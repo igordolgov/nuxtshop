@@ -1,0 +1,15 @@
+[
+  {
+    "id": "1",
+    "name": "Админ",
+    "email": "admin@test.com",
+    "password": "$2b$12$Z84j/WAfqi1lrVfTUg6qfO/o/NtHLP1QtolFrtcM7ulqg3jbeRQM.",
+    "role": "admin",
+    "phone": "+79991234567",
+    "address": "Москва, ул. Примерная, д. 1",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "lastLogin": "2026-06-10T14:22:49.160Z"
+  }
+]

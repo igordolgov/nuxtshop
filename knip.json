@@ -1,0 +1,30 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "nuxt.config.ts",
+        "app/app.vue",
+        "app/pages/**/*.vue",
+        "app/layouts/**/*.vue",
+        "app/middleware/**/*.{ts,js}",
+        "app/plugins/**/*.{ts,js}",
+        "server/**/*.{ts,js}"
+      ],
+      "project": [
+        "app/**/*.{js,ts,vue}"
+      ],
+      "ignore": [
+        "app/_trash/**",
+        "app/components/ui/**/*.vue",
+        "**/*.d.ts",
+				"backend/**"
+      ],
+      "ignoreDependencies": [
+        "@tailwindcss/forms",
+        "@tailwindcss/typography",
+        "h3"
+      ]
+    }
+  }
+}

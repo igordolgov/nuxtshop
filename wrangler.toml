@@ -1,0 +1,7 @@
+# wrangler.toml
+name = "nuxt-shop"
+compatibility_date = "2026-02-22"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NUXT_PUBLIC_API_BASE = ""
