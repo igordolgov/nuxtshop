@@ -2,13 +2,13 @@
 <template lang="pug">
 .similar-products(
 	v-if="products.length > 0"
-	class="px-2 pb-15 lg:mt-0 lg:mb-3 lg:pb-3"
+	class="lg:mt-0 lg:mb-3 px-2 pb-15 lg:pb-3"
 )
 	.container.mx-auto.px-2(class="lg:px-4")
-		h2.text-xl.font-semibold.mb-2(class="lg:text-2xl lg:mb-3") Похожие товары:
+		h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") Похожие товары:
 		
 		.grid.grid-cols-2.gap-1(
-			class="sm:grid-cols-3 lg:grid-cols-4 lg:gap-4"
+			class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
 		)
 			.similar-product-card(
 				v-for="item in products"
@@ -60,7 +60,7 @@
 					//- Ссылка на товар
 					NuxtLink.flex-1.flex.flex-col(:to="getProductUrl(item)" prefetch)
 						figure.p-1.pt-0.flex.justify-center.items-center(class="lg:h-40")
-							NuxtImg.rounded-box.w-full.object-cover.max-w-full(
+							img.rounded-box.w-full.object-cover.max-w-full(
 								:src="getValidImageUrl(item.image)"
 								:alt="item.name"
 								@error="handleImageError"

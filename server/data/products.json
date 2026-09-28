@@ -612,11 +612,13 @@
     "categories": [
       "новые"
     ],
-    "gallery": [],
+    "gallery": [
+      "/images/products/product-31-gallery-0-1788296766664.webp"
+    ],
     "inStock": true,
     "stockQuantity": 1,
     "characteristics": {},
     "createdAt": "2026-02-19T16:49:09.482Z",
-    "updatedAt": "2026-02-19T16:57:40.562Z"
+    "updatedAt": "2026-09-01T21:06:06.665Z"
   }
 ]

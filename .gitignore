@@ -1,24 +1,50 @@
-# Nuxt dev/build outputs
-.output
-.data
-.nuxt
-.nitro
-.cache
-dist
+# Dependencies
+node_modules/
 
-# Node dependencies
-node_modules
+# Nuxt
+.nuxt/
+.output/
+.data/
+.nitro/
+.cache/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+
+# Wrangler
+.wrangler/
+wrangler.toml.bak
 
 # Logs
-logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
 
-# Misc
+# OS
 .DS_Store
-.fleet
-.idea
+Thumbs.db
 
-# Local env files
-.env
-.env.*
-!.env.example
+# Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# Archives
+*.tar.gz
+*.zip
+
+# System
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Local config
+options.vite

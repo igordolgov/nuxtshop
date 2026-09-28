@@ -1,13 +1,18 @@
-// composables/useAuth.js
+// app/composables/useAuth.js
 import { ref, computed } from 'vue'
 
 let authInstance = null
 
 export const useAuth = () => {
-  if (authInstance) {
-    return authInstance
-  }
+  // SSR: свежий инстанс на каждый запрос — никакого шаринга между пользователями
+  if (import.meta.server) return createAuth()
 
+  if (authInstance) return authInstance
+  authInstance = createAuth()
+  return authInstance
+}
+
+function createAuth() {
   const user = ref(null)
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
@@ -15,219 +20,125 @@ export const useAuth = () => {
   const loading = ref(false)
   const authChecked = ref(false)
 
-  // Helper для безопасного обновления состояния
   const updateAuthState = (newUser) => {
     user.value = newUser
-    // isAuthenticated обновится автоматически через computed
   }
 
-  // Проверка аутентификации при загрузке
   const checkAuth = async () => {
+    if (authChecked.value) {
+      return { user: user.value, isAuthenticated: !!user.value }
+    }
+
     try {
-      console.log('🔍 Проверка аутентификации...')
-      console.log('📱 Платформа:', process.client ? 'клиент' : 'сервер')
-      
       const data = await $fetch('/api/auth/user', {
-        headers: {
-          'Cache-Control': 'no-cache'
-        },
-        credentials: 'include'
+        headers: { 'Cache-Control': 'no-cache' },
+        credentials: 'include',
       })
-      
       updateAuthState(data.user)
       authChecked.value = true
-      
-      console.log('✅ Результат проверки аутентификации:', { 
-        isAuthenticated: !!data.user,
-        user: data.user ? { 
-          email: data.user.email, 
-          role: data.user.role,
-          name: data.user.name 
-        } : null
-      })
-      
       return data
-    } catch (error) {
-      console.log('❌ Пользователь не аутентифицирован:', error.message)
+    } catch {
       updateAuthState(null)
       authChecked.value = true
       return { user: null, isAuthenticated: false }
     }
   }
 
-  // Вход - УЛУЧШЕННАЯ ВЕРСИЯ
   const login = async (credentials) => {
     loading.value = true
     try {
-      console.log('🔐 Попытка входа:', credentials.email)
-      
       const data = await $fetch('/api/auth/login', {
         method: 'POST',
         body: credentials,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
 
-      if (data.success) {
-        updateAuthState(data.user)
-        console.log('✅ Вход успешен:', { 
-          email: data.user.email, 
-          role: data.user.role,
-          name: data.user.name
-        })
-        return data
-      } else {
-        throw new Error(data.error || 'Ошибка входа')
-      }
+      if (!data.success) throw new Error(data.error || 'Ошибка входа')
+      updateAuthState(data.user)
+      return data
     } catch (error) {
-      console.error('❌ Ошибка входа:', error)
-      
-      let errorMessage = 'Ошибка при входе в систему'
-      
-      if (error.data?.statusMessage) {
-        errorMessage = error.data.statusMessage
-      } else if (error.status === 401) {
-        errorMessage = 'Неверный email или пароль'
-      } else if (error.status === 500) {
-        errorMessage = 'Ошибка сервера. Попробуйте позже.'
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      throw new Error(errorMessage)
+      let msg = 'Ошибка при входе в систему'
+      if (error.data?.statusMessage) msg = error.data.statusMessage
+      else if (error.status === 401) msg = 'Неверный email или пароль'
+      else if (error.status === 500) msg = 'Ошибка сервера. Попробуйте позже.'
+      else if (error.message) msg = error.message
+      throw new Error(msg)
     } finally {
       loading.value = false
     }
   }
 
-  // Регистрация
   const register = async (userData) => {
     loading.value = true
     try {
-      console.log('👤 Попытка регистрации:', userData.email)
-      
       const data = await $fetch('/api/auth/register', {
         method: 'POST',
         body: userData,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
 
-      if (data.success) {
-        updateAuthState(data.user)
-        console.log('✅ Регистрация успешна:', { 
-          email: data.user.email, 
-          role: data.user.role,
-          name: data.user.name
-        })
-        return data
-      } else {
-        throw new Error(data.error || 'Ошибка регистрации')
-      }
+      if (!data.success) throw new Error(data.error || 'Ошибка регистрации')
+      updateAuthState(data.user)
+      return data
     } catch (error) {
-      console.error('❌ Ошибка регистрации:', error)
-      
-      let errorMessage = 'Ошибка при регистрации'
-      if (error.data?.statusMessage) {
-        errorMessage = error.data.statusMessage
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      throw new Error(errorMessage)
+      let msg = 'Ошибка при регистрации'
+      if (error.data?.statusMessage) msg = error.data.statusMessage
+      else if (error.message) msg = error.message
+      throw new Error(msg)
     } finally {
       loading.value = false
     }
   }
 
-  // Выход - ИСПРАВЛЕННАЯ ВЕРСИЯ
   const logout = async () => {
     try {
-      console.log('🚪 Начало выхода из системы...')
-      
-      // Отправляем запрос на сервер для выхода
-      const data = await $fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      })
-
-      // Очищаем локальное состояние
+      await $fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
       updateAuthState(null)
 
-      // Очищаем localStorage/sessionStorage
-      if (process.client) {
+      if (import.meta.client) {
         localStorage.removeItem('user')
         sessionStorage.removeItem('user')
         localStorage.removeItem('auth-token')
-        
-        // Очищаем все куки на клиенте
-        document.cookie.split(";").forEach(cookie => {
-          const eqPos = cookie.indexOf("=")
+
+        document.cookie.split(';').forEach((cookie) => {
+          const eqPos = cookie.indexOf('=')
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/"
+          document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
         })
       }
-
-      console.log('✅ Выход выполнен успешно')
-      
       return { success: true }
     } catch (error) {
-      console.error('❌ Ошибка выхода:', error)
-      // Даже при ошибке очищаем локальное состояние
       updateAuthState(null)
-      return { success: false, error: error.message }
+      return { success: false, error: error?.message || 'Неизвестная ошибка' }
     }
   }
 
-  // Обновление профиля
   const updateProfile = async (profileData) => {
     loading.value = true
     try {
-      console.log('📝 Обновление профиля:', profileData.email)
       const data = await $fetch('/api/auth/profile', {
         method: 'PUT',
         body: profileData,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
 
-      if (data.success) {
-        updateAuthState(data.user)
-        console.log('✅ Профиль обновлен')
-        return data
-      } else {
-        throw new Error(data.error || 'Ошибка обновления профиля')
-      }
-    } catch (error) {
-      console.error('❌ Ошибка обновления профиля:', error)
-      throw error
+      if (!data.success) throw new Error(data.error || 'Ошибка обновления профиля')
+      updateAuthState(data.user)
+      return data
     } finally {
       loading.value = false
     }
   }
 
-  // Принудительный сброс состояния
   const resetAuth = () => {
     updateAuthState(null)
     authChecked.value = false
-    console.log('🔄 Состояние аутентификации сброшено')
   }
 
-  // Инициализация при создании - ТОЛЬКО на клиенте
-  if (process.client) {
-    // Запускаем проверку аутентификации
-    setTimeout(() => {
-      checkAuth()
-    }, 500)
-  }
-
-  authInstance = {
+  return {
     user,
     isAuthenticated,
     isAdmin,
@@ -240,9 +151,6 @@ export const useAuth = () => {
     logout,
     updateProfile,
     resetAuth,
-    // Добавляем helper функцию
-    updateAuthState
+    updateAuthState,
   }
-
-  return authInstance
 }

@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nuxt-shop",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2025-07-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "NUXT_PUBLIC_API_BASE": ""
+  }
+}

@@ -1,120 +1,56 @@
 // server/lib/productHelpers.js
-import { readFile, writeFile, access } from 'fs/promises'
-import { join } from 'path'
+/**
+ * Хранилище товаров в памяти воркера.
+ *
+ * ВАЖНО: на Cloudflare Workers нет файловой системы. Данные живут
+ * в модульной переменной. Это позволяет приложению работать, но:
+ *  - Изменения теряются при перезапуске изолята Cloudflare (обычно минуты-часы).
+ *  - При нескольких изолятах данные расходятся.
+ * Для постоянного хранения — мигрировать на Cloudflare D1 / KV.
+ */
 
-const dataPath = join(process.cwd(), 'server', 'data', 'products.json')
+import productsSeed from '../data/products.json'
 
-// Кэш с таймстемпом для инвалидации
-let productsCache = null
-let cacheTimestamp = null
-const CACHE_TTL = 5000 // 5 секунд
+// In-memory store. Инициализируется из инлайн-JSON при сборке.
+let productsState = Array.isArray(productsSeed) ? [...productsSeed] : []
 
 // Полная таблица транслитерации
 const TRANSLIT_MAP = {
-  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
-  'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i',
-  'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
-  'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
-  'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch',
-  'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '',
-  'э': 'e', 'ю': 'yu', 'я': 'ya'
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd',
+  е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i',
+  й: 'y', к: 'k', л: 'l', м: 'm', н: 'n',
+  о: 'o', п: 'p', р: 'r', с: 's', т: 't',
+  у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch',
+  ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '',
+  э: 'e', ю: 'yu', я: 'ya',
 }
 
 /**
- * Инвалидирует кэш продуктов
+ * Инвалидирует кэш. В in-memory версии — no-op (кэш и есть состояние).
  */
 export function invalidateProductsCache() {
-  productsCache = null
-  cacheTimestamp = null
+  // no-op
 }
 
 /**
- * Проверяет существование файла
- */
-async function fileExists(filePath) {
-  try {
-    await access(filePath)
-    return true
-  } catch {
-    return false
-  }
-}
-
-/**
- * Читает продукты из JSON файла
- * @param {boolean} forceRefresh - Принудительное обновление кэша
+ * Читает продукты. Возвращает in-memory массив.
  * @returns {Promise<Array>}
  */
-export async function readProducts(forceRefresh = false) {
-  const now = Date.now()
-  
-  // Возвращаем кэш если валиден
-  if (!forceRefresh && productsCache && cacheTimestamp && (now - cacheTimestamp < CACHE_TTL)) {
-    return productsCache
-  }
-  
-  // Проверяем существование файла
-  if (!await fileExists(dataPath)) {
-    console.warn(`⚠️ Файл ${dataPath} не найден, возвращаем пустой массив`)
-    productsCache = []
-    cacheTimestamp = now
-    return []
-  }
-  
-  try {
-    const data = await readFile(dataPath, 'utf-8')
-    
-    if (!data.trim()) {
-      console.warn(`⚠️ Файл ${dataPath} пуст`)
-      productsCache = []
-      cacheTimestamp = now
-      return []
-    }
-    
-    const products = JSON.parse(data)
-    
-    // Валидация
-    if (!Array.isArray(products)) {
-      console.error('❌ products.json должен содержать массив')
-      productsCache = []
-      cacheTimestamp = now
-      return []
-    }
-    
-    productsCache = products
-    cacheTimestamp = now
-    return products
-    
-  } catch (error) {
-    console.error(`❌ Ошибка чтения ${dataPath}:`, error.message)
-    return productsCache || []
-  }
+export async function readProducts() {
+  return productsState
 }
 
 /**
- * Записывает продукты в JSON файл
- * @param {Array} products - Массив продуктов
+ * Записывает продукты в in-memory store.
+ * @param {Array} products
  * @returns {Promise<boolean>}
  */
 export async function writeProducts(products) {
   if (!Array.isArray(products)) {
     throw new Error('Products must be an array')
   }
-  
-  try {
-    const content = JSON.stringify(products, null, 2)
-    await writeFile(dataPath, content, 'utf-8')
-    
-    // Обновляем кэш
-    productsCache = products
-    cacheTimestamp = Date.now()
-    
-    return true
-    
-  } catch (error) {
-    console.error(`❌ Ошибка записи в ${dataPath}:`, error.message)
-    throw error
-  }
+  productsState = products
+  return true
 }
 
 /**
@@ -122,10 +58,9 @@ export async function writeProducts(products) {
  */
 function transliterate(text) {
   if (!text || typeof text !== 'string') return ''
-  
+
   let result = text.toLowerCase()
-  
-  // Сначала заменяем многобуквенные сочетания
+
   result = result.replace(/щ/g, 'sch')
   result = result.replace(/ш/g, 'sh')
   result = result.replace(/ч/g, 'ch')
@@ -134,88 +69,69 @@ function transliterate(text) {
   result = result.replace(/я/g, 'ya')
   result = result.replace(/ё/g, 'yo')
   result = result.replace(/ж/g, 'zh')
-  
-  // Затем остальные буквы
+
   for (const [rus, eng] of Object.entries(TRANSLIT_MAP)) {
     if (!['щ', 'ш', 'ч', 'ц', 'ю', 'я', 'ё', 'ж'].includes(rus)) {
       result = result.replace(new RegExp(rus, 'g'), eng)
     }
   }
-  
+
   return result
 }
 
 /**
  * Создаёт slug из строки
- * @param {string} str - Исходная строка
- * @returns {string}
  */
 export function slugify(str) {
   if (!str || typeof str !== 'string') return `product-${Date.now()}`
-  
+
   let slug = transliterate(str.trim())
-  
+
   slug = slug
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-  
+
   return slug || `product-${Date.now()}`
 }
 
 /**
  * Генерирует уникальный slug
- * @param {string} baseSlug - Базовый slug
- * @param {Array} existingProducts - Существующие продукты
- * @param {string|number} excludeId - ID продукта для исключения (при редактировании)
- * @returns {string}
  */
 export function generateUniqueSlug(baseSlug, existingProducts, excludeId = null) {
   const existingSlugs = new Set(
     existingProducts
-      .filter(p => p.id !== excludeId && p.id !== String(excludeId))
-      .map(p => p.slug)
+      .filter((p) => p.id !== excludeId && p.id !== String(excludeId))
+      .map((p) => p.slug)
   )
-  
-  if (!existingSlugs.has(baseSlug)) {
-    return baseSlug
-  }
-  
+
+  if (!existingSlugs.has(baseSlug)) return baseSlug
+
   let counter = 1
-  while (existingSlugs.has(`${baseSlug}-${counter}`)) {
-    counter++
-  }
-  
+  while (existingSlugs.has(`${baseSlug}-${counter}`)) counter++
+
   return `${baseSlug}-${counter}`
 }
 
 /**
  * Находит товар по slug или ID
- * @param {string} slugOrId 
- * @returns {Promise<Object|null>}
  */
 export async function getProductBySlug(slugOrId) {
   const products = await readProducts()
-  return products.find(p => 
-    p.slug === slugOrId || 
-    String(p.id) === slugOrId
-  ) || null
+  return products.find((p) => p.slug === slugOrId || String(p.id) === slugOrId) || null
 }
 
 /**
  * Находит товар по ID
- * @param {string|number} id 
- * @returns {Promise<Object|null>}
  */
 export async function getProductById(id) {
   const products = await readProducts()
-  return products.find(p => String(p.id) === String(id)) || null
+  return products.find((p) => String(p.id) === String(id)) || null
 }
 
 /**
  * Возвращает все продукты
- * @returns {Promise<Array>}
  */
 export async function getAllProducts() {
   return readProducts()
@@ -223,59 +139,42 @@ export async function getAllProducts() {
 
 /**
  * Находит похожие товары по категориям
- * @param {Object} currentProduct 
- * @param {number} limit 
- * @returns {Promise<Array>}
  */
 export async function getSimilarProducts(currentProduct, limit = 4) {
   if (!currentProduct?.categories?.length) return []
-  
+
   const products = await readProducts()
   const currentId = String(currentProduct.id)
-  
+
   return products
-    .filter(p => 
-      String(p.id) !== currentId &&
-      p.categories?.some(cat => currentProduct.categories.includes(cat))
+    .filter(
+      (p) =>
+        String(p.id) !== currentId &&
+        p.categories?.some((cat) => currentProduct.categories.includes(cat))
     )
     .slice(0, limit)
 }
 
 /**
  * Валидирует структуру продукта
- * @param {Object} product 
- * @returns {{valid: boolean, errors: string[]}}
  */
 export function validateProduct(product) {
   const errors = []
-  
-  if (!product.name?.trim()) {
-    errors.push('Название обязательно')
-  }
-  
-  if (!product.price || isNaN(parseFloat(product.price))) {
-    errors.push('Цена обязательна')
-  }
-  
-  if (product.price < 0) {
-    errors.push('Цена не может быть отрицательной')
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  }
+
+  if (!product.name?.trim()) errors.push('Название обязательно')
+  if (!product.price || isNaN(parseFloat(product.price))) errors.push('Цена обязательна')
+  if (product.price < 0) errors.push('Цена не может быть отрицательной')
+
+  return { valid: errors.length === 0, errors }
 }
 
 /**
  * Создаёт новый продукт с дефолтными значениями
- * @param {Object} data 
- * @returns {Object}
  */
 export function createProductObject(data) {
   const now = new Date().toISOString()
   const stockQuantity = parseInt(data.stockQuantity) || 0
-  
+
   return {
     id: data.id || String(Date.now()),
     slug: data.slug || slugify(data.name),
@@ -289,11 +188,10 @@ export function createProductObject(data) {
     stockQuantity,
     characteristics: data.characteristics || {},
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   }
 }
 
-// Экспорт по умолчанию
 export default {
   readProducts,
   writeProducts,
@@ -305,5 +203,5 @@ export default {
   getAllProducts,
   getSimilarProducts,
   validateProduct,
-  createProductObject
+  createProductObject,
 }

@@ -1,3 +1,38 @@
 {
-    "editor.wordWrap": "on"
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "oxc.path.oxfmt": "node_modules/.bin/oxfmt",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "always"
+  },
+
+  "[pug]": {
+    "editor.formatOnSave": false
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  "postcss.lint.unknownAtRules": "ignore",
+
+  "tailwindCSS.experimental.exclude": [
+    "**/backend/**",
+    "**/server/**",
+    "**/_trash/**",
+    "**/node_modules/**"
+  ],
+
+  "editor.quickSuggestions": {
+    "strings": true
+  }
 }

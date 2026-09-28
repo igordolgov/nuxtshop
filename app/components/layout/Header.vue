@@ -1,105 +1,85 @@
 <!-- components/layout/Header.vue -->
 <template lang="pug">
-header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
-  class="border-b border-secondary/60"
-  :class="headerClasses"
+header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
+  class="bg-base-100/95 border-base-300 px-3 sm:px-4 lg:px-6"
 )
   //- Начало: логотип и бургер-меню на мобильных
   .navbar-start.flex-0
-    .flex.items-center
-      //- Бургер меню для мобильных (без ClientOnly)
-      .dropdown.dropdown-end.relative(v-if="isMobile" class="mr-2")
-        label.btn.btn-ghost.btn-circle.p-0(
+    .flex.items-center.gap-1
+      //- Бургер меню для мобильных
+      .dropdown.dropdown-end.relative(v-if="isMobile" class="mr-1")
+        label.btn.btn-ghost.btn-circle.btn-sm(
           tabindex="0"
-          :class="burgerButtonClasses"
         )
-          svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="grey")
-            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16")
-        ul.dropdown-content.menu.p-2.shadow.bg-base-100.rounded-box.w-64.z-50(
-          class="mt-3 -left-4"
+          svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70")
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
+        ul.dropdown-content.menu.p-2.gap-1.shadow-lg.bg-base-100.rounded-2xl.w-60.z-50.border(
+          class="mt-3 -left-2 border-base-300"
           tabindex="0"
         )
           li
-            NuxtLink.px-4.py-2.rounded-lg.font-medium(
-              :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+            NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+              :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
               to="/"
               @click="closeMobileMenu"
               prefetch
             ) Главная
           li
-            NuxtLink.px-4.py-2.rounded-lg.font-medium(
-              :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+            NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+              :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
               to="/news"
               @click="closeMobileMenu"
               prefetch
             ) Новости
           li
-            NuxtLink.px-4.py-2.rounded-lg.font-medium(
-              :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+            NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+              :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
               to="/about"
               @click="closeMobileMenu"
               prefetch
             ) О нас
           li
-            NuxtLink.px-4.py-2.rounded-lg.font-medium(
-              :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+            NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+              :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
               to="/contacts"
               @click="closeMobileMenu"
               prefetch
             ) Контакты
-          //- li
-            //- NuxtLink.px-4.py-2.rounded-lg.font-medium.flex.items-center.justify-between(
-            //-   :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
-            //-   to="/favorites"
-            //-   @click="closeMobileMenu"
-            //- )
-            //-   span Избранное
-            //-   span.badge.badge-xs.badge-primary.ml-2(v-if="favoritesCount > 0") {{ favoritesCount }}
-          
+
           //- Админка для мобильных
           template(v-if="isAdmin")
             li
-              .divider.my-1
+              .divider.my-1.text-xs.opacity-50 Админка
             li
-              .px-4.py-1.text-xs.opacity-50.font-semibold Админка
-            //- li
-            //-   NuxtLink.px-4.py-2.rounded-lg.font-medium(
-            //-     :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
-            //-     to="/admin"
-            //-     @click="closeMobileMenu"
-            //-   ) Дашборд
-            li
-              NuxtLink.px-4.py-2.rounded-lg.font-medium(
-                :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+              NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+                :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
                 to="/admin/products"
                 @click="closeMobileMenu"
                 prefetch
               ) Товары
             li
-              NuxtLink.px-4.py-2.rounded-lg.font-medium(
-                :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-300'"
+              NuxtLink.px-4.py-2.rounded-xl.font-medium.text-sm(
+                :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
                 to="/admin/users"
                 @click="closeMobileMenu"
                 prefetch
               ) Пользователи
 
       //- Логотип
-      NuxtLink.flex.items-center.gap-2(to="/" class="lg:mr-6" prefetch)
-        .bg-primary.rounded-xl.flex.items-center.justify-center.shadow-lg(
-          :class="logoContainerClasses"
+      NuxtLink.flex.items-center.gap-2.shrink-0(to="/" class="lg:mr-6" prefetch)
+        .bg-primary.rounded-xl.flex.items-center.justify-center.size-8(
         )
-          span.text-white.font-bold(:class="logoTextClasses") М
-        span.text-sky-700.font-bold(v-show="!isHomePageVertical") Магазин
+          span.text-white.font-bold.text-sm М
+        span.font-semibold.text-base-content.tracking-tight(v-show="!isHomePageVertical") Магазин
 
   //- Центр: поиск на мобильных, меню на десктопе
   .navbar-center.flex-1.min-w-0
     //- Мобильные: поиск
-    .search-and-filters-container.flex.items-center.gap-3.w-full.ml-3(
+    .search-and-filters-container.flex.items-center.gap-2.w-full.ml-2(
       v-if="isMobile"
       class="lg:hidden"
     )
-      //- Компонент поиска
-      .search-container.flex-1.min-w-0.max-w-auto
+      .search-container.flex-1.min-w-0
         SmartSearchInput(
           v-show="isHomePage"
           :products="allProducts"
@@ -119,7 +99,7 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
           @update:activeSuggestionIndex="emit('update:activeSuggestionIndex', $event)"
           @update:showSuggestions="emit('update:showSuggestions', $event)"
         )
-      
+
       //- Кнопка мобильных фильтров
       button.filters-button(
         v-if="isHomePage"
@@ -137,7 +117,7 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
             path(
               stroke-linecap="round"
               stroke-linejoin="round"
-              stroke-width="2"
+              stroke-width="1.75"
               d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
             )
           .filters-badge(v-if="activeFiltersCount > 0") {{ activeFiltersCount }}
@@ -146,45 +126,45 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
     nav.hidden(class="lg:block")
       ul.flex.items-center.gap-1
         li
-          NuxtLink.px-4.py-2.rounded-lg.font-medium.text-sm(
-            :class="isActiveRoute('/') ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
+            :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/"
             prefetch
           ) Главная
         li
-          NuxtLink.px-4.py-2.rounded-lg.font-medium.text-sm(
-            :class="isActiveRoute('/news') ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
+            :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/news"
             prefetch
           ) Новости
         li
-          NuxtLink.px-4.py-2.rounded-lg.font-medium.text-sm(
-            :class="isActiveRoute('/about') ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
+            :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/about"
             prefetch
           ) О нас
         li
-          NuxtLink.px-4.py-2.rounded-lg.font-medium.text-sm(
-            :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
+            :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/contacts"
             prefetch
           ) Контакты
-        
+
         //- Пункт "Избранное" с бейджем
         li.relative
-          NuxtLink.px-4.py-2.rounded-lg.font-medium.text-sm.flex.items-center.gap-2(
-            :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-2.transition-colors(
+            :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/favorites"
           )
             span Избранное
-            span.badge.badge-xs.badge-primary.absolute.top-0.right-0.p-0.min-w-4.h-4.flex.items-center.justify-center.rounded-sm(
+            span.badge.badge-xs.badge-primary.rounded-full(
               v-if="favoritesCount > 0"
             ) {{ favoritesCount }}
 
         //- Админка (только для админов на десктопе)
         li.relative(v-if="isAdmin" class="hidden md:block")
-          button.px-4.py-2.rounded-lg.font-medium.text-sm.flex.items-center.gap-1(
-            :class="isAdminRouteActive || isAdminMenuOpen ? 'bg-primary text-primary-content shadow-md' : 'hover:bg-primary/30 text-base-content'"
+          button.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-1.transition-colors(
+            :class="isAdminRouteActive || isAdminMenuOpen ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             @click="toggleAdminMenu"
             @keydown.enter="toggleAdminMenu"
             @keydown.space="toggleAdminMenu"
@@ -192,50 +172,44 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
             tabindex="0"
           )
             span Админка
-            svg.w-4.h-4(
+            svg.w-4.h-4.transition-transform(
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              :class="isAdminMenuOpen ? 'transform rotate-180' : ''"
+              :class="isAdminMenuOpen ? 'rotate-180' : ''"
             )
-              path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
-          
-          //- Выпадающее меню админки
-          .absolute.top-full.left-0.mt-2.bg-base-100.rounded-box.shadow-lg.border.border-base-300.z-50(
+              path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 9l-7 7-7-7")
+
+            //- Выпадающее меню админки
+          .absolute.top-full.left-0.mt-2.bg-base-100.rounded-2xl.shadow-lg.border.z-50(
             v-show="isAdminMenuOpen"
-            class="min-w-48"
+            class="min-w-48 border-base-300"
           )
             .flex.flex-col.p-2.gap-1
-              NuxtLink.flex.items-center.gap-3.p-2.rounded-lg(
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin"
                 @click="closeAdminMenu"
-                :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
-              )
-                .w-5.h-5.flex.items-center.justify-content
-                span.text-sm Дашборд
-              
-              NuxtLink.flex.items-center.gap-3.p-2.rounded-lg(
+                :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+              ) Дашборд
+
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/products"
                 @click="closeAdminMenu"
-                :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
+                :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              )
-                .w-5.h-5.flex.items-center.justify-content
-                span.text-sm Товары
-              
-              NuxtLink.flex.items-center.gap-3.p-2.rounded-lg(
+              ) Товары
+
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/users"
                 @click="closeAdminMenu"
-                :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
+                :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              )
-                .w-5.h-5.flex.items-center.justify-content
-                span.text-sm Пользователи
+              ) Пользователи
 
   //- Конец: элементы управления
   .navbar-end.flex-shrink-0
-    .flex.items-center(class="lg:gap-3")
+    .flex.items-center.gap-1(class="lg:gap-2")
       //- Поиск на десктопе
       .search-desktop.hidden(
         v-if="isHomePage"
@@ -259,50 +233,48 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
           @update:activeSuggestionIndex="emit('update:activeSuggestionIndex', $event)"
           @update:showSuggestions="emit('update:showSuggestions', $event)"
         )
-      
+
       //- Корзина на десктопе
-      .indicator.ml-2(class="hidden lg:block")
-        NuxtLink.btn.btn-ghost.btn-circle(
+      .indicator(class="hidden lg:block")
+        NuxtLink.btn.btn-ghost.btn-circle.btn-sm(
           to="/cart"
-          class="hover:bg-primary/30"
-          :class="cartButtonClasses"
         )
-          svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-base-content/70")
-            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
-        span.badge.badge-xs.badge-error.absolute.top-2.right-1.indicator-item.rounded-xl.w-2(
+          svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70" stroke-width="1.75")
+            path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
+        span.badge.badge-xs.badge-primary.absolute.top-0.right-0.indicator-item.rounded-full.px-1(
           v-if="cartItemsCount > 0"
         ) {{ cartItemsCount }}
 
-      //- Переключатель тем (без ClientOnly)
-      button.btn.btn-ghost.btn-circle.mr-2.text-base-200.bg-secondary(
-        :class="themeButtonClasses"
+      //- Переключатель тем
+      button.btn.btn-ghost.btn-circle.btn-sm(
         @click="toggleTheme"
         :title="currentTheme === 'corporate' ? 'Включить темную тему' : 'Включить светлую тему'"
       )
-        svg(
+        svg.w-4.h-4.text-base-content-70(
           v-if="currentTheme === 'corporate'"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          :class="themeIconClasses"
+          stroke-width="1.75"
+          class="text-base-content/70"
         )
-          path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z")
-        svg(
+          path(stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z")
+        svg.w-4.h-4(
           v-else
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          :class="themeIconClasses"
+          stroke-width="1.75"
+          class="text-base-content/70"
         )
-          path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646A9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z")
+          path(stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646A9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z")
 
       //- Меню пользователя
       .relative.ml-0.flex-shrink-0(v-if="isAuthenticated")
-        button.flex.items-center.gap-2.cursor-pointer(
-          class="hover:bg-base-300 rounded-lg text-base-content"
-          :class="userButtonClasses"
+        button.flex.items-center.gap-2.cursor-pointer.rounded-xl.px-2.py-2.transition-colors(
+          class="hover:bg-base-200"
           @click="toggleUserMenu"
           @keydown.enter="toggleUserMenu"
           @keydown.space="toggleUserMenu"
@@ -310,83 +282,68 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
           tabindex="0"
         )
           .avatar
-            .rounded-full.bg-primary.flex.items-center.justify-center.text-white.font-bold(
-              :class="avatarClasses"
-            )
+            .rounded-full.bg-primary.flex.items-center.justify-center.text-white.font-semibold.size-7.text-xs
               span {{ userInitials }}
           span.font-medium.text-sm(class="hidden sm:block") {{ userName }}
-          svg.w-4.h-4(
+          svg.w-4.h-4.transition-transform(
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            :class="isUserMenuOpen ? 'transform rotate-180' : ''"
+            class="text-base-content/50"
+            :class="isUserMenuOpen ? 'rotate-180' : ''"
           )
-            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 9l-7 7-7-7")
 
         //- Выпадающее меню пользователя
-        .absolute.top-full.right-0.bg-base-100.rounded-box.shadow-lg.border.border-base-300.z-50(
+        .absolute.top-full.right-0.mt-2.bg-base-100.rounded-2xl.shadow-lg.border.z-50(
           v-show="isUserMenuOpen"
-          class="min-w-auto"
+          class="min-w-56 border-base-300"
         )
           .flex.flex-col.p-2
             //- Информация о пользователе
-            .px-3.py-0.border-b.border-base-300.mb-0
-              .text-xs.text-base-content.opacity-70 {{ userEmail }}
-              .badge.badge-sm.mt-1(
+            .px-3.py-2.border-b.border-base-300.mb-1
+              .text-xs.text-base-content.opacity-60.truncate {{ userEmail }}
+              .badge.badge-sm.mt-1.rounded-full(
                 :class="userRole === 'admin' ? 'badge-primary' : userRole === 'manager' ? 'badge-secondary' : 'badge-accent'"
               )
                 | {{ userRole === 'admin' ? 'Администратор' : userRole === 'manager' ? 'Менеджер' : 'Пользователь' }}
-            
+
             //- Пункты меню
-            button.flex.items-center.gap-3.p-2.rounded-lg.w-full.text-left.cursor-pointer(
+            button.flex.items-center.gap-3.px-3.py-2.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               @click="navigateToPath('/user')"
-              :class="isExactActiveRoute('/user') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
+              :class="isExactActiveRoute('/user') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              .w-5.h-5.flex.items-center.justify-center
-                svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z")
-              span.text-sm Личный кабинет
+              span Личный кабинет
 
             //- Управление пользователями только для админов
-            button.flex.items-center.gap-3.p-2.rounded-lg.w-full.text-left.cursor-pointer(
+            button.flex.items-center.gap-3.px-3.py-2.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               v-if="isAdmin"
               @click="navigateToPath('/admin/users')"
-              :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
+              :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              .w-5.h-5.flex.items-center.justify-center
-                svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z")
-              span.text-sm Управление пользователями
+              span Управление пользователями
 
-            button.flex.items-center.gap-3.p-2.rounded-lg.w-full.text-left.cursor-pointer(
+            button.flex.items-center.gap-3.px-3.py-2.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               @click="navigateToPath('/settings')"
-              :class="isExactActiveRoute('/settings') ? 'bg-primary text-primary-content' : 'hover:bg-base-300 text-base-content'"
+              :class="isExactActiveRoute('/settings') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              .w-5.h-5.flex.items-center.justify-center
-                svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z")
-              span.text-sm Настройки
+              span Настройки
 
-            button.flex.items-center.gap-3.p-2.rounded-lg.w-full.text-left.cursor-pointer(
+            .divider.my-1
+
+            button.flex.items-center.gap-3.px-3.py-2.rounded-xl.w-full.text-left.cursor-pointer.text-sm.text-error.transition-colors(
               @click="handleLogout"
-              class="text-red-500 hover:bg-error/30"
+              class="hover:bg-error/10"
             )
-              .w-5.h-5.flex.items-center.justify-center
-                svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1")
-              span.text-sm Выйти
+              span Выйти
 
       //- Кнопка входа (только для неавторизованных)
-      NuxtLink.btn.btn-primary.max-h-9.ml-3.rounded-lg.flex-shrink-0(
+      NuxtLink.btn.btn-primary.btn-sm.rounded-xl.ml-1(
         v-else
         to="/auth/login"
-        :class="loginButtonClasses"
       )
-        svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-          path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1")
-        span.hidden(class="sm:inline") Войти
+        span Войти
 </template>
 
 <style scoped>
@@ -400,32 +357,33 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
 .fade-leave-to {
   opacity: 0;
 }
-
-/* Стили для кнопки фильтров */
+/* Кнопка фильтров — минималистичный плоский стиль */
 .filters-button {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: hsl(var(--p));
-  color: hsl(var(--pc));
-  border-radius: var(--rounded-btn, 0.5rem);
+  background: rgb(var(--color-base-200));
+  color: rgb(var(--color-base-content));
+  border: 1px solid rgb(var(--color-base-300));
+  border-radius: var(--radius-xl, 0.75rem);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
   position: relative;
-  border: none;
   flex-shrink: 0;
 }
 
 .filters-button:hover {
-  background: hsl(var(--pf));
+  border-color: rgb(var(--color-primary) / 0.4);
 }
 
 .filters-button.active {
-  background: hsl(var(--a));
+  background: rgb(var(--color-primary) / 0.12);
+  border-color: rgb(var(--color-primary) / 0.4);
+  color: rgb(var(--color-primary));
 }
 
 .filters-icon {
@@ -438,20 +396,20 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
   position: absolute;
   top: -6px;
   right: -8px;
-  background: oklch(55% 0.2 40);
+  background: rgb(var(--color-primary));
   color: white;
   border-radius: 50%;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  border: 2px solid hsl(var(--b1));
+  border: 2px solid rgb(var(--color-base-100));
 }
 
-/* Стили для контейнера поиска и фильтров */
+/* Контейнеры поиска */
 .search-and-filters-container {
   min-width: 0;
 }
@@ -461,7 +419,6 @@ header.navbar.min-h-13.pt-2.bg-base-100.sticky.top-0.z-50(
   flex: 1;
 }
 
-/* Десктопное меню */
 nav ul {
   list-style: none;
   padding: 0;
@@ -474,32 +431,20 @@ nav ul li button {
   white-space: nowrap;
 }
 
-/* Стили для поиска на десктопе */
 .search-desktop {
-  min-width: 300px;
-  max-width: 500px;
+  min-width: 280px;
+  max-width: 460px;
   flex: 1;
 }
 
-/* Адаптивность для мобильных устройств */
+/* Адаптивность */
 @media (max-width: 768px) {
   .search-and-filters-container {
     gap: 8px;
   }
-  
-  .search-container {
-    min-width: 150px;
-  }
-}
 
-@media (max-width: 640px) {
-  .search-and-filters-container {
-    flex-direction: row;
-    gap: 2px;
-  }
-  
   .search-container {
-    min-width: 120px;
+    min-width: 140px;
   }
 }
 
@@ -508,28 +453,22 @@ nav ul li button {
     min-width: 100px;
     margin-right: 4px;
   }
-  
-  .navbar-start .text-lg {
-    display: none;
-  }
 }
 
-/* Десктопные стили */
 @media (min-width: 1024px) {
   .navbar-center nav {
     display: block;
   }
-  
+
   .search-and-filters-container {
     display: none;
   }
-  
+
   .navbar-start .dropdown {
     display: none;
   }
 }
 
-/* Исправление позиции бургер-меню */
 .dropdown.dropdown-end .dropdown-content {
   position: absolute;
   left: 0;
@@ -539,49 +478,10 @@ nav ul li button {
 
 @media (max-width: 768px) {
   .dropdown.dropdown-end .dropdown-content {
-    left: -12px;
+    left: -8px;
   }
 }
 
-/* Стили для бейджа избранного */
-.favorites-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: oklch(var(--p));
-  color: oklch(var(--pc));
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  border: 2px solid oklch(var(--b1));
-}
-
-/* Адаптация для маленьких экранов */
-@media (max-width: 480px) {
-  .filters-button {
-    padding: 6px 8px;
-  }
-  
-  .filters-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .filters-badge {
-    top: -4px;
-    right: -6px;
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
-  }
-}
-
-/* Скрываем на десктопе */
 @media (min-width: 1025px) {
   .filters-button {
     display: none;
@@ -673,20 +573,6 @@ const userRole = computed(() => user.value?.role || 'user')
 const isAdminRouteActive = computed(() => route.path.startsWith('/admin'))
 
 //- ============================================
-//- Классы для адаптивности
-//- ============================================
-const headerClasses = 'px-0 sm:px-0 lg:px-6 h-10 md:h-11 lg:h-12 pt-0.5 md:pt-1 lg:pt-1.5'
-const burgerButtonClasses = 'h-8 w-8 md:h-9 md:w-9 hover:bg-base-300'
-const logoContainerClasses = 'w-7 h-7 md:w-8 md:h-8 lg:w-9 lg:h-9'
-const logoTextClasses = 'text-xs md:text-sm lg:text-lg'
-const themeButtonClasses = 'hover:bg-neutral-400 w-7 h-7 md:w-8 md:h-8 transition-transform duration-200 hover:scale-110 ml-2 md:ml-3'
-const themeIconClasses = 'h-3.5 w-3.5 md:h-4 md:w-4 lg:h-5 lg:w-5'
-const avatarClasses = 'w-7 h-7 md:w-7 md:h-7 lg:w-8 lg:h-8'
-const userButtonClasses = 'py-1.5 md:py-2 lg:py-2 px-2 md:px-2 lg:px-3'
-const cartButtonClasses = 'w-7 h-7 md:w-8 md:h-8 lg:w-9 lg:h-9'
-const loginButtonClasses = 'h-8 md:h-9 lg:h-10 px-2 md:px-3 lg:px-4 text-xs md:text-sm transition-transform duration-200 hover:scale-105'
-
-//- ============================================
 //- Функции маршрутизации
 //- ============================================
 const isActiveRoute = (path) => route.path === path || route.path.startsWith(path + '/')
@@ -744,7 +630,7 @@ const handleLogout = async () => {
   closeAdminMenu()
   closeUserMenu()
   closeMobileMenu()
-  
+
   const result = await appState.logout()
   if (result.success) {
     $notify.success('Вы успешно вышли из системы')
@@ -757,14 +643,14 @@ const handleLogout = async () => {
 //- ============================================
 const closeMenusOnClickOutside = (event) => {
   if (!process.client) return
-  
+
   const adminMenuElement = event.target.closest('li.relative')
   const userMenuElement = event.target.closest('.relative')
-  
+
   if (!adminMenuElement && isAdminMenuOpen.value) {
     closeAdminMenu()
   }
-  
+
   if (!userMenuElement && isUserMenuOpen.value) {
     closeUserMenu()
   }
@@ -798,3 +684,4 @@ watch(() => route.path, () => {
   closeMobileMenu()
 })
 </script>
+

@@ -11,11 +11,11 @@
         )
           span.text-sm.text-white Сбросить фильтры
         div(v-else class="lg:bg-transparent pb-2 lg:mt-1 lg:pt-0 lg:pl-0").bg-primary.rounded-lg.px-4.py-2
-          span.text-white.font-medium(class="text-sm lg:text-lg") Фильтры:
+          span.font-medium(class="text-sm lg:text-lg") Фильтры:
         
         //- Количество товаров (только для вертикального режима)
         .product-count-display.ml-2(v-if="!isHorizontal && shouldShowProductCount")
-          .badge.badge-md.badge-outline.px-2.py-3.rounded-md(class="text-info lg:badge-sm")
+          .outline.px-1.py-0.mr-1.rounded-md(class="text-info lg:badge-sm")
             span {{ productCountText }} товаров
 
   //- Основной контейнер

@@ -1,64 +1,57 @@
-<!-- ImageZoom.vue -->
-<template>
-  <div class="image-zoom-container">
-    <!-- Основное изображение -->
-    <div 
-      class="main-image-wrapper"
-      :class="{ 'cursor-zoom-in': !isZoomed, 'cursor-zoom-out': isZoomed }"
-      @click="toggleZoom"
-      @mousemove="handleMouseMove"
-      @mouseleave="handleMouseLeave"
-    >
-      <img
+<!-- app/components/ui/ImageZoom.vue -->
+<template lang="pug">
+.image-zoom-container
+  .main-image-wrapper(
+    :class="{ 'cursor-zoom-in': !isZoomed, 'cursor-zoom-out': isZoomed }"
+    @click="toggleZoom"
+    @mousemove="handleMouseMove"
+    @mouseleave="handleMouseLeave"
+  )
+    //- width/height="0" — подсказка браузеру для предотвращения layout shift.
+    //- Реальный размер задаётся CSS (.main-image).
+    img.main-image(
+      :src="src"
+      :alt="alt"
+      :style="imageStyle"
+      width="0"
+      height="0"
+      ref="imageRef"
+      @load="handleImageLoad"
+    )
+
+    //- Лупа при увеличении
+    .magnifier(
+      v-if="isZoomed && zoomType === 'magnifier'"
+      :style="magnifierStyle"
+    )
+      .magnifier-image(:style="magnifiedImageStyle")
+
+  //- Полноэкранный режим
+  .fullscreen-overlay(
+    v-if="isZoomed && zoomType === 'fullscreen'"
+    @click="closeZoom"
+  )
+    .fullscreen-content
+      button.close-button(
+        @click="closeZoom"
+        aria-label="Закрыть"
+        type="button"
+      ) ✕
+      img.fullscreen-image(
         :src="src"
         :alt="alt"
-        :style="imageStyle"
-        class="main-image"
-        ref="imageRef"
-        @load="handleImageLoad"
-      />
-      
-      <!-- Лупа при увеличении -->
-      <div 
-        v-if="isZoomed && zoomType === 'magnifier'"
-        class="magnifier"
-        :style="magnifierStyle"
-      >
-        <div 
-          class="magnifier-image"
-          :style="magnifiedImageStyle"
-        />
-      </div>
-    </div>
+        width="0"
+        height="0"
+      )
 
-    <!-- Полноэкранный режим -->
-    <div 
-      v-if="isZoomed && zoomType === 'fullscreen'"
-      class="fullscreen-overlay"
-      @click="closeZoom"
-    >
-      <div class="fullscreen-content">
-        <button class="close-button" @click="closeZoom">
-          ✕
-        </button>
-        <img
-          :src="src"
-          :alt="alt"
-          class="fullscreen-image"
-        />
-      </div>
-    </div>
-
-    <!-- Кнопка увеличения (опционально) -->
-    <button 
-      v-if="showZoomButton && !isZoomed"
-      class="zoom-button"
-      @click="toggleZoom"
-      :title="zoomButtonText"
-    >
-      🔍
-    </button>
-  </div>
+  //- Кнопка увеличения
+  button.zoom-button(
+    v-if="showZoomButton && !isZoomed"
+    @click="toggleZoom"
+    :title="zoomButtonText"
+    aria-label="Увеличить изображение"
+    type="button"
+  ) 🔍
 </template>
 
 <script setup lang="ts">
@@ -84,7 +77,7 @@ const props = withDefaults(defineProps<Props>(), {
   showZoomButton: true,
   zoomButtonText: 'Увеличить изображение',
   maxWidth: '100%',
-  maxHeight: '400'
+  maxHeight: '400',
 })
 
 const emits = defineEmits<{
@@ -102,15 +95,13 @@ const isImageLoaded = ref(false)
 
 // Вычисляемые свойства
 const imageStyle = computed(() => {
-  // Обрабатываем maxHeight: если это число, конвертируем в строку с 'px'
-  const maxHeight = typeof props.maxHeight === 'number' 
-    ? `${props.maxHeight}px` 
-    : props.maxHeight
-  
+  const maxHeight =
+    typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight
+
   return {
     maxWidth: props.maxWidth,
     maxHeight: isZoomed.value ? 'none' : maxHeight,
-    cursor: isZoomed.value ? 'zoom-out' : 'zoom-in'
+    cursor: isZoomed.value ? 'zoom-out' : 'zoom-in',
   }
 })
 
@@ -119,85 +110,81 @@ const magnifierStyle = computed(() => ({
   height: `${props.magnifierSize}px`,
   left: `${mousePosition.value.x - props.magnifierSize / 2}px`,
   top: `${mousePosition.value.y - props.magnifierSize / 2}px`,
-  display: isZoomed.value && isMouseInBounds.value ? 'block' : 'none'
+  display: isZoomed.value && isMouseInBounds.value ? 'block' : 'none',
 }))
 
-// Проверка, находится ли курсор в пределах изображения
 const isMouseInBounds = computed(() => {
   if (!imageRef.value) return false
-  
+
   const rect = imageRef.value.getBoundingClientRect()
   const x = mousePosition.value.x
   const y = mousePosition.value.y
-  
+
   return x >= 0 && x <= rect.width && y >= 0 && y <= rect.height
 })
 
 const magnifiedImageStyle = computed(() => {
   if (!imageRef.value || !isImageLoaded.value) return {}
-  
+
   const rect = imageRef.value.getBoundingClientRect()
   const imageAspect = imageDimensions.value.width / imageDimensions.value.height
   const containerAspect = rect.width / rect.height
-  
-  let displayedWidth, displayedHeight
-  
-  // Определяем фактические размеры отображаемого изображения
+
+  let displayedWidth: number
+  let displayedHeight: number
+
   if (imageAspect > containerAspect) {
-    // Изображение шире контейнера
     displayedWidth = rect.width
     displayedHeight = rect.width / imageAspect
   } else {
-    // Изображение выше контейнера
     displayedHeight = rect.height
     displayedWidth = rect.height * imageAspect
   }
-  
-  // Вычисляем позицию для лупы с учетом границ
+
   const bgWidth = imageDimensions.value.width * props.zoomLevel
   const bgHeight = imageDimensions.value.height * props.zoomLevel
-  
-  // Вычисляем соотношение между оригинальным и отображаемым изображением
+
   const scaleX = imageDimensions.value.width / displayedWidth
   const scaleY = imageDimensions.value.height / displayedHeight
-  
-  // Корректируем позицию с учетом масштаба
-  const bgPositionX = -mousePosition.value.x * scaleX * props.zoomLevel + props.magnifierSize / 2
-  const bgPositionY = -mousePosition.value.y * scaleY * props.zoomLevel + props.magnifierSize / 2
-  
+
+  const bgPositionX =
+    -mousePosition.value.x * scaleX * props.zoomLevel + props.magnifierSize / 2
+  const bgPositionY =
+    -mousePosition.value.y * scaleY * props.zoomLevel + props.magnifierSize / 2
+
   return {
     backgroundImage: `url(${props.src})`,
     backgroundSize: `${bgWidth}px ${bgHeight}px`,
     backgroundPosition: `${bgPositionX}px ${bgPositionY}px`,
     backgroundRepeat: 'no-repeat',
     width: '100%',
-    height: '100%'
+    height: '100%',
   }
 })
 
 // Методы
 const handleImageLoad = () => {
-  if (imageRef.value) {
-    imageDimensions.value = {
-      width: imageRef.value.naturalWidth,
-      height: imageRef.value.naturalHeight
-    }
-    const rect = imageRef.value.getBoundingClientRect()
-    containerDimensions.value = {
-      width: rect.width,
-      height: rect.height
-    }
-    isImageLoaded.value = true
+  if (!imageRef.value) return
+
+  imageDimensions.value = {
+    width: imageRef.value.naturalWidth,
+    height: imageRef.value.naturalHeight,
   }
+  const rect = imageRef.value.getBoundingClientRect()
+  containerDimensions.value = {
+    width: rect.width,
+    height: rect.height,
+  }
+  isImageLoaded.value = true
 }
 
 const handleMouseMove = (event: MouseEvent) => {
   if (!imageRef.value || !isZoomed.value) return
-  
+
   const rect = imageRef.value.getBoundingClientRect()
   mousePosition.value = {
     x: event.clientX - rect.left,
-    y: event.clientY - rect.top
+    y: event.clientY - rect.top,
   }
 }
 
@@ -207,18 +194,16 @@ const handleMouseLeave = () => {
 
 const toggleZoom = () => {
   if (!isImageLoaded.value) return
-  
+
   isZoomed.value = !isZoomed.value
-  
+
   if (isZoomed.value) {
     emits('zoomIn')
-    // Блокируем скролл страницы при полноэкранном режиме
     if (props.zoomType === 'fullscreen') {
       document.body.style.overflow = 'hidden'
     }
   } else {
     emits('zoomOut')
-    // Разблокируем скролл
     if (props.zoomType === 'fullscreen') {
       document.body.style.overflow = ''
     }
@@ -231,29 +216,25 @@ const closeZoom = () => {
   document.body.style.overflow = ''
 }
 
-// Обработка клавиши Escape
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && isZoomed.value) {
     closeZoom()
   }
 }
 
-// Обработка изменения размера окна
 const handleResize = () => {
   if (isZoomed.value && props.zoomType === 'fullscreen') {
     closeZoom()
   }
-  // Обновляем размеры контейнера при изменении размера окна
   if (imageRef.value) {
     const rect = imageRef.value.getBoundingClientRect()
     containerDimensions.value = {
       width: rect.width,
-      height: rect.height
+      height: rect.height,
     }
   }
 }
 
-// Хуки жизненного цикла
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', handleResize)
@@ -262,13 +243,11 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('resize', handleResize)
-  // Убедимся, что скролл разблокирован
   document.body.style.overflow = ''
 })
 </script>
 
 <style scoped>
-/* Стили без изменений */
 .image-zoom-container {
   position: relative;
   display: inline-block;
@@ -280,6 +259,7 @@ onUnmounted(() => {
   display: inline-block;
   overflow: hidden;
   border-radius: 8px;
+  transition: transform 0.3s ease;
 }
 
 .main-image {
@@ -303,15 +283,14 @@ onUnmounted(() => {
   cursor: zoom-out;
 }
 
-/* Стили для лупы */
 .magnifier {
   position: absolute;
   border: 2px solid #fff;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 0.1);
   pointer-events: none;
   z-index: 10;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 20px rgb(0 0 0 / 0.3);
   overflow: hidden;
   transition: opacity 0.2s ease;
 }
@@ -322,19 +301,19 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
-/* Остальные стили остаются без изменений */
 .fullscreen-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100dvh;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgb(0 0 0 / 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   cursor: zoom-out;
+  animation: fadeIn 0.3s ease;
 }
 
 .fullscreen-content {
@@ -354,7 +333,7 @@ onUnmounted(() => {
   position: absolute;
   top: -40px;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 0.7);
   color: white;
   border: none;
   border-radius: 50%;
@@ -369,14 +348,14 @@ onUnmounted(() => {
 }
 
 .close-button:hover {
-  background: rgba(0, 0, 0, 0.9);
+  background: rgb(0 0 0 / 0.9);
 }
 
 .zoom-button {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 0.7);
   color: white;
   border: none;
   border-radius: 50%;
@@ -392,7 +371,7 @@ onUnmounted(() => {
 }
 
 .zoom-button:hover {
-  background: rgba(0, 0, 0, 0.9);
+  background: rgb(0 0 0 / 0.9);
   transform: scale(1.1);
 }
 
@@ -400,25 +379,17 @@ onUnmounted(() => {
   .magnifier {
     display: none !important;
   }
-  
+
   .zoom-button {
     width: 36px;
     height: 36px;
     font-size: 14px;
   }
-  
+
   .fullscreen-content {
     max-width: 95vw;
     max-height: 95vh;
   }
-}
-
-.main-image-wrapper {
-  transition: transform 0.3s ease;
-}
-
-.fullscreen-overlay {
-  animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {

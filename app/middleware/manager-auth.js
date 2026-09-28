@@ -1,5 +1,5 @@
 // middleware/manager-auth.js
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (_to, _from) => {
   const { $notify } = useNuxtApp()
   const appState = useAppState()
   
@@ -10,14 +10,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   
   // Если пользователь не аутентифицирован
   if (!appState.isAuthenticated.value) {
-    console.log('🚫 Доступ запрещен: неавторизованный пользователь')
+    consola.debug('🚫 Доступ запрещен: неавторизованный пользователь')
     $notify.error('Для доступа необходимо войти в систему')
     return navigateTo('/auth/login')
   }
   
   // Если пользователь не менеджер или администратор
   if (!appState.isManager.value) {
-    console.log('🚫 Доступ запрещен: недостаточно прав', {
+    consola.debug('🚫 Доступ запрещен: недостаточно прав', {
       user: appState.user.value,
       isManager: appState.isManager.value
     })
@@ -25,5 +25,5 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo('/')
   }
   
-  console.log('✅ Доступ разрешен: менеджер/администратор')
+  consola.debug('✅ Доступ разрешен: менеджер/администратор')
 })

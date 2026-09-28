@@ -3,9 +3,10 @@
 .flex.items-center.gap-2.flex-wrap
   //- Категории
   .dropdown.dropdown-bottom(:class="{'dropdown-open': showCategories}")
-    label.btn.btn-xs.btn-outline.gap-1(@click="showCategories = !showCategories" type="button")
-      | Категории
-      span.badge.badge-xs.badge-primary(v-if="selectedCount") {{ selectedCount }}
+    label.btn.btn-xs.bg-primary.gap-0(@click="showCategories = !showCategories" type="button")
+      | Категории:
+      span.badge.badge-sm.-pl-0.badge-primary(v-if="selectedCount") {{ selectedCount }} кат
+      span.badge.badge-sm.-pl-0.badge-primary(v-else) (все)
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
       .max-h-60.overflow-y-auto
@@ -28,7 +29,7 @@
     button.btn.btn-xs.gap-1(
       v-for="opt in sortOptions"
       :key="opt.field"
-      :class="sortField === opt.field ? 'btn-primary' : 'btn-ghost'"
+      :class="sortField === opt.field ? 'btn-primary' : 'btn-secondary opacity-70 text-white'"
       @click="$emit('sort', opt.field)"
       type="button"
     )

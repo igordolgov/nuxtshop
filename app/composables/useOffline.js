@@ -1,77 +1,56 @@
-// composables/useOffline.js
+// app/composables/useOffline.js
 /**
- * Composable для отслеживания состояния сети
- * - Определяет онлайн/оффлайн статус
- * - Уведомляет о восстановлении связи
- * - Управляет синхронизацией данных
+ * Composable для отслеживания состояния сети.
+ *
+ * Singleton: все вызовы `useOffline()` в приложении делят один и тот же стейт.
+ * Реализовано через `useState` — SSR-safe, шарится между компонентами,
+ * автоматически подчищается при размонтировании Nuxt-приложения.
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 
 export const useOffline = () => {
-  // ==========================================
-  // State
-  // ==========================================
-  
-  const isOnline = ref(true)
-  const wasOffline = ref(false)
-  const showRestoredMessage = ref(false)
-  const pendingSyncCount = ref(0)
+  const isOnline = useState('offline:isOnline', () => true)
+  const wasOffline = useState('offline:wasOffline', () => false)
+  const showRestoredMessage = useState('offline:showRestored', () => false)
+  const pendingSyncCount = useState('offline:pendingSync', () => 0)
+  const listenerAttached = useState('offline:listenerAttached', () => false)
 
-  // ==========================================
-  // Методы
-  // ==========================================
+  // ─── Методы ───────────────────────────────────────────────
 
-  /**
-   * Обновление статуса сети
-   */
   const updateOnlineStatus = async () => {
     const wasOfflineBefore = !isOnline.value
     isOnline.value = navigator.onLine
 
     if (wasOfflineBefore && isOnline.value) {
-      // Связь восстановлена
       wasOffline.value = true
       showRestoredMessage.value = true
-      
-      // Запускаем синхронизацию
       await syncPendingData()
-      
-      // Скрываем сообщение через 3 секунды
+
       setTimeout(() => {
         showRestoredMessage.value = false
       }, 3000)
     }
 
     if (!isOnline.value) {
-      // Связь потеряна
       wasOffline.value = true
     }
   }
 
-  /**
-   * Синхронизация отложенных данных
-   */
   const syncPendingData = async () => {
     if (!('serviceWorker' in navigator)) return
+    if (!('SyncManager' in window)) return
 
     try {
       const registration = await navigator.serviceWorker.ready
-      
-      // Запускаем синхронизацию разных типов данных
-      if ('sync' in registration) {
-        await registration.sync.register('sync-cart')
-        await registration.sync.register('sync-favorites')
-        pendingSyncCount.value = 0
-      }
+      await registration.sync.register('sync-cart')
+      await registration.sync.register('sync-favorites')
+      pendingSyncCount.value = 0
     } catch (error) {
       console.error('[useOffline] Sync failed:', error)
     }
   }
 
-  /**
-   * Проверка количества отложенных изменений
-   */
   const checkPendingSync = async () => {
     try {
       const { useOfflineStorage } = await import('./useOfflineStorage')
@@ -83,57 +62,46 @@ export const useOffline = () => {
     }
   }
 
-  /**
-   * Принудительная синхронизация
-   */
   const forceSync = async () => {
     if (!isOnline.value) {
       console.log('[useOffline] Cannot sync while offline')
       return false
     }
-
     await syncPendingData()
     return true
   }
 
-  // ==========================================
-  // Lifecycle
-  // ==========================================
+  // ─── Lifecycle (только один раз на приложение) ────────────
 
   onMounted(() => {
-    if (!process.client) return
+    if (listenerAttached.value) return
+    listenerAttached.value = true
 
     isOnline.value = navigator.onLine
-    
+
     window.addEventListener('online', updateOnlineStatus)
     window.addEventListener('offline', updateOnlineStatus)
-    
-    // Проверяем отложенные изменения
+
     checkPendingSync()
   })
 
   onUnmounted(() => {
-    if (!process.client) return
-
-    window.removeEventListener('online', updateOnlineStatus)
-    window.removeEventListener('offline', updateOnlineStatus)
+    // НЕ снимаем слушатели: useState живёт дольше компонента,
+    // а updateOnlineStatus — стабильная функция из замыкания.
+    // Слушатели снимаются при полной разгрузке приложения.
   })
 
-  // ==========================================
-  // API
-  // ==========================================
+  // ─── API ──────────────────────────────────────────────────
 
   return {
-    // State
     isOnline: computed(() => isOnline.value),
     isOffline: computed(() => !isOnline.value),
     wasOffline: computed(() => wasOffline.value),
     showRestoredMessage: computed(() => showRestoredMessage.value),
     pendingSyncCount: computed(() => pendingSyncCount.value),
 
-    // Methods
     syncPendingData,
     forceSync,
-    checkPendingSync
+    checkPendingSync,
   }
 }

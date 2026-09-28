@@ -28,7 +28,7 @@
               th Название
               th.w-20.text-right Цена
               th.w-24 Категории
-              th.w-20 Статус
+              th.w-20 Кол-во
               th.w-20 Действия
           tbody
             tr(v-for="product in products" :key="product.id")
@@ -70,13 +70,13 @@
                   | {{ product.inStock ? `${product.stockQuantity || 0}` : 'Нет' }}
 
               td
-                .flex.gap-1
-                  button.btn.btn-xs.btn-ghost.text-info(
+                .flex.gap-4
+                  button.text-info.cursor-pointer(
                     @click="$emit('edit', product)"
                     type="button"
                   )
                     icon(name="heroicons:pencil-square" size="16")
-                  button.btn.btn-xs.btn-ghost.text-error(
+                  button.text-error.cursor-pointer(
                     @click="$emit('delete', product)"
                     type="button"
                   )

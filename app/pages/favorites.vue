@@ -7,18 +7,19 @@
   :class="{ 'ml-16': isHorizontal }"
 )
   Header
-  
-  main.flex-1.flex.flex-col.p-2(class="lg:p-4")
+
+  main.flex-1.flex.flex-col.max-w-7xl.w-full.mx-auto.px-3.py-4(class="lg:px-6 lg:py-8")
     //- Заголовок
-    .flex.items-center.justify-between.mb-2
-      h1.text-xl.font-bold(class="lg:text-2xl") Избранное
-      .flex.items-center.gap-2
-        span.text-sm.opacity-70 {{ favoriteProducts.length }} товаров
-        button.btn.btn-outline.btn-xs.btn-error.rounded-md(
-          v-if="favoriteProducts.length > 0"
-          @click="clearAllFavorites"
-        )
-          | Очистить
+    .flex.items-center.justify-between.mb-4(class="lg:mb-6")
+      div
+        h3.tex
+        h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Избранное
+        p.text-sm.mt-1(v-if="favoriteProducts.length > 0") {{ favoriteProducts.length }} {{ pluralize(favoriteProducts.length) }}
+      button.btn.btn-ghost.btn-sm.rounded-xl.text-error(
+        v-if="favoriteProducts.length > 0"
+        @click="clearAllFavorites"
+        class="text-base-content/50"
+      ) Очистить всё
 
     //- Сетка товаров
     .products-grid(v-if="favoriteProducts.length > 0")
@@ -33,9 +34,12 @@
 
     //- Пустое состояние
     .empty-state(v-else)
-      h2 Список пуст
-      p Добавьте товары в избранное
-      NuxtLink.btn.btn-primary(to="/") Перейти в каталог
+      .empty-icon
+        svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5")
+          path(d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
+      h2.text-lg.font-semibold.text-base-content Список избранного пуст
+      p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/50") Сохраняйте понравившиеся товары, чтобы быстро вернуться к ним позже
+      NuxtLink.btn.btn-primary.rounded-xl(to="/") Перейти в каталог
 
   MobileNavFooter(v-if="isMobile")
 </template>
@@ -61,6 +65,15 @@ const favoriteProducts = computed(() => {
   return products.filter(p => p?.isFavorite)
 })
 
+const pluralize = (count) => {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod100 >= 11 && mod100 <= 14) return 'товаров'
+  if (mod10 === 1) return 'товар'
+  if (mod10 >= 2 && mod10 <= 4) return 'товара'
+  return 'товаров'
+}
+
 const isInCart = (id) => {
   return cartItems.value?.some(item => item.id === id?.toString()) || false
 }
@@ -75,11 +88,10 @@ const addToCartHandler = async (product) => {
   }
 }
 
-// ✅ Исправлено: передаём весь объект или используем removeFromFavorites
 const removeFavorite = (product) => {
   // product может быть объектом или просто id
   const productId = product?.id || product
-  
+
   if (appState.favorites?.removeFromFavorites) {
     appState.favorites.removeFromFavorites(productId)
   } else if (appState.removeFromFavorites) {
@@ -106,7 +118,7 @@ useHead({ title: 'Избранное' })
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
@@ -118,13 +130,6 @@ useHead({ title: 'Избранное' })
 @media (min-width: 768px) {
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
   }
 }
@@ -137,17 +142,21 @@ useHead({ title: 'Избранное' })
 
 .empty-state {
   text-align: center;
-  padding: 4rem 1rem;
+  padding: 5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.empty-state h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  opacity: 0.7;
-  margin-bottom: 1rem;
+.empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--color-base-200));
+  color: rgb(var(--color-base-content) / 0.3);
+  margin-bottom: 1.25rem;
 }
 </style>

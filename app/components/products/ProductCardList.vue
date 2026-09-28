@@ -6,7 +6,7 @@
 )
   //- Кнопка избранного
   button(
-    class="absolute top-1 left-1 z-10 btn btn-circle btn-xs transition-all duration-300 hover:scale-110",
+    class="top-1 left-1 z-10 absolute hover:scale-110 transition-all duration-300 btn btn-circle btn-xs",
     :class="isFavorite ? 'btn-error' : ''",
     @click="toggleFavorite",
     title="Добавить в избранное"
@@ -30,16 +30,15 @@
         //- Фиксированная ширина изображения
         figure.overflow-hidden.rounded-xl.flex-shrink-0
           NuxtImg(
-            class="h-24 w-24 object-cover transition-transform duration-700 group-hover:scale-110",
+            class="w-24 h-24 object-cover group-hover:scale-110 transition-transform duration-700",
             :src="getSafeImage(product.image)",
             :alt="product.name",
-            @error="handleImageError"
           )
             //- Цена
         .pt-3
           .text-lg.font-bold.text-sky-600.transition-all.duration-300(
             v-if="product.inStock"
-            class="group-hover:scale-105 text-base md:text-xl"
+            class="text-base md:text-xl group-hover:scale-105"
           ) {{ formatPrice(product.price) }} ₽
           .text-md.text-error.transition-all.duration-300(
             v-else
@@ -48,7 +47,7 @@
       .flex-1.min-w-0
         //- Название товара с подсветкой
         h2(
-          class="card-title text-base-content transition-colors duration-300 group-hover:text-primary line-clamp-2 min-h-8 leading-tight mb-1 text-md md:text-base"
+          class="mb-1 min-h-8 text-md group-hover:text-primary text-base-content md:text-base line-clamp-2 leading-tight transition-colors duration-300 card-title"
         )
           template(v-if="!queryValidForHighlight")
             | {{ product.name }}
@@ -59,7 +58,7 @@
         
         //- Описание товара с уменьшенным шрифтом на мобильных и подсветкой
         p(
-          class="text-secondary transition-colors duration-300 group-hover:text-base-content/80 line-clamp-3 min-h-8 leading-snug mb-2 text-xs md:text-sm"
+          class="mb-2 min-h-8 text-secondary text-xs md:text-sm group-hover:text-base-content/80 line-clamp-3 leading-snug transition-colors duration-300"
         )
           template(v-if="!queryValidForHighlight")
             | {{ product.description }}
@@ -71,7 +70,7 @@
         //- Бейджи категорий в две строки с подсветкой
         .flex.flex-wrap.gap-1.max-h-10.overflow-hidden
           span.badge.bg-gray-600.text-white.badge-xs.rounded-sm.transition-all.duration-300(
-            class="hover:opacity-100 hover:badge-primary mb-1",
+            class="hover:opacity-100 mb-1 hover:badge-primary",
             v-for="category in displayedCategories",
             :key="category",
             :class="{ 'badge-highlight': queryValidForHighlight && categoryHasHighlight(category) }"
@@ -102,7 +101,7 @@ const props = defineProps({
 // Используем единый useAppState
 const app = useAppState()
 const { $notify } = useNuxtApp()
-const { getSafeImage, formatPrice, handleImageError } = useProductUtils()
+const { getSafeImage, formatPrice } = useProductUtils()
 
 // Используем композабл для подсветки (не импортируем isQueryValidForHighlight, чтобы избежать конфликта)
 const { highlightText, highlightBadge, containsQuery } = useSearchHighlight()

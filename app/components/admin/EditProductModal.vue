@@ -140,7 +140,7 @@
             @change="handleGalleryUpload"
             :disabled="isSubmitting"
           )
-          button.btn.btn-outline.btn-xs(
+          button.btn-sm.cursor-pointer(
             type="button"
             @click="triggerGalleryUpload"
             :disabled="isSubmitting"

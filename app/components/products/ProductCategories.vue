@@ -20,8 +20,8 @@
         label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.py-1.rounded-full.border.text-xs(
           v-for="category in sortedCategories"
           :key="category"
-          :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'bg-base-100 border-base-content/40'",
-          class="hover:bg-primary/50"
+          :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/40'",
+          class="hover:bg-primary/50 hover:text-white"
         )
           input.hidden(
             type="checkbox"

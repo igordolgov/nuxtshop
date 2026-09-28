@@ -1,62 +1,66 @@
-// plugins/offline-init.client.js
+// app/plugins/offline-init.client.js
 /**
- * Плагин инициализации PWA и Service Worker
+ * PWA: регистрация Service Worker и обработка сообщений от него.
+ *
+ * В dev-режиме SW не регистрируется — @vite-pwa/nuxt не генерирует sw.js.
+ * Регистрация отложена до app:mounted, чтобы не блокировать гидратацию.
  */
+export default defineNuxtPlugin((nuxtApp) => {
+  // В dev — ничего не делаем: sw.js не существует,
+  // а HMR и так работает через Vite websocket
+  if (import.meta.dev) return
 
-export default defineNuxtPlugin(async (nuxtApp) => {
-  // Проверка поддержки Service Worker
-  if (!('serviceWorker' in navigator)) {
-    console.log('[PWA] Service Workers not supported')
-    return
-  }
+  // SW не поддерживается — молча выходим
+  if (!('serviceWorker' in navigator)) return
 
-  // Регистрация Service Worker
-  try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/'
-    })
-    
-    console.log('[PWA] Service Worker registered:', registration.scope)
+  // Откладываем всю работу до момента, когда приложение смонтировано.
+  // Плагин синхронный, поэтому гидратация не блокируется.
+  nuxtApp.hook('app:mounted', () => {
+    registerServiceWorker(nuxtApp)
+  })
+})
 
-    // Проверка обновлений
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing
-      
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          console.log('[PWA] New version available')
-          
-          if (nuxtApp.$notify) {
-            nuxtApp.$notify.info('Доступно обновление. Обновите страницу.')
+function registerServiceWorker(nuxtApp) {
+  navigator.serviceWorker
+    .register('/sw.js', { scope: '/' })
+    .then((registration) => {
+      console.log('[PWA] Service Worker registered:', registration.scope)
+
+      // Обновление SW
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing
+        if (!newWorker) return
+
+        newWorker.addEventListener('statechange', () => {
+          const isUpdate =
+            newWorker.state === 'installed' && navigator.serviceWorker.controller
+          if (isUpdate) {
+            console.log('[PWA] New version available')
+            nuxtApp.$notify?.info?.('Доступно обновление. Обновите страницу.')
           }
-        }
+        })
       })
+
+      // Возможности API
+      if ('SyncManager' in window) {
+        console.log('[PWA] Background Sync supported')
+      }
+      if ('PushManager' in window) {
+        console.log('[PWA] Push Notifications supported')
+      }
+    })
+    .catch((error) => {
+      console.error('[PWA] Service Worker registration failed:', error)
     })
 
-    // Background Sync
-    if ('sync' in registration) {
-      console.log('[PWA] Background Sync supported')
-    }
-
-    // Push Notifications
-    if ('pushManager' in registration) {
-      console.log('[PWA] Push Notifications supported')
-    }
-
-  } catch (error) {
-    console.error('[PWA] Service Worker registration failed:', error)
-  }
-
-  // Обработка сообщений от Service Worker
+  // Сообщения от SW
   navigator.serviceWorker.addEventListener('message', (event) => {
     const { type, data } = event.data || {}
 
     switch (type) {
       case 'SYNC_COMPLETE':
         console.log('[PWA] Sync complete:', data)
-        if (nuxtApp.$notify) {
-          nuxtApp.$notify.success('Данные синхронизированы!')
-        }
+        nuxtApp.$notify?.success?.('Данные синхронизированы!')
         break
 
       case 'CACHE_UPDATED':
@@ -72,28 +76,26 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     }
   })
 
-  // Контроллер Service Worker изменился
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     console.log('[PWA] Controller changed, reloading...')
   })
 
   // Предзагрузка критических данных
-  const preloadCriticalData = async () => {
-    try {
-      const { useOfflineStorage } = await import('@/composables/useOfflineStorage')
-      const storage = useOfflineStorage()
-      
-      const productsCount = await storage.getProductsCount()
-      
-      if (productsCount === 0) {
-        console.log('[PWA] No cached products, will cache on first load')
-      } else {
-        console.log(`[PWA] ${productsCount} products cached`)
-      }
-    } catch (error) {
-      console.error('[PWA] Preload failed:', error)
-    }
-  }
-
   preloadCriticalData()
-})
+}
+
+async function preloadCriticalData() {
+  try {
+    const { useOfflineStorage } = await import('@/composables/useOfflineStorage')
+    const storage = useOfflineStorage()
+    const productsCount = await storage.getProductsCount()
+
+    if (productsCount === 0) {
+      console.log('[PWA] No cached products, will cache on first load')
+    } else {
+      console.log(`[PWA] ${productsCount} products cached`)
+    }
+  } catch (error) {
+    console.error('[PWA] Preload failed:', error)
+  }
+}

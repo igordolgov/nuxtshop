@@ -25,7 +25,7 @@
         v-if="gallery.length > 1"
         @click.stop="prevImage"
         @touchstart.stop.prevent="prevImage"
-        class="absolute left-2 top-1/2 -translate-y-1/2 z-20"
+        class="top-1/2 left-2 z-20 absolute -translate-y-1/2"
         aria-label="Предыдущее изображение"
       )
         svg.w-6.h-6.text-white.opacity-80(
@@ -41,12 +41,12 @@
       .image-slides-container(
         ref="slidesContainer"
         :style="{ transform: `translateX(${slideOffset}px)` }"
-        class="flex transition-transform duration-300 ease-out w-full h-full"
+        class="flex w-full h-full transition-transform duration-300 ease-out"
       )
         .image-slide(
           v-for="(image, index) in gallery"
           :key="`slide-${index}`"
-          class="shrink-0 w-full h-full relative"
+          class="relative w-full h-full shrink-0"
         )
           .image-center-container
             //- Скелетон для конкретного слайда
@@ -54,10 +54,10 @@
               v-if="loadingStates[index]"
               aria-hidden="true"
             )
-            NuxtImg(
+            img(
               :src="getValidImageUrl(image)"
               :alt="`${productName} - изображение ${index + 1}`"
-              class="product-main-image relative z-10"
+              class="z-10 relative product-main-image"
               :class="{ 'cursor-zoom-in': isDesktop, 'horizontal-zoom-image': isHorizontal }"
               @load="handleImageLoad(index)"
               @error="(e) => handleImageError(e, index)"
@@ -76,7 +76,7 @@
         v-if="gallery.length > 1"
         @click.stop="nextImage"
         @touchstart.stop.prevent="nextImage"
-        class="absolute right-2 top-1/2 -translate-y-1/2 z-20"
+        class="top-1/2 right-2 z-20 absolute -translate-y-1/2"
         aria-label="Следующее изображение"
       )
         svg.w-6.h-6.text-white.opacity-80(
@@ -93,7 +93,7 @@
         v-if="gallery.length > 0"
         @click.stop="openZoom(currentIndex)"
         @touchstart.stop="openZoom(currentIndex)"
-        class="absolute bottom-4 right-4 z-30 size-12 rounded-full bg-black/30 flex items-center justify-center transition-all hover:bg-black/50"
+        class="right-4 bottom-4 z-30 absolute flex justify-center items-center bg-black/30 hover:bg-black/50 rounded-full size-12 transition-all"
         aria-label="Увеличить изображение"
       )
         svg.w-6.h-6.text-white(
@@ -108,14 +108,14 @@
       //- Индикаторы (точки)
       .image-indicator(
         v-if="gallery.length > 1"
-        class="absolute bottom-2 sm:bottom-8 lg:bottom-1 left-1/2 -translate-x-1/2 z-20 flex gap-2"
+        class="bottom-2 sm:bottom-8 lg:bottom-1 left-1/2 z-20 absolute flex gap-2 -translate-x-1/2"
       )
         .indicator-dot(
           v-for="(image, index) in gallery"
           :key="`indicator-${index}`"
           @click.stop="goToImage(index)"
           :class="{ 'active': index === currentIndex }"
-          class="size-2 rounded-full cursor-pointer transition-all duration-300"
+          class="rounded-full size-2 transition-all duration-300 cursor-pointer"
           :style="index === currentIndex ? 'transform: scale(1.3);' : 'background-color: rgba(255, 255, 255, 0.8);'"
           :aria-label="`Перейти к изображению ${index + 1}`"
         )
@@ -140,7 +140,7 @@
           @mouseup="handleZoomMouseUp"
           @mouseleave="handleZoomMouseUp"
         )
-          NuxtImg(
+          img(
             :src="zoomImageUrl"
             :alt="`${productName} - увеличенное изображение`"
             class="modal-zoom-image"
@@ -243,15 +243,11 @@ const updateSlidePosition = async () => {
   }
 }
 
+// ИСПРАВЛЕНО: убран бессмысленный if/else, обе ветки делали одно и то же
 const goToImage = async (index) => {
   if (index >= 0 && index < props.gallery.length) {
     currentIndex.value = index
-    // Сбрасываем состояние загрузки для нового слайда
-    if (loadingStates.value[index] === undefined) {
-      loadingStates.value[index] = true
-    } else {
-      loadingStates.value[index] = true
-    }
+    loadingStates.value[index] = true
     await updateSlidePosition()
   }
 }
@@ -305,7 +301,12 @@ const handleTouchEnd = async (event) => {
   if (!isSwiping.value) return
   const diff = (event.changedTouches?.[0]?.clientX || 0) - touchStartX.value
   if (Math.abs(diff) > 50) {
-    diff > 0 ? await prevImage() : await nextImage()
+    // ИСПРАВЛЕНО: if/else вместо тернарника с await
+    if (diff > 0) {
+      await prevImage()
+    } else {
+      await nextImage()
+    }
   } else {
     await updateSlidePosition()
   }
@@ -337,7 +338,12 @@ const handleMouseUp = async (event) => {
   if (!isDragging.value) return
   const diff = event.clientX - dragStartX.value
   if (Math.abs(diff) > 50) {
-    diff > 0 ? await prevImage() : await nextImage()
+    // ИСПРАВЛЕНО: if/else вместо тернарника с await
+    if (diff > 0) {
+      await prevImage()
+    } else {
+      await nextImage()
+    }
   } else {
     await updateSlidePosition()
   }
@@ -442,15 +448,20 @@ const handleZoomMouseUp = () => {
 // ============================================
 // Lifecycle
 // ============================================
+
+// ИСПРАВЛЕНО: вынесен обработчик resize, чтобы можно было удалить его в onUnmounted
+const handleResize = () => updateSlidePosition()
+
 onMounted(async () => {
-  // Инициализация состояний загрузки
-  loadingStates.value = new Array(props.gallery.length).fill(true)
+  // ИСПРАВЛЕНО: Array.from вместо new Array(...).fill(...)
+  loadingStates.value = Array.from({ length: props.gallery.length }, () => true)
   await updateSlidePosition()
-  window.addEventListener('resize', () => updateSlidePosition())
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateSlidePosition)
+  // ИСПРАВЛЕНО: удаляем именно ту функцию, которую добавили
+  window.removeEventListener('resize', handleResize)
   if (isZoomOpen.value) document.body.style.overflow = ''
 })
 
@@ -459,7 +470,8 @@ onUnmounted(() => {
 // ============================================
 watch(() => props.gallery, async (newGallery) => {
   currentIndex.value = 0
-  loadingStates.value = new Array(newGallery.length).fill(true)
+  // ИСПРАВЛЕНО: Array.from вместо new Array(...).fill(...)
+  loadingStates.value = Array.from({ length: newGallery.length }, () => true)
   await nextTick()
   await updateSlidePosition()
 }, { immediate: true })

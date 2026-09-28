@@ -1,172 +1,101 @@
-﻿import tailwindcss from "@tailwindcss/vite";
+﻿// nuxt.config.ts
+import tailwindcss from '@tailwindcss/vite';
+import removeConsole from 'vite-plugin-remove-console';
+
+const isProd = process.env.NODE_ENV === 'production';
 
 export default defineNuxtConfig({
-  ssr: true,
   compatibilityDate: '2025-07-15',
-
   devtools: { enabled: false },
 
-  devServer: {
-    port: 3000
-  },
-
   experimental: {
-    payloadExtraction: true,
-    renderJsonPayloads: true,
     componentIslands: true,
     inlineRouteRules: true,
-    watchPayload: false
   },
 
   vite: {
-    server: {
-      hmr: {
-        port: 24679
-      }
-    },
     build: {
-      cssMinify: true,
       minify: 'terser',
+      cssMinify: 'lightningcss',
       terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log']
-        }
-      },
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              const match = id.match(/node_modules\/([^/]+)/);
-              if (match) {
-                const pkg = match[1];
-                // ✅ fixed OR operators
-                if (pkg === 'vue' || pkg === '@vue' || pkg === 'vue-router' || pkg === 'pinia') {
-                  return 'vue-vendor';
-                }
-                if (pkg.includes('iconify') || pkg.includes('heroicons')) {
-                  return 'icons';
-                }
-                return 'vendor';
-              }
-            }
-            // return undefined for non-node_modules
-          },
-        },
+        compress: { drop_debugger: true, passes: 2 },
+        format: { comments: false },
       },
       target: 'es2022',
       sourcemap: false,
-      modulePreload: {
-        polyfill: false
-      }
-    },
-    experimental: {
-      inlineSSRStyles: true
+      reportCompressedSize: false,
+      modulePreload: { polyfill: false },
+      chunkSizeWarningLimit: 1000,
     },
     css: {
       devSourcemap: false,
-      transformer: 'postcss'
+      transformer: 'lightningcss',
     },
-    plugins: [tailwindcss() ],
+    plugins: [tailwindcss(), isProd ? removeConsole({ includes: ['log', 'debug'] }) : null].filter(
+      Boolean,
+    ) as any,
     optimizeDeps: {
       include: ['vue', 'vue-router', 'pinia'],
-      exclude: ['@nuxt/icon']
-    }
-  },
-
-  hooks: {
-    'vite:extendConfig': (config) => {
-      config.vue = config.vue || {};
-      config.vue.template = config.vue.template || {};
-      config.vue.template.preprocessOptions = {
-        pug: {
-          doctype: 'html'
-        }
-      }
-    }
+    },
   },
 
   nitro: {
-    serveStatic: true,
-    publicAssets: [
-      { dir: 'public', baseURL: '/' },
-      { dir: '.nuxt/dev-sw-dist', baseURL: '/' }
-    ],
+    preset: 'cloudflare-module',
+    esbuild: {
+      options: { target: 'es2022' },
+    },
     experimental: {
       asyncContext: true,
-      headNext: true,
-      templateUtils: true,
-      treeshakeClientOnly: true,
-      componentIslands: true,
-      sharedPrerenderData: true
     },
-    maxMemory: 512,
     minify: true,
     sourceMap: false,
     compressPublicAssets: {
       brotli: true,
-      gzip: true
+      gzip: true,
     },
     prerender: {
       crawlLinks: true,
       routes: ['/'],
-      ignore: ['/admin', '/manager']
-    },
-    sourcemap: {
-      client: false,
-      server: false
-    },
-    development: {
-      viteRuntime: true
-    },
-    optimization: {
-      keyedComposables: [
-        { name: 'useAsyncData', argumentLength: 3 },
-        { name: 'useFetch', argumentLength: 3 },
-        { name: 'useLazyAsyncData', argumentLength: 3 },
-        { name: 'useLazyFetch', argumentLength: 3 }
-      ]
+      ignore: ['/admin', '/manager'],
     },
     routeRules: {
       '/_nuxt/**': {
-        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' }
+        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
       },
       '/images/**': {
-        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' }
+        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
       },
       '/product/**': {
         swr: 3600,
-        headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400' }
-      }
-    }
+        headers: {
+          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        },
+      },
+    },
   },
 
   modules: [
     '@nuxt/image',
     '@nuxt/icon',
-    '@nuxthub/core',
     '@pinia/nuxt',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
+    '@baptistecrouzet/nuxt-oxlint',
   ],
 
-    // ============================================
+  oxlint: {
+    checker: {
+      configFile: '.oxlintrc.json',
+      path: 'app',
+      failOnError: false,
+    },
+  },
+
   pwa: {
     registerType: 'autoUpdate',
     includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
-
-    devOptions: {
-      enabled: false,
-      type: 'module'
-    },
-
-    client: {
-      installPrompt: true,
-      registerPlugin: true
-    },
-
+    devOptions: { enabled: false, type: 'module' },
+    client: { installPrompt: true, registerPlugin: true },
     strategies: 'generateSW',
-
     manifest: {
       name: 'Магазин',
       short_name: 'Магазин',
@@ -179,10 +108,9 @@ export default defineNuxtConfig({
       start_url: '/',
       icons: [
         { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-        { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
-      ]
+        { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+      ],
     },
-
     workbox: {
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
       runtimeCaching: [
@@ -192,8 +120,8 @@ export default defineNuxtConfig({
           options: {
             cacheName: 'pages-cache',
             networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 50, maxAgeSeconds: 86400 }
-          }
+            expiration: { maxEntries: 50, maxAgeSeconds: 86400 },
+          },
         },
         {
           urlPattern: /\/api\/products/i,
@@ -202,69 +130,53 @@ export default defineNuxtConfig({
             cacheName: 'api-products',
             networkTimeoutSeconds: 10,
             expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-            cacheableResponse: { statuses: [0, 200] }
-          }
+            cacheableResponse: { statuses: [0, 200] },
+          },
         },
         {
           urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
           handler: 'CacheFirst',
           options: {
             cacheName: 'images-cache',
-            expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 }
-          }
-        }
-      ]
-    }
+            expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+          },
+        },
+      ],
+    },
   },
 
-  // ============================================
-  // Настройки иконок
-  // ============================================
   icon: {
     provider: 'iconify',
-    iconify: {
-      autoInstall: true,
-      collections: ['heroicons', 'mdi']
+    collections: ['heroicons', 'mdi'],
+    componentName: 'Icon',
+    clientBundle: {
+      scan: true,
+      sizeLimitKb: 256,
     },
-    componentName: 'Icon'
   },
 
-
-  // ✅ Moved misplaced image config into its own section
   image: {
-    format: ['webp', 'avif'],
+    provider: 'none',
+    format: ['webp'],
     screens: {
       xs: 320,
       sm: 640,
       md: 768,
       lg: 1024,
       xl: 1280,
-      xxl: 1536
+      xxl: 1536,
     },
     presets: {
-      product: {
-        modifiers: { format: 'webp', quality: 80, width: 400, height: 400 }
-      },
-      thumbnail: {
-        modifiers: { format: 'webp', quality: 70, width: 150, height: 150 }
-      }
-    }
+      product: { modifiers: { format: 'webp', quality: 80, width: 400, height: 400 } },
+      thumbnail: { modifiers: { format: 'webp', quality: 70, width: 150, height: 150 } },
+    },
   },
 
-  components: [
-    { path: '~/components', pathPrefix: false, extensions: ['.vue', '.pug'] },
-    { path: '~/components/ui', prefix: '', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/layout', prefix: 'Layout', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/products', prefix: 'Product', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/filters', prefix: 'Filter', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/cart', prefix: 'Cart', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/admin', prefix: 'Admin', extensions: ['.vue', '.pug'], global: false },
-    { path: '~/components/modals', prefix: 'Modal', extensions: ['.vue', '.pug'], global: false }
-  ],
+  components: [{ path: '~/components', pathPrefix: false }],
 
   imports: {
-    dirs: ['composables', 'composables/', 'stores', 'stores/', 'utils', 'utils/**'],
-    autoImport: true
+    dirs: ['composables', 'stores', 'utils', 'utils/**'],
+    autoImport: true,
   },
 
   app: {
@@ -278,41 +190,25 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#ffffff' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Магазин' }
+        { name: 'apple-mobile-web-app-title', content: 'Магазин' },
       ],
       link: [
         { rel: 'preconnect', href: process.env.API_BASE || 'http://localhost:3001' },
         { rel: 'dns-prefetch', href: 'https://api.iconify.design' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
-        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' }
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
       ],
       script: [
         {
-          innerHTML: `(function() {
-            try {
-              var theme = localStorage.getItem('theme') || 'light';
-              document.documentElement.setAttribute('data-theme', theme);
-            } catch (e) {}
-          })();`,
+          innerHTML: `(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
           type: 'text/javascript',
-          tagPosition: 'head'
-        }
-      ]
+          tagPosition: 'head',
+        },
+      ],
     },
     pageTransition: false,
-    layoutTransition: false
+    layoutTransition: false,
   },
 
   css: ['~/assets/css/main.css'],
-
-  performance: {
-    hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
-    maxEntrypointSize: 512000,
-    maxAssetSize: 512000
-  },
-
-  features: {
-    inlineStyles: true,
-    noScripts: false
-  }
 });

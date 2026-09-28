@@ -6,11 +6,11 @@
       //- Левая часть
       .flex.items-center.gap-2
         h1.text-base.font-bold(class="sm:text-lg") Товары
-        .badge.badge-ghost {{ stats.total }}
+        .text-base-content.pt-1 (всего: {{ stats.total }})
 
       //- Правая часть
       .flex.items-center.gap-3
-        button.btn.btn-sm.btn-ghost.btn-square(
+        button.btn-sm.btn-square.cursor-pointer(
           @click="$emit('refresh')"
           title="Обновить"
           type="button"

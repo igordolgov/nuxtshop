@@ -73,20 +73,20 @@
     .text-sm.text-center.mt-3(class="text-base-content/60")
       | Диапазон:&nbsp;&nbsp;от {{ formatPrice(minPrice) }}&nbsp;&nbsp;до&nbsp;&nbsp;{{ formatPrice(maxPrice) }} ₽
 
-  .price-slider.px-4(v-else)
+  .price-slider.px-3(v-else)
     .slider-wrapper.relative.pt-4.pb-6.px-1(
       :style="{ width: sliderWidth }"
       @click="handleSliderClick"
     )
       .slider-track.absolute.inset-x-0.h-2.bg-base-300.rounded-full.transform(class="-translate-y-1/2 top-1/2")
       
-      .slider-range.absolute.h-2.bg-primary.rounded-full.transform(
+      .slider-range.absolute.h-1.bg-primary.rounded-full.transform(
         class="-translate-y-1/2 top-1/2" 
         :style="sliderRangeStyle"
       )
       
       .slider-thumb.min-thumb.absolute.cursor-grab.z-20(
-        :class="[compact ? 'w-5 h-5' : 'w-6 h-6', { 'active': activeThumb === 'min' }]",
+        :class="[compact ? 'w-5 h-5' : 'w-4 h-4', { 'active': activeThumb === 'min' }]",
         class="active:cursor-grabbing"
         :style="{ left: thumbLeftStyle }"
         @mousedown="startDrag('min', $event)"
@@ -95,7 +95,7 @@
         .thumb-indicator.absolute.inset-0.bg-primary.rounded-full
       
       .slider-thumb.max-thumb.absolute.cursor-grab.z-20(
-        :class="[compact ? 'w-5 h-5' : 'w-6 h-6', { 'active': activeThumb === 'max' }]",
+        :class="[compact ? 'w-5 h-5' : 'w-4 h-4', { 'active': activeThumb === 'max' }]",
         class="active:cursor-grabbing"
         :style="{ left: thumbRightStyle }"
         @mousedown="startDrag('max', $event)"

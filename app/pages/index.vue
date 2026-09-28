@@ -1,8 +1,6 @@
-<!-- app/pages/index.vue - Оптимизированная версия -->
+<!-- app/pages/index.vue -->
 <template lang="pug">
-//- Главный контейнер страницы
-.grid-container
-  //- Хедер сайта (критический - загружается сразу)
+.grid-container(v-if="isMounted")
   Header.header-area(
     :activeFiltersCount="activeFiltersCount"
     :displayedProductsCount="displayedProducts.length"
@@ -17,7 +15,6 @@
     v-on="headerEvents"
   )
 
-  //- Панель мобильных фильтров
   Transition(name="fade")
     LazyMobileFiltersPanel.mobile-filters(
       v-if="showMobileFilters"
@@ -31,10 +28,8 @@
       v-on="mobileFiltersEvents"
     )
 
-  //- Основной контент
   .main-content-wrapper
     .content-area
-      //- Десктопный сайдбар (ленивая загрузка)
       LazyDesktopSidebar.sidebar-area(
         v-if="!isMobile"
         :searchQuery="searchQuery"
@@ -47,15 +42,9 @@
         v-on="sidebarEvents"
       )
 
-      //- Основная область с товарами
       .main-area(:class="mainAreaClasses")
-        .products-container(
-          ref="productsContainerRef"
-        )
-          //- Sentinel для IntersectionObserver
+        .products-container(ref="productsContainerRef")
           .scroll-sentinel
-
-          //- Секция товаров
           ProductsSection(
             :products="displayedProducts"
             :isLoading="isLoading"
@@ -73,7 +62,6 @@
             @clearSearch="clearSearch"
           )
 
-  //- Мобильный футер
   MobileNavFooter(
     v-if="isMobile"
     :class="footerClasses"
@@ -82,44 +70,13 @@
     :activeTab="currentTab"
     v-on="footerEvents"
   )
-
-  //- Кнопка наверх (ленивая загрузка)
-  LazyScrollToTop.scroll-top(
-    v-if="showScrollTop"
-    :visible="showScrollTop"
-    :target="scrollTarget"
-  )
 </template>
 
 <script setup>
 import { useAppState } from '@/composables/useAppState'
 import { useMobileDetection } from '@/composables/useMobileDetection'
 import { useCart } from '@/composables/useCart'
-import { nextTick, ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-
-//- ============================================
-//- Константа для проверки клиента
-//- ============================================
-const isClient = process.client
-
-//- ============================================
-//- Ленивая загрузка тяжелых компонентов
-//- ============================================
-const LazyMobileFiltersPanel = defineAsyncComponent(() => 
-  import('~/components/layout/MobileFiltersPanel.vue')
-)
-const LazyDesktopSidebar = defineAsyncComponent(() => 
-  import('~/components/layout/DesktopSidebar.vue')
-)
-const LazyScrollToTop = defineAsyncComponent(() => 
-  import('~/components/ScrollToTop.vue')
-)
-
-// Критические компоненты загружаются сразу
-import Header from '~/components/layout/Header.vue'
-import ProductsSection from '~/components/products/ProductsSection.vue'
-import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
+import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
 //- Composables
@@ -133,17 +90,18 @@ const { isMobile } = useMobileDetection()
 //- ============================================
 //- Реактивные переменные
 //- ============================================
+const isMounted = ref(false)
 const showMobileFilters = ref(false)
-const showScrollTop = ref(false)
 const productsContainerRef = ref(null)
 const isHorizontal = ref(false)
 const currentTab = ref('home')
-const scrollObserver = ref(null)
 
 //- ============================================
-//- Хелпер для безопасного доступа к состоянию
+//- Чтение состояния (SSR-safe)
 //- ============================================
+// TODO: заменить на прямой доступ к appState.*, когда useAppState.js будет отрефакторен
 const getState = (path, defaultValue = null) => {
+  if (!import.meta.client) return defaultValue
   const keys = path.split('.')
   let result = appState
   for (const key of keys) {
@@ -153,9 +111,6 @@ const getState = (path, defaultValue = null) => {
   return result?.value ?? defaultValue
 }
 
-//- ============================================
-//- Вычисляемые свойства (упрощены)
-//- ============================================
 const searchQuery = computed(() => getState('search.query', ''))
 const isSearching = computed(() => getState('search.isSearching', false))
 const showSuggestions = computed(() => getState('search.showSuggestions', false))
@@ -165,6 +120,7 @@ const activeSuggestionIndex = computed(() => getState('search.activeSuggestionIn
 const categories = computed(() => getState('categories', []))
 const filters = computed(() => getState('filters', {}))
 const sort = computed(() => {
+  if (!import.meta.client) return { field: 'createdAt', order: 'desc' }
   const currentSort = getState('sort')
   return currentSort?.field ? currentSort : { field: 'createdAt', order: 'desc' }
 })
@@ -172,26 +128,31 @@ const priceRange = computed(() => getState('actualPriceRange', {}))
 const isLoading = computed(() => getState('loading', false))
 const displayedProducts = computed(() => getState('displayedProducts', []))
 const products = computed(() => getState('products', []))
-const totalProductsCount = computed(() => products.value.length)
+const totalProductsCount = computed(() => products.value?.length ?? 0)
 
 //- ============================================
-//- Группировка обработчиков событий
+//- Обработчики (клиентские, guard не нужен)
 //- ============================================
 const setSearchQuery = (query) => appState.setSearchQuery(query)
+
 const performSearch = () => appState.search?.performSearch?.()
+
 const resetSearch = () => appState.search?.resetSearch?.()
+
 const clearSearch = () => appState.setSearchQuery('')
+
 const handleFiltersUpdate = (newFilters) => appState.handleFiltersUpdate(newFilters)
+
 const handleSortUpdate = (newSort) => appState.handleSortUpdate(newSort)
 
 const updateActiveSuggestionIndex = (index) => {
-  if (appState.search?.activeSuggestionIndex?.value !== undefined) {
+  if (appState.search?.activeSuggestionIndex) {
     appState.search.activeSuggestionIndex.value = index
   }
 }
 
 const updateShowSuggestions = (value) => {
-  if (appState.search?.showSuggestions?.value !== undefined) {
+  if (appState.search?.showSuggestions) {
     appState.search.showSuggestions.value = value
   }
 }
@@ -205,27 +166,6 @@ const handleSuggestionSelected = async (suggestion) => {
   }
 }
 
-const resetFilters = async () => {
-  showMobileFilters.value = false
-  const currentSort = { ...sort.value }
-  
-  appState.handleFiltersUpdate({
-    categories: [],
-    priceRange: { min: null, max: null },
-    onlyInStock: false,
-    onlyFavorites: false
-  })
-  
-  appState.setSearchQuery('')
-  
-  if (currentSort.field) {
-    appState.handleSortUpdate(currentSort)
-  }
-  
-  await nextTick()
-  scrollToTop()
-}
-
 const toggleMobileFilters = () => {
   showMobileFilters.value = !showMobileFilters.value
 }
@@ -234,9 +174,7 @@ const closeMobileFilters = () => {
   showMobileFilters.value = false
 }
 
-const toggleFavorite = (productId) => {
-  appState.toggleFavorite(productId)
-}
+const toggleFavorite = (productId) => appState.toggleFavorite(productId)
 
 const refreshProducts = async () => {
   try {
@@ -247,8 +185,6 @@ const refreshProducts = async () => {
 }
 
 const scrollToTop = () => {
-  if (!isClient) return
-  
   const container = productsContainerRef.value
   if (container) {
     container.scrollTo({ top: 0, behavior: 'smooth' })
@@ -256,36 +192,56 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+const resetFilters = async () => {
+  showMobileFilters.value = false
+  const currentSort = { ...sort.value }
+
+  appState.handleFiltersUpdate({
+    categories: [],
+    priceRange: { min: null, max: null },
+    onlyInStock: false,
+    onlyFavorites: false,
+  })
+  appState.setSearchQuery('')
+
+  if (currentSort.field) {
+    appState.handleSortUpdate(currentSort)
+  }
+
+  await nextTick()
+  scrollToTop()
+}
+
 const openCart = () => router.push('/cart')
 const openFavorites = () => router.push('/favorites')
 const openAuth = () => router.push('/auth/login')
 
 //- ============================================
-//- Объекты событий для v-on
+//- Объекты событий
 //- ============================================
 const headerEvents = {
   'update:searchQuery': setSearchQuery,
-  'suggestionSelected': handleSuggestionSelected,
-  'performSearch': performSearch,
-  'resetSearch': resetSearch,
-  'search': setSearchQuery,
+  suggestionSelected: handleSuggestionSelected,
+  performSearch,
+  resetSearch,
+  search: setSearchQuery,
   'clear-search': clearSearch,
-  'toggleFilters': toggleMobileFilters,
+  toggleFilters: toggleMobileFilters,
   'update:activeSuggestionIndex': updateActiveSuggestionIndex,
   'update:showSuggestions': updateShowSuggestions,
   'filters-update': handleFiltersUpdate,
   'sort-update': handleSortUpdate,
   'search-query-update': setSearchQuery,
-  'reset-filters': resetFilters
+  'reset-filters': resetFilters,
 }
 
 const mobileFiltersEvents = {
-  'close': closeMobileFilters,
+  close: closeMobileFilters,
   'update:filters': handleFiltersUpdate,
   'update:sort': handleSortUpdate,
   'update:searchQuery': setSearchQuery,
   'reset-filters': resetFilters,
-  'scroll-to-top': scrollToTop
+  'scroll-to-top': scrollToTop,
 }
 
 const sidebarEvents = {
@@ -293,18 +249,18 @@ const sidebarEvents = {
   'update:sort': handleSortUpdate,
   'update:searchQuery': setSearchQuery,
   'reset-filters': resetFilters,
-  'scroll-to-top': scrollToTop
+  'scroll-to-top': scrollToTop,
 }
 
 const footerEvents = {
-  'toggleFilters': toggleMobileFilters,
-  'openCart': openCart,
-  'openFavorites': openFavorites,
-  'openAuth': openAuth
+  toggleFilters: toggleMobileFilters,
+  openCart,
+  openFavorites,
+  openAuth,
 }
 
 //- ============================================
-//- Классы для layout
+//- Классы
 //- ============================================
 const mainAreaClasses = computed(() => {
   const classes = []
@@ -313,36 +269,34 @@ const mainAreaClasses = computed(() => {
   return classes
 })
 
-const footerClasses = computed(() => {
-  return isHorizontal.value ? 'horizontal-footer-left' : 'footer-area'
-})
-
-const scrollTarget = computed(() => '.products-container')
+const footerClasses = computed(() =>
+  isHorizontal.value ? 'horizontal-footer-left' : 'footer-area'
+)
 
 //- ============================================
-//- Количество активных фильтров
+//- Активные фильтры
 //- ============================================
 const activeFiltersCount = computed(() => {
-  const filtersValue = filters.value
-  if (!filtersValue) return 0
-  
+  const f = filters.value
+  if (!f) return 0
+
   let count = 0
-  if (filtersValue.categories?.length > 0) count++
-  if (filtersValue.onlyInStock) count++
-  if (filtersValue.onlyFavorites) count++
-  
+  if (f.categories?.length > 0) count++
+  if (f.onlyInStock) count++
+  if (f.onlyFavorites) count++
+
   const actualMin = priceRange.value.min || 0
   const actualMax = priceRange.value.max || 100000
-  const filterMin = filtersValue.priceRange?.min || actualMin
-  const filterMax = filtersValue.priceRange?.max || actualMax
-  
+  const filterMin = f.priceRange?.min || actualMin
+  const filterMax = f.priceRange?.max || actualMax
+
   if (filterMin > actualMin || filterMax < actualMax) count++
-  
+
   return count
 })
 
 //- ============================================
-//- Навигация по вкладкам
+//- Текущая вкладка
 //- ============================================
 watch(
   () => route.path,
@@ -357,21 +311,19 @@ watch(
 )
 
 //- ============================================
-//- Проверка ориентации (оптимизировано с rAF)
+//- Ориентация (rAF-throttled)
 //- ============================================
 let rafId = null
 
 const checkOrientation = () => {
-  if (!isClient) return
-  
   const width = window.innerWidth
   const height = window.innerHeight
   const isLandscape = width > height
   const isMobileDevice = width <= 768
-  
-  isHorizontal.value = isMobileDevice 
-    ? (isLandscape && width <= 926) 
-    : (isLandscape && width <= 1024)
+
+  isHorizontal.value = isMobileDevice
+    ? isLandscape && width <= 926
+    : isLandscape && width <= 1024
 }
 
 const scheduleOrientationCheck = () => {
@@ -380,76 +332,45 @@ const scheduleOrientationCheck = () => {
 }
 
 //- ============================================
-//- IntersectionObserver для scroll кнопки
-//- ============================================
-const setupScrollObserver = () => {
-  if (!isClient || !productsContainerRef.value) return
-  
-  scrollObserver.value = new IntersectionObserver(
-    ([entry]) => {
-      showScrollTop.value = !entry.isIntersecting
-    },
-    {
-      threshold: 0.1,
-      rootMargin: '-100px 0px 0px 0px',
-      root: productsContainerRef.value
-    }
-  )
-  
-  const sentinel = productsContainerRef.value.querySelector('.scroll-sentinel')
-  if (sentinel) {
-    scrollObserver.value.observe(sentinel)
-  }
-}
-
-//- ============================================
-//- Блокировка скролла при открытых фильтрах
+//- Блокировка скролла при мобильных фильтрах
 //- ============================================
 const updateBodyScroll = (locked) => {
-  if (!isClient) return
   document.body.style.overflow = locked ? 'hidden' : ''
 }
 
 //- ============================================
-//- Инициализация
+//- Lifecycle
 //- ============================================
 onMounted(() => {
-  if (!isClient) return
-  
+  isMounted.value = true
+
+  if (products.value.length === 0 && !isLoading.value) {
+    appState.loadProducts?.()
+  }
+
   checkOrientation()
-  setupScrollObserver()
-  
   window.addEventListener('resize', scheduleOrientationCheck, { passive: true })
   window.addEventListener('orientationchange', scheduleOrientationCheck, { passive: true })
 })
 
 onUnmounted(() => {
-  if (!isClient) return
-  
   window.removeEventListener('resize', scheduleOrientationCheck)
   window.removeEventListener('orientationchange', scheduleOrientationCheck)
-  
-  if (scrollObserver.value) {
-    scrollObserver.value.disconnect()
-  }
-  
   if (rafId) cancelAnimationFrame(rafId)
 })
 
-//- ============================================
-//- Watchers
-//- ============================================
 watch(showMobileFilters, updateBodyScroll)
 </script>
 
 <style scoped>
-/* Основная структура с CSS containment */
+/* ─── Корневая структура ─────────────────────────────────────── */
+
 .grid-container {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
-  overflow: hidden;
-  contain: layout;
+  height: 100dvh;
+  /* contain: layout убран — он ломает position: fixed
+     у MobileNavFooter и MobileFiltersPanel, которые внутри */
 }
 
 .header-area {
@@ -464,18 +385,20 @@ watch(showMobileFilters, updateBodyScroll)
   min-height: 0;
   overflow: hidden;
   width: 100%;
-  contain: layout;
 }
+
+/* ─── Сетка контента ────────────────────────────────────────── */
 
 .content-area {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-areas: "main";
-  
+  grid-template-areas: 'main';
+  min-height: 0;
+
   @media (min-width: 1025px) {
     grid-template-columns: 280px 1fr;
-    grid-template-areas: "sidebar main";
+    grid-template-areas: 'sidebar main';
     gap: 1rem;
     padding: 0 1rem;
     padding-right: 0;
@@ -485,51 +408,46 @@ watch(showMobileFilters, updateBodyScroll)
 .sidebar-area {
   grid-area: sidebar;
   display: none;
-  
+
   @media (min-width: 1025px) {
     display: block;
     padding-top: 10px;
   }
 }
 
+/* ─── Скроллируемая область с товарами ──────────────────────── */
+
 .main-area {
   grid-area: main;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
   width: 100%;
 }
 
-/* Products container с CSS containment для производительности */
 .products-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* magic number убран — высоту вычисляет flexbox */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   width: 100%;
-  max-height: calc(100dvh - 64px);
-  
-  /* CSS Containment - браузер не пересчитывает весь layout */
   contain: layout style;
   content-visibility: auto;
   contain-intrinsic-size: auto 500px;
-  
-  @media (max-width: 768px) {
-    max-height: calc(100dvh - 60px);
-  }
 }
 
-/* Sentinel для IntersectionObserver */
 .scroll-sentinel {
   height: 1px;
   width: 100%;
   flex-shrink: 0;
 }
 
-/* Transition для мобильных фильтров */
+/* ─── Переход фильтров ──────────────────────────────────────── */
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -540,7 +458,8 @@ watch(showMobileFilters, updateBodyScroll)
   opacity: 0;
 }
 
-/* Мобильный футер */
+/* ─── Мобильный футер ───────────────────────────────────────── */
+
 .footer-area {
   position: fixed;
   left: 0;
@@ -552,7 +471,7 @@ watch(showMobileFilters, updateBodyScroll)
   justify-content: space-around;
   align-items: center;
   background: white;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 4px rgb(0 0 0 / 0.1);
 }
 
 .horizontal-footer-left {
@@ -567,45 +486,40 @@ watch(showMobileFilters, updateBodyScroll)
   justify-content: flex-start;
   align-items: center;
   background: white;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 4px rgb(0 0 0 / 0.1);
   padding-top: 1rem;
   gap: 1.5rem;
 }
 
-/* Горизонтальная ориентация */
+/* ─── Горизонтальная ориентация ─────────────────────────────── */
+
 .main-area.horizontal-orientation {
-  margin-left: 64px !important;
-  width: calc(100% - 64px) !important;
-  
+  margin-left: 64px;
+  width: calc(100% - 64px);
+
   @media (max-width: 740px) and (orientation: landscape) {
-    margin-left: 60px !important;
-    width: calc(100% - 60px) !important;
+    margin-left: 60px;
+    width: calc(100% - 60px);
   }
-  
+
   @media (max-width: 360px) and (orientation: landscape) {
-    margin-left: 50px !important;
-    width: calc(100% - 50px) !important;
+    margin-left: 50px;
+    width: calc(100% - 50px);
   }
 }
 
 .main-area.horizontal-orientation .products-container {
-  padding: 0 0.5rem !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
+  padding: 0 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Панель мобильных фильтров */
+/* ─── Оверлей мобильных фильтров ────────────────────────────── */
+
 .mobile-filters {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-/* Кнопка наверх */
-.scroll-top {
-  position: fixed;
-  right: 16px;
-  z-index: 20;
+  background: rgb(0 0 0 / 0.5);
 }
 </style>
