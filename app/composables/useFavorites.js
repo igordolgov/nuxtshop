@@ -1,161 +1,200 @@
 // app/composables/useFavorites.js
-import { ref, computed } from 'vue'
+// ============================================
+// Composable: useFavorites
+// Единственный источник правды по избранному.
+// Реактивный массив снапшотов + автосохранение в localStorage.
+// Новые товары добавляются сверху — порядок стабилен между перезагрузками.
+// ============================================
+
+import { ref, computed, watch } from 'vue'
+
+const STORAGE_KEY = 'favoriteProducts'
+// Ключи от старой второй системы избранного — вычищаем при загрузке
+const LEGACY_KEYS = ['userFavorites']
 
 let favoritesInstance = null
 
 export const useFavorites = () => {
-  // SSR: свежий инстанс на каждый запрос
+  // SSR: свежий инстанс на каждый запрос — никакого шаринга между пользователями
   if (import.meta.server) return createFavorites()
 
-  if (favoritesInstance) return favoritesInstance
-  favoritesInstance = createFavorites()
+  if (!favoritesInstance) favoritesInstance = createFavorites()
   return favoritesInstance
 }
 
 function createFavorites() {
-  const favorites = ref(new Set())
-  const favoriteProducts = ref([])
+  // Единственное мутируемое состояние. Всё остальное — computed от него,
+  // поэтому any изменение автоматически обновляет всех потребителей.
+  const items = ref([])
 
   const normalizeId = (id) => (id == null ? null : String(id))
 
-  // ─── Загрузка / сохранение ────────────────────────────────
+  // ─── Производные (реактивные) ─────────────────────────────
+  const favoriteIdSet = computed(() => new Set(items.value.map((p) => p.id)))
+  const favoriteIds = computed(() => items.value.map((p) => p.id))
+  const favoritesCount = computed(() => items.value.length)
 
-  const loadFavorites = () => {
+  // ─── Персистентность ──────────────────────────────────────
+
+  const save = () => {
     if (!import.meta.client) return
     try {
-      const stored = localStorage.getItem('favoriteProducts')
-      if (!stored) return
-
-      const data = JSON.parse(stored)
-
-      if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
-        favoriteProducts.value = data.map((p) => ({ ...p, id: normalizeId(p.id) }))
-        favorites.value = new Set(data.map((p) => normalizeId(p.id)))
-      } else if (Array.isArray(data)) {
-        // legacy-формат: массив ID
-        favorites.value = new Set(data.map(normalizeId))
-        favoriteProducts.value = []
-      }
-
-      console.log('❤️ Загружены избранные:', favorites.value.size, 'товаров')
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items.value))
     } catch (err) {
-      console.error('❌ Ошибка загрузки избранных:', err)
-      favorites.value = new Set()
-      favoriteProducts.value = []
+      console.error('[useFavorites] Ошибка сохранения:', err)
     }
   }
 
-  const saveFavorites = () => {
-    if (!import.meta.client) return
-    try {
-      localStorage.setItem('favoriteProducts', JSON.stringify(favoriteProducts.value))
-      console.log('💾 Избранные сохранены:', favoriteProducts.value.length, 'товаров')
-    } catch (err) {
-      console.error('❌ Ошибка сохранения избранных:', err)
-    }
+  // Автосохранение при любом изменении — никаких ручных saveFavorites()
+  if (import.meta.client) {
+    watch(items, save, { deep: true })
   }
 
-  // ─── Snapshot товара для хранения ─────────────────────────
-
-  const buildProductSnapshot = (product) => ({
+  // Снапшот товара для хранения — минимум полей для карточки избранного
+  const buildSnapshot = (product) => ({
     id: normalizeId(product.id || product._id),
-    slug: product.slug || null,
-    categorySlug: product.categorySlug || product.category?.slug || null,
-    category: product.category?.name || product.category || null,
-    name: product.name,
-    price: product.price || product.currentPrice,
-    image: product.image || product.mainImage || product.images?.[0],
-    brand: product.brand,
-    description: product.description,
+    slug: product.slug ?? null,
+    name: product.name ?? '',
+    price: product.price ?? product.currentPrice ?? null,
+    image:
+      product.image ??
+      product.mainImage ??
+      (Array.isArray(product.images) ? product.images[0] : null),
+    category: typeof product.category === 'string' ? product.category : product.category?.name ?? null,
+    categorySlug: product.categorySlug ?? product.category?.slug ?? null,
+    brand: product.brand ?? null,
+    description: product.description ?? '',
     inStock: product.inStock ?? true,
     stockQuantity: product.stockQuantity ?? null,
+    addedAt: new Date().toISOString(),
   })
+
+  const normalizeSnapshot = (p, index) => ({
+    id: normalizeId(p.id),
+    slug: p.slug ?? null,
+    name: p.name ?? '',
+    price: p.price ?? p.currentPrice ?? null,
+    image:
+      p.image ??
+      p.mainImage ??
+      (Array.isArray(p.images) ? p.images[0] : null),
+    category: p.category ?? null,
+    categorySlug: p.categorySlug ?? null,
+    brand: p.brand ?? null,
+    description: p.description ?? '',
+    inStock: p.inStock ?? true,
+    stockQuantity: p.stockQuantity ?? null,
+    // Старые записи без addedAt: сохраняем относительный порядок,
+    // более поздние в списке считаются более новыми
+    addedAt: p.addedAt ?? new Date(Date.now() - index * 1000).toISOString(),
+  })
+
+  const load = () => {
+    if (!import.meta.client) return
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+
+      const data = JSON.parse(raw)
+      if (!Array.isArray(data)) return
+
+      // Принимаем только снапшоты-объекты с id.
+      // Legacy-формат (голый массив id) отбрасываем — карточки из него
+      // всё равно не собрать.
+      items.value = data
+        .filter((p) => p && typeof p === 'object' && p.id != null)
+        .map(normalizeSnapshot)
+        .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
+
+      // Убираем ключи от старой дублирующей системы
+      LEGACY_KEYS.forEach((k) => localStorage.removeItem(k))
+    } catch (err) {
+      console.error('[useFavorites] Ошибка загрузки:', err)
+    }
+  }
+
+  // Совместимость: некоторые места могут слушать это событие
+  const notifyChanged = () => {
+    if (import.meta.client) window.dispatchEvent(new CustomEvent('favorites-updated'))
+  }
 
   // ─── API ──────────────────────────────────────────────────
 
+  // Реактивен: читает favoriteIdSet (computed), поэтому все computed,
+  // которые его вызывают, пересчитываются автоматически
   const isFavorite = (productId) => {
     const id = normalizeId(productId)
-    return id !== null && favorites.value.has(id)
+    return id !== null && favoriteIdSet.value.has(id)
   }
 
   const addToFavorites = (product) => {
-    if (!import.meta.client || !product || typeof product !== 'object') return
+    if (!import.meta.client || !product || typeof product !== 'object') return false
 
-    const id = normalizeId(product.id || product._id)
-    if (!id || favorites.value.has(id)) return
+    const snapshot = buildSnapshot(product)
+    if (!snapshot.id || favoriteIdSet.value.has(snapshot.id)) return false
 
-    favorites.value.add(id)
-    favoriteProducts.value = [...favoriteProducts.value, buildProductSnapshot(product)]
-    saveFavorites()
-    console.log('❤️ Добавлен в избранное:', product.name || id)
-    window.dispatchEvent(new CustomEvent('favorites-updated'))
+    items.value = [snapshot, ...items.value] // новые сверху
+    notifyChanged()
+    return true
   }
 
   const removeFromFavorites = (productId) => {
-    if (!import.meta.client) return
-
     const id = normalizeId(productId)
-    if (!id || !favorites.value.has(id)) return
+    if (!id || !favoriteIdSet.value.has(id)) return false
 
-    favorites.value.delete(id)
-    favoriteProducts.value = favoriteProducts.value.filter(
-      (p) => normalizeId(p.id) !== id
-    )
-    saveFavorites()
-    console.log('💔 Удален из избранного:', id)
-    window.dispatchEvent(new CustomEvent('favorites-updated'))
+    items.value = items.value.filter((p) => p.id !== id)
+    notifyChanged()
+    return true
   }
 
   /**
-   * Принимает либо полный объект товара, либо ID.
-   * - Объект → корректно добавит или удалит.
-   * - ID → может только удалить (для добавления нет данных).
+   * Принимает объект товара или ID.
+   * Объект → добавит или удалит. ID → только удалит.
    */
   const toggleFavorite = (productOrId) => {
-    if (!import.meta.client) return
-
     const isObject = productOrId && typeof productOrId === 'object'
     const id = normalizeId(isObject ? productOrId.id || productOrId._id : productOrId)
-    if (!id) return
+    if (!id) return false
 
-    if (favorites.value.has(id)) {
-      removeFromFavorites(id)
-      return
-    }
-
+    if (isFavorite(id)) return removeFromFavorites(id)
     if (!isObject) {
-      console.warn(
-        '[useFavorites] toggleFavorite: для добавления нужен объект товара, получен ID:',
-        id
-      )
-      return
+      console.warn('[useFavorites] для добавления нужен объект товара, получен id:', id)
+      return false
     }
-
-    addToFavorites(productOrId)
+    return addToFavorites(productOrId)
   }
 
   const clearAllFavorites = () => {
-    if (!import.meta.client) return
-    favorites.value = new Set()
-    favoriteProducts.value = []
-    saveFavorites()
-    console.log('🗑️ Все избранные товары очищены')
-    window.dispatchEvent(new CustomEvent('favorites-updated'))
+    if (!items.value.length) return
+    items.value = []
+    notifyChanged()
   }
 
-  if (import.meta.client) loadFavorites()
+  // ─── Инициализация (только клиент) ────────────────────────
+  if (import.meta.client) {
+    load()
+
+    // Кросс-табовая синхронизация: изменение в другой вкладке подхватывается здесь
+    window.addEventListener('storage', (e) => {
+      if (e.key !== STORAGE_KEY) return
+      try {
+        const data = e.newValue ? JSON.parse(e.newValue) : []
+        items.value = Array.isArray(data) ? data : []
+      } catch {
+        // битые данные из другой вкладки — игнорируем
+      }
+    })
+  }
 
   return {
-    favorites: computed(() => favorites.value),
-    favoriteIds: computed(() => Array.from(favorites.value)),
-    favoriteProducts: computed(() => favoriteProducts.value),
-    favoritesCount: computed(() => favorites.value.size),
-
+    favoriteIds,
+    favoriteProducts: computed(() => items.value),
+    favoritesCount,
     isFavorite,
     addToFavorites,
     removeFromFavorites,
     toggleFavorite,
-    loadFavorites,
     clearAllFavorites,
+    load,
   }
 }

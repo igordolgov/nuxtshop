@@ -193,7 +193,7 @@
 }
 
 .right-column .filter-section::-webkit-scrollbar-track {
-  background: hsl(var(--b3));
+  background: var(--color-base-300);
   border-radius: 2px;
 }
 
@@ -207,7 +207,7 @@
 }
 
 .vertical-content::-webkit-scrollbar-track {
-  background: hsl(var(--b3));
+  background: var(--color-base-300);
   border-radius: 3px;
 }
 

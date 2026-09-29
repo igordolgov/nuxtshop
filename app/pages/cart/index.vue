@@ -361,7 +361,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgb(var(--color-base-100));
+  background: var(--color-base-100);
   z-index: 40;
   display: none;
 }
@@ -377,7 +377,7 @@
   top: 20px;
   left: 0;
   right: 0;
-  background: rgb(var(--color-base-100));
+  background: var(--color-base-100);
   z-index: 30;
   display: none;
 }
@@ -399,8 +399,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgb(var(--color-base-200));
-  color: rgb(var(--color-base-content) / 0.3);
+  background: var(--color-base-200);
+  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
 }
 
 @keyframes fadeIn {
@@ -439,9 +439,9 @@
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: rgb(var(--color-warning) / 0.1);
-  color: rgb(var(--color-warning));
-  border: 1px solid rgb(var(--color-warning) / 0.25);
+  background: color-mix(in oklab, var(--color-warning) 10%, transparent);
+  color: var(--color-warning);
+  border: 1px solid color-mix(in oklab, var(--color-warning) 25%, transparent);
 }
 
 /* ============================================
@@ -454,17 +454,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  border: 1px solid rgb(var(--color-base-300));
+  border: 1px solid var(--color-base-300);
   background: transparent;
   font-size: 1rem;
   font-weight: 600;
-  color: rgb(var(--color-base-content) / 0.6);
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
   transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
 }
 
 .qty-btn:hover:not(:disabled) {
-  border-color: rgb(var(--color-primary) / 0.4);
-  color: rgb(var(--color-primary));
+  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  color: var(--color-primary);
 }
 
 .qty-btn:disabled {
@@ -485,13 +485,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: rgb(var(--color-base-content) / 0.3);
+  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
   transition: color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
 }
 
 .remove-btn:hover {
-  color: rgb(var(--color-error));
-  background: rgb(var(--color-error) / 0.08);
+  color: var(--color-error);
+  background: color-mix(in oklab, var(--color-error) 8%, transparent);
 }
 
 .remove-btn-inline {
@@ -501,13 +501,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: rgb(var(--color-base-content) / 0.3);
+  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
   transition: color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
 }
 
 .remove-btn-inline:hover {
-  color: rgb(var(--color-error));
-  background: rgb(var(--color-error) / 0.08);
+  color: var(--color-error);
+  background: color-mix(in oklab, var(--color-error) 8%, transparent);
 }
 
 /* ============================================
@@ -519,18 +519,18 @@
   gap: 0.75rem;
   padding: 0.625rem 0.875rem;
   border-radius: 0.75rem;
-  border: 1px solid rgb(var(--color-base-300));
+  border: 1px solid var(--color-base-300);
   cursor: pointer;
   transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
 }
 
 .option-tile:hover {
-  border-color: rgb(var(--color-primary) / 0.3);
+  border-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
 }
 
 .option-tile-active {
-  border-color: rgb(var(--color-primary));
-  background: rgb(var(--color-primary) / 0.06);
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
 }
 
 /* ============================================

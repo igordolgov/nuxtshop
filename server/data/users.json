@@ -1,15 +1,17 @@
 [
   {
     "id": "1",
-    "name": "Админ",
-    "email": "admin@test.com",
-    "password": "$2b$12$Z84j/WAfqi1lrVfTUg6qfO/o/NtHLP1QtolFrtcM7ulqg3jbeRQM.",
+    "name": "Администратор",
+    "email": "admin@shop.ru",
+    "password": "pbkdf2$20000$Cqt5DI3BT6IONDwLkdePRQ==$NQ2xBPkwHSqNIn5quKcaYoDS2TxwquK167alhNGhirs=",
     "role": "admin",
-    "phone": "+79991234567",
-    "address": "Москва, ул. Примерная, д. 1",
+    "phone": "",
+    "address": "",
+    "avatar": "",
     "isActive": true,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "lastLogin": "2026-09-28T17:44:56.937Z"
+    "emailVerified": true,
+    "lastLogin": null,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
   }
 ]

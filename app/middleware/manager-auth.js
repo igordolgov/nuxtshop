@@ -1,29 +1,40 @@
 // middleware/manager-auth.js
-export default defineNuxtRouteMiddleware(async (_to, _from) => {
+// ============================================
+// Middleware: manager-auth — доступ manager и admin.
+// Сервер: SSR-проверка по кукам (роуты не кэшируются).
+// Клиент: проверка через общий стейт useAuth.
+// ============================================
+export default defineNuxtRouteMiddleware(async (to) => {
+  // ─── Сервер ───────────────────────────────────────────────
+  if (import.meta.server) {
+    const headers = useRequestHeaders(['cookie'])
+    try {
+      const data = await $fetch('/api/auth/user', { headers })
+      const user = data?.user ?? null
+      if (!user) return navigateTo('/auth/login', { replace: true })
+      if (!['manager', 'admin'].includes(user.role)) {
+        return navigateTo('/', { replace: true })
+      }
+    } catch {
+      return navigateTo('/auth/login', { replace: true })
+    }
+    return
+  }
+
+  // ─── Клиент ───────────────────────────────────────────────
   const { $notify } = useNuxtApp()
-  const appState = useAppState()
-  
-  // Проверяем аутентификацию, если еще не проверяли
-  if (!appState.authChecked.value) {
-    await appState.checkAuth()
+  const { authChecked, isAuthenticated, isManager, checkAuth } = useAuth()
+
+  if (!authChecked.value) {
+    await checkAuth()
   }
-  
-  // Если пользователь не аутентифицирован
-  if (!appState.isAuthenticated.value) {
-    consola.debug('🚫 Доступ запрещен: неавторизованный пользователь')
+
+  if (!isAuthenticated.value) {
     $notify.error('Для доступа необходимо войти в систему')
-    return navigateTo('/auth/login')
+    return navigateTo('/auth/login', { replace: true })
   }
-  
-  // Если пользователь не менеджер или администратор
-  if (!appState.isManager.value) {
-    consola.debug('🚫 Доступ запрещен: недостаточно прав', {
-      user: appState.user.value,
-      isManager: appState.isManager.value
-    })
+  if (!isManager.value) {
     $notify.error('Недостаточно прав для доступа')
-    return navigateTo('/')
+    return navigateTo('/', { replace: true })
   }
-  
-  consola.debug('✅ Доступ разрешен: менеджер/администратор')
 })

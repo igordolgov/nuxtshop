@@ -1,7 +1,7 @@
-<!-- components/layout/Header.vue -->
+<!-- app/components/layout/Header.vue -->
 <template lang="pug">
 header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
-  class="bg-base-100/95 border-base-300 px-3 sm:px-4 lg:px-6"
+  class="bg-base-100/95 px-3 sm:px-4 lg:px-6 border-base-300"
 )
   //- Начало: логотип и бургер-меню на мобильных
   .navbar-start.flex-0
@@ -14,7 +14,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
           svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70")
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
         ul.dropdown-content.menu.p-2.gap-1.shadow-lg.bg-base-100.rounded-2xl.w-60.z-50.border(
-          class="mt-3 -left-2 border-base-300"
+          class="-left-2 mt-3 border-base-300"
           tabindex="0"
         )
           li
@@ -67,8 +67,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
 
       //- Логотип
       NuxtLink.flex.items-center.gap-2.shrink-0(to="/" class="lg:mr-6" prefetch)
-        .bg-primary.rounded-xl.flex.items-center.justify-center.size-8(
-        )
+        .bg-primary.rounded-xl.flex.items-center.justify-center.size-8
           span.text-white.font-bold.text-sm М
         span.font-semibold.text-base-content.tracking-tight(v-show="!isHomePageVertical") Магазин
 
@@ -184,7 +183,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
             //- Выпадающее меню админки
           .absolute.top-full.left-0.mt-2.bg-base-100.rounded-2xl.shadow-lg.border.z-50(
             v-show="isAdminMenuOpen"
-            class="min-w-48 border-base-300"
+            class="border-base-300 min-w-48"
           )
             .flex.flex-col.p-2.gap-1
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
@@ -248,9 +247,10 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
       //- Переключатель тем
       button.btn.btn-ghost.btn-circle.btn-sm(
         @click="toggleTheme"
-        :title="currentTheme === 'corporate' ? 'Включить темную тему' : 'Включить светлую тему'"
+        :title="currentTheme === 'corporate' ? 'Включить тёмную тему' : 'Включить светлую тему'"
+        aria-label="Переключить тему"
       )
-        svg.w-4.h-4.text-base-content-70(
+        svg.w-4.h-4(
           v-if="currentTheme === 'corporate'"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -298,7 +298,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
         //- Выпадающее меню пользователя
         .absolute.top-full.right-0.mt-2.bg-base-100.rounded-2xl.shadow-lg.border.z-50(
           v-show="isUserMenuOpen"
-          class="min-w-56 border-base-300"
+          class="border-base-300 min-w-56"
         )
           .flex.flex-col.p-2
             //- Информация о пользователе
@@ -357,33 +357,37 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
 .fade-leave-to {
   opacity: 0;
 }
-/* Кнопка фильтров — минималистичный плоский стиль */
+
+/* Кнопка фильтров — минималистичный плоский стиль.
+   ВАЖНО: --color-* в daisyUI 5 — готовые цвета (oklch), rgb()-обёртка
+   делает значение невалидным. Прозрачность — через color-mix(). */
 .filters-button {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgb(var(--color-base-200));
-  color: rgb(var(--color-base-content));
-  border: 1px solid rgb(var(--color-base-300));
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
   border-radius: var(--radius-xl, 0.75rem);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0;
 }
 
 .filters-button:hover {
-  border-color: rgb(var(--color-primary) / 0.4);
+  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
 }
 
 .filters-button.active {
-  background: rgb(var(--color-primary) / 0.12);
-  border-color: rgb(var(--color-primary) / 0.4);
-  color: rgb(var(--color-primary));
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  color: var(--color-primary);
 }
 
 .filters-icon {
@@ -396,7 +400,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
   position: absolute;
   top: -6px;
   right: -8px;
-  background: rgb(var(--color-primary));
+  background: var(--color-primary);
   color: white;
   border-radius: 50%;
   width: 16px;
@@ -406,7 +410,7 @@ header.navbar.min-h-14.backdrop-blur.sticky.top-0.z-50.border-b(
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  border: 2px solid rgb(var(--color-base-100));
+  border: 2px solid var(--color-base-100);
 }
 
 /* Контейнеры поиска */
@@ -528,11 +532,7 @@ const emit = defineEmits([
 //- ============================================
 //- Imports
 //- ============================================
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import SmartSearchInput from '~/components/products/SmartSearchInput.vue'
-import { useMobileDetection } from '@/composables/useMobileDetection'
-import { useFavorites } from '~/composables/useFavorites'
-import { useCart } from '~/composables/useCart'
 
 //- ============================================
 //- Composables
@@ -547,6 +547,8 @@ const appState = useAppState()
 //- ============================================
 //- Состояние
 //- ============================================
+// Инлайн-скрипт в <head> выставляет data-theme до первой отрисовки;
+// здесь только зеркало текущего значения для иконки/титула кнопки
 const currentTheme = ref('corporate')
 const isAdminMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
@@ -600,7 +602,7 @@ const closeUserMenu = () => {
 }
 
 const closeMobileMenu = () => {
-  if (process.client) {
+  if (import.meta.client) {
     const dropdown = document.querySelector('.dropdown input[type="checkbox"]')
     if (dropdown) dropdown.checked = false
   }
@@ -614,10 +616,12 @@ const navigateToPath = async (path) => {
 }
 
 //- ============================================
-//- Функция переключения темы
+//- Переключение темы
+//- Имена тем строго corporate/business — они же в localStorage,
+//- их же читает инлайн-скрипт до первой отрисовки.
 //- ============================================
 const toggleTheme = () => {
-  if (!process.client) return
+  if (!import.meta.client) return
   currentTheme.value = currentTheme.value === 'corporate' ? 'business' : 'corporate'
   document.documentElement.setAttribute('data-theme', currentTheme.value)
   localStorage.setItem('theme', currentTheme.value)
@@ -642,7 +646,7 @@ const handleLogout = async () => {
 //- Закрытие меню при клике вне
 //- ============================================
 const closeMenusOnClickOutside = (event) => {
-  if (!process.client) return
+  if (!import.meta.client) return
 
   const adminMenuElement = event.target.closest('li.relative')
   const userMenuElement = event.target.closest('.relative')
@@ -660,20 +664,17 @@ const closeMenusOnClickOutside = (event) => {
 //- Lifecycle
 //- ============================================
 onMounted(() => {
-  if (process.client) {
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      currentTheme.value = savedTheme
-      document.documentElement.setAttribute('data-theme', savedTheme)
-    } else {
-      document.documentElement.setAttribute('data-theme', currentTheme.value)
-    }
+  if (import.meta.client) {
+    // data-theme уже выставлен инлайн-скриптом до первой отрисовки —
+    // синхронизируем стейт кнопки с реально применённой темой
+    const applied = document.documentElement.getAttribute('data-theme')
+    currentTheme.value = applied === 'business' ? 'business' : 'corporate'
     document.addEventListener('click', closeMenusOnClickOutside)
   }
 })
 
 onUnmounted(() => {
-  if (process.client) {
+  if (import.meta.client) {
     document.removeEventListener('click', closeMenusOnClickOutside)
   }
 })
@@ -684,4 +685,3 @@ watch(() => route.path, () => {
   closeMobileMenu()
 })
 </script>
-

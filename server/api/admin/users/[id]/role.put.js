@@ -1,90 +1,42 @@
 // server/api/admin/users/[id]/role.put.js
-import { readUsers, writeUsers } from '../../../../lib/userHelpers.js'
-import { adminActionLog } from '../../../../lib/logger.js'
-
-const getSessionFromCookie = (event) => {
-  const sessionCookie = getCookie(event, 'user_session')
-  if (!sessionCookie) return null
-
-  try {
-    return JSON.parse(sessionCookie)
-  } catch {
-    return null
-  }
-}
+import { readUsers, writeUsers, stripPassword } from '../../../../lib/userHelpers'
+import { requireAdmin } from '../../../../utils/auth'
+import { adminActionLog } from '../../../../lib/logger'
 
 export default defineEventHandler(async (event) => {
-  try {
-    console.log('🔄 PUT /api/admin/users/[id]/role - обновление роли')
+  const adminUser = await requireAdmin(event)
 
-    // ====== ПРОВЕРКА ПРАВ АДМИНА ======
-    const session = getSessionFromCookie(event)
+  const userId = getRouterParam(event, 'id')
+  const body = await readBody(event)
 
-    if (!session?.user) {
-      throw createError({ statusCode: 401, statusMessage: 'Требуется авторизация' })
-    }
-
-    const adminUser = session.user
-
-    if (adminUser.role !== 'admin') {
-      console.log('⛔ Доступ запрещен. Роль:', adminUser.role)
-
-      adminActionLog.add({
-        action: 'UNAUTHORIZED_ROLE_CHANGE_ATTEMPT',
-        attemptedBy: { id: adminUser.id, email: adminUser.email, role: adminUser.role },
-      })
-
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Доступ запрещен. Требуются права администратора',
-      })
-    }
-
-    console.log('✅ Админ подтвержден:', adminUser.email)
-
-    // ====== ОСНОВНАЯ ЛОГИКА ======
-    const userId = getRouterParam(event, 'id')
-    const body = await readBody(event)
-
-    if (!body.role || !['user', 'manager', 'admin'].includes(body.role)) {
-      throw createError({ statusCode: 400, statusMessage: 'Недопустимая роль' })
-    }
-
-    const users = await readUsers()
-    const userIndex = users.findIndex((u) => u.id === userId)
-
-    if (userIndex === -1) {
-      throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
-    }
-
-    const targetUser = users[userIndex]
-    const oldRole = targetUser.role
-
-    users[userIndex] = {
-      ...targetUser,
-      role: body.role,
-      updatedAt: new Date().toISOString(),
-    }
-
-    await writeUsers(users)
-
-    adminActionLog.add({
-      action: 'USER_ROLE_CHANGED',
-      admin: { id: adminUser.id, email: adminUser.email, name: adminUser.name },
-      targetUser: { id: targetUser.id, email: targetUser.email, name: targetUser.name },
-      roleChange: { from: oldRole, to: body.role },
-    })
-
-    const { password, ...userWithoutPassword } = users[userIndex]
-
-    console.log('✅ Роль обновлена:', targetUser.email, oldRole, '→', body.role)
-
-    return { success: true, user: userWithoutPassword, message: 'Роль обновлена' }
-  } catch (error) {
-    console.error('❌ Ошибка:', error)
-    throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Ошибка сервера',
-    })
+  if (!body?.role || !['user', 'manager', 'admin'].includes(body.role)) {
+    throw createError({ statusCode: 400, statusMessage: 'Недопустимая роль' })
   }
+
+  const users = await readUsers(event)
+  const userIndex = users.findIndex((u) => u.id === userId)
+  if (userIndex === -1) {
+    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+  }
+
+  const targetUser = users[userIndex]
+  if (targetUser.role === 'admin' && body.role !== 'admin') {
+    const adminCount = users.filter((u) => u.role === 'admin').length
+    if (adminCount <= 1) {
+      throw createError({ statusCode: 400, statusMessage: 'Нельзя снять роль с последнего администратора' })
+    }
+  }
+
+  const oldRole = targetUser.role
+  users[userIndex] = { ...targetUser, role: body.role, updatedAt: new Date().toISOString() }
+  await writeUsers(event, users)
+
+  adminActionLog.add({
+    action: 'USER_ROLE_CHANGED',
+    admin: { id: adminUser.id, email: adminUser.email },
+    targetUser: { id: targetUser.id, email: targetUser.email },
+    roleChange: { from: oldRole, to: body.role },
+  })
+
+  return { success: true, user: stripPassword(users[userIndex]), message: 'Роль обновлена' }
 })

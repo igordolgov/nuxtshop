@@ -59,7 +59,7 @@
       )
         //- Название
         h2.card-title.min-h-8.text-base-content.transition-colors.duration-300.text-sm.leading-tight(
-          class="lg:min-h-10 lg:text-base group-hover:text-sky-600"
+          class="lg:min-h-10 group-hover:text-sky-600 lg:text-base"
         )
           span.line-clamp-2 {{ product.name }}
         
@@ -199,24 +199,18 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  background-color: hsl(var(--b2));
+  background-color: var(--color-base-200);
   transition: opacity 0.3s ease;
 }
 
 .skeleton {
-  background: linear-gradient(90deg, 
-    hsl(var(--b2)) 25%, 
-    hsl(var(--b3)) 50%, 
-    hsl(var(--b2)) 75%
+  background: linear-gradient(
+    90deg,
+    var(--color-base-200) 25%,
+    var(--color-base-300) 50%,
+    var(--color-base-200) 75%
   );
   background-size: 200% 100%;
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 @media (max-width: 640px) {

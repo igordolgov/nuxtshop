@@ -11,17 +11,14 @@
         "app/composables/**/*.{ts,js}",
         "server/**/*.{ts,js}"
       ],
-      "project": ["app/**/*.{js,ts,vue}"],
-      "ignoreUnresolved": ["^@/.*", "^~/.*", "^#.*"],
+      "project": ["app/**/*.{js,ts,vue,css}"],
       "ignoreDependencies": [
         "@markuplint/pug-parser",
         "@markuplint/vue-parser",
         "@markuplint/vue-spec",
         "@iconify-json/heroicons",
         "@iconify-json/mdi",
-        "@iconify/vue",
-        "pug",
-        "pug-plain-loader"
+        "pug"
       ]
     }
   }

@@ -1,4 +1,4 @@
-<!-- app/components/admin/AddProductModal.vue -->
+<!-- app/components/admin/AdminAddProductModal.vue -->
 <template lang="pug">
 .modal(v-if="isOpen" class="modal-open")
   .modal-box.max-w-2xl.relative.w-full.max-h-screen.p-3(class="sm:p-6 sm:w-auto")
@@ -10,7 +10,7 @@
     ) ✕
 
     h3.text-base.font-bold.mb-2(class="sm:text-xl") Добавить товар
-    
+
     form(@submit.prevent="handleSubmit")
       //- Основная информация - 2 колонки на мобильных
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-6")
@@ -121,9 +121,9 @@
             )
               template(v-if="form.image && isValidImage(form.image)")
                 img(
-                  :src="form.image" 
-                  alt="Preview" 
-                  class="w-full.h-full.object-cover"
+                  :src="form.image"
+                  alt="Preview"
+                  class="w-full h-full object-cover"
                   @error="handleImageError"
                 )
               template(v-else)
@@ -147,7 +147,7 @@
             @click="triggerGalleryUpload"
             :disabled="isSubmitting || form.gallery.length >= MAX_GALLERY_IMAGES"
           ) +
-        
+
         //- Превью галереи
         .flex.flex-wrap.gap-1.mt-1(v-if="form.gallery.length > 0")
           .relative(
@@ -156,9 +156,9 @@
           )
             .w-12.h-12.border.rounded.overflow-hidden(class="sm:w-14 sm:h-14")
               img(
-                :src="image" 
-                :alt="`Изображение ${index + 1}`" 
-                class="w-full.h-full.object-cover"
+                :src="image"
+                :alt="`Изображение ${index + 1}`"
+                class="w-full h-full object-cover"
                 @error="handleGalleryImageError(index)"
               )
             button.btn.btn-xs.btn-circle.btn-error.absolute.-top-1.-right-1.p-0(
@@ -179,34 +179,38 @@
       //- Кнопки
       .modal-action.mt-3
         button.btn.btn-ghost.btn-sm(
-          type="button" 
+          type="button"
           @click="handleCancel"
           :disabled="isSubmitting"
         ) Отмена
         button.btn.btn-primary.btn-sm(
-          type="submit" 
+          type="submit"
           :disabled="isSubmitting || !isFormValid"
-        ) 
+        )
           span.loading.loading-spinner.loading-xs.mr-1(v-if="isSubmitting")
           span(v-if="isSubmitting") Сохранение...
           span(v-else) Добавить
 </template>
 
 <script setup>
+// ============================================
+// Компонент: AdminAddProductModal
+// Модалка добавления товара.
+// Изображения ресайзятся на клиенте в WebP (useImageResize) —
+// в JSON уходит ~50–150 КБ вместо мегабайт base64.
+// ============================================
 const { createProduct, loadProducts } = useProducts()
+const { resizeToWebp } = useImageResize()
 const notify = useNotifyQueue()
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
-  allCategories: { type: Array, default: () => [] }
+  allCategories: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update:isOpen', 'productAdded'])
 
 const MAX_GALLERY_IMAGES = 5
-const MAX_FILE_SIZE_MB = 2
-const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 const isSubmitting = ref(false)
 const uploadProgress = ref(0)
@@ -225,7 +229,7 @@ const form = ref({
   image: '',
   gallery: [],
   inStock: true,
-  stockQuantity: 0
+  stockQuantity: 0,
 })
 
 const isFormValid = computed(() => {
@@ -260,12 +264,6 @@ const isValidImage = (imageUrl) => {
   return imageUrl.startsWith('data:image/') || imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')
 }
 
-const validateFile = (file) => {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return { valid: false, error: `Неподдерживаемый формат: ${file.name}` }
-  if (file.size > MAX_FILE_SIZE) return { valid: false, error: `${file.name} слишком большой (макс. ${MAX_FILE_SIZE_MB}MB)` }
-  return { valid: true }
-}
-
 const handleImageError = () => {
   formError.value = 'Не удалось загрузить изображение'
   form.value.image = ''
@@ -278,56 +276,63 @@ const handleGalleryImageError = (index) => {
 const handleMainImageUpload = async (event) => {
   const file = event.target.files[0]
   if (!file) return
-  
-  const validation = validateFile(file)
+
+  const validation = validateImageFile(file)
   if (!validation.valid) {
     formError.value = validation.error
     return
   }
-  
+
   uploadProgress.value = 10
-  
+
   try {
-    const base64 = await readFileAsDataURL(file)
+    // Основное изображение: до 1200px, webp q=0.85
+    form.value.image = await resizeToWebp(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
     uploadProgress.value = 30
-    const compressed = await compressImage(base64, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
-    form.value.image = compressed
     formError.value = ''
     notify.success('Загружено')
-  } catch (error) {
+  } catch (err) {
+    console.error('Ошибка обработки изображения:', err)
     formError.value = 'Ошибка загрузки'
   } finally {
     uploadProgress.value = 0
+    if (mainImageInput.value) mainImageInput.value.value = ''
   }
 }
 
 const handleGalleryUpload = async (event) => {
   const files = Array.from(event.target.files)
   if (files.length === 0) return
-  
+
   const availableSlots = MAX_GALLERY_IMAGES - form.value.gallery.length
-  if (availableSlots <= 0) return
-  
+  if (availableSlots <= 0) {
+    formError.value = `Максимум ${MAX_GALLERY_IMAGES} изображений`
+    return
+  }
+
   const filesToProcess = files.slice(0, availableSlots)
   let loadedCount = 0
-  
+
   uploadProgress.value = 10
-  
+
+  // Последовательно: сохраняем порядок файлов и честный прогресс
   for (const file of filesToProcess) {
-    const validation = validateFile(file)
-    if (!validation.valid) continue
-    
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      formError.value = validation.error
+      continue
+    }
     try {
-      const base64 = await readFileAsDataURL(file)
-      const compressed = await compressImage(base64, { maxWidth: 800, maxHeight: 800, quality: 0.75 })
-      form.value.gallery.push(compressed)
+      // Галерея: до 800px, webp q=0.75
+      const webp = await resizeToWebp(file, { maxWidth: 800, maxHeight: 800, quality: 0.75 })
+      form.value.gallery.push(webp)
       loadedCount++
       uploadProgress.value = 10 + Math.floor((loadedCount / filesToProcess.length) * 80)
-    } catch (error) {
-      console.error('Ошибка:', error)
+    } catch (err) {
+      console.error('Ошибка обработки изображения:', err)
     }
   }
-  
+
   uploadProgress.value = 0
   if (loadedCount > 0) notify.success(`Загружено ${loadedCount}`)
   if (galleryInput.value) galleryInput.value.value = ''
@@ -337,49 +342,9 @@ const triggerGalleryUpload = () => {
   galleryInput.value?.click()
 }
 
-const readFileAsDataURL = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target.result)
-    reader.onerror = () => reject(new Error('Ошибка чтения'))
-    reader.readAsDataURL(file)
-  })
-}
-
-const compressImage = (base64, options = {}) => {
-  const { maxWidth = 800, maxHeight = 600, quality = 0.7 } = options
-  
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        let { width, height } = img
-        
-        if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth }
-        if (height > maxHeight) { width = (width * maxHeight) / height; height = maxHeight }
-        
-        canvas.width = Math.round(width)
-        canvas.height = Math.round(height)
-        ctx.imageSmoothingEnabled = true
-        ctx.imageSmoothingQuality = 'high'
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        
-        const format = base64.includes('image/png') ? 'image/png' : 'image/jpeg'
-        resolve(canvas.toDataURL(format, format === 'image/png' ? undefined : quality))
-      } catch (error) {
-        reject(error)
-      }
-    }
-    img.onerror = () => reject(new Error('Ошибка загрузки'))
-    img.src = base64
-  })
-}
-
 const onCategorySelect = () => {
   if (form.value.categorySelect) {
-    const current = form.value.categoriesInput.split(',').map(c => c.trim()).filter(Boolean)
+    const current = form.value.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
     if (!current.includes(form.value.categorySelect)) {
       current.push(form.value.categorySelect)
       form.value.categoriesInput = current.join(', ')
@@ -408,21 +373,21 @@ const handleCancel = () => {
 const handleSubmit = async () => {
   validateField('name')
   validateField('price')
-  
+
   if (!isFormValid.value) return
   if (hasTooManyGalleryImages.value) {
     formError.value = `Максимум ${MAX_GALLERY_IMAGES} изображений`
     return
   }
-  
+
   isSubmitting.value = true
   uploadProgress.value = 10
   formError.value = ''
-  
+
   try {
-    const categories = form.value.categoriesInput.split(',').map(cat => cat.trim()).filter(Boolean)
+    const categories = form.value.categoriesInput.split(',').map((cat) => cat.trim()).filter(Boolean)
     if (categories.length === 0) categories.push('Другое')
-    
+
     const newProduct = {
       name: form.value.name.trim(),
       description: form.value.description?.trim() || '',
@@ -431,24 +396,23 @@ const handleSubmit = async () => {
       image: form.value.image || '',
       gallery: form.value.gallery,
       inStock: Boolean(form.value.inStock),
-      stockQuantity: Math.max(0, Number(form.value.stockQuantity) || 0)
+      stockQuantity: Math.max(0, Number(form.value.stockQuantity) || 0),
     }
-    
+
     uploadProgress.value = 40
     const product = await createProduct(newProduct)
     uploadProgress.value = 80
-    
+
     await loadProducts(true)
-    
+
     notify.success(`"${product.name}" добавлен`)
     emit('productAdded', product)
-    
+
     uploadProgress.value = 100
     setTimeout(() => {
       resetForm()
       emit('update:isOpen', false)
     }, 300)
-    
   } catch (error) {
     formError.value = error.message || 'Ошибка'
   } finally {
@@ -467,7 +431,7 @@ const resetForm = () => {
     image: '',
     gallery: [],
     inStock: true,
-    stockQuantity: 0
+    stockQuantity: 0,
   }
   errors.value = { name: '', price: '' }
   if (mainImageInput.value) mainImageInput.value.value = ''

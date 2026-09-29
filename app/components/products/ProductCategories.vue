@@ -101,7 +101,7 @@ defineExpose({
 <style scoped>
 .categories-container {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--bc) / 0.3) transparent;
+  scrollbar-color: color-mix(in oklab, var(--color-base-content) 30%, transparent) transparent;
 }
 
 .categories-container::-webkit-scrollbar {
@@ -114,12 +114,12 @@ defineExpose({
 }
 
 .categories-container::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--bc) / 0.3);
+  background-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
   border-radius: 2px;
 }
 
 .categories-container::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--bc) / 0.5);
+  background-color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
 }
 
 @media (max-width: 768px) {

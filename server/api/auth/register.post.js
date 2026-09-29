@@ -1,139 +1,33 @@
 // server/api/auth/register.post.js
-import { readUsers, writeUsers } from '../../lib/userHelpers.js'
-import { hashPassword } from '../../lib/authHelpers.js'
-import { registrationLog } from '../../lib/logger.js'
 
-const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
+import { createUser, getUserByEmail, stripPassword } from '../../lib/userHelpers'
+import { hashPassword } from '../../lib/password'
+import { createSession } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const startTime = Date.now()
-  let email = ''
+  const body = await readBody(event)
+  const email = body.email?.toLowerCase().trim() || ''
+  const name = body.name?.trim() || ''
+  const password = body.password || ''
 
-  try {
-    const body = await readBody(event)
-    email = body.email?.toLowerCase().trim() || ''
-
-    const ip =
-      getRequestHeader(event, 'x-forwarded-for') ||
-      getRequestHeader(event, 'x-real-ip') ||
-      'unknown'
-
-    console.log('👤 POST /api/auth/register:', email)
-
-    // ====== ВАЛИДАЦИЯ ======
-    if (!body.email || !body.password || !body.name) {
-      registrationLog.add({ email, success: false, ip, reason: 'Missing required fields' })
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Все поля обязательны для заполнения',
-      })
-    }
-
-    if (!isValidEmail(email)) {
-      registrationLog.add({ email, success: false, ip, reason: 'Invalid email format' })
-      throw createError({ statusCode: 400, statusMessage: 'Некорректный формат email' })
-    }
-
-    const name = body.name.trim()
-    if (name.length < 2) {
-      registrationLog.add({ email, success: false, ip, reason: 'Name too short' })
-      throw createError({ statusCode: 400, statusMessage: 'Имя должно содержать минимум 2 символа' })
-    }
-
-    if (name.length > 50) {
-      registrationLog.add({ email, success: false, ip, reason: 'Name too long' })
-      throw createError({ statusCode: 400, statusMessage: 'Имя слишком длинное' })
-    }
-
-    if (body.password.length < 6) {
-      registrationLog.add({ email, success: false, ip, reason: 'Password too short' })
-      throw createError({ statusCode: 400, statusMessage: 'Пароль должен содержать минимум 6 символов' })
-    }
-
-    if (body.password.length > 100) {
-      registrationLog.add({ email, success: false, ip, reason: 'Password too long' })
-      throw createError({ statusCode: 400, statusMessage: 'Пароль слишком длинный' })
-    }
-
-    // ====== ПРОВЕРКА СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ ======
-    const users = await readUsers()
-    console.log(`📊 Пользователей в базе: ${users.length}`)
-
-    const existingUser = users.find((u) => u.email.toLowerCase() === email)
-    if (existingUser) {
-      console.log('❌ Email уже занят:', email)
-      registrationLog.add({ email, success: false, ip, reason: 'Email already exists' })
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Пользователь с таким email уже существует',
-      })
-    }
-
-    // ====== СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ ======
-    console.log('🔑 Хэширование пароля...')
-    const hashedPassword = await hashPassword(body.password)
-
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password: hashedPassword,
-      role: 'user',
-      phone: '',
-      address: '',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-    }
-
-    users.push(newUser)
-    await writeUsers(users)
-
-    console.log(`✅ Пользователь создан: ${email}`)
-
-    // ====== СОЗДАЁМ СЕССИЮ ======
-    const sessionData = {
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        phone: newUser.phone,
-        address: newUser.address,
-      },
-      createdAt: new Date().toISOString(),
-    }
-
-    setCookie(event, 'user_session', JSON.stringify(sessionData), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-      sameSite: 'lax',
-    })
-
-    registrationLog.add({ email, success: true, ip })
-
-    const { password, ...userWithoutPassword } = newUser
-
-    const duration = Date.now() - startTime
-    console.log(`✅ Регистрация завершена: ${email} (${duration}ms)`)
-
-    return {
-      success: true,
-      user: userWithoutPassword,
-      message: 'Регистрация успешна',
-    }
-  } catch (error) {
-    console.error('❌ Ошибка регистрации:', error.message)
-
-    throw createError({
-      statusCode: error.statusCode || 400,
-      statusMessage: error.statusMessage || 'Ошибка при регистрации',
-    })
+  if (!email || !password || !name) {
+    throw createError({ statusCode: 400, statusMessage: 'Все поля обязательны для заполнения' })
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createError({ statusCode: 400, statusMessage: 'Некорректный формат email' })
+  }
+  if (name.length < 2 || name.length > 50) {
+    throw createError({ statusCode: 400, statusMessage: 'Имя должно содержать от 2 до 50 символов' })
+  }
+  if (password.length < 6 || password.length > 100) {
+    throw createError({ statusCode: 400, statusMessage: 'Пароль должен содержать от 6 до 100 символов' })
+  }
+  if (await getUserByEmail(event, email)) {
+    throw createError({ statusCode: 400, statusMessage: 'Пользователь с таким email уже существует' })
+  }
+
+  const user = await createUser(event, { name, email, password: await hashPassword(password) })
+  await createSession(event, user.id)
+
+  return { success: true, user: stripPassword(user), message: 'Регистрация успешна' }
 })

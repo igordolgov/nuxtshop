@@ -204,13 +204,13 @@ const toggleFavorite = () => {
 }
 
 .has-search-highlight {
-  border-color: rgb(var(--color-primary) / 0.4) !important;
+  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent) !important;
 }
 
 /* Доступность */
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgb(var(--color-primary) / 0.5);
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 50%, transparent);
   outline-offset: 2px;
 }
 </style>

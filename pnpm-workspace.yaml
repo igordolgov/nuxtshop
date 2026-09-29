@@ -1,7 +1,7 @@
 allowBuilds:
   esbuild: true
   unrs-resolver: true
-  workerd: set this to true or false
+  workerd: true
 minimumReleaseAgeExclude:
   - '@iconify/vue@5.0.3'
   - '@oxfmt/binding-android-arm-eabi@0.70.0 || 0.71.0'
@@ -44,11 +44,9 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0'
   - oxfmt@0.70.0 || 0.71.0
   - oxlint@1.85.0 || 1.86.0
+  - wrangler@4.143.0 || 4.143.1
+  - miniflare@5.20260926.1-alpha
 peerDependencyRules:
   allowedVersions:
     typescript: "6"
     magicast: "0.5"
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
-  - unrs-resolver

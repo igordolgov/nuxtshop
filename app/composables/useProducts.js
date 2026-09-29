@@ -3,13 +3,16 @@
 // Composable: useProducts
 // Управление состоянием товаров.
 // На SSR — свежий инстанс на каждый запрос.
+// Административные операции (create/update/delete)
+// НЕ имеют локальных fallback: ошибка сервера — ошибка в UI.
+// Избранное: делегация в useFavorites, реактивность автоматическая.
+// Подтверждение удаления (confirm) — ответственность вызывающего компонента.
 // ============================================
 
 import { ref, computed } from 'vue'
 
 let productsState = null
 let isInitialized = false
-let eventListenerAdded = false
 
 export const useProducts = () => {
   if (import.meta.server) return createProducts()
@@ -27,7 +30,6 @@ function createProducts() {
   const error = ref(null)
 
   const favorites = useFavorites()
-  const favoritesUpdateTrigger = ref(0)
 
   let cachedCategories = []
   let lastProductsForCategories = ''
@@ -69,6 +71,10 @@ function createProducts() {
     }
     console.log(`[${type.toUpperCase()}] ${message}`)
   }
+
+  // Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
+  const errorMessage = (err) =>
+    err?.data?.message || err?.data?.statusMessage || err?.message || 'Неизвестная ошибка'
 
   const updateProductStockStatus = (product) => ({
     ...product,
@@ -114,7 +120,9 @@ function createProducts() {
 
     try {
       const response = await $fetch('/api/products')
-      products.value = response.map((product) =>
+      const list = Array.isArray(response) ? response : response?.products || []
+
+      products.value = list.map((product) =>
         updateProductStockStatus(
           fixProductImages({
             ...product,
@@ -126,9 +134,10 @@ function createProducts() {
       return products.value
     } catch (err) {
       console.error('[useProducts] Ошибка загрузки товаров:', err)
-      error.value = err.message
+      error.value = errorMessage(err)
       showNotification('error', 'Ошибка загрузки товаров')
 
+      // Офлайн-фолбэк на чтение — легитимен для PWA
       if (import.meta.client) {
         try {
           const cached = localStorage.getItem('products')
@@ -158,28 +167,28 @@ function createProducts() {
   const toggleFavorite = async (productOrId) => {
     try {
       const isObject = productOrId && typeof productOrId === 'object'
-      const id = isObject ? (productOrId.id || productOrId._id) : productOrId
+      const id = isObject ? productOrId.id || productOrId._id : productOrId
 
       if (!id) {
         console.warn('[useProducts] toggleFavorite: не передан ID или объект')
         return false
       }
 
-      // Ищем товар — сравниваем строкой, чтобы 1 === "1"
       const idx = products.value.findIndex((p) => String(p.id) === String(id))
-      const product = idx !== -1 ? products.value[idx] : (isObject ? productOrId : null)
+      const product = idx !== -1 ? products.value[idx] : isObject ? productOrId : null
 
       if (!product) {
         console.warn('[useProducts] toggleFavorite: товар не найден по ID', id)
         return false
       }
 
-      // useFavorites.toggleFavorite принимает и объект, и ID — оба работают
       favorites.toggleFavorite(product)
 
-      // Обновляем флаг isFavorite в массиве товаров
       if (idx !== -1) {
-        products.value[idx].isFavorite = favorites.isFavorite(id)
+        products.value[idx] = {
+          ...products.value[idx],
+          isFavorite: favorites.isFavorite(id),
+        }
         persist()
       }
 
@@ -202,47 +211,32 @@ function createProducts() {
         body: finalData,
       })
 
-      if (!response.success) throw new Error(response.message || 'Ошибка при обновлении товара')
+      if (!response.success || !response.product) {
+        throw new Error(response.message || 'Сервер не подтвердил обновление')
+      }
 
-      const index = products.value.findIndex((p) => p.id === productId)
+      const index = products.value.findIndex((p) => String(p.id) === String(productId))
       const wasFavorite = favorites.isFavorite(productId)
 
+      const merged = updateProductStockStatus(
+        fixProductImages({
+          ...(index !== -1 ? products.value[index] : {}),
+          ...response.product,
+          isFavorite: wasFavorite,
+        })
+      )
+
       if (index !== -1) {
-        products.value[index] = updateProductStockStatus(
-          fixProductImages({
-            ...products.value[index],
-            ...response.product,
-            isFavorite: wasFavorite,
-          })
-        )
+        products.value[index] = merged
       } else {
-        products.value.push(
-          updateProductStockStatus(
-            fixProductImages({ ...response.product, isFavorite: wasFavorite })
-          )
-        )
+        products.value.push(merged)
       }
       persist()
-      showNotification('success', 'Товар успешно обновлен')
-      return index !== -1 ? products.value[index] : products.value[products.value.length - 1]
+      return merged
     } catch (err) {
       console.error('[useProducts] Ошибка обновления товара:', err)
-      showNotification('error', `Ошибка обновления товара: ${err.message || 'Неизвестная ошибка'}`)
-
-      const index = products.value.findIndex((p) => p.id === productId)
-      if (index !== -1) {
-        products.value[index] = updateProductStockStatus(
-          fixProductImages({
-            ...products.value[index],
-            ...updatedData,
-            isFavorite: favorites.isFavorite(productId),
-            updatedAt: new Date().toISOString(),
-          })
-        )
-        persist()
-        showNotification('info', 'Товар обновлен локально (ошибка сервера)')
-        return products.value[index]
-      }
+      error.value = errorMessage(err)
+      showNotification('error', `Ошибка обновления товара: ${errorMessage(err)}`)
       throw err
     } finally {
       loading.value = false
@@ -253,93 +247,51 @@ function createProducts() {
     loading.value = true
     error.value = null
 
-    const buildFallback = (data) =>
-      updateProductStockStatus(
-        fixProductImages({
-          id: Date.now().toString(),
-          name: data.name,
-          description: data.description || '',
-          price: data.price,
-          categories: data.categories,
-          image: data.image || '',
-          gallery: data.gallery || [],
-          inStock: data.stockQuantity > 0,
-          stockQuantity: data.stockQuantity || 0,
-          isFavorite: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          slug: `${data.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-        })
-      )
-
     try {
       const finalData = { ...productData, inStock: productData.stockQuantity > 0 }
       const response = await $fetch('/api/products', { method: 'POST', body: finalData })
 
-      let newProduct
-      if (response.success && response.product) {
-        newProduct = updateProductStockStatus(fixProductImages({ ...response.product, isFavorite: false }))
-      } else if (response.id) {
-        newProduct = updateProductStockStatus(fixProductImages({ ...response, isFavorite: false }))
-      } else {
-        newProduct = buildFallback(productData)
+      if (!response.success || !response.product) {
+        throw new Error(response.message || 'Сервер не подтвердил создание')
       }
 
+      const newProduct = updateProductStockStatus(
+        fixProductImages({ ...response.product, isFavorite: false })
+      )
       products.value = [newProduct, ...products.value]
       persist()
-      showNotification('success', 'Товар успешно создан')
       return newProduct
     } catch (err) {
       console.error('[useProducts] Ошибка создания товара:', err)
-      showNotification('error', `Ошибка создания товара: ${err.message || 'Неизвестная ошибка'}`)
-
-      const newProduct = buildFallback(productData)
-      products.value = [newProduct, ...products.value]
-      showNotification('info', 'Товар создан локально (ошибка сервера)')
-      return newProduct
+      error.value = errorMessage(err)
+      showNotification('error', `Ошибка создания товара: ${errorMessage(err)}`)
+      throw err
     } finally {
       loading.value = false
     }
   }
 
   const deleteProduct = async (productId) => {
-    if (import.meta.client) {
-      const confirmed = window.confirm('Вы уверены, что хотите удалить этот товар?')
-      if (!confirmed) return false
-    }
-
     loading.value = true
     error.value = null
-
-    const removeLocally = () => {
-      const idx = products.value.findIndex((p) => p.id === productId)
-      if (idx === -1) return null
-      const name = products.value[idx].name
-      products.value.splice(idx, 1)
-      persist()
-      if (favorites.isFavorite(productId)) favorites.removeFromFavorites(productId)
-      return name
-    }
 
     try {
       const response = await $fetch(`/api/products/${productId}`, { method: 'DELETE' })
       if (!response.success) throw new Error(response.message || 'Ошибка при удалении товара')
 
-      const name = removeLocally()
-      if (name) {
-        showNotification('success', `Товар "${name}" удален`)
-        return true
-      }
-      return false
+      const idx = products.value.findIndex((p) => String(p.id) === String(productId))
+      if (idx === -1) return false
+      const name = products.value[idx].name
+      products.value.splice(idx, 1)
+      persist()
+      if (favorites.isFavorite(productId)) favorites.removeFromFavorites(productId)
+      showNotification('success', `Товар "${name}" удален`)
+      return true
     } catch (err) {
       console.error('[useProducts] Ошибка удаления товара:', err)
-      showNotification('error', `Ошибка удаления товара: ${err.message || 'Неизвестная ошибка'}`)
-
-      const name = removeLocally()
-      if (name) {
-        showNotification('info', `Товар "${name}" удален локально (ошибка сервера)`)
-        return true
-      }
+      error.value = errorMessage(err)
+      // 401 — сессия истекла (например, после рестарта dev-сервера)
+      showNotification('error', `Ошибка удаления товара: ${errorMessage(err)}`)
       return false
     } finally {
       loading.value = false
@@ -350,20 +302,26 @@ function createProducts() {
 
   const getProductBySlug = async (slug) => {
     try {
-      const local = products.value.find((p) => p.slug === slug || p.id === slug)
+      const local = products.value.find(
+        (p) => p.slug === slug || String(p.id) === String(slug)
+      )
       if (local) return local
 
       if (!loading.value) {
         await loadProducts(true)
-        const refreshed = products.value.find((p) => p.slug === slug || p.id === slug)
+        const refreshed = products.value.find(
+          (p) => p.slug === slug || String(p.id) === String(slug)
+        )
         if (refreshed) return refreshed
       }
 
       try {
         const response = await $fetch(`/api/product/${slug}`)
-        if (response) {
+        // Новый эндпоинт: { success, product, similarProducts }; старый: товар напрямую
+        const raw = response?.product ?? response
+        if (raw) {
           const product = updateProductStockStatus(
-            fixProductImages({ ...response, isFavorite: favorites.isFavorite(response.id) })
+            fixProductImages({ ...raw, isFavorite: favorites.isFavorite(raw.id) })
           )
           products.value.push(product)
           return product
@@ -378,7 +336,7 @@ function createProducts() {
     }
   }
 
-  const getProductById = (id) => products.value.find((p) => p.id === id)
+  const getProductById = (id) => products.value.find((p) => String(p.id) === String(id))
 
   const getProductsByCategory = (category) => {
     if (!category) return products.value
@@ -432,20 +390,26 @@ function createProducts() {
   }
 
   const updateProductQuantity = (productId, newQuantity) => {
-    const idx = products.value.findIndex((p) => p.id === productId)
+    const idx = products.value.findIndex((p) => String(p.id) === String(productId))
     if (idx === -1) return false
-    products.value[idx].stockQuantity = newQuantity
-    products.value[idx].inStock = newQuantity > 0
+    products.value[idx] = {
+      ...products.value[idx],
+      stockQuantity: newQuantity,
+      inStock: newQuantity > 0,
+    }
     persist()
     return true
   }
 
   const decreaseProductQuantity = (productId, amount = 1) => {
-    const idx = products.value.findIndex((p) => p.id === productId)
+    const idx = products.value.findIndex((p) => String(p.id) === String(productId))
     if (idx === -1) return -1
     const newQuantity = Math.max(0, products.value[idx].stockQuantity - amount)
-    products.value[idx].stockQuantity = newQuantity
-    products.value[idx].inStock = newQuantity > 0
+    products.value[idx] = {
+      ...products.value[idx],
+      stockQuantity: newQuantity,
+      inStock: newQuantity > 0,
+    }
     persist()
     return newQuantity
   }
@@ -453,20 +417,6 @@ function createProducts() {
   // ─── Инициализация (только клиент, только один раз) ───────
   if (import.meta.client && !isInitialized) {
     isInitialized = true
-
-    if (!eventListenerAdded) {
-      eventListenerAdded = true
-      window.addEventListener('favorites-updated', () => {
-        favoritesUpdateTrigger.value++
-        if (products.value.length > 0) {
-          products.value = products.value.map((product) => ({
-            ...product,
-            isFavorite: favorites.isFavorite(product.id),
-          }))
-          persist()
-        }
-      })
-    }
 
     loadProducts(true).catch((err) => {
       console.warn('[useProducts] Загрузка не удалась:', err)
@@ -489,14 +439,13 @@ function createProducts() {
       return cachedCategories
     }),
 
-    favoriteProducts: computed(() => {
-      // eslint-disable-next-line no-unused-expressions
-      favoritesUpdateTrigger.value
-      return products.value.filter((p) => favorites.isFavorite(p.id))
-    }),
+    // Реактивно без триггеров: isFavorite читает computed из useFavorites
+    favoriteProducts: computed(() =>
+      products.value.filter((p) => favorites.isFavorite(p.id))
+    ),
 
     isFavorite: (productId) => favorites.isFavorite(productId),
-    favoritesCount: computed(() => favorites.favoritesCount),
+    favoritesCount: computed(() => favorites.favoritesCount.value),
 
     loadProducts,
     updateProduct,

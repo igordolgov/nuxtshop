@@ -108,7 +108,7 @@ ClientOnly
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  color: hsl(var(--bc));
+  color: var(--color-base-content);
   position: relative;
   flex: 1;
   min-height: 0;
@@ -116,7 +116,7 @@ ClientOnly
 }
 
 .nav-item:hover {
-  background: hsl(var(--bc) / 0.1);
+  background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
 }
 
 .nav-item:active {
@@ -183,7 +183,7 @@ ClientOnly
   min-width: 16px;
   height: 16px;
   padding: 0 3px;
-  border: 2px solid hsl(var(--b2));
+  border: 2px solid var(--color-base-200);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   z-index: 1;
 }
@@ -230,7 +230,7 @@ ClientOnly
   z-index: 40;
   height: calc(100% - 56px);
   overflow: hidden;
-  background: hsl(var(--b1));
+  background: var(--color-base-100);
   --horizontal-nav-width: 70px;
 }
 
@@ -254,7 +254,7 @@ ClientOnly
   margin: 0;
   min-height: 0;
   border-radius: 0;
-  border-bottom: 1px solid hsl(var(--b2) / 0.5);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-base-200) 50%, transparent);
   position: relative;
   overflow: auto;
 }

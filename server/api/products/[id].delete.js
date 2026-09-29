@@ -1,53 +1,31 @@
 // server/api/products/[id].delete.js
-import { readProducts, writeProducts } from '../../lib/productHelpers.js'
+import { readProducts, writeProducts } from '../../lib/productHelpers'
+import { requireAdmin } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const id = event.context.params?.id
-  
-  // Проверяем что ID передан
-  if (!id) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'ID товара не указан'
-    })
-  }
-  
   try {
-    console.log(`🗑️ Попытка удаления товара с ID: ${id}`)
-    
-    const products = await readProducts()
-    const productIndex = products.findIndex(p => p.id === id || p.id === Number(id))
-    
-    if (productIndex === -1) {
-      console.error(`❌ Товар с ID ${id} не найден`)
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Товар не найден'
-      })
+    await requireAdmin(event)
+
+    const id = getRouterParam(event, 'id')
+    if (!id) {
+      throw createError({ statusCode: 400, statusMessage: 'ID товара не указан', message: 'ID товара не указан' })
     }
-    
-    const productToDelete = products[productIndex]
-    console.log(`🗑️ Удаление товара: ${productToDelete.name} (ID: ${productToDelete.id})`)
-    
-    products.splice(productIndex, 1)
-    await writeProducts(products)
-    
-    console.log(`✅ Товар успешно удален: ${productToDelete.name}`)
-    
-    return { 
-      success: true, 
-      message: 'Товар успешно удален',
-      deletedProduct: productToDelete
+
+    const products = await readProducts(event)
+    const index = products.findIndex((p) => String(p.id) === String(id))
+    if (index === -1) {
+      throw createError({ statusCode: 404, statusMessage: 'Товар не найден', message: 'Товар не найден' })
     }
-    
+
+    const deleted = products[index]
+    products.splice(index, 1)
+    await writeProducts(event, products)
+
+    // Картинки data-URI живут внутри JSON товара — отдельная очистка файлов не нужна
+    return { success: true, message: `Товар "${deleted.name}" удалён`, deletedId: deleted.id }
   } catch (error) {
-    // Если ошибка уже обработана (createError), пробрасываем дальше
     if (error.statusCode) throw error
-    
-    console.error('❌ Ошибка при удалении товара:', error)
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Внутренняя ошибка сервера'
-    })
+    console.error('Ошибка удаления товара:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось удалить товар', message: 'Не удалось удалить товар' })
   }
 })

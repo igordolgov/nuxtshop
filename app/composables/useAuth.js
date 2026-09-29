@@ -1,5 +1,9 @@
 // app/composables/useAuth.js
-import { ref, computed } from 'vue'
+// app/composables/useAuth.js
+
+// In-flight дедупликация checkAuth. Только клиент: на SSR промисы нельзя
+// шарить между запросами — это утечка сессий между пользователями.
+let clientCheckPromise = null
 
 let authInstance = null
 
@@ -29,19 +33,27 @@ function createAuth() {
       return { user: user.value, isAuthenticated: !!user.value }
     }
 
-    try {
-      const data = await $fetch('/api/auth/user', {
-        headers: { 'Cache-Control': 'no-cache' },
-        credentials: 'include',
-      })
-      updateAuthState(data.user)
-      authChecked.value = true
-      return data
-    } catch {
-      updateAuthState(null)
-      authChecked.value = true
-      return { user: null, isAuthenticated: false }
+    // Несколько компонентов могут запросить проверку одновременно — делаем один fetch
+    if (import.meta.client && clientCheckPromise) {
+      return clientCheckPromise
     }
+
+    const request = (async () => {
+      try {
+        const data = await $fetch('/api/auth/user', { credentials: 'include' })
+        user.value = data.user ?? null
+        return data
+      } catch {
+        user.value = null
+        return { user: null, isAuthenticated: false }
+      } finally {
+        authChecked.value = true
+        clientCheckPromise = null
+      }
+    })()
+
+    if (import.meta.client) clientCheckPromise = request
+    return request
   }
 
   const login = async (credentials) => {
@@ -50,7 +62,6 @@ function createAuth() {
       const data = await $fetch('/api/auth/login', {
         method: 'POST',
         body: credentials,
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       })
 
@@ -75,7 +86,6 @@ function createAuth() {
       const data = await $fetch('/api/auth/register', {
         method: 'POST',
         body: userData,
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       })
 
@@ -95,24 +105,25 @@ function createAuth() {
   const logout = async () => {
     try {
       await $fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-      updateAuthState(null)
-
-      if (import.meta.client) {
-        localStorage.removeItem('user')
-        sessionStorage.removeItem('user')
-        localStorage.removeItem('auth-token')
-
-        document.cookie.split(';').forEach((cookie) => {
-          const eqPos = cookie.indexOf('=')
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-          document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
-        })
-      }
-      return { success: true }
+      authChecked.value = true
     } catch (error) {
+      // Сервер не подтвердил выход — локально разлогиниваем,
+      // но при следующей навигации сессия будет перепроверена
+      authChecked.value = false
       updateAuthState(null)
-      return { success: false, error: error?.message || 'Неизвестная ошибка' }
+      return { success: false, error: error?.message || 'Не удалось выйти' }
     }
+
+    updateAuthState(null)
+
+    // Ключи от старой auth-схемы — чистим на устройствах пользователей
+    if (import.meta.client) {
+      localStorage.removeItem('user')
+      localStorage.removeItem('auth-token')
+      sessionStorage.removeItem('user')
+    }
+
+    return { success: true }
   }
 
   const updateProfile = async (profileData) => {
@@ -121,7 +132,6 @@ function createAuth() {
       const data = await $fetch('/api/auth/profile', {
         method: 'PUT',
         body: profileData,
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       })
 

@@ -1,16 +1,20 @@
 // app/composables/useAppState.js
-/**
- * Централизованный стейт приложения.
- *
- * ВАЖНО: на сервере (SSR) каждый запрос получает свежий инстанс — никакого
- * шаринга между пользователями. На клиенте — singleton, чтобы все компоненты
- * видели одни и те же данные.
- */
+// ============================================
+// Composable: useAppState
+// Централизованный стейт приложения.
+//
+// На сервере (SSR) каждый запрос получает свежий инстанс — никакого
+// шаринга между пользователями. На клиенте — singleton.
+//
+// Избранное: единственный источник правды — useFavorites.
+// Здесь только делегация под старым API (favorites.*) для совместимости.
+// ============================================
+
 import { useProducts } from './useProducts'
 import { useFilters } from './useFilters'
-import { useNotifications } from './useNotifications'
 import { useAuth } from './useAuth'
-import { computed, watch, reactive } from 'vue'
+import { useFavorites } from './useFavorites'
+import { computed, watch } from 'vue'
 
 let globalState = null
 
@@ -26,142 +30,27 @@ export const useAppState = () => {
 }
 
 function createAppState() {
-  const { $notify } = useNuxtApp()
-
   // ─── Модули ──────────────────────────────────────────────
-  const notifications = useNotifications()
-  const products = useProducts(notifications)
+  const products = useProducts()
   const filters = useFilters(products.products)
   const auth = useAuth()
+  const favorites = useFavorites()
 
-  // ─── Избранное ───────────────────────────────────────────
-  const favoritesState = reactive({
-    items: [],
-    products: [],
-    loading: false,
-  })
+  // ─── Избранное: делегация в useFavorites ─────────────────
+  // Сохранён старый API (favorites.items / .products / .loadFavorites ...),
+  // чтобы не ломать компоненты, которые уже его используют.
+  const favoritesApi = {
+    items: favorites.favoriteIds,
+    products: favorites.favoriteProducts,
+    loading: computed(() => false),
+    favoritesCount: favorites.favoritesCount,
 
-  function persistFavorites() {
-    if (!import.meta.client) return
-    localStorage.setItem('favoriteProducts', JSON.stringify(favoritesState.products))
-    localStorage.setItem('userFavorites', JSON.stringify(favoritesState.items))
-  }
-
-  function updateProductsFavoritesState() {
-    if (products.products.value.length > 0) {
-      products.products.value = products.products.value.map((product) => ({
-        ...product,
-        isFavorite: isFavorite(product.id || product._id),
-      }))
-    }
-  }
-
-  async function loadFavorites() {
-    if (!import.meta.client) return
-    try {
-      favoritesState.loading = true
-      const saved = localStorage.getItem('favoriteProducts')
-      if (saved) {
-        favoritesState.products = JSON.parse(saved)
-        favoritesState.items = favoritesState.products.map((p) => p.id)
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки избранного:', error)
-    } finally {
-      favoritesState.loading = false
-    }
-  }
-
-  async function addToFavorites(product) {
-    if (!auth.isAuthenticated.value) {
-      $notify.warning('Войдите в систему чтобы добавить в избранное')
-      return navigateTo('/auth/login')
-    }
-
-    try {
-      const productId = product.id || product._id
-
-      if (!favoritesState.items.includes(productId)) {
-        favoritesState.items.push(productId)
-
-        favoritesState.products.push({
-          id: productId,
-          _id: product._id || productId,
-          name: product.name,
-          price: product.currentPrice || product.price,
-          currentPrice: product.currentPrice || product.price,
-          image: product.image || product.mainImage,
-          mainImage: product.mainImage || product.image,
-          category: product.category,
-          categorySlug:
-            product.categorySlug ||
-            product.category?.slug ||
-            product.category?.name?.toLowerCase().replace(/\s+/g, '-'),
-          slug: product.slug,
-          brand: product.brand,
-          description: product.description,
-        })
-
-        persistFavorites()
-        updateProductsFavoritesState()
-        window.dispatchEvent(new CustomEvent('favorites-updated'))
-      }
-      return true
-    } catch (error) {
-      console.error('Ошибка добавления в избранное:', error)
-      $notify.error('Ошибка добавления в избранное')
-      return false
-    }
-  }
-
-  async function removeFromFavorites(productId) {
-    try {
-      favoritesState.items = favoritesState.items.filter((id) => id !== productId)
-      favoritesState.products = favoritesState.products.filter(
-        (p) => p.id !== productId && p._id !== productId
-      )
-
-      persistFavorites()
-      updateProductsFavoritesState()
-      window.dispatchEvent(new CustomEvent('favorites-updated'))
-      return true
-    } catch (error) {
-      console.error('Ошибка удаления из избранного:', error)
-      $notify.error('Ошибка удаления из избранного')
-      return false
-    }
-  }
-
-  function isFavorite(productId) {
-    return favoritesState.items.includes(productId)
-  }
-
-  async function toggleFavorite(productOrId) {
-    const isObject = productOrId && typeof productOrId === 'object'
-    const id = isObject ? (productOrId.id || productOrId._id) : productOrId
-
-    if (!id) return
-
-    if (favorites.isFavorite(id)) {
-      favorites.removeFromFavorites(id)
-      return
-    }
-
-    if (!isObject) {
-      console.warn('[useAppState] toggleFavorite: для добавления нужен объект товара')
-      return
-    }
-
-    return addToFavorites(productOrId)
-  }
-
-  function clearAllFavorites() {
-    favoritesState.items = []
-    favoritesState.products = []
-    if (import.meta.client) {
-      localStorage.removeItem('favoriteProducts')
-      localStorage.removeItem('userFavorites')
-    }
+    loadFavorites: async () => favorites.favoriteProducts.value,
+    addToFavorites: favorites.addToFavorites,
+    removeFromFavorites: favorites.removeFromFavorites,
+    isFavorite: favorites.isFavorite,
+    toggleFavorite: favorites.toggleFavorite,
+    clearAllFavorites: favorites.clearAllFavorites,
   }
 
   // ─── Поиск ───────────────────────────────────────────────
@@ -291,7 +180,10 @@ function createAppState() {
         break
       case 'ArrowUp':
         event.preventDefault()
-        activeSuggestionIndex.value = Math.max(activeSuggestionIndex.value - 1, -1)
+        activeSuggestionIndex.value = Math.max(
+          activeSuggestionIndex.value - 1,
+          -1
+        )
         break
       case 'Enter':
         event.preventDefault()
@@ -319,65 +211,14 @@ function createAppState() {
     }).format(price)
   }
 
-  // ─── Auth ────────────────────────────────────────────────
+  // ─── Auth: делегация, без дублирования ────────────────────
+  // Избранное — локальные данные устройства: при выходе НЕ очищаем.
   async function logout() {
-    try {
-      await $fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (auth.updateAuthState) {
-        auth.updateAuthState(null)
-      } else {
-        auth.user.value = null
-      }
-      clearAllFavorites()
-
-      if (import.meta.client) {
-        localStorage.removeItem('user')
-        sessionStorage.removeItem('user')
-        localStorage.removeItem('auth-token')
-        localStorage.removeItem('userFavorites')
-
-        document.cookie.split(';').forEach((cookie) => {
-          const eqPos = cookie.indexOf('=')
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-          const domain =
-            location.hostname === 'localhost'
-              ? ''
-              : '; domain=.' + location.hostname.split('.').slice(-2).join('.')
-          document.cookie =
-            name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/' + domain
-        })
-      }
-
-      return { success: true }
-    } catch (error) {
-      console.error('❌ Ошибка выхода:', error)
-      if (auth.updateAuthState) {
-        auth.updateAuthState(null)
-      } else {
-        auth.user.value = null
-      }
-      clearAllFavorites()
-      return { success: false, error: error.message }
-    }
+    return auth.logout()
   }
 
   function forceClearAuthState() {
-    if (auth.updateAuthState) {
-      auth.updateAuthState(null)
-    } else {
-      auth.user.value = null
-    }
-    clearAllFavorites()
-
-    if (import.meta.client) {
-      localStorage.removeItem('user')
-      localStorage.removeItem('userFavorites')
-      sessionStorage.removeItem('user')
-    }
+    auth.resetAuth()
   }
 
   // ─── Скролл ──────────────────────────────────────────────
@@ -420,31 +261,6 @@ function createAppState() {
     }
   })
 
-  watch(
-    () => auth.isAuthenticated.value,
-    (isAuthenticated) => {
-      if (isAuthenticated) {
-        loadFavorites()
-      } else {
-        clearAllFavorites()
-      }
-    }
-  )
-
-  if (import.meta.client) {
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'userFavorites' && e.newValue) {
-        try {
-          favoritesState.items = JSON.parse(e.newValue)
-          loadFavorites()
-          updateProductsFavoritesState()
-        } catch (error) {
-          console.error('Ошибка синхронизации избранного:', error)
-        }
-      }
-    })
-  }
-
   // ─── Инициализация ───────────────────────────────────────
   async function initializeApp() {
     try {
@@ -453,7 +269,6 @@ function createAppState() {
       }
 
       await auth.checkAuth()
-      await loadFavorites()
       filters.resetFilters()
     } catch (err) {
       products.error.value = err.message
@@ -473,29 +288,15 @@ function createAppState() {
     hideSuggestions()
     filters.resetFilters()
     forceClearAuthState()
-    clearAllFavorites()
   }
 
   // ─── Публичный API ───────────────────────────────────────
   return {
     ...products,
     ...filters,
-    ...notifications,
     ...auth,
 
-    favorites: {
-      items: computed(() => favoritesState.items),
-      products: computed(() => favoritesState.products),
-      loading: computed(() => favoritesState.loading),
-      favoritesCount: computed(() => favoritesState.products.length),
-
-      loadFavorites,
-      addToFavorites,
-      removeFromFavorites,
-      isFavorite,
-      toggleFavorite,
-      clearAllFavorites,
-    },
+    favorites: favoritesApi,
 
     search: {
       query: searchQuery,

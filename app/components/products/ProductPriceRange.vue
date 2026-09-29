@@ -579,11 +579,11 @@ defineExpose({ resetPriceRange })
 /* Темная тема */
 @media (prefers-color-scheme: dark) {
   .slider-track {
-    background: hsl(var(--b3));
+    background: var(--color-base-300);
   }
   
   .thumb-indicator {
-    border-color: hsl(var(--b1));
+    border-color: var(--color-base-100);
   }
 }
 </style>

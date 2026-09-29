@@ -63,6 +63,15 @@
 </template>
 
 <script setup>
+// ============================================
+// Компонент: AdminProducts
+// Страница управления товарами.
+// Удаление: один confirm здесь; результат запроса уважается —
+// success-тост только при реальном удалении (useProducts сам
+// показывает ошибку с текстом от сервера).
+// Перезагрузка списка после добавления/редактирования выполняет
+// модалка — здесь дублируемый loadProducts убран.
+// ============================================
 import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 import ScrollToTop from '~/components/ScrollToTop.vue'
@@ -123,7 +132,7 @@ const processedProducts = computed(() => {
 
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    result = result.filter(p => 
+    result = result.filter(p =>
       p.name?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q) ||
       p.categories?.some(c => c.toLowerCase().includes(q))
@@ -131,7 +140,7 @@ const processedProducts = computed(() => {
   }
 
   if (selectedCategories.value.length > 0) {
-    result = result.filter(p => 
+    result = result.filter(p =>
       p.categories?.some(c => selectedCategories.value.includes(c))
     )
   }
@@ -196,12 +205,10 @@ const handleEdit = (product) => {
 
 const handleDelete = async (product) => {
   if (!confirm(`Удалить "${product.name}"?`)) return
-  try {
-    await deleteProduct(product.id)
-    notify.success(`"${product.name}" удалён`)
-  } catch (e) {
-    notify.error('Ошибка удаления')
-  }
+  // useProducts.deleteProduct сам показывает ошибку с текстом от сервера
+  // (в т.ч. «Требуется авторизация» при мёртвой сессии) и возвращает boolean
+  const ok = await deleteProduct(product.id)
+  if (ok) notify.success(`"${product.name}" удалён`)
 }
 
 const handleSort = (field) => {
@@ -230,16 +237,16 @@ const clearCategories = () => {
   selectedCategories.value = []
 }
 
-const handleProductAdded = async (product) => {
+const handleProductAdded = (product) => {
+  // Список уже перезагружен модалкой — только закрываем и уведомляем
   showAddModal.value = false
-  await loadProducts(true)
   notify.success(`"${product.name}" добавлен`)
 }
 
-const handleProductUpdated = async (product) => {
+const handleProductUpdated = (product) => {
+  // Список уже перезагружен модалкой
   showEditModal.value = false
   currentProduct.value = null
-  await loadProducts(true)
   notify.success(`"${product.name}" обновлён`)
 }
 </script>

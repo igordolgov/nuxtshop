@@ -200,7 +200,9 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          innerHTML: `(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          // Тема до первой отрисовки. Только валидные имена тем:
+          // старый мусор ('light'/'dark') мигрирует на тему по настройке ОС.
+          innerHTML: `(function(){try{var t=localStorage.getItem('theme');if(t!=='corporate'&&t!=='business'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'business':'corporate';localStorage.setItem('theme',t);}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
           type: 'text/javascript',
           tagPosition: 'head',
         },

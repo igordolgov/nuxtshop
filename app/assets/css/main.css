@@ -7,9 +7,11 @@
 
 /* ─── Базовая тема ───────────────────────────────────────────── */
 
+/* color-scheme для браузерных контролов (скроллбары, инпуты, autofill).
+    Инлайн-скрипт в <head> гарантирует, что data-theme — всегда
+   'corporate' или 'business', поэтому правила ниже покрывают всё. */
 :root {
-  /* браузерные контролы (скроллбары, инпуты, autofill) */
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 [data-theme="corporate"] {
@@ -25,6 +27,10 @@
     background-color: #1C96E1;
     border-color: #1C96E1;
   }
+}
+
+[data-theme="business"] {
+  color-scheme: dark;
 }
 
 /* ─── Layout-хаки ────────────────────────────────────────────── */
@@ -60,13 +66,15 @@ body {
 /* ─── Анимации ───────────────────────────────────────────────── */
 
 @layer components {
-  /* Скелетон загрузки */
+  /* Скелетон загрузки.
+     ВАЖНО: daisyUI 5 экспортирует --color-base-* как готовые цвета
+     (oklch), а не каналы — rgb()/oklch() обёртки здесь не нужны. */
   .skeleton {
     background: linear-gradient(
       90deg,
-      oklch(var(--b3)) 0%,
-      oklch(var(--b2)) 50%,
-      oklch(var(--b3)) 100%
+      var(--color-base-300) 0%,
+      var(--color-base-200) 50%,
+      var(--color-base-300) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
