@@ -54,23 +54,11 @@ export default defineNuxtConfig({
       gzip: true,
     },
     prerender: {
-      crawlLinks: true,
-      routes: ['/'],
-      ignore: ['/admin', '/manager'],
+      crawlLinks: false,
+      routes: ['/', '/about', '/contacts', '/news', '/offline'],
     },
     routeRules: {
-      '/_nuxt/**': {
-        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
-      },
-      '/images/**': {
-        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
-      },
-      '/product/**': {
-        swr: 3600,
-        headers: {
-          'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-        },
-      },
+      '/product/**': { swr: 3600 },
     },
   },
 

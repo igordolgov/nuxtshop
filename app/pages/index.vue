@@ -369,8 +369,7 @@ watch(showMobileFilters, updateBodyScroll)
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  /* contain: layout убран — он ломает position: fixed
-     у MobileNavFooter и MobileFiltersPanel, которые внутри */
+
 }
 
 .header-area {

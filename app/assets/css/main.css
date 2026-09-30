@@ -1,8 +1,10 @@
 /* app/assets/css/main.css */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "daisyui" {
-  themes: corporate --default, business --prefersdark;
+  themes:
+    corporate --default,
+    business --prefersdark;
 }
 
 /* ─── Базовая тема ───────────────────────────────────────────── */
@@ -14,7 +16,7 @@
   color-scheme: light dark;
 }
 
-[data-theme="corporate"] {
+[data-theme='corporate'] {
   color-scheme: light;
 
   .badge,
@@ -24,12 +26,12 @@
   }
 
   .my-btn:hover {
-    background-color: #1C96E1;
-    border-color: #1C96E1;
+    background-color: #1c96e1;
+    border-color: #1c96e1;
   }
 }
 
-[data-theme="business"] {
+[data-theme='business'] {
   color-scheme: dark;
 }
 
@@ -67,7 +69,7 @@ body {
 
 @layer components {
   /* Скелетон загрузки.
-     ВАЖНО: daisyUI 5 экспортирует --color-base-* как готовые цвета
+      ВАЖНО: daisyUI 5 экспортирует --color-base-* как готовые цвета
      (oklch), а не каналы — rgb()/oklch() обёртки здесь не нужны. */
   .skeleton {
     background: linear-gradient(
@@ -82,7 +84,9 @@ body {
   }
 
   .product-card {
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition:
+      transform 0.2s ease-out,
+      box-shadow 0.2s ease-out;
   }
   .product-card:hover {
     transform: translateY(-4px);
@@ -105,7 +109,9 @@ body {
   .reveal {
     opacity: 0;
     transform: translateY(16px);
-    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    transition:
+      opacity 0.5s ease-out,
+      transform 0.5s ease-out;
   }
   .reveal.visible {
     opacity: 1;
@@ -120,13 +126,22 @@ body {
 /* ─── Keyframes (вне @layer, чтобы не участвовали в каскаде) ─── */
 
 @keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes cartBounce {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.3); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
 }
 
 /* ─── Vue transitions ────────────────────────────────────────── */

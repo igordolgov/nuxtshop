@@ -4,9 +4,10 @@
 // Сервер: SSR-проверка по кукам (роуты не кэшируются).
 // Клиент: проверка через общий стейт useAuth.
 // ============================================
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware(async () => {
   // ─── Сервер ───────────────────────────────────────────────
   if (import.meta.server) {
+    // $fetch при SSR не пересылает куки автоматически — делаем это явно
     const headers = useRequestHeaders(['cookie'])
     try {
       const data = await $fetch('/api/auth/user', { headers })
