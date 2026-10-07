@@ -22,8 +22,8 @@
     "@tailwindcss/vite": "^4.3.3",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^15.0.0",
-    "daisyui": "^5.7.46",
-    "idb": "^8.0.3",
+    "daisyui": "^5.7.47",
+    "idb": "^8.0.4",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -32,19 +32,19 @@
     "@markuplint/vue-parser": "^5.0.1",
     "@markuplint/vue-spec": "^5.0.1",
     "@pinia/nuxt": "^1.0.2",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "cross-env": "^10.1.0",
     "h3": "^1.15.11",
-    "knip": "^6.38.0",
+    "knip": "^6.40.0",
     "markuplint": "^5.0.1",
-    "nuxt": "^4.5.2",
-    "oxfmt": "^0.71.0",
-    "oxlint": "^1.86.0",
+    "nuxt": "4.5.2",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
     "pinia": "^4.0.3",
     "pug": "^3.0.4",
     "vite-plugin-remove-console": "^2.2.0",
     "vue": "^3.5.43",
-    "wrangler": "^4.143.1"
+    "wrangler": "^4.148.0"
   },
   "packageManager": "pnpm@12.6.0"
 }

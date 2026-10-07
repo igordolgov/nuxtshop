@@ -1,0 +1,29 @@
+/* assets/css/scroll-indicator.css */
+
+/* СКРЫТИЕ СТАНДАРТНЫХ СКРОЛЛБАРОВ ТОЛЬКО НА МОБИЛЬНЫХ */
+@media (max-width: 768px) {
+  .products-container.mobile,
+  .mobile-products-container {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .products-container.mobile::-webkit-scrollbar,
+  .mobile-products-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Улучшение скролла на iOS */
+  .mobile-products-container,
+  .products-container.mobile {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Скрываем старый кастомный скроллбар */
+.ozon-scroll-indicator {
+  display: none !important;
+}

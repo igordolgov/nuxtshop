@@ -44,8 +44,10 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0'
   - oxfmt@0.70.0 || 0.71.0
   - oxlint@1.85.0 || 1.86.0
-  - wrangler@4.143.0 || 4.143.1
-  - miniflare@5.20260926.1-alpha
+  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0
+  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha
+  - daisyui@5.7.47
+  - knip@6.40.0
 peerDependencyRules:
   allowedVersions:
     typescript: "6"

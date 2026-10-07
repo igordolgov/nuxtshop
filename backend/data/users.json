@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "Администратор",
+    "email": "admin@example.com",
+    "password": "$2a$12$DL3ssxiG5zdhZg7UTCg2Qen3Bk86TJmm.QHeJkYeR/X4q0c.GdQcq",
+    "role": "admin",
+    "isActive": true,
+    "createdAt": "2025-11-03T15:49:42.412Z",
+    "lastLogin": null
+  }
+]

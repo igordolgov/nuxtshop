@@ -1,0 +1,1283 @@
+===== server/api/admin/stats.get.js =====
+// server/api/admin/stats.get.js
+import { readUsers, stripPassword } from '../../lib/userHelpers'
+import { readProducts } from '../../lib/productHelpers'
+import { requireAdmin } from '../../utils/auth'
+import { adminActionLog } from '../../lib/logger'
+
+export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
+
+  const users = await readUsers(event)
+  const products = await readProducts(event)
+
+  const now = new Date()
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  const userStats = {
+    total: users.length,
+    admins: users.filter((u) => u.role === 'admin').length,
+    managers: users.filter((u) => u.role === 'manager').length,
+    users: users.filter((u) => u.role === 'user').length,
+    newToday: users.filter((u) => new Date(u.createdAt) > dayAgo).length,
+    newWeek: users.filter((u) => new Date(u.createdAt) > weekAgo).length,
+    newMonth: users.filter((u) => new Date(u.createdAt) > monthAgo).length,
+    active: users.filter((u) => u.lastLogin && new Date(u.lastLogin) > weekAgo).length,
+  }
+
+  // Заказы не хранятся на сервере — когда появится БД, заменить на реальные данные
+  const orderStats = {
+    total: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    cancelled: 0,
+    totalRevenue: 0,
+    weekRevenue: 0,
+  }
+
+  const productStats = {
+    total: products.length,
+    inStock: products.filter((p) => p.inStock).length,
+    outOfStock: products.filter((p) => !p.inStock).length,
+  }
+
+  const adminActionsCount = adminActionLog.count((l) => new Date(l.timestamp) > weekAgo)
+
+  const recentUsers = [...users]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5)
+    .map(stripPassword)
+
+  return {
+    success: true,
+    timestamp: now.toISOString(),
+    stats: {
+      users: userStats,
+      orders: orderStats,
+      products: productStats,
+      adminActions: adminActionsCount,
+    },
+    recentUsers,
+  }
+})
+===== server/api/admin/users.get.js =====
+// server/api/admin/users.get.js
+import { readUsers, stripPassword } from '../../lib/userHelpers'
+import { requireAdmin } from '../../utils/auth'
+import { adminAccessLog } from '../../lib/logger'
+
+export default defineEventHandler(async (event) => {
+  try {
+    const adminUser = await requireAdmin(event)
+
+    const query = getQuery(event)
+    const page = parseInt(query.page) || 1
+    const limit = parseInt(query.limit) || 50
+    const role = query.role
+    const search = query.search?.toLowerCase()
+    const sortBy = query.sortBy || 'createdAt'
+    const sortOrder = query.sortOrder || 'desc'
+
+    const users = await readUsers(event)
+
+    let filteredUsers = [...users]
+
+    if (role && ['admin', 'manager', 'user'].includes(role)) {
+      filteredUsers = filteredUsers.filter((u) => u.role === role)
+    }
+    if (search) {
+      filteredUsers = filteredUsers.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(search) ||
+          u.email?.toLowerCase().includes(search) ||
+          u.phone?.includes(search),
+      )
+    }
+
+    filteredUsers.sort((a, b) => {
+      let aVal = a[sortBy]
+      let bVal = b[sortBy]
+      if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
+        aVal = new Date(aVal || 0).getTime()
+        bVal = new Date(bVal || 0).getTime()
+      }
+      if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
+      return aVal < bVal ? 1 : -1
+    })
+
+    const total = filteredUsers.length
+    const totalPages = Math.ceil(total / limit)
+    const offset = (page - 1) * limit
+    const safeUsers = filteredUsers.slice(offset, offset + limit).map((u) => ({
+      ...stripPassword(u),
+      hasPassword: !!u.password,
+    }))
+
+    adminAccessLog.add({
+      admin: { id: adminUser.id, email: adminUser.email },
+      action: 'VIEW_USERS_LIST',
+    })
+
+    return {
+      success: true,
+      users: safeUsers,
+      pagination: { page, limit, total, totalPages, hasMore: page < totalPages },
+      filters: { role: role || null, search: search || null },
+    }
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Ошибка получения пользователей:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Ошибка сервера' })
+  }
+})
+===== server/api/admin/users/[id].delete.js =====
+// server/api/admin/users/[id].delete.js
+import { readUsers, writeUsers, stripPassword } from '../../../lib/userHelpers'
+import { requireAdmin } from '../../../utils/auth'
+import { adminActionLog } from '../../../lib/logger'
+
+export default defineEventHandler(async (event) => {
+  const adminUser = await requireAdmin(event)
+
+  const userId = getRouterParam(event, 'id')
+  if (!userId) {
+    throw createError({ statusCode: 400, statusMessage: 'ID пользователя не указан' })
+  }
+
+  const users = await readUsers(event)
+  const userIndex = users.findIndex((u) => u.id === userId)
+  if (userIndex === -1) {
+    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+  }
+
+  const targetUser = users[userIndex]
+
+  if (targetUser.id === adminUser.id) {
+    throw createError({ statusCode: 400, statusMessage: 'Нельзя удалить свою учётную запись' })
+  }
+
+  const adminCount = users.filter((u) => u.role === 'admin').length
+  if (targetUser.role === 'admin' && adminCount <= 1) {
+    throw createError({ statusCode: 400, statusMessage: 'Нельзя удалить последнего администратора' })
+  }
+
+  users.splice(userIndex, 1)
+  await writeUsers(event, users)
+
+  adminActionLog.add({
+    action: 'USER_DELETED',
+    admin: { id: adminUser.id, email: adminUser.email },
+    deletedUser: { id: targetUser.id, email: targetUser.email, role: targetUser.role },
+  })
+
+  return {
+    success: true,
+    message: `Пользователь "${targetUser.name}" (${targetUser.email}) удалён`,
+    deletedUser: stripPassword(targetUser),
+  }
+})
+===== server/api/admin/users/[id]/role.put.js =====
+// server/api/admin/users/[id]/role.put.js
+import { readUsers, writeUsers, stripPassword } from '../../../../lib/userHelpers'
+import { requireAdmin } from '../../../../utils/auth'
+import { adminActionLog } from '../../../../lib/logger'
+
+export default defineEventHandler(async (event) => {
+  const adminUser = await requireAdmin(event)
+
+  const userId = getRouterParam(event, 'id')
+  const body = await readBody(event)
+
+  if (!body?.role || !['user', 'manager', 'admin'].includes(body.role)) {
+    throw createError({ statusCode: 400, statusMessage: 'Недопустимая роль' })
+  }
+
+  const users = await readUsers(event)
+  const userIndex = users.findIndex((u) => u.id === userId)
+  if (userIndex === -1) {
+    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+  }
+
+  const targetUser = users[userIndex]
+  if (targetUser.role === 'admin' && body.role !== 'admin') {
+    const adminCount = users.filter((u) => u.role === 'admin').length
+    if (adminCount <= 1) {
+      throw createError({ statusCode: 400, statusMessage: 'Нельзя снять роль с последнего администратора' })
+    }
+  }
+
+  const oldRole = targetUser.role
+  users[userIndex] = { ...targetUser, role: body.role, updatedAt: new Date().toISOString() }
+  await writeUsers(event, users)
+
+  adminActionLog.add({
+    action: 'USER_ROLE_CHANGED',
+    admin: { id: adminUser.id, email: adminUser.email },
+    targetUser: { id: targetUser.id, email: targetUser.email },
+    roleChange: { from: oldRole, to: body.role },
+  })
+
+  return { success: true, user: stripPassword(users[userIndex]), message: 'Роль обновлена' }
+})
+===== server/api/auth/current-user.get.js =====
+// server/api/auth/current-user.get.js
+import { getSessionUser } from '../../utils/auth'
+import { stripPassword } from '../../lib/userHelpers'
+
+export default defineEventHandler(async (event) => {
+  const user = await getSessionUser(event)
+
+  // Не кидаем 401 — эндпоинт вызывается на каждой загрузке страницы,
+  // отсутствие сессии это нормальное состояние, а не ошибка
+  return { success: true, user: user ? stripPassword(user) : null }
+})
+===== server/api/auth/emergency-logout.post.js =====
+// server/api/auth/emergency-logout.post.js
+import { destroySession } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  await destroySession(event)
+  return { success: true, message: 'Сессия завершена' }
+})
+===== server/api/auth/login.post.js =====
+
+// server/api/auth/login.post.js
+import { readUsers, writeUsers, stripPassword } from '../../lib/userHelpers'
+import { comparePassword } from '../../lib/password'
+import { createSession } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const email = body.email?.toLowerCase().trim() || ''
+  const password = body.password || ''
+
+  if (!email || !password) {
+    throw createError({ statusCode: 400, statusMessage: 'Email и пароль обязательны' })
+  }
+
+  const users = await readUsers(event)
+  const user = users.find((u) => u.email?.toLowerCase() === email)
+
+  // Одинаковый ответ для «нет пользователя» и «неверный пароль» — не раскрываем email'ы
+  if (!user || !(await comparePassword(password, user.password ?? ''))) {
+    throw createError({ statusCode: 401, statusMessage: 'Неверный email или пароль' })
+  }
+
+  user.lastLogin = new Date().toISOString()
+  user.updatedAt = user.lastLogin
+  await writeUsers(event, users)
+
+  await createSession(event, user.id)
+  return { success: true, user: stripPassword(user), message: 'Вход выполнен успешно' }
+})
+===== server/api/auth/logout.post.js =====
+// server/api/auth/logout.post.js
+import { destroySession } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  await destroySession(event)
+  return { success: true, message: 'Выход выполнен успешно' }
+})
+===== server/api/auth/profile.put.js =====
+// server/api/auth/profile.put.js
+import { readUsers, writeUsers, stripPassword } from '../../lib/userHelpers'
+import { requireUser } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  const current = await requireUser(event)
+  const body = await readBody(event)
+
+  const users = await readUsers(event)
+  const user = users.find((u) => u.id === current.id)
+  if (!user) throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+
+  if (body.name !== undefined) {
+    const name = String(body.name).trim()
+    if (name.length < 2 || name.length > 50) {
+      throw createError({ statusCode: 400, statusMessage: 'Имя должно содержать от 2 до 50 символов' })
+    }
+    user.name = name
+  }
+  if (body.phone !== undefined) user.phone = String(body.phone).trim()
+  if (body.address !== undefined) user.address = String(body.address).trim()
+  user.updatedAt = new Date().toISOString()
+
+  await writeUsers(event, users)
+  return { success: true, user: stripPassword(user), message: 'Профиль обновлён' }
+})
+===== server/api/auth/register.post.js =====
+// server/api/auth/register.post.js
+
+import { createUser, getUserByEmail, stripPassword } from '../../lib/userHelpers'
+import { hashPassword } from '../../lib/password'
+import { createSession } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const email = body.email?.toLowerCase().trim() || ''
+  const name = body.name?.trim() || ''
+  const password = body.password || ''
+
+  if (!email || !password || !name) {
+    throw createError({ statusCode: 400, statusMessage: 'Все поля обязательны для заполнения' })
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createError({ statusCode: 400, statusMessage: 'Некорректный формат email' })
+  }
+  if (name.length < 2 || name.length > 50) {
+    throw createError({ statusCode: 400, statusMessage: 'Имя должно содержать от 2 до 50 символов' })
+  }
+  if (password.length < 6 || password.length > 100) {
+    throw createError({ statusCode: 400, statusMessage: 'Пароль должен содержать от 6 до 100 символов' })
+  }
+  if (await getUserByEmail(event, email)) {
+    throw createError({ statusCode: 400, statusMessage: 'Пользователь с таким email уже существует' })
+  }
+
+  const user = await createUser(event, { name, email, password: await hashPassword(password) })
+  await createSession(event, user.id)
+
+  return { success: true, user: stripPassword(user), message: 'Регистрация успешна' }
+})
+===== server/api/auth/user.get.js =====
+// server/api/auth/user.get.js
+import { getSessionUser } from '../../utils/auth'
+import { stripPassword } from '../../lib/userHelpers'
+
+export default defineEventHandler(async (event) => {
+  const user = await getSessionUser(event)
+  return { success: true, user: user ? stripPassword(user) : null }
+})
+===== server/api/products/[id].delete.js =====
+// server/api/products/[id].delete.js
+import { readProducts, writeProducts } from '../../lib/productHelpers'
+import { requireAdmin } from '../../utils/auth'
+
+export default defineEventHandler(async (event) => {
+  try {
+    await requireAdmin(event)
+
+    const id = getRouterParam(event, 'id')
+    if (!id) {
+      throw createError({ statusCode: 400, statusMessage: 'ID товара не указан', message: 'ID товара не указан' })
+    }
+
+    const products = await readProducts(event)
+    const index = products.findIndex((p) => String(p.id) === String(id))
+    if (index === -1) {
+      throw createError({ statusCode: 404, statusMessage: 'Товар не найден', message: 'Товар не найден' })
+    }
+
+    const deleted = products[index]
+    products.splice(index, 1)
+    await writeProducts(event, products)
+
+    // Картинки data-URI живут внутри JSON товара — отдельная очистка файлов не нужна
+    return { success: true, message: `Товар "${deleted.name}" удалён`, deletedId: deleted.id }
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Ошибка удаления товара:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось удалить товар', message: 'Не удалось удалить товар' })
+  }
+})
+===== server/api/products/[id].put.js =====
+// server/api/products/[id].put.js
+import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
+import { requireAdmin } from '../../utils/auth'
+import { processImage, processGallery } from '../../lib/imageStorage'
+
+export default defineEventHandler(async (event) => {
+  try {
+    await requireAdmin(event)
+
+    const id = getRouterParam(event, 'id')
+    if (!id) {
+      throw createError({ statusCode: 400, statusMessage: 'ID товара не указан', message: 'ID товара не указан' })
+    }
+
+    const body = await readBody(event)
+
+    const products = await readProducts(event)
+    const index = products.findIndex((p) => String(p.id) === String(id))
+    if (index === -1) {
+      throw createError({ statusCode: 404, statusMessage: 'Товар не найден', message: 'Товар не найден' })
+    }
+
+    const existing = products[index]
+
+    // Slug: если изменилось имя — генерируем заново, иначе оставляем
+    let slug = existing.slug
+    if (body.name && body.name.trim() !== existing.name) {
+      slug = generateUniqueSlug(slugify(body.name), products, existing.id)
+    }
+
+    let imageUrl = existing.image
+    if (body.image?.startsWith('data:image/')) {
+      imageUrl = await processImage(body.image, 'main')
+    } else if (body.image) {
+      imageUrl = body.image
+    }
+
+    const gallery =
+      body.gallery !== undefined ? await processGallery(body.gallery) : existing.gallery
+
+    const stockQuantity =
+      body.stockQuantity !== undefined ? parseInt(body.stockQuantity) || 0 : existing.stockQuantity
+
+    let categories = existing.categories
+    if (Array.isArray(body.categories) && body.categories.length > 0) {
+      categories = body.categories
+    } else if (body.categoriesInput) {
+      categories = body.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
+    }
+
+    const updated = {
+      ...existing,
+      name: body.name?.trim() ?? existing.name,
+      description: body.description ?? existing.description,
+      price: body.price !== undefined ? parseFloat(body.price) : existing.price,
+      image: imageUrl,
+      gallery,
+      categories,
+      inStock: stockQuantity > 0,
+      stockQuantity,
+      characteristics: body.characteristics ?? existing.characteristics,
+      slug,
+      updatedAt: new Date().toISOString(),
+    }
+
+    products[index] = updated
+    await writeProducts(event, products)
+
+    return { success: true, product: updated, message: 'Товар обновлён' }
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Ошибка обновления товара:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось обновить товар', message: 'Не удалось обновить товар' })
+  }
+})
+===== server/api/products/index.get.js =====
+// server/api/products/index.get.js
+import { readProducts } from '../../lib/productHelpers'
+
+export default defineEventHandler(async (event) => {
+  try {
+    const products = await readProducts(event)
+    const query = getQuery(event)
+
+    let list = products
+
+    if (query.category) {
+      list = list.filter((p) => p.categories?.includes(query.category))
+    }
+    if (query.inStock === 'true') {
+      list = list.filter((p) => p.inStock)
+    }
+    if (query.minPrice) {
+      list = list.filter((p) => p.price >= parseFloat(query.minPrice))
+    }
+    if (query.maxPrice) {
+      list = list.filter((p) => p.price <= parseFloat(query.maxPrice))
+    }
+    if (query.search) {
+      const s = query.search.toLowerCase()
+      list = list.filter(
+        (p) => p.name.toLowerCase().includes(s) || p.description?.toLowerCase().includes(s),
+      )
+    }
+
+    switch (query.sort) {
+      case 'price-asc':
+        list.sort((a, b) => a.price - b.price)
+        break
+      case 'price-desc':
+        list.sort((a, b) => b.price - a.price)
+        break
+      case 'name':
+        list.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+        break
+      case 'newest':
+        list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        break
+    }
+
+    const page = parseInt(query.page) || 1
+    const limit = parseInt(query.limit) || 0
+
+    if (limit > 0) {
+      const start = (page - 1) * limit
+      return {
+        products: list.slice(start, start + limit),
+        pagination: {
+          total: list.length,
+          page,
+          limit,
+          totalPages: Math.ceil(list.length / limit),
+        },
+      }
+    }
+
+    return list
+  } catch (error) {
+    console.error('Ошибка получения товаров:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось загрузить товары' })
+  }
+})
+===== server/api/products/index.post.js =====
+// server/api/products/index.post.js
+import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
+import { requireAdmin } from '../../utils/auth'
+import { processImage, processGallery } from '../../lib/imageStorage'
+
+export default defineEventHandler(async (event) => {
+  try {
+    await requireAdmin(event)
+
+    const body = await readBody(event)
+    if (!body?.name?.trim()) {
+      throw createError({ statusCode: 400, statusMessage: 'Название товара обязательно' })
+    }
+    if (!body.price || Number.isNaN(parseFloat(body.price))) {
+      throw createError({ statusCode: 400, statusMessage: 'Цена товара обязательна' })
+    }
+
+    const products = await readProducts(event)
+
+    const newId = products.length > 0 ? Math.max(...products.map((p) => Number(p.id) || 0)) + 1 : 1
+    const slug = generateUniqueSlug(slugify(body.name) || `product-${newId}`, products)
+
+    let imageUrl = body.image || '/images/products/placeholder.webp'
+    if (body.image?.startsWith('data:image/')) {
+      imageUrl = await processImage(body.image, 'main')
+    }
+    const gallery = await processGallery(body.gallery)
+
+    const stockQuantity = parseInt(body.stockQuantity) || 0
+    let categories = ['Другое']
+    if (Array.isArray(body.categories) && body.categories.length > 0) {
+      categories = body.categories
+    } else if (body.categoriesInput) {
+      categories = body.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
+    }
+
+    const now = new Date().toISOString()
+    const newProduct = {
+      id: String(newId),
+      slug,
+      name: body.name.trim(),
+      description: body.description || '',
+      price: parseFloat(body.price),
+      image: imageUrl,
+      categories,
+      gallery,
+      inStock: stockQuantity > 0,
+      stockQuantity,
+      characteristics: body.characteristics || {},
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    products.push(newProduct)
+    await writeProducts(event, products)
+
+    return { success: true, product: newProduct, message: 'Товар успешно добавлен' }
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Ошибка добавления товара:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось добавить товар' })
+  }
+})
+===== server/api/product/[slug].js =====
+// server/api/product/[slug].js
+import { getProductBySlug, getSimilarProducts } from '../../lib/productHelpers'
+
+export default defineEventHandler(async (event) => {
+  try {
+    const slugOrId = getRouterParam(event, 'slug')
+    if (!slugOrId) {
+      throw createError({ statusCode: 400, statusMessage: 'Не указан идентификатор товара' })
+    }
+
+    const product = await getProductBySlug(event, slugOrId)
+    if (!product) {
+      throw createError({ statusCode: 404, statusMessage: 'Товар не найден' })
+    }
+
+    const similarProducts = await getSimilarProducts(event, product, 4)
+
+    return { success: true, product, similarProducts }
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Ошибка получения товара:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Не удалось загрузить товар' })
+  }
+})
+===== server/lib/imageOptimizer.js =====
+// server/lib/imageOptimizer.js
+
+/**
+ * Image optimization for Cloudflare Pages
+ * 
+ * Sharp не работает на Cloudflare Pages (нет Node.js runtime).
+ * Используйте Cloudflare Image Resizing в production:
+ * https://developers.cloudflare.com/images/transform-images/
+ * 
+ * Пример URL: /cdn-cgi/image/width=400,quality=80,format=webp/path/to/image.jpg
+ */
+
+// Поддерживаемые форматы (для валидации)
+const SUPPORTED_FORMATS = ['jpeg', 'jpg', 'png', 'webp', 'gif', 'avif', 'tiff', 'heif']
+
+/**
+ * Оптимизирует и сжимает изображение
+ * На Cloudflare возвращает оригинал — используйте Image Resizing URL
+ * 
+ * @param {Buffer} imageBuffer - Буфер изображения
+ * @param {Object} options - Настройки оптимизации
+ * @returns {Promise<Buffer>} - Оптимизированный буфер
+ */
+export async function optimizeImage(imageBuffer, options = {}) {
+  if (!Buffer.isBuffer(imageBuffer) || imageBuffer.length === 0) {
+    throw new Error('Некорректный буфер изображения')
+  }
+
+  console.log('🖼️ Возвращаю оригинал. Используйте Cloudflare Image Resizing для оптимизации.')
+  return imageBuffer
+}
+
+/**
+ * Определяет оптимальный формат для изображения
+ * @param {string} mimeType - MIME тип
+ * @returns {string} - Формат для конвертации
+ */
+export function getOptimalFormat(mimeType) {
+  const formatMap = {
+    'image/jpeg': 'webp',
+    'image/jpg': 'webp',
+    'image/png': 'webp',
+    'image/webp': 'webp',
+    'image/gif': 'webp',
+    'image/avif': 'avif',
+    'image/tiff': 'webp'
+  }
+  
+  return formatMap[mimeType?.toLowerCase()] || 'webp'
+}
+
+/**
+ * Вычисляет качество на основе размера исходного изображения
+ * @param {number} originalSize - Размер в байтах
+ * @param {Object} options - Опции
+ * @returns {number} - Качество (1-100)
+ */
+export function calculateQuality(originalSize, options = {}) {
+  const { 
+    minQuality = 60, 
+    maxQuality = 90,
+    threshold1 = 500000,
+    threshold2 = 2000000,
+    threshold3 = 5000000
+  } = options
+  
+  if (originalSize <= threshold1) return maxQuality
+  if (originalSize <= threshold2) return 80
+  if (originalSize <= threshold3) return 70
+  return minQuality
+}
+
+/**
+ * Проверяет, является ли буфер валидным изображением
+ * @param {Buffer} buffer 
+ * @returns {Promise<boolean>}
+ */
+export async function isValidImage(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    return false
+  }
+
+  // Проверка по magic bytes (signature)
+  const signatures = [
+    [0xFF, 0xD8, 0xFF],           // JPEG
+    [0x89, 0x50, 0x4E, 0x47],     // PNG
+    [0x47, 0x49, 0x46, 0x38],     // GIF
+    [0x52, 0x49, 0x46, 0x46]      // WebP (RIFF)
+  ]
+
+  for (const sig of signatures) {
+    if (buffer.length >= sig.length) {
+      const matches = sig.every((byte, i) => buffer[i] === byte)
+      if (matches) return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Получает метаданные изображения
+ * @param {Buffer} buffer 
+ * @returns {Promise<Object>}
+ */
+export async function getImageMetadata(buffer) {
+  return {
+    format: null,
+    width: null,
+    height: null,
+    size: buffer.length,
+    hasAlpha: null,
+    orientation: null,
+    density: null,
+    note: 'Use Cloudflare Image Resizing for metadata extraction'
+  }
+}
+
+/**
+ * Создаёт превью изображения
+ * На Cloudflare используйте URL: /cdn-cgi/image/width=200,height=200,fit=cover/path/to/image.jpg
+ * 
+ * @param {Buffer} imageBuffer 
+ * @param {number} size - Размер превью
+ * @returns {Promise<Buffer>}
+ */
+export async function createThumbnail(imageBuffer, size = 200) {
+  return optimizeImage(imageBuffer, {
+    maxWidth: size,
+    maxHeight: size,
+    quality: 75,
+    format: 'webp'
+  })
+}
+
+/**
+ * Генерирует Cloudflare Image Resizing URL
+ * @param {string} imagePath - Путь к изображению
+ * @param {Object} options - Опции
+ * @returns {string} - URL для оптимизированного изображения
+ */
+export function getCloudflareImageUrl(imagePath, options = {}) {
+  const {
+    width = 400,
+    height,
+    quality = 80,
+    format = 'webp',
+    fit = 'cover',
+    dpr = 1
+  } = options
+
+  const params = []
+  if (width) params.push(`width=${width}`)
+  if (height) params.push(`height=${height}`)
+  params.push(`quality=${quality}`)
+  params.push(`format=${format}`)
+  params.push(`fit=${fit}`)
+  if (dpr > 1) params.push(`dpr=${dpr}`)
+
+  return `/cdn-cgi/image/${params.join(',')}${imagePath}`
+}
+===== server/lib/imageStorage.js =====
+// server/lib/imageStorage.js
+/**
+ * Хранилище картинок для Cloudflare Workers.
+ *
+ * ВАЖНО: на Workers нет fs. Временно сохраняем картинки как base64
+ * data-URI прямо в JSON товара. Это раздувает JSON, но работает без
+ * внешних сервисов.
+ *
+ * Правильное решение — Cloudflare R2. Настроить биндинг BLOB в
+ * wrangler.jsonc и заменить эту реализацию.
+ */
+
+import { optimizeImage, calculateQuality } from './imageOptimizer.js'
+
+/**
+ * Оптимизирует картинку и возвращает data-URI.
+ */
+export async function processImage(base64String, imageType = 'main') {
+  if (!base64String || !base64String.startsWith('data:image/')) {
+    return base64String
+  }
+
+  try {
+    const matches = base64String.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/)
+    if (!matches || matches.length !== 3) return base64String
+
+    const base64Data = matches[2]
+    const imageBuffer = Buffer.from(base64Data, 'base64')
+
+    console.log(`🖼️ Оптимизация ${imageType}: ${(imageBuffer.length / 1024).toFixed(1)} KB`)
+
+    const optimizedBuffer = await optimizeImage(imageBuffer, {
+      maxWidth: imageType === 'main' ? 1200 : 800,
+      maxHeight: imageType === 'main' ? 1200 : 800,
+      format: 'webp',
+      quality: typeof calculateQuality === 'function' ? calculateQuality(imageBuffer.length) : 85,
+    })
+
+    const saved = ((1 - optimizedBuffer.length / imageBuffer.length) * 100).toFixed(0)
+    console.log(`✅ Оптимизировано: ${(optimizedBuffer.length / 1024).toFixed(1)} KB (-${saved}%)`)
+
+    return `data:image/webp;base64,${optimizedBuffer.toString('base64')}`
+  } catch (error) {
+    console.error('❌ Ошибка оптимизации, используем оригинал:', error.message)
+    return base64String
+  }
+}
+
+/**
+ * Обрабатывает массив картинок галереи.
+ */
+export async function processGallery(gallery) {
+  if (!Array.isArray(gallery) || gallery.length === 0) return []
+
+  const processed = []
+  for (let i = 0; i < gallery.length; i++) {
+    const image = gallery[i]
+    if (image && image.startsWith('data:image/')) {
+      processed.push(await processImage(image, `gallery-${i}`))
+    } else if (image) {
+      processed.push(image)
+    }
+  }
+  return processed
+}
+===== server/lib/logger.js =====
+// server/lib/logger.js
+/**
+ * In-memory логгер для Cloudflare Workers.
+ *
+ * На Workers нет fs — логи хранятся в памяти изолята и дублируются в
+ * console.log (Cloudflare собирает их в дашборде: Workers → Logs).
+ *
+ * Несколько изолятов = несколько независимых логов. Для консолидации
+ * использовать Logpush или внешний сервис.
+ */
+
+const MAX_ENTRIES = 500
+
+function createLogStore(name) {
+  const entries = []
+
+  return {
+    add(entry) {
+      const record = {
+        id: Date.now() + Math.random(),
+        timestamp: new Date().toISOString(),
+        ...entry,
+      }
+      entries.unshift(record)
+      if (entries.length > MAX_ENTRIES) entries.length = MAX_ENTRIES
+
+      // Дублируем в консоль для Cloudflare Logs
+      console.log(`[${name}]`, JSON.stringify(entry))
+    },
+    getAll() {
+      return entries
+    },
+    count(filterFn) {
+      return filterFn ? entries.filter(filterFn).length : entries.length
+    },
+  }
+}
+
+export const registrationLog = createLogStore('registration')
+export const logoutLog = createLogStore('logout')
+export const adminActionLog = createLogStore('admin-action')
+export const adminAccessLog = createLogStore('admin-access')
+===== server/lib/password.ts =====
+// server/lib/password.ts
+/**
+ * PBKDF2-SHA256 через WebCrypto — нативно в Workers.
+ * Формат: pbkdf2$<iterations>$<salt-b64>$<hash-b64>
+ */
+const ITERATIONS = 100_000;
+// ⚠️ Free-план (10ms CPU): если логин падает с "exceeded CPU time limit" — снизь до 20_000.
+
+const encoder = new TextEncoder();
+const toB64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+const fromB64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+async function derive(password: string, salt: Uint8Array, iterations: number) {
+  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, [
+    'deriveBits',
+  ]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: salt as BufferSource, iterations },
+    key,
+    256,
+  );
+  return new Uint8Array(bits);
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  if (!password || typeof password !== 'string') throw new Error('Пароль обязателен');
+  if (password.length < 6) throw new Error('Пароль должен содержать минимум 6 символов');
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await derive(password, salt, ITERATIONS);
+  return `pbkdf2$${ITERATIONS}$${toB64(salt)}$${toB64(hash)}`;
+}
+
+export async function comparePassword(password: string, stored: string): Promise<boolean> {
+  if (!password || !stored) return false;
+  const [algo, iterations, saltB64, hashB64] = stored.split('$');
+  if (algo !== 'pbkdf2' || !saltB64 || !hashB64) return false;
+  const expected = fromB64(hashB64);
+  const actual = await derive(password, fromB64(saltB64), Number(iterations) || ITERATIONS);
+  if (actual.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < actual.length; i++) diff |= actual[i]! ^ expected[i]!;
+  return diff === 0;
+}
+
+===== server/lib/productHelpers.ts =====
+// server/lib/productHelpers.ts
+import type { H3Event } from 'h3';
+import { kvGetJSON, kvPutJSON } from './storage';
+import productsSeed from '../data/products.json';
+
+const PRODUCTS_KEY = 'data:products';
+
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  gallery: string[];
+  categories: string[];
+  inStock: boolean;
+  stockQuantity: number;
+  characteristics: Record<string, string>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const TRANSLIT: Record<string, string> = {
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  ё: 'yo',
+  ж: 'zh',
+  з: 'z',
+  и: 'i',
+  й: 'y',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+  х: 'h',
+  ц: 'ts',
+  ч: 'ch',
+  ш: 'sh',
+  щ: 'sch',
+  ъ: '',
+  ы: 'y',
+  ь: '',
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
+};
+
+export function slugify(str: string): string {
+  if (!str) return `product-${Date.now()}`;
+  const slug = str
+    .toLowerCase()
+    .split('')
+    .map((ch) => TRANSLIT[ch] ?? ch)
+    .join('')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || `product-${Date.now()}`;
+}
+
+/** Все товары. При первом обращении заливает сид из бандла. */
+export async function readProducts(event: H3Event): Promise<Product[]> {
+  const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
+  if (stored) return stored;
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  await kvPutJSON(event, PRODUCTS_KEY, seed);
+  return seed;
+}
+
+export async function writeProducts(event: H3Event, products: Product[]) {
+  if (!Array.isArray(products)) throw new Error('Products must be an array');
+  await kvPutJSON(event, PRODUCTS_KEY, products);
+}
+
+export function generateUniqueSlug(
+  baseSlug: string,
+  existing: Product[],
+  excludeId: string | null = null,
+): string {
+  const taken = new Set(existing.filter((p) => p.id !== excludeId).map((p) => p.slug));
+  if (!taken.has(baseSlug)) return baseSlug;
+  let i = 1;
+  while (taken.has(`${baseSlug}-${i}`)) i++;
+  return `${baseSlug}-${i}`;
+}
+
+export async function getProductBySlug(event: H3Event, slugOrId: string): Promise<Product | null> {
+  const products = await readProducts(event);
+  return products.find((p) => p.slug === slugOrId || String(p.id) === slugOrId) ?? null;
+}
+
+export async function getProductById(event: H3Event, id: string): Promise<Product | null> {
+  const products = await readProducts(event);
+  return products.find((p) => String(p.id) === String(id)) ?? null;
+}
+
+export async function getSimilarProducts(
+  event: H3Event,
+  current: Product,
+  limit = 4,
+): Promise<Product[]> {
+  if (!current.categories?.length) return [];
+  const products = await readProducts(event);
+  return products
+    .filter(
+      (p) =>
+        String(p.id) !== String(current.id) &&
+        p.categories?.some((c) => current.categories.includes(c)),
+    )
+    .slice(0, limit);
+}
+
+export function validateProduct(product: Partial<Product>) {
+  const errors: string[] = [];
+  if (!product.name?.trim()) errors.push('Название обязательно');
+  if (product.price === undefined || Number.isNaN(product.price)) errors.push('Цена обязательна');
+  if ((product.price ?? 0) < 0) errors.push('Цена не может быть отрицательной');
+  return { valid: errors.length === 0, errors };
+}
+
+export function createProductObject(data: Record<string, any>): Product {
+  const now = new Date().toISOString();
+  const stockQuantity = parseInt(data.stockQuantity) || 0;
+  return {
+    id: data.id || String(Date.now()),
+    slug: data.slug || slugify(data.name),
+    name: data.name?.trim() || '',
+    description: data.description || '',
+    price: parseFloat(data.price) || 0,
+    image: data.image || '/images/products/placeholder.webp',
+    gallery: Array.isArray(data.gallery) ? data.gallery : [],
+    categories: Array.isArray(data.categories) ? data.categories : ['Другое'],
+    inStock: stockQuantity > 0,
+    stockQuantity,
+    characteristics: data.characteristics || {},
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+===== server/lib/storage.ts =====
+// server/lib/storage.ts
+/**
+ * Доступ к Workers KV через event.context.cloudflare.env.
+ * В `nuxt dev` биндингов нет — in-memory fallback.
+ */
+
+import type { H3Event } from 'h3';
+
+interface KVStore {
+  get<T>(key: string, type: 'json'): Promise<T | null>;
+  put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
+const mem = new Map<string, unknown>();
+
+function getKV(event: H3Event): KVStore | null {
+  return (event.context.cloudflare?.env as { KV?: KVStore } | undefined)?.KV ?? null;
+}
+
+export async function kvGetJSON<T>(event: H3Event, key: string): Promise<T | null> {
+  const kv = getKV(event);
+  if (kv) return kv.get<T>(key, 'json');
+  return (mem.get(key) as T) ?? null;
+}
+
+export async function kvPutJSON(event: H3Event, key: string, value: unknown, ttl?: number) {
+  const kv = getKV(event);
+  if (kv) await kv.put(key, JSON.stringify(value), ttl ? { expirationTtl: ttl } : {});
+  else mem.set(key, value);
+}
+
+export async function kvDelete(event: H3Event, key: string) {
+  const kv = getKV(event);
+  if (kv) await kv.delete(key);
+  else mem.delete(key);
+}
+
+===== server/lib/userHelpers.ts =====
+// server/lib/userHelpers.ts
+import type { H3Event } from 'h3';
+import { kvGetJSON, kvPutJSON } from './storage';
+import usersSeed from '../data/users.json';
+
+const USERS_KEY = 'data:users';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: 'user' | 'manager' | 'admin';
+  phone: string;
+  address: string;
+  avatar?: string;
+  isActive: boolean;
+  emailVerified?: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function readUsers(event: H3Event): Promise<User[]> {
+  const stored = await kvGetJSON<User[]>(event, USERS_KEY);
+  if (stored) return stored;
+  const seed = (Array.isArray(usersSeed) ? usersSeed : []) as User[];
+  await kvPutJSON(event, USERS_KEY, seed);
+  return seed;
+}
+
+export async function writeUsers(event: H3Event, users: User[]) {
+  if (!Array.isArray(users)) throw new Error('Users must be an array');
+  await kvPutJSON(event, USERS_KEY, users);
+}
+
+export function stripPassword<T extends { password?: string }>(user: T) {
+  const { password: _p, ...safe } = user;
+  return safe;
+}
+
+export async function getUserByEmail(event: H3Event, email: string): Promise<User | null> {
+  const users = await readUsers(event);
+  const e = email?.toLowerCase();
+  return users.find((u) => u.email?.toLowerCase() === e) ?? null;
+}
+
+export async function createUser(
+  event: H3Event,
+  data: { name: string; email: string; password: string },
+): Promise<User> {
+  const users = await readUsers(event);
+  if (users.some((u) => u.email?.toLowerCase() === data.email.toLowerCase())) {
+    throw new Error('Пользователь с таким email уже существует');
+  }
+  const now = new Date().toISOString();
+  const user: User = {
+    id: Date.now().toString(),
+    name: data.name,
+    email: data.email.toLowerCase(),
+    password: data.password,
+    role: 'user',
+    phone: '',
+    address: '',
+    avatar: '',
+    isActive: true,
+    emailVerified: false,
+    lastLogin: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+  users.push(user);
+  await writeUsers(event, users);
+  return user;
+}
+
+===== server/middleware/security.ts =====
+
+// server/middleware/security.ts/**
+//  * Security-заголовки для всех ответов.
+//  * CSP с 'unsafe-inline' нужен для инлайн-скрипта темы в <head> и гидрации Vue.
+//  */
+
+export default defineEventHandler((event) => {
+  setResponseHeaders(event, {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+    'Content-Security-Policy':
+      "script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'",
+  })
+})
+===== server/utils/auth.ts =====
+// server/utils/auth.ts
+import type { H3Event } from 'h3';
+import { kvGetJSON, kvPutJSON, kvDelete } from '../lib/storage';
+import { readUsers, type User } from '../lib/userHelpers';
+
+const SESSION_COOKIE = 'user_session';
+const SESSION_TTL = 60 * 60 * 24 * 7; // 7 дней
+
+function randomToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function createSession(event: H3Event, userId: string) {
+  const token = randomToken();
+  await kvPutJSON(
+    event,
+    `session:${token}`,
+    { userId, createdAt: new Date().toISOString() },
+    SESSION_TTL,
+  );
+  setCookie(event, SESSION_COOKIE, token, {
+    httpOnly: true,
+    // secure-куки браузер не ставит по http — проверяем протокол
+    // (workers.dev — https, wrangler dev — http, кука поставится)
+    secure: getRequestURL(event).protocol === 'https:',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: SESSION_TTL,
+  });
+}
+
+/** Полная запись пользователя из KV или null. Неактивные теряют доступ мгновенно. */
+export async function getSessionUser(event: H3Event): Promise<User | null> {
+  const token = getCookie(event, SESSION_COOKIE);
+  if (!token) return null;
+  const session = await kvGetJSON<{ userId: string }>(event, `session:${token}`);
+  if (!session) return null;
+  const users = await readUsers(event);
+  return users.find((u) => u.id === session.userId && u.isActive !== false) ?? null;
+}
+
+export async function destroySession(event: H3Event) {
+  const token = getCookie(event, SESSION_COOKIE);
+  if (token) await kvDelete(event, `session:${token}`);
+  deleteCookie(event, SESSION_COOKIE, { path: '/' });
+}
+
+export async function requireUser(event: H3Event) {
+  const user = await getSessionUser(event);
+  if (!user) throw createError({ statusCode: 401, statusMessage: 'Требуется авторизация' });
+  return user;
+}
+
+export async function requireAdmin(event: H3Event) {
+  const user = await requireUser(event);
+  if (user.role !== 'admin') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Доступ запрещён. Требуются права администратора',
+    });
+  }
+  return user;
+}
+

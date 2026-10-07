@@ -48,3 +48,4 @@ Thumbs.db
 
 # Local config
 options.vite
+server/logs/
