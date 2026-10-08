@@ -48,6 +48,28 @@ minimumReleaseAgeExclude:
   - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha
   - daisyui@5.7.47
   - knip@6.40.0
+  - '@markuplint/astro-parser@5.1.0'
+  - '@markuplint/cli-utils@5.1.0'
+  - '@markuplint/config-presets@5.1.0'
+  - '@markuplint/file-resolver@5.1.0'
+  - '@markuplint/html-parser@5.1.0'
+  - '@markuplint/html-spec@5.1.0'
+  - '@markuplint/i18n@5.1.0'
+  - '@markuplint/ml-ast@5.1.0'
+  - '@markuplint/ml-config@5.1.0'
+  - '@markuplint/ml-core@5.1.0'
+  - '@markuplint/ml-spec@5.1.0'
+  - '@markuplint/parser-utils@5.1.0'
+  - '@markuplint/pretenders@5.1.0'
+  - '@markuplint/pug-parser@5.1.0'
+  - '@markuplint/rules@5.1.0'
+  - '@markuplint/selector@5.1.0'
+  - '@markuplint/shared@5.1.0'
+  - '@markuplint/svelte-parser@5.1.0'
+  - '@markuplint/types@5.1.0'
+  - '@markuplint/vue-parser@5.1.0'
+  - '@markuplint/vue-spec@5.1.0'
+  - markuplint@5.1.0
 peerDependencyRules:
   allowedVersions:
     typescript: "6"
