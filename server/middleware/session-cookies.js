@@ -1,7 +1,6 @@
 // server/middleware/cors.js
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
-  'http://localhost:3001',
   'http://127.0.0.1:3000',
   'http://192.168.1.1:3000', // Для тестирования в локальной сети
   process.env.SITE_URL,
