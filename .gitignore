@@ -85,3 +85,4 @@ Thumbs.db
 # Local config
 # ===========================================
 options.vitepackage-lock.json
+package-lock.json
