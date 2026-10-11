@@ -66,7 +66,11 @@
               h1.text-xl.font-semibold.text-base-content(class="lg:text-2xl")
                 | Корзина
               .flex.items-center.gap-4
-                span(v-if="totalItems > 0").text-sm(class="text-base-content/50")
+                //- ИСПРАВЛЕНО: атрибуты объединены в одну группу (убрано предупреждение Pug-линтера)
+                span.text-sm(
+                  v-if="totalItems > 0"
+                  class="text-base-content/50"
+                )
                   | {{ totalItems }} {{ pluralizeItems(totalItems) }}
                 button.btn.btn-ghost.btn-xs.rounded-lg(
                   class="hover:text-error text-base-content/50"
@@ -84,7 +88,7 @@
               .alert-banner.mb-4.mx-3(
                 class="sm:mx-0 lg:mx-0"
                 v-if="hasOutOfStockItems"
-                )
+              )
                 svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                   path(stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z")
                 span.text-sm Некоторые товары недоступны в запрошенном количестве
@@ -208,7 +212,9 @@
 
                       .col-span-2.text-right
                         .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
-                        .col-span-1.text-center
+
+                      //- ИСПРАВЛЕНО: кнопка вынесена в отдельную колонку col-span-1 (по структуре шапки таблицы)
+                      .col-span-1.text-center
                         button.remove-btn-inline(
                           @click="removeFromCart(item.id)"
                           title="Удалить из корзины"
@@ -285,10 +291,11 @@
                           value="pickup"
                           v-model="selectedDelivery"
                         )
+                        //- ИСПРАВЛЕНО: удалён пустой .form-control.mb-6, оставшийся от копипаста
                         .flex-grow
                           .font-medium.text-sm Самовывоз
                           .text-xs(class="text-base-content/50") Сегодня · бесплатно
-                          .form-control.mb-6
+
                     label.label.p-0.mb-2
                       span.label-text.font-medium.text-sm Способ оплаты
                     .grid.grid-cols-1.gap-2(class="sm:grid-cols-2")
@@ -644,7 +651,7 @@ const { getProductUrl } = useCart()
 const isHorizontal = ref(false)
 
 const checkOrientation = () => {
-  if (process.client) {
+  if (import.meta.client) {
     const isLandscape = window.innerWidth > window.innerHeight
     const isSmallWidth = window.innerWidth <= 926
     isHorizontal.value = isLandscape && isSmallWidth
@@ -655,7 +662,7 @@ const checkOrientation = () => {
 const isMobile = ref(false)
 
 const checkMobile = () => {
-  if (process.client) {
+  if (import.meta.client) {
     isMobile.value = window.innerWidth < 1024
   }
 }
@@ -747,23 +754,21 @@ const goToProduct = (product) => {
 }
 
 // Инициализация
+// ИСПРАВЛЕНО: process.client → import.meta.client; guard'ы внутри
+// onMounted/onUnmounted убраны — эти хуки и так выполняются только на клиенте
 onMounted(() => {
-  if (process.client) {
-    checkOrientation()
-    checkMobile()
-    window.addEventListener('resize', checkOrientation)
-    window.addEventListener('resize', checkMobile)
-    window.addEventListener('orientationchange', checkOrientation)
-    window.scrollTo(0, 0)
-  }
+  checkOrientation()
+  checkMobile()
+  window.addEventListener('resize', checkOrientation)
+  window.addEventListener('resize', checkMobile)
+  window.addEventListener('orientationchange', checkOrientation)
+  window.scrollTo(0, 0)
 })
 
 onUnmounted(() => {
-  if (process.client) {
-    window.removeEventListener('resize', checkOrientation)
-    window.removeEventListener('resize', checkMobile)
-    window.removeEventListener('orientationchange', checkOrientation)
-  }
+  window.removeEventListener('resize', checkOrientation)
+  window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('orientationchange', checkOrientation)
 })
 
 useHead({ title: 'Корзина' })

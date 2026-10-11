@@ -1,5 +1,6 @@
 {
   "name": "nuxt-shop",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
@@ -28,23 +29,23 @@
   },
   "devDependencies": {
     "@baptistecrouzet/nuxt-oxlint": "^1.1.5",
-    "@markuplint/pug-parser": "^5.1.0",
-    "@markuplint/vue-parser": "^5.1.0",
-    "@markuplint/vue-spec": "^5.1.0",
+    "@markuplint/pug-parser": "^5.1.1",
+    "@markuplint/vue-parser": "^5.1.1",
+    "@markuplint/vue-spec": "^5.1.1",
     "@pinia/nuxt": "^1.0.2",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "cross-env": "^10.1.0",
     "h3": "^1.15.11",
-    "knip": "^6.40.0",
-    "markuplint": "^5.1.0",
-    "nuxt": "4.5.2",
+    "knip": "^6.41.0",
+    "markuplint": "^5.1.1",
+    "nuxt": "4.6.1",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "pinia": "^4.0.3",
     "pug": "^3.0.4",
     "vite-plugin-remove-console": "^2.2.0",
     "vue": "^3.5.43",
-    "wrangler": "^4.148.0"
+    "wrangler": "^4.149.0"
   },
   "packageManager": "pnpm@12.6.0"
 }

@@ -44,10 +44,10 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0'
   - oxfmt@0.70.0 || 0.71.0
   - oxlint@1.85.0 || 1.86.0
-  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0
-  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha
+  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0
+  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha
   - daisyui@5.7.47
-  - knip@6.40.0
+  - knip@6.40.0 || 6.41.0
   - '@markuplint/astro-parser@5.1.0'
   - '@markuplint/cli-utils@5.1.0'
   - '@markuplint/config-presets@5.1.0'
@@ -70,6 +70,12 @@ minimumReleaseAgeExclude:
   - '@markuplint/vue-parser@5.1.0'
   - '@markuplint/vue-spec@5.1.0'
   - markuplint@5.1.0
+  - '@nuxt/kit@4.6.1'
+  - '@nuxt/nitro-server@4.6.1'
+  - '@nuxt/schema@4.6.1'
+  - '@nuxt/vite-builder@4.6.1'
+  - '@nuxt/vite-server@4.6.1'
+  - nuxt@4.6.1
 peerDependencyRules:
   allowedVersions:
     typescript: "6"
