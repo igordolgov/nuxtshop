@@ -1,4 +1,8 @@
 ﻿// nuxt.config.ts
+// Конфигурация Nuxt для проекта nuxt-shop:
+// Tailwind CSS 4 + daisyUI, PWA (Workbox), Cloudflare (nitro preset),
+// оптимизация сборки (terser/lightningcss), автосбор иконок и изображений.
+
 import tailwindcss from '@tailwindcss/vite';
 import removeConsole from 'vite-plugin-remove-console';
 
@@ -34,8 +38,11 @@ export default defineNuxtConfig({
     plugins: [tailwindcss(), isProd ? removeConsole({ includes: ['log', 'debug'] }) : null].filter(
       Boolean,
     ) as any,
+    // Список чистый: только реально используемые пакеты.
+    // Записи @vue/devtools-* (если появятся) добавляет сам Nuxt —
+    // предупреждение NUXT_B7002 на прод не влияет.
     optimizeDeps: {
-      include: ['vue', 'vue-router', 'pinia'],
+      include: ['@vueuse/core', 'idb', 'pinia', 'vue', 'vue-router'],
     },
   },
 
@@ -181,6 +188,7 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-title', content: 'Магазин' },
       ],
       link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'preconnect', href: process.env.API_BASE || 'http://localhost:3001' },
         { rel: 'dns-prefetch', href: 'https://api.iconify.design' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
@@ -202,3 +210,4 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 });
+
