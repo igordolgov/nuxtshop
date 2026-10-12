@@ -1,5 +1,11 @@
+<!-- app/app.vue — каркас приложения: анонс маршрута (a11y), оффлайн-баннер, -->
+<!-- layout со страницей, установка PWA. -->
 <template lang="pug">
-.min-h-screen.flex.flex-col
+//- min-h-dvh вместо min-h-screen: на мобильных 100vh включает область
+//- под адресной строкой, dvh — видимую высоту (без прыжков при скролле)
+.min-h-dvh.flex.flex-col
+  //- Объявление смены маршрута для скринридеров (доступность)
+  NuxtRouteAnnouncer
   OfflineIndicator(show-banner)
   NuxtLayout
     NuxtPage
@@ -7,6 +13,6 @@
 </template>
 
 <script setup>
-// useOffline теперь singleton, но вызывать его в app.vue всё равно не нужно:
-// OfflineIndicator сам его вызовет, и стейт будет общий.
+// useOffline — singleton; OfflineIndicator сам его вызывает,
+// стейт общий для всего приложения. Здесь вызывать не нужно.
 </script>

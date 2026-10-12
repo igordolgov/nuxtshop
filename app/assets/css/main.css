@@ -1,4 +1,6 @@
 /* app/assets/css/main.css */
+/* Глобальные стили: подключение Tailwind + daisyUI, темы, layout-хаки, */
+/* touch/a11y-полировка, скелетоны, утилиты анимаций, Vue-переходы. */
 @import 'tailwindcss';
 
 @plugin "daisyui" {
@@ -7,18 +9,43 @@
     business --prefersdark;
 }
 
+/* ─── Карта z-index (НЕ вводить магические значения мимо карты) ──
+  60+  модальные окна / оверлеи (MobileOverlay, Modal)
+  50   шапка (Header) и её дропдауны
+  40   нижняя навигация (MobileNavFooter)
+  30   плавающие кнопки (FAB фильтров, ScrollToTop)
+  20   внутристрочные декорации                                            */
+
 /* ─── Базовая тема ───────────────────────────────────────────── */
 
 /* color-scheme для браузерных контролов (скроллбары, инпуты, autofill).
-    Инлайн-скрипт в <head> гарантирует, что data-theme — всегда
-   'corporate' или 'business', поэтому правила ниже покрывают всё. */
+  Инлайн-скрипт в <head> гарантирует, что data-theme — всегда
+  'corporate' или 'business', поэтому правила ниже покрывают всё. */
 :root {
   color-scheme: light dark;
+
+  /* Safe-area insets: работают ТОЛЬКО при viewport-fit=cover
+    в meta viewport (nuxt.config → app.head.meta). На устройствах
+    без вырезов дают 0 — можно использовать без оговорок. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Высоты фиксированных слоёв — для расчёта отступов контента/FAB.
+    ⚙️ НАСТРОЙКА: шапка = min-h-14 (56px); нижняя навигация ≈ 60px
+    (6pt паддинг + 24 иконка + 4 gap + подпись ~15 + 4 safe-pad). */
+  --header-height: 56px;
+  --mobile-nav-height: 60px;
 }
 
 [data-theme='corporate'] {
   color-scheme: light;
 
+  /* ⚠️ ПОДОЗРИТЕЛЬНЫЙ ХАК: color:white на ВСЕ .btn — btn-ghost/outline
+    на светлом фоне получают белый текст. Если визуально всё ок —
+    вероятно, daisyUI перебивает специфичностью; при чистке тем
+    проверить и, скорее всего, удалить. */
   .badge,
   .btn,
   .checkbox {
@@ -33,6 +60,53 @@
 
 [data-theme='business'] {
   color-scheme: dark;
+}
+
+/* ─── Мобильные touch-настройки и доступность ────────────────── */
+
+@layer base {
+  /* Системная серая подсветка тапа (Android/старый iOS) убрана —
+     отклик даём сами через :active / transform */
+  a,
+  button,
+  [role='button'],
+  summary,
+  label {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Двойной тап по интерактивным элементам не должен зумить страницу
+     (быстрые нажатия: «в корзину», лайк, ползунки фильтров) */
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation;
+  }
+
+  /* Видимый фокус только для клавиатурной навигации;
+     на таче :focus-visible не срабатывает — шума не добавляет */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Уважение к системной настройке «уменьшить движение»
+   (вестибулярные нарушения): гасим все декоративные анимации */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ─── Layout-хаки ────────────────────────────────────────────── */
@@ -69,8 +143,8 @@ body {
 
 @layer components {
   /* Скелетон загрузки.
-      ВАЖНО: daisyUI 5 экспортирует --color-base-* как готовые цвета
-     (oklch), а не каналы — rgb()/oklch() обёртки здесь не нужны. */
+    ВАЖНО: daisyUI 5 экспортирует --color-base-* как готовые цвета
+    (oklch), а не каналы — rgb()/oklch() обёртки здесь не нужны. */
   .skeleton {
     background: linear-gradient(
       90deg,
@@ -88,15 +162,19 @@ body {
       transform 0.2s ease-out,
       box-shadow 0.2s ease-out;
   }
-  .product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  /* Hover-эффекты карточки — только для устройств с курсором:
+     на таче «прилипающий» hover выглядит как глюк */
+  @media (hover: hover) {
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+    }
+    .product-card:hover img {
+      transform: scale(1.05);
+    }
   }
   .product-card img {
     transition: transform 0.3s ease-out;
-  }
-  .product-card:hover img {
-    transform: scale(1.05);
   }
 
   .btn-interactive {

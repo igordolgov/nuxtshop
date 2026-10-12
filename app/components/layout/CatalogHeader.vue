@@ -1,13 +1,15 @@
-<!-- components/layout/CatalogHeader.vue -->
+<!-- components/layout/CatalogHeader.vue — шапка каталога: -->
+<!-- счётчик товаров, фильтры и обновление (десктоп). -->
 <template lang="pug">
 .catalog-header.z-30.bg-base-100.shadow-lg
   .px-4.py-3
     .flex.items-center.justify-between
       .flex.items-center.gap-3
-        h1.text-xl.font-bold.text-base-content 
+        //- Раньше h1 был пустым (текст отсутствовал) — минус SEO и a11y
+        h1.text-xl.font-bold.text-base-content Каталог
         .badge.badge-lg.badge-outline
           | {{ displayedProductsCount }} / {{ totalProductsCount }}
-      
+
       .flex.items-center.gap-2
         //- Кнопка фильтров (только для десктопа)
         .relative(class="hidden lg:block")
@@ -17,9 +19,9 @@
           )
             svg.w-4.h-4.mr-1(
               :class="{ 'animate-spin': isLoading }",
-              xmlns="http://www.w3.org/2000/svg", 
-              fill="none", 
-              viewBox="0 0 24 24", 
+              xmlns="http://www.w3.org/2000/svg",
+              fill="none",
+              viewBox="0 0 24 24",
               stroke="currentColor"
             )
               path(stroke-linecap="round", stroke-linejoin="round", stroke-width="2", d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z")
@@ -32,6 +34,7 @@
         button.btn.btn-sm.btn-ghost(
           @click="$emit('refreshProducts')",
           :disabled="isLoading"
+          aria-label="Обновить товары"
           class="hidden lg:flex"
         )
           svg.w-4.h-4(
@@ -46,22 +49,10 @@
 
 <script setup>
 defineProps({
-  activeFiltersCount: {
-    type: Number,
-    default: 0
-  },
-  displayedProductsCount: {
-    type: Number,
-    default: 0
-  },
-  totalProductsCount: {
-    type: Number,
-    default: 0
-  },
-  isLoading: {
-    type: Boolean,
-    default: false
-  }
+  activeFiltersCount: { type: Number, default: 0 },
+  displayedProductsCount: { type: Number, default: 0 },
+  totalProductsCount: { type: Number, default: 0 },
+  isLoading: { type: Boolean, default: false },
 })
 
 defineEmits(['toggleFilters', 'refreshProducts'])

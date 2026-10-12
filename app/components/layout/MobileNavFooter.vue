@@ -1,15 +1,22 @@
-<!-- ~/components/layout/MobileNavFooter.vue -->
+//- ~/components/layout/MobileNavFooter.vue
+//- Нижняя навигация мобильных (fixed). В landscape-режиме планшетов/крупных
+//- телефонов превращается в боковую колонку слева.
 <template lang="pug">
 ClientOnly
   div
     footer.mobile-nav-footer.border-t(
-      class="bg-base-100 border-base-300"
+      class="border-base-300"
       :class="{ 'horizontal-orientation': isHorizontal }"
     )
-      nav.nav-items(:class="{ 'vertical-layout': isHorizontal }")
+      nav.nav-items(
+        :class="{ 'vertical-layout': isHorizontal, 'nav-items-4': !canFullscreen }"
+        aria-label="Основная навигация"
+      )
         button.nav-item(
           @click="openHome"
           :class="{ 'is-active': activeHome }"
+          :aria-current="activeHome ? 'page' : undefined"
+          type="button"
         )
           .nav-icon
             svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
@@ -19,6 +26,8 @@ ClientOnly
         button.nav-item(
           @click="openCart"
           :class="{ 'is-active': activeCart }"
+          :aria-current="activeCart ? 'page' : undefined"
+          type="button"
         )
           .nav-icon.relative
             svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
@@ -32,6 +41,8 @@ ClientOnly
         button.nav-item(
           @click="openFavorites"
           :class="{ 'is-active': activeFavorites }"
+          :aria-current="activeFavorites ? 'page' : undefined"
+          type="button"
         )
           .nav-icon.relative
             svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
@@ -42,10 +53,14 @@ ClientOnly
             ) {{ displayFavoritesCount > 99 ? '99+' : displayFavoritesCount }}
           span.nav-label Избранное
 
+        //- Кнопка полноэкранного режима рендерится только если браузер
+        //- поддерживает Fullscreen API (iOS Safari — не поддерживает)
         button.nav-item(
+          v-if="canFullscreen"
           @click="toggleFullScreen"
           :title="isFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'"
           :class="{ 'is-active': isFullscreen }"
+          type="button"
         )
           .nav-icon
             svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
@@ -66,6 +81,8 @@ ClientOnly
         button.nav-item(
           @click="openAuth"
           :class="{ 'is-active': activeAuth }"
+          :aria-current="activeAuth ? 'page' : undefined"
+          type="button"
         )
           .nav-icon.relative
             svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
@@ -79,16 +96,24 @@ ClientOnly
 </template>
 
 <style scoped>
-/* ============================================
-  БАЗОВЫЕ СТИЛИ
-============================================ */
+/* ============================================================
+   БАЗА
+   Карта z-index: шапка 50 · нижняя навигация 40 · FAB 30
+============================================================ */
 .mobile-nav-footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding-top: 6px;
   z-index: 40;
+  padding-top: 6px;
+  /* Safe-area: на iPhone с жестовой полосой пункты меню не прилипают
+     к краю. Работает с viewport-fit=cover (nuxt.config) */
+  padding-bottom: calc(4px + var(--safe-area-bottom, 0px));
+  /* Полупрозрачный фон + blur — согласованно со шапкой (bg-base-100/95) */
+  background: color-mix(in oklab, var(--color-base-100) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .nav-items {
@@ -96,6 +121,12 @@ ClientOnly
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   padding: 0 16px;
+}
+
+/* Без кнопки «Развернуть» (нет Fullscreen API) — 4 колонки,
+   пункты не растягиваются на ширину пятого */
+.nav-items-4 {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .nav-item {
@@ -112,11 +143,17 @@ ClientOnly
   position: relative;
   flex: 1;
   min-height: 0;
-  transition: all 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
-.nav-item:hover {
-  background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+/* Sticky-hover на таче — источник «прилипших» подсветок.
+   Hover только для устройств с курсором */
+@media (hover: hover) {
+  .nav-item:hover {
+    background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+  }
 }
 
 .nav-item:active {
@@ -145,33 +182,34 @@ ClientOnly
   flex-shrink: 0;
 }
 
-/* ============================================
-  АКТИВНАЯ ВКЛАДКА (синяя подсветка)
-============================================ */
+/* ============================================================
+   АКТИВНАЯ ВКЛАДКА — цвет из темы (в business тоже согласован).
+   Раньше был хардкод #3389d4, выпадавший из палитры тем
+============================================================ */
 .nav-item.is-active {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  color: #3389d4 !important;
+  background-color: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .nav-item.is-active .nav-icon svg {
-  stroke: #3389d4 !important;
+  stroke: var(--color-primary);
   stroke-width: 2.5px;
 }
 
 .nav-item.is-active .nav-label {
-  color: #3389d4 !important;
+  color: var(--color-primary);
 }
 
-/* ============================================
-  КРАСНЫЕ БЕЙДЖИ (корзина, избранное, авторизация)
-============================================ */
+/* ============================================================
+   БЕЙДЖИ — цвет ошибки из темы (--color-error вместо #ef4444)
+============================================================ */
 .cart-badge,
 .favorites-badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #ef4444; /* ярко-красный */
+  background: var(--color-error);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -183,8 +221,8 @@ ClientOnly
   min-width: 16px;
   height: 16px;
   padding: 0 3px;
-  border: 2px solid var(--color-base-200);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--color-base-100);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
   z-index: 1;
 }
 
@@ -208,29 +246,26 @@ ClientOnly
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #ef4444;
+  background: var(--color-error);
   border-radius: 50%;
   width: 8px;
   height: 8px;
   z-index: 1;
 }
 
-/* ============================================
-  ГОРИЗОНТАЛЬНАЯ ОРИЕНТАЦИЯ
-============================================ */
+/* ============================================================
+   ГОРИЗОНТАЛЬНАЯ ОРИЕНТАЦИЯ — навигация колонкой слева
+============================================================ */
 .mobile-nav-footer.horizontal-orientation {
-  position: fixed;
   left: 0;
-  top: 56px;
+  top: var(--header-height, 56px);
   bottom: 0;
   width: 70px;
   border-top: none;
   border-left: none;
   padding: 0;
-  z-index: 40;
-  height: calc(100% - 56px);
+  height: calc(100% - var(--header-height, 56px));
   overflow: hidden;
-  background: var(--color-base-100);
   --horizontal-nav-width: 70px;
 }
 
@@ -277,12 +312,12 @@ ClientOnly
 }
 
 .mobile-nav-footer.horizontal-orientation .nav-item.is-active {
-  background-color: rgba(96, 165, 250, 0.2) !important;
+  background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
 }
 
-/* ============================================
-  АДАПТИВНОСТЬ
-============================================ */
+/* ============================================================
+   АДАПТИВНОСТЬ
+============================================================ */
 @media (max-width: 480px) {
   .nav-items {
     padding: 0 6px;
@@ -331,20 +366,25 @@ ClientOnly
 </style>
 
 <script setup>
+//- Компонент: фиксированная нижняя навигация мобильных.
+//- Источники данных — общие композаблы (singleton): бейджи всегда
+//- синхронны с шапкой, никакого локального поллинга localStorage.
 import { useCart } from '@/composables/useCart'
 import { useAppState } from '@/composables/useAppState'
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter, useRoute } from '#app'
+import { useFavorites } from '@/composables/useFavorites'
 
-const { totalItems } = useCart()
-const appState = useAppState()
-const router = useRouter()
 const route = useRoute()
+const appState = useAppState()
+const { totalItems } = useCart()
+// Раньше здесь был свой парсер localStorage + setInterval(2s) —
+// теперь бейдж reactive из общего стейка (как в Header.vue)
+const { favoritesCount } = useFavorites()
 
 const isHorizontal = ref(false)
-const localFavoritesCount = ref(0)
-const isAuthenticated = computed(() => appState.isAuthenticated.value)
 const isFullscreen = ref(false)
+// iOS Safari не даёт Fullscreen API для произвольных элементов —
+// кнопку показываем только при реальной поддержке
+const canFullscreen = ref(false)
 
 const activeHome = computed(() => {
   const path = route.path
@@ -354,151 +394,112 @@ const activeCart = computed(() => route.path?.startsWith('/cart') || false)
 const activeFavorites = computed(() => route.path?.startsWith('/favorites') || false)
 const activeAuth = computed(() => {
   const path = route.path
-  return path?.startsWith('/auth') ||
+  return (
+    path?.startsWith('/auth') ||
     path?.startsWith('/login') ||
     path?.startsWith('/register') ||
     path?.startsWith('/profile') ||
     path?.startsWith('/user') ||
-    path?.startsWith('/account') || false
+    path?.startsWith('/account') ||
+    false
+  )
 })
 
-const displayFavoritesCount = computed(() => localFavoritesCount.value || 0)
+const displayFavoritesCount = computed(() => favoritesCount.value || 0)
 const cartItemsCount = computed(() => totalItems.value || 0)
 
+// ⚙️ НАСТРОЙКА: диапазон ширины, при котором в landscape навигация
+// уходит в боковую колонку. Должен совпадать с usePageConditions
 const checkOrientation = () => {
-  if (process.client) {
-    const isLandscape = window.innerWidth > window.innerHeight
-    const isTabletSize = window.innerWidth <= 926 && window.innerWidth >= 768
-    isHorizontal.value = isLandscape && isTabletSize
-  }
+  if (!import.meta.client) return
+  const isLandscape = window.innerWidth > window.innerHeight
+  const isTabletSize = window.innerWidth >= 768 && window.innerWidth <= 926
+  isHorizontal.value = isLandscape && isTabletSize
 }
 
 const checkFullscreen = () => {
-  if (process.client) {
-    isFullscreen.value = !!(document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement)
-  }
+  if (!import.meta.client) return
+  isFullscreen.value = !!(document.fullscreenElement || document.webkitFullscreenElement)
 }
 
 const toggleFullScreen = () => {
-  if (!process.client) return
-  if (!document.fullscreenElement &&
-    !document.webkitFullscreenElement &&
-    !document.mozFullScreenElement &&
-    !document.msFullscreenElement) {
-    const elem = document.documentElement
-    if (elem.requestFullscreen) elem.requestFullscreen()
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen()
-    else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen()
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen()
+  if (!import.meta.client || !canFullscreen.value) return
+  const elem = document.documentElement
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    ;(elem.requestFullscreen || elem.webkitRequestFullscreen)?.call(elem)
   } else {
-    if (document.exitFullscreen) document.exitFullscreen()
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
-    else if (document.mozCancelFullScreen) document.mozCancelFullScreen()
-    else if (document.msExitFullscreen) document.msExitFullscreen()
+    ;(document.exitFullscreen || document.webkitExitFullscreen)?.call(document)
   }
 }
-
-const loadFavoritesFromStorage = () => {
-  if (!process.client) return
-  try {
-    const favoritesData = localStorage.getItem('favoriteProducts')
-    if (favoritesData) {
-      const parsed = JSON.parse(favoritesData)
-      if (Array.isArray(parsed)) localFavoritesCount.value = parsed.length
-      else if (parsed && typeof parsed === 'object') {
-        let count = 0
-        for (const key in parsed) if (parsed[key] === true) count++
-        localFavoritesCount.value = count
-      } else localFavoritesCount.value = 0
-    } else {
-      const otherData = localStorage.getItem('favorites') || localStorage.getItem('userFavorites')
-      if (otherData) {
-        const parsed = JSON.parse(otherData)
-        if (Array.isArray(parsed)) localFavoritesCount.value = parsed.length
-        else if (parsed?.items && Array.isArray(parsed.items)) localFavoritesCount.value = parsed.items.length
-        else if (parsed && typeof parsed === 'object') localFavoritesCount.value = Object.keys(parsed).length
-        else localFavoritesCount.value = 0
-      } else localFavoritesCount.value = 0
-    }
-  } catch (error) {
-    console.error('Ошибка загрузки избранного:', error)
-    localFavoritesCount.value = 0
-  }
-}
-
-const handleFavoritesUpdated = () => loadFavoritesFromStorage()
 
 const openHome = () => navigateTo('/')
 const openCart = () => navigateTo('/cart')
 const openFavorites = () => navigateTo('/favorites')
 const openAuth = () => navigateTo(isAuthenticated.value ? '/user' : '/auth/login')
 
+const isAuthenticated = computed(() => appState.isAuthenticated.value)
+
 const updateNavigationWidthVariable = () => {
-  if (!process.client) return
+  if (!import.meta.client) return
   if (isHorizontal.value) {
-    document.documentElement.style.setProperty('--horizontal-nav-width', window.innerWidth <= 740 ? '60px' : '70px')
+    document.documentElement.style.setProperty(
+      '--horizontal-nav-width',
+      window.innerWidth <= 740 ? '60px' : '70px',
+    )
   } else {
     document.documentElement.style.setProperty('--horizontal-nav-width', '0px')
   }
 }
 
+//- Именованные обработчики: обязательны для корректного
+//- removeEventListener в onUnmounted (раньше добавлялись анонимными
+//- стрелками, а снимались другие ссылки — утечка при каждом переходе)
+const onResize = () => {
+  checkOrientation()
+  updateNavigationWidthVariable()
+}
+
+const onOrientationChange = () => {
+  // Небольшая задержка: ориентация на iOS меняется раньше, чем размеры
+  setTimeout(() => {
+    checkOrientation()
+    updateNavigationWidthVariable()
+  }, 100)
+}
+
+const onFullscreenChange = () => checkFullscreen()
+
 watch(isHorizontal, (newValue) => {
   updateNavigationWidthVariable()
-  if (process.client) {
-    if (newValue) document.body.classList.add('has-horizontal-nav')
-    else document.body.classList.remove('has-horizontal-nav')
-  }
+  if (!import.meta.client) return
+  // body-класс используют страницы для отступа под боковую навигацию
+  document.body.classList.toggle('has-horizontal-nav', newValue)
 })
 
-let favoritesPollInterval = null
-
 onMounted(() => {
-  if (process.client) {
-    loadFavoritesFromStorage()
-    checkOrientation()
-    checkFullscreen()
-    updateNavigationWidthVariable()
-    if (isHorizontal.value) document.body.classList.add('has-horizontal-nav')
+  checkOrientation()
+  checkFullscreen()
+  // ⚙️: определяем поддержку Fullscreen API (на iOS Safari — false,
+  // кнопка «Развернуть» не рендерится)
+  canFullscreen.value = !!(
+    document.documentElement.requestFullscreen ||
+    document.documentElement.webkitRequestFullscreen
+  )
+  updateNavigationWidthVariable()
+  if (isHorizontal.value) document.body.classList.add('has-horizontal-nav')
 
-    document.addEventListener('fullscreenchange', checkFullscreen)
-    document.addEventListener('webkitfullscreenchange', checkFullscreen)
-    document.addEventListener('mozfullscreenchange', checkFullscreen)
-    document.addEventListener('MSFullscreenChange', checkFullscreen)
-
-    window.addEventListener('resize', () => {
-      checkOrientation()
-      updateNavigationWidthVariable()
-    })
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => {
-        checkOrientation()
-        updateNavigationWidthVariable()
-      }, 100)
-    })
-    window.addEventListener('visibilitychange', () => {
-      if (!document.hidden) setTimeout(() => loadFavoritesFromStorage(), 100)
-    })
-    window.addEventListener('favorites-updated', handleFavoritesUpdated)
-
-    favoritesPollInterval = setInterval(() => loadFavoritesFromStorage(), 2000)
-  }
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange)
+  window.addEventListener('resize', onResize)
+  window.addEventListener('orientationchange', onOrientationChange)
 })
 
 onUnmounted(() => {
-  if (process.client) {
-    document.removeEventListener('fullscreenchange', checkFullscreen)
-    document.removeEventListener('webkitfullscreenchange', checkFullscreen)
-    document.removeEventListener('mozfullscreenchange', checkFullscreen)
-    document.removeEventListener('MSFullscreenChange', checkFullscreen)
-    window.removeEventListener('resize', checkOrientation)
-    window.removeEventListener('orientationchange', checkOrientation)
-    window.removeEventListener('favorites-updated', handleFavoritesUpdated)
-    if (favoritesPollInterval) clearInterval(favoritesPollInterval)
-    document.body.classList.remove('has-horizontal-nav')
-    document.documentElement.style.setProperty('--horizontal-nav-width', '0px')
-  }
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
+  document.removeEventListener('webkitfullscreenchange', onFullscreenChange)
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('orientationchange', onOrientationChange)
+  document.body.classList.remove('has-horizontal-nav')
+  document.documentElement.style.setProperty('--horizontal-nav-width', '0px')
 })
 </script>

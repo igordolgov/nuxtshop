@@ -182,7 +182,13 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Лучший интернет-магазин' },
         { name: 'keywords', content: 'товары, покупки, магазин' },
         { name: 'format-detection', content: 'telephone=no' },
-        { name: 'theme-color', content: '#ffffff' },
+        // viewport-fit=cover ОБЯЗАТЕЛЕН: без него env(safe-area-inset-*) = 0,
+        // и фиксированные слои (нижнее меню, FAB) прилипают к жестовой полосе iPhone
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        // Цвет статус-бара/окна PWA под каждую тему (Android, Safari 15+).
+        // ⚙️ НАСТРОЙКА: тёмное значение подогнать под base-100 темы business
+        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#ffffff' },
+        { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#1e293b' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
         { name: 'apple-mobile-web-app-title', content: 'Магазин' },
@@ -204,7 +210,10 @@ export default defineNuxtConfig({
         },
       ],
     },
-    pageTransition: false,
+    // Мягкий fade между страницами — классы .fade-* уже есть в main.css.
+    // Тяжёлым страницам (админка) отключается локально:
+    //   definePageMeta({ pageTransition: false })
+    pageTransition: { name: 'fade', mode: 'out-in' },
     layoutTransition: false,
   },
 
