@@ -1,19 +1,27 @@
-<!-- app/pages/index.vue -->
+<!-- app/pages/index.vue — главная (каталог): шапка с поиском/фильтрами,
+    скелетон загрузки, сайдбары, бесконечный список товаров,
+    нижняя мобильная навигация. -->
 <template lang="pug">
-.grid-container(v-if="isMounted")
-  Header.header-area(
-    :activeFiltersCount="activeFiltersCount"
-    :displayedProductsCount="displayedProducts.length"
-    :totalProductsCount="totalProductsCount"
-    :searchQuery="searchQuery"
-    :isSearching="isSearching"
-    :showSuggestions="showSuggestions"
-    :searchSuggestions="searchSuggestions"
-    :hasSearchSuggestions="hasSearchSuggestions"
-    :activeSuggestionIndex="activeSuggestionIndex"
-    :showFilters="showMobileFilters"
-    v-on="headerEvents"
-  )
+.grid-container
+  //- Шапка в ClientOnly: мобильные ветки зависят от window.innerWidth,
+  //- SSR-рендер давал hydration mismatch. Fallback — заглушка той же
+  //- высоты (--header-height), layout не прыгает
+  ClientOnly
+    Header.header-area(
+      :activeFiltersCount="activeFiltersCount"
+      :displayedProductsCount="displayedProducts.length"
+      :totalProductsCount="totalProductsCount"
+      :searchQuery="searchQuery"
+      :isSearching="isSearching"
+      :showSuggestions="showSuggestions"
+      :searchSuggestions="searchSuggestions"
+      :hasSearchSuggestions="hasSearchSuggestions"
+      :activeSuggestionIndex="activeSuggestionIndex"
+      :showFilters="showMobileFilters"
+      v-on="headerEvents"
+    )
+    template(#fallback)
+      .header-skeleton
 
   Transition(name="fade")
     LazyMobileFiltersPanel.mobile-filters(
@@ -30,46 +38,50 @@
 
   .main-content-wrapper
     .content-area
-      LazyDesktopSidebar.sidebar-area(
-        v-if="!isMobile"
-        :searchQuery="searchQuery"
-        :categories="categories"
-        :filters="filters"
-        :sort="sort"
-        :priceRange="priceRange"
-        :total-count="totalProductsCount"
-        :filtered-count="displayedProducts.length"
-        v-on="sidebarEvents"
-      )
+      //- Скелетон вместо белого экрана: данные каталога клиентские,
+      //- до первой загрузки показываем структуру страницы.
+      //- Раньше весь контент прятал v-if="isMounted" — посетитель видел
+      //- пустоту, пока не загрузится и не выполнится JS
+      .skeleton-area(v-if="showSkeleton")
+        .skeleton.skeleton-title
+        .skeleton-grid
+          .skeleton.skeleton-card(v-for="i in 8" :key="i")
 
-      .main-area(:class="mainAreaClasses")
-        .products-container(ref="productsContainerRef")
-          .scroll-sentinel
-          ProductsSection(
-            :products="displayedProducts"
-            :isLoading="isLoading"
-            :isMobile="isMobile"
-            :isHorizontal="isHorizontal"
-            :searchQuery="searchQuery"
-            :activeFiltersCount="activeFiltersCount"
-            useInfiniteScroll
-            :pageSize="20"
-            :maxRendered="100"
-            @toggleFavorite="toggleFavorite"
-            @addToCart="addToCart"
-            @resetFilters="resetFilters"
-            @refreshProducts="refreshProducts"
-            @clearSearch="clearSearch"
-          )
+      template(v-else)
+        LazyDesktopSidebar.sidebar-area(
+          v-if="!isMobile"
+          :searchQuery="searchQuery"
+          :categories="categories"
+          :filters="filters"
+          :sort="sort"
+          :priceRange="priceRange"
+          :total-count="totalProductsCount"
+          :filtered-count="displayedProducts.length"
+          v-on="sidebarEvents"
+        )
 
-  MobileNavFooter(
-    v-if="isMobile"
-    :class="footerClasses"
-    :isHorizontal="isHorizontal"
-    :activeFiltersCount="activeFiltersCount"
-    :activeTab="currentTab"
-    v-on="footerEvents"
-  )
+        .main-area(:class="mainAreaClasses")
+          .products-container(ref="productsContainerRef")
+            .scroll-sentinel
+            ProductsSection(
+              :products="displayedProducts"
+              :isLoading="isLoading"
+              :isMobile="isMobile"
+              :isHorizontal="isHorizontal"
+              :searchQuery="searchQuery"
+              :activeFiltersCount="activeFiltersCount"
+              useInfiniteScroll
+              :pageSize="20"
+              :maxRendered="100"
+              @toggleFavorite="toggleFavorite"
+              @addToCart="addToCart"
+              @resetFilters="resetFilters"
+              @refreshProducts="refreshProducts"
+              @clearSearch="clearSearch"
+            )
+
+  //- Футер сам управляет ориентацией и навигацией — ни props, ни событий
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <script setup>
@@ -79,13 +91,16 @@ import { useCart } from '@/composables/useCart'
 import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
-//- Composables
+//- Composables.
+//- isMobile и isHorizontal — из ЕДИНОГО композабла: локальные
+//- определения с собственными порогами удалены (источник бага
+//- «меню слева и снизу одновременно»)
 //- ============================================
 const route = useRoute()
 const router = useRouter()
 const { addToCart } = useCart()
 const appState = useAppState()
-const { isMobile } = useMobileDetection()
+const { isMobile, isHorizontal } = useMobileDetection()
 
 //- ============================================
 //- Реактивные переменные
@@ -93,13 +108,11 @@ const { isMobile } = useMobileDetection()
 const isMounted = ref(false)
 const showMobileFilters = ref(false)
 const productsContainerRef = ref(null)
-const isHorizontal = ref(false)
-const currentTab = ref('home')
 
 //- ============================================
 //- Чтение состояния (SSR-safe)
+//- TODO: заменить на прямой доступ к appState.*, когда useAppState.js будет отрефакторен
 //- ============================================
-// TODO: заменить на прямой доступ к appState.*, когда useAppState.js будет отрефакторен
 const getState = (path, defaultValue = null) => {
   if (!import.meta.client) return defaultValue
   const keys = path.split('.')
@@ -130,8 +143,15 @@ const displayedProducts = computed(() => getState('displayedProducts', []))
 const products = computed(() => getState('products', []))
 const totalProductsCount = computed(() => products.value?.length ?? 0)
 
+//- Скелетон: до монтирования ИЛИ пока идёт первая загрузка пустого каталога.
+//- Важно: ProductsSection с пустым списком показал бы empty-state
+//- «ничего не найдено» — не пускаем его до появления данных
+const showSkeleton = computed(
+  () => !isMounted.value || (products.value.length === 0 && isLoading.value),
+)
+
 //- ============================================
-//- Обработчики (клиентские, guard не нужен)
+//- Обработчики (клиентские)
 //- ============================================
 const setSearchQuery = (query) => appState.setSearchQuery(query)
 
@@ -212,10 +232,6 @@ const resetFilters = async () => {
   scrollToTop()
 }
 
-const openCart = () => router.push('/cart')
-const openFavorites = () => router.push('/favorites')
-const openAuth = () => router.push('/auth/login')
-
 //- ============================================
 //- Объекты событий
 //- ============================================
@@ -252,13 +268,6 @@ const sidebarEvents = {
   'scroll-to-top': scrollToTop,
 }
 
-const footerEvents = {
-  toggleFilters: toggleMobileFilters,
-  openCart,
-  openFavorites,
-  openAuth,
-}
-
 //- ============================================
 //- Классы
 //- ============================================
@@ -268,10 +277,6 @@ const mainAreaClasses = computed(() => {
   if (isMobile.value && isHorizontal.value) classes.push('horizontal-orientation')
   return classes
 })
-
-const footerClasses = computed(() =>
-  isHorizontal.value ? 'horizontal-footer-left' : 'footer-area'
-)
 
 //- ============================================
 //- Активные фильтры
@@ -296,42 +301,6 @@ const activeFiltersCount = computed(() => {
 })
 
 //- ============================================
-//- Текущая вкладка
-//- ============================================
-watch(
-  () => route.path,
-  (path) => {
-    if (path === '/') currentTab.value = 'home'
-    else if (path.startsWith('/cart')) currentTab.value = 'cart'
-    else if (path.startsWith('/favorites')) currentTab.value = 'favorites'
-    else if (path.startsWith('/auth') || path.startsWith('/user')) currentTab.value = 'auth'
-    else currentTab.value = ''
-  },
-  { immediate: true }
-)
-
-//- ============================================
-//- Ориентация (rAF-throttled)
-//- ============================================
-let rafId = null
-
-const checkOrientation = () => {
-  const width = window.innerWidth
-  const height = window.innerHeight
-  const isLandscape = width > height
-  const isMobileDevice = width <= 768
-
-  isHorizontal.value = isMobileDevice
-    ? isLandscape && width <= 926
-    : isLandscape && width <= 1024
-}
-
-const scheduleOrientationCheck = () => {
-  if (rafId) cancelAnimationFrame(rafId)
-  rafId = requestAnimationFrame(checkOrientation)
-}
-
-//- ============================================
 //- Блокировка скролла при мобильных фильтрах
 //- ============================================
 const updateBodyScroll = (locked) => {
@@ -339,7 +308,9 @@ const updateBodyScroll = (locked) => {
 }
 
 //- ============================================
-//- Lifecycle
+//- Lifecycle.
+//- Слушатели resize/orientationchange больше не нужны здесь —
+//- их держит useMobileDetection (один набор на всё приложение)
 //- ============================================
 onMounted(() => {
   isMounted.value = true
@@ -347,16 +318,12 @@ onMounted(() => {
   if (products.value.length === 0 && !isLoading.value) {
     appState.loadProducts?.()
   }
-
-  checkOrientation()
-  window.addEventListener('resize', scheduleOrientationCheck, { passive: true })
-  window.addEventListener('orientationchange', scheduleOrientationCheck, { passive: true })
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', scheduleOrientationCheck)
-  window.removeEventListener('orientationchange', scheduleOrientationCheck)
-  if (rafId) cancelAnimationFrame(rafId)
+  // Страховка: уход со страницы при открытых фильтрах не должен
+  // оставить body заблокированным для следующих страниц
+  updateBodyScroll(false)
 })
 
 watch(showMobileFilters, updateBodyScroll)
@@ -369,13 +336,19 @@ watch(showMobileFilters, updateBodyScroll)
   display: flex;
   flex-direction: column;
   height: 100dvh;
-
 }
 
 .header-area {
   flex-shrink: 0;
   width: 100%;
   z-index: 40;
+}
+
+/* Заглушка шапки на время ClientOnly-fallback: та же высота,
+   что Header (min-h-14 = 56px), чтобы контент не прыгал */
+.header-skeleton {
+  height: var(--header-height, 56px);
+  width: 100%;
 }
 
 .main-content-wrapper {
@@ -414,6 +387,40 @@ watch(showMobileFilters, updateBodyScroll)
   }
 }
 
+/* ─── Скелетон каталога (до первой загрузки данных) ─────────── */
+
+.skeleton-area {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.skeleton-title {
+  height: 2rem;
+  width: 12rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  overflow: hidden;
+
+  @media (min-width: 1025px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.skeleton-card {
+  aspect-ratio: 3 / 4;
+  border-radius: 0.75rem;
+}
+
 /* ─── Скроллируемая область с товарами ──────────────────────── */
 
 .main-area {
@@ -429,7 +436,6 @@ watch(showMobileFilters, updateBodyScroll)
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* magic number убран — высоту вычисляет flexbox */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -437,6 +443,12 @@ watch(showMobileFilters, updateBodyScroll)
   contain: layout style;
   content-visibility: auto;
   contain-intrinsic-size: auto 500px;
+
+  /* Нижний «воздух» под фиксированной навигацией: без него последний
+     ряд карточек прятался под меню и был недоступен для тапа */
+  @media (max-width: 1023.98px) {
+    padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
+  }
 }
 
 .scroll-sentinel {
@@ -457,53 +469,16 @@ watch(showMobileFilters, updateBodyScroll)
   opacity: 0;
 }
 
-/* ─── Мобильный футер ───────────────────────────────────────── */
-
-.footer-area {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 60px;
-  z-index: 30;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: white;
-  box-shadow: 0 -2px 4px rgb(0 0 0 / 0.1);
-}
-
-.horizontal-footer-left {
-  position: fixed;
-  left: 0;
-  top: 60px;
-  bottom: 0;
-  width: 70px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  background: white;
-  box-shadow: 2px 0 4px rgb(0 0 0 / 0.1);
-  padding-top: 1rem;
-  gap: 1.5rem;
-}
-
-/* ─── Горизонтальная ориентация ─────────────────────────────── */
+/* ─── Горизонтальная ориентация: сдвиг под боковую навигацию.
+   Ширины синхронизированы с MobileNavFooter (70/60px) ───────── */
 
 .main-area.horizontal-orientation {
-  margin-left: 64px;
-  width: calc(100% - 64px);
+  margin-left: 70px;
+  width: calc(100% - 70px);
 
   @media (max-width: 740px) and (orientation: landscape) {
     margin-left: 60px;
     width: calc(100% - 60px);
-  }
-
-  @media (max-width: 360px) and (orientation: landscape) {
-    margin-left: 50px;
-    width: calc(100% - 50px);
   }
 }
 

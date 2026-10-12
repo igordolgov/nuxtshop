@@ -1,6 +1,6 @@
-//- ~/components/layout/MobileNavFooter.vue
-//- Нижняя навигация мобильных (fixed). В landscape-режиме планшетов/крупных
-//- телефонов превращается в боковую колонку слева.
+<!-- ~/components/layout/MobileNavFooter.vue -->
+<!-- Нижняя навигация мобильных (fixed). В landscape-режиме планшетов/крупных -->
+<!-- телефонов превращается в боковую колонку слева. -->
 <template lang="pug">
 ClientOnly
   div
