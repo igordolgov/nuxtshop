@@ -1,5 +1,5 @@
 // server/api/products/add.post.js
-import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers.js'
+import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
 import { optimizeImage } from '../../lib/imageOptimizer.js'
 import fs from 'fs/promises'
 import path from 'path'
