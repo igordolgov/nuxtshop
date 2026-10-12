@@ -10,7 +10,7 @@
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
       .max-h-60.overflow-y-auto
-        label.label.cursor-pointer.justify-start.gap-2.py-1.px-2.hover-bg-base-200.rounded(
+        label.label.cursor-pointer.justify-start.gap-2.py-1.px-2(class="hover:bg-base-200" rounded
           v-for="cat in categories"
           :key="cat"
         )
@@ -46,7 +46,7 @@
       | Сортировка
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-40.z-50.mt-1(v-if="showSort" @click.stop)
-      .px-2.py-1.cursor-pointer.hover-bg-base-200.rounded(
+      .px-2.py-1.cursor-pointer(class="hover:bg-base-200" rounded
         v-for="opt in sortOptions"
         :key="opt.field"
         @click="selectSort(opt.field)"

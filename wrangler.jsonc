@@ -1,26 +1,32 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "nuxt-shop",
-	"main": ".output/server/index.mjs",
-	"compatibility_date": "2025-07-15",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"assets": {
-		"directory": ".output/public",
-		"binding": "ASSETS"
-	},
-	"observability": {
-		"enabled": true
-	},
-	"vars": {
-		"NUXT_PUBLIC_API_BASE": ""
-	},
-	"kv_namespaces": [
-		{
-			"binding": "SHOP_KV",
-			"id": "2882e3a4601940b881c2140f1401989f",
-			"remote": true
-		}
-	]
+  // wrangler.jsonc — единственный конфиг Wrangler (wrangler.toml удалён как устаревший).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nuxt-shop",
+  "main": ".output/server/index.mjs",
+  // Совпадает с compatibilityDate в nuxt.config.ts
+  "compatibility_date": "2025-07-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "NUXT_PUBLIC_API_BASE": "",
+  },
+  "kv_namespaces": [
+    {
+      // ⚠️ КРИТИЧНО: биндинг обязан называться "KV" — это имя читает
+      // server/lib/storage.ts через event.context.cloudflare.env.KV.
+      // Было "SHOP_KV" — из-за несовпадения в проде работала in-memory
+      // заглушка, и данные не переживали перезапуск изолята.
+      "binding": "KV",
+      // ⚙️ НАСТРОЙКА: ID вашего KV namespace (npx wrangler kv namespace create)
+      "id": "2882e3a4601940b881c2140f1401989f",
+      // Удалённое KV при wrangler dev (nuxt dev всё равно работает in-memory)
+      "remote": true,
+    },
+  ],
 }

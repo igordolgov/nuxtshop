@@ -87,7 +87,7 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
-    includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+    includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
     devOptions: { enabled: false, type: 'module' },
     client: { installPrompt: true, registerPlugin: true },
     strategies: 'generateSW',
@@ -210,4 +210,3 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 });
-

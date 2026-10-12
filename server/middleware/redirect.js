@@ -1,119 +1,112 @@
 // server/middleware/redirect.js
-import { readFileSync } from 'fs'
-import { join } from 'path'
+// Серверный middleware: редиректы старых URL, товара с числовым ID на slug,
+// срез trailing slash, приведение путей к нижнему регистру.
+// Кроссплатформенно: без fs (на Cloudflare Workers его нет) —
+// товары читаются из KV через productHelpers.
 
-// Кэш продуктов для редиректов (обновляется каждые N секунд)
+import { readProducts } from '../lib/productHelpers'
+
+// Кэш товаров для редиректов /product/<id>. module-scope живёт в изоляте
+// Workers между запросами; TTL защищает от чтения KV на каждый запрос.
 let productsCache = null
 let cacheTime = 0
-const CACHE_TTL = 60000 // 1 минута
+const CACHE_TTL = 60_000 // ⚙️ НАСТРОЙКА: время кэша товаров, мс
 
 /**
- * Получает продукты с кэшированием
+ * Товары для редиректов (KV через readProducts, с кэшем в памяти изолята)
  */
-function getProductsForRedirect() {
+async function getProductsForRedirect(event) {
   const now = Date.now()
-  
-  if (productsCache && (now - cacheTime < CACHE_TTL)) {
+
+  if (productsCache && now - cacheTime < CACHE_TTL) {
     return productsCache
   }
-  
+
   try {
-    const productsPath = join(process.cwd(), 'server', 'data', 'products.json')
-    const data = readFileSync(productsPath, 'utf-8')
-    productsCache = JSON.parse(data) || []
+    const products = await readProducts(event)
+    productsCache = Array.isArray(products) ? products : []
     cacheTime = now
     return productsCache
   } catch (error) {
-    console.error('❌ Ошибка чтения products.json:', error.message)
+    // KV недоступен — редиректы товаров деградируют, запрос не ломаем
+    console.error('❌ Ошибка чтения товаров для редиректов:', error.message)
     return []
   }
 }
 
 /**
- * Карта редиректов для статических маршрутов
+ * Карта редиректов статических маршрутов.
+ * ⚙️ НАСТРОЙКА: цель редиректа обязана существовать как страница!
+ * Каталог в проекте — главная '/'; страниц /products, /checkout, /contact,
+ * /promotions НЕТ (проверено по app/pages). Не возвращать их в карту.
  */
 const STATIC_REDIRECTS = {
-  // Старые категории
-  '/catalog': '/products',
-  '/shop': '/products',
-  '/store': '/products',
-  
+  // Старые категории → каталог (главная)
+  '/catalog': '/',
+  '/shop': '/',
+  '/store': '/',
+
   // Старые страницы
   '/about-us': '/about',
-  '/contacts': '/contact',
   '/cart.php': '/cart',
-  '/checkout.php': '/checkout',
-  
-  // Удалённые страницы
-  '/old-promo': '/promotions'
+  '/checkout.php': '/cart/checkout',
+
+  // ⚠️ Умышленно удалены:
+  // '/contacts': '/contact' — страница /contact не существует,
+  //   редирект уводил пользователей с живой страницы /contacts в 404;
+  // '/old-promo': '/promotions' — страницы /promotions не существует.
 }
 
 export default defineEventHandler(async (event) => {
-  const url = event.node.req.url
-  const pathname = url.split('?')[0].split('#')[0]
-  
-  // 1. Проверяем статические редиректы
+  // event.path вместо event.node.req.url — работает на любом рантайме Nitro
+  const pathname = event.path.split('?')[0].split('#')[0]
+
+  // 1. Статические редиректы
   const staticRedirect = STATIC_REDIRECTS[pathname]
   if (staticRedirect) {
     console.log(`↗️ Редирект: ${pathname} → ${staticRedirect}`)
     return sendRedirect(event, staticRedirect, 301)
   }
-  
-  // 2. Редирект со старых URL товаров с числовым ID
+
+  // 2. Старые URL товаров с числовым ID → slug из KV
   const oldProductMatch = pathname.match(/^\/product\/(\d+)$/)
-  
+
   if (oldProductMatch) {
     const id = oldProductMatch[1]
-    
-    try {
-      const products = getProductsForRedirect()
-      
-      // Ищем по ID (строка или число)
-      const product = products.find(p => 
-        String(p.id) === id || p.id === Number(id)
-      )
-      
-      if (product?.slug) {
-        const newUrl = `/product/${product.slug}`
-        console.log(`↗️ Редирект товара: /product/${id} → ${newUrl}`)
-        return sendRedirect(event, newUrl, 301)
-      }
-      
-      // Товар не найден - редирект на каталог
-      console.log(`↗️ Товар #${id} не найден, редирект на /products`)
-      return sendRedirect(event, '/products', 302)
-      
-    } catch (error) {
-      console.error('❌ Ошибка редиректа:', error.message)
+
+    const products = await getProductsForRedirect(event)
+    const product = products.find((p) => String(p.id) === id || p.id === Number(id))
+
+    if (product?.slug) {
+      const newUrl = `/product/${product.slug}`
+      console.log(`↗️ Редирект товара: /product/${id} → ${newUrl}`)
+      return sendRedirect(event, newUrl, 301)
     }
+
+    // Товар не найден — на каталог (главную), 302: возможно, появится позже
+    console.log(`↗️ Товар #${id} не найден, редирект на /`)
+    return sendRedirect(event, '/', 302)
   }
-  
-  // 3. Редирект со старых URL категорий (если были числовые)
-  const oldCategoryMatch = pathname.match(/^\/category\/(\d+)$/)
-  
-  if (oldCategoryMatch) {
-    // Можно добавить логику для категорий
-    console.log(`↗️ Редирект категории: ${pathname} → /products`)
-    return sendRedirect(event, '/products', 301)
-  }
-  
-  // 4. Убираем trailing slash (кроме корня)
+
+  // 3. Срез trailing slash (кроме корня) — канонизация URL
   if (pathname !== '/' && pathname.endsWith('/')) {
-    const newUrl = pathname.slice(0, -1) + url.slice(pathname.length)
-    console.log(`↗️ Убираем trailing slash: ${pathname} → ${newUrl}`)
+    const newUrl = pathname.slice(0, -1) + event.path.slice(pathname.length)
+    console.log(`↗️ Срез trailing slash: ${pathname} → ${newUrl}`)
     return sendRedirect(event, newUrl, 301)
   }
-  
-  // 5. Редирект на нижний регистр (кроме API и статики)
-  if (pathname !== pathname.toLowerCase() && 
-      !pathname.startsWith('/api/') && 
-      !pathname.startsWith('/_') &&
-      !pathname.includes('.')) {
-    const newUrl = pathname.toLowerCase() + url.slice(pathname.length)
-    console.log(`↗️ Редирект в нижний регистр: ${pathname} → ${newUrl}`)
+
+  // 4. Нижний регистр (кроме API, внутренних путей и файлов со статикой)
+  if (
+    pathname !== pathname.toLowerCase() &&
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith('/_') &&
+    !pathname.includes('.')
+  ) {
+    const newUrl = pathname.toLowerCase() + event.path.slice(pathname.length)
+    console.log(`↗️ Приведение к нижнему регистру: ${pathname} → ${newUrl}`)
     return sendRedirect(event, newUrl, 301)
   }
-  
-  // Продолжаем обработку
+
+  // Продолжаем обработку обычным конвейером Nitro
   return
 })

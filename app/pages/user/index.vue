@@ -156,7 +156,7 @@
                 )
                   //- Заголовок заказа (кликабельный)
                   .p-3.cursor-pointer(
-                    class="bg-base-50 hover:bg-base-200 transition-colors"
+                    class="bg-base-200/40 hover:bg-base-200 transition-colors"
                     @click="toggleOrderDetails(order.id)"
                   )
                     .flex.items-center.justify-between.gap-2
