@@ -14,6 +14,22 @@ const LEGACY_KEYS = ['userFavorites']
 
 let favoritesInstance = null
 
+/**
+ * Извлекает название категории из товара в любом из встречающихся форматов:
+ *   category: 'Электроника'                 → строка
+ *   category: { name: 'Электроника' }       → объект
+ *   categories: ['Электроника']             → массив строк (формат сервера!)
+ *   categories: [{ name: 'Электронica' }]   → массив объектов
+ * Ничего не нашлось — null (не подставляем фиктивную категорию).
+ * Дублирует resolveCategory из useCart.js — при рефакторинге вынести
+ * в app/utils и импортировать в обоих местах.
+ */
+const resolveCategory = (product) => {
+  const raw = product.category ?? product.categories?.[0]
+  if (!raw) return null
+  return typeof raw === 'string' ? raw : raw.name || null
+}
+
 export const useFavorites = () => {
   // SSR: свежий инстанс на каждый запрос — никакого шаринга между пользователями
   if (import.meta.server) return createFavorites()
@@ -24,7 +40,7 @@ export const useFavorites = () => {
 
 function createFavorites() {
   // Единственное мутируемое состояние. Всё остальное — computed от него,
-  // поэтому any изменение автоматически обновляет всех потребителей.
+  // поэтому любое изменение автоматически обновляет всех потребителей.
   const items = ref([])
 
   const normalizeId = (id) => (id == null ? null : String(id))
@@ -50,7 +66,10 @@ function createFavorites() {
     watch(items, save, { deep: true })
   }
 
-  // Снапшот товара для хранения — минимум полей для карточки избранного
+  // Снапшот товара для хранения — минимум полей для карточки избранного.
+  // ВАЖНО: категория через resolveCategory — раньше читалось только
+  // product.category, которого у серверных товаров нет (там categories),
+  // из-за чего корзина, получая снапшот, показывала «Другое» у всех
   const buildSnapshot = (product) => ({
     id: normalizeId(product.id || product._id),
     slug: product.slug ?? null,
@@ -60,7 +79,7 @@ function createFavorites() {
       product.image ??
       product.mainImage ??
       (Array.isArray(product.images) ? product.images[0] : null),
-    category: typeof product.category === 'string' ? product.category : product.category?.name ?? null,
+    category: resolveCategory(product),
     categorySlug: product.categorySlug ?? product.category?.slug ?? null,
     brand: product.brand ?? null,
     description: product.description ?? '',
@@ -78,7 +97,8 @@ function createFavorites() {
       p.image ??
       p.mainImage ??
       (Array.isArray(p.images) ? p.images[0] : null),
-    category: p.category ?? null,
+    // Старые записи без категории остаются null — не фиктивная «Другое»
+    category: p.category ?? (p.categories?.[0] ?? null),
     categorySlug: p.categorySlug ?? null,
     brand: p.brand ?? null,
     description: p.description ?? '',

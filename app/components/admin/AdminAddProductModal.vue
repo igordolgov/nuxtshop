@@ -1,9 +1,14 @@
-<!-- app/components/admin/AdminAddProductModal.vue -->
+<!-- app/components/admin/AdminAddProductModal.vue — модалка добавления товара:
+    категории ОБЯЗАТЕЛЬНЫ (раньше пустое поле молча подставляло фиктивную
+    категорию «Другое», которая сохранялась в KV и доезжала до корзины),
+    изображения ресайзятся на клиенте в WebP (useImageResize) —
+    в JSON уходит ~50–150 КБ вместо мегабайт base64. -->
 <template lang="pug">
 .modal(v-if="isOpen" class="modal-open")
   .modal-box.max-w-2xl.relative.w-full.max-h-screen.p-3(class="sm:p-6 sm:w-auto")
     //- Кнопка закрытия
     button.btn.btn-xs.btn-circle.btn-error.absolute.right-2.top-2(
+      type="button"
       @click="handleCancel"
       :disabled="isSubmitting"
       aria-label="Закрыть"
@@ -12,7 +17,7 @@
     h3.text-base.font-bold.mb-2(class="sm:text-xl") Добавить товар
 
     form(@submit.prevent="handleSubmit")
-      //- Основная информация - 2 колонки на мобильных
+      //- Основная информация — 2 колонки на мобильных
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-6")
         //- Название товара
         .form-control(class="sm:col-span-2")
@@ -27,11 +32,13 @@
             :class="{ 'input-error': errors.name }"
             @blur="validateField('name')"
           )
+          label.label.py-1(v-if="errors.name")
+            span.label-text-alt.text-error {{ errors.name }}
 
-        //- Категории
+        //- Категории — обязательное поле
         .form-control(class="sm:col-span-2")
           label.label.py-1
-            span.label-text.text-xs Категории
+            span.label-text.text-xs Категории *
           select.select.select-bordered.select-sm.w-full(
             v-model="form.categorySelect"
             :disabled="isSubmitting"
@@ -42,9 +49,13 @@
           input.input.input-bordered.input-sm.w-full.mt-1(
             type="text"
             v-model="form.categoriesInput"
-            placeholder="или ввести"
+            placeholder="или через запятую"
             :disabled="isSubmitting"
+            :class="{ 'input-error': errors.categories }"
+            @blur="validateField('categories')"
           )
+          label.label.py-1(v-if="errors.categories")
+            span.label-text-alt.text-error {{ errors.categories }}
 
         //- Цена
         .form-control(class="sm:col-span-1")
@@ -59,7 +70,10 @@
             step="0.01"
             :disabled="isSubmitting"
             :class="{ 'input-error': errors.price }"
+            @blur="validateField('price')"
           )
+          label.label.py-1(v-if="errors.price")
+            span.label-text-alt.text-error {{ errors.price }}
 
         //- Количество
         .form-control(class="sm:col-span-1")
@@ -122,7 +136,7 @@
               template(v-if="form.image && isValidImage(form.image)")
                 img(
                   :src="form.image"
-                  alt="Preview"
+                  alt="Превью изображения"
                   class="w-full h-full object-cover"
                   @error="handleImageError"
                 )
@@ -162,9 +176,9 @@
                 @error="handleGalleryImageError(index)"
               )
             button.btn.btn-xs.btn-circle.btn-error.absolute.-top-1.-right-1.p-0(
+              type="button"
               @click="removeGalleryImage(index)"
               :disabled="isSubmitting"
-              type="button"
             ) ✕
 
       //- Прогресс-бар
@@ -172,7 +186,7 @@
         .w-full.bg-gray-200.rounded-full.h-1
           .bg-primary.h-1.rounded-full.transition-all(:style="{ width: uploadProgress + '%' }")
 
-      //- Ошибка
+      //- Ошибка формы
       .alert.alert-error.mt-2.p-2.text-xs(v-if="formError")
         | {{ formError }}
 
@@ -196,6 +210,10 @@
 // ============================================
 // Компонент: AdminAddProductModal
 // Модалка добавления товара.
+// Категории ОБЯЗАТЕЛЬНЫ: раньше при пустом поле сюда
+// подставлялась фиктивная категория «Другое» — она сохранялась
+// в KV и показывалась в корзине/избранном. Теперь — валидация
+// на клиенте (поле + ошибки) и на сервере (index.post.js).
 // Изображения ресайзятся на клиенте в WebP (useImageResize) —
 // в JSON уходит ~50–150 КБ вместо мегабайт base64.
 // ============================================
@@ -210,6 +228,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:isOpen', 'productAdded'])
 
+// ⚙️ НАСТРОЙКА: максимум изображений в галерее товара
 const MAX_GALLERY_IMAGES = 5
 
 const isSubmitting = ref(false)
@@ -218,7 +237,8 @@ const mainImageInput = ref(null)
 const galleryInput = ref(null)
 const formError = ref('')
 
-const errors = ref({ name: '', price: '' })
+// Ошибки валидации полей (categories добавлена как обязательная)
+const errors = ref({ name: '', price: '', categories: '' })
 
 const form = ref({
   name: '',
@@ -232,11 +252,18 @@ const form = ref({
   stockQuantity: 0,
 })
 
+//- Категории из текстового поля: строка «A, B» → ['A', 'B']
+const parsedCategories = computed(() =>
+  form.value.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean),
+)
+
 const isFormValid = computed(() => {
   const hasName = form.value.name?.trim().length > 0
-  const hasValidPrice = form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
-  const noErrors = !errors.value.name && !errors.value.price
-  return hasName && hasValidPrice && noErrors
+  const hasValidPrice =
+    form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
+  const hasCategories = parsedCategories.value.length > 0
+  const noErrors = !errors.value.name && !errors.value.price && !errors.value.categories
+  return hasName && hasValidPrice && hasCategories && noErrors
 })
 
 const hasTooManyGalleryImages = computed(() => {
@@ -252,16 +279,27 @@ const validateField = (field) => {
       else errors.value.name = ''
       break
     case 'price':
-      if (form.value.price === null || form.value.price === undefined) errors.value.price = 'Обязательно'
+      if (form.value.price === null || form.value.price === undefined)
+        errors.value.price = 'Обязательно'
       else if (form.value.price < 0) errors.value.price = 'Не может быть отрицательной'
       else errors.value.price = ''
+      break
+    case 'categories':
+      if (parsedCategories.value.length === 0)
+        errors.value.categories = 'Укажите хотя бы одну категорию'
+      else errors.value.categories = ''
       break
   }
 }
 
 const isValidImage = (imageUrl) => {
   if (!imageUrl) return false
-  return imageUrl.startsWith('data:image/') || imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')
+  return (
+    imageUrl.startsWith('data:image/') ||
+    imageUrl.startsWith('http://') ||
+    imageUrl.startsWith('https://') ||
+    imageUrl.startsWith('/')
+  )
 }
 
 const handleImageError = () => {
@@ -350,6 +388,8 @@ const onCategorySelect = () => {
       form.value.categoriesInput = current.join(', ')
     }
     form.value.categorySelect = ''
+    // Категория добавлена — снимаем ошибку обязательности
+    validateField('categories')
   }
 }
 
@@ -373,6 +413,7 @@ const handleCancel = () => {
 const handleSubmit = async () => {
   validateField('name')
   validateField('price')
+  validateField('categories')
 
   if (!isFormValid.value) return
   if (hasTooManyGalleryImages.value) {
@@ -385,8 +426,9 @@ const handleSubmit = async () => {
   formError.value = ''
 
   try {
-    const categories = form.value.categoriesInput.split(',').map((cat) => cat.trim()).filter(Boolean)
-    if (categories.length === 0) categories.push('Другое')
+    // Категории обязательны — фиктивная «Другое» больше не подставляется.
+    // (Раньше здесь было: if (categories.length === 0) categories.push('Другое'))
+    const categories = parsedCategories.value
 
     const newProduct = {
       name: form.value.name.trim(),
@@ -433,14 +475,17 @@ const resetForm = () => {
     inStock: true,
     stockQuantity: 0,
   }
-  errors.value = { name: '', price: '' }
+  errors.value = { name: '', price: '', categories: '' }
   if (mainImageInput.value) mainImageInput.value.value = ''
   if (galleryInput.value) galleryInput.value.value = ''
   uploadProgress.value = 0
   formError.value = ''
 }
 
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) resetForm()
-})
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) resetForm()
+  },
+)
 </script>

@@ -100,11 +100,6 @@ export async function getProductBySlug(event: H3Event, slugOrId: string): Promis
   return products.find((p) => p.slug === slugOrId || String(p.id) === slugOrId) ?? null;
 }
 
-export async function getProductById(event: H3Event, id: string): Promise<Product | null> {
-  const products = await readProducts(event);
-  return products.find((p) => String(p.id) === String(id)) ?? null;
-}
-
 export async function getSimilarProducts(
   event: H3Event,
   current: Product,
@@ -119,32 +114,4 @@ export async function getSimilarProducts(
         p.categories?.some((c) => current.categories.includes(c)),
     )
     .slice(0, limit);
-}
-
-export function validateProduct(product: Partial<Product>) {
-  const errors: string[] = [];
-  if (!product.name?.trim()) errors.push('Название обязательно');
-  if (product.price === undefined || Number.isNaN(product.price)) errors.push('Цена обязательна');
-  if ((product.price ?? 0) < 0) errors.push('Цена не может быть отрицательной');
-  return { valid: errors.length === 0, errors };
-}
-
-export function createProductObject(data: Record<string, any>): Product {
-  const now = new Date().toISOString();
-  const stockQuantity = parseInt(data.stockQuantity) || 0;
-  return {
-    id: data.id || String(Date.now()),
-    slug: data.slug || slugify(data.name),
-    name: data.name?.trim() || '',
-    description: data.description || '',
-    price: parseFloat(data.price) || 0,
-    image: data.image || '/images/products/placeholder.webp',
-    gallery: Array.isArray(data.gallery) ? data.gallery : [],
-    categories: Array.isArray(data.categories) ? data.categories : ['Другое'],
-    inStock: stockQuantity > 0,
-    stockQuantity,
-    characteristics: data.characteristics || {},
-    createdAt: now,
-    updatedAt: now,
-  };
 }

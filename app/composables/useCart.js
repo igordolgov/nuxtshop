@@ -1,4 +1,9 @@
 // app/composables/useCart.js
+// ============================================
+// Composable: useCart — корзина (singleton на клиенте).
+// Снапшоты товаров в localStorage; все суммы — computed.
+// ============================================
+
 import { ref, computed } from 'vue'
 
 const STORAGE_KEY = 'cart'
@@ -11,6 +16,22 @@ const slugify = (str) => {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim()
+}
+
+/**
+ * Достаёт название категории из товара в любом из встречающихся форматов:
+ *   category: 'Электроника'                    → строка
+ *   category: { name: 'Электронica', slug }    → объект
+ *   categories: ['Электроника']                → массив строк
+ *   categories: [{ name: 'Электроника' }]      → массив объектов
+ * Ничего не нашлось — 'Другое'.
+ * (Раньше читался только categories?.[0], которого в товарах нет,
+ *  — все позиции в корзине получали категорию «Другое»)
+ */
+const resolveCategory = (product) => {
+  const raw = product.category ?? product.categories?.[0]
+  if (!raw) return 'Другое'
+  return typeof raw === 'string' ? raw : raw.name || 'Другое'
 }
 
 let cartInstance = null
@@ -47,25 +68,26 @@ function createCart() {
     cartItems.value.reduce((sum, item) => {
       const price = item.currentPrice || item.price || 0
       return sum + price * (item.quantity || 0)
-    }, 0)
+    }, 0),
   )
 
   const discount = computed(() => (appliedPromo.value ? subtotal.value * 0.1 : 0))
 
+  // ⚙️ НАСТРОЙКА: бесплатная доставка от 2000 ₽, иначе 300 ₽
   const deliveryPrice = computed(() => (subtotal.value > 2000 ? 0 : 300))
 
   const total = computed(() => subtotal.value - discount.value + deliveryPrice.value)
 
   const totalItems = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+    cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0),
   )
 
   const discountPercent = computed(() =>
-    subtotal.value > 0 ? Math.round((discount.value / subtotal.value) * 100) : 0
+    subtotal.value > 0 ? Math.round((discount.value / subtotal.value) * 100) : 0,
   )
 
   const hasOutOfStockItems = computed(() =>
-    cartItems.value.some((item) => (item.quantity || 0) > (item.stockQuantity || 999))
+    cartItems.value.some((item) => (item.quantity || 0) > (item.stockQuantity || 999)),
   )
 
   // ─── Storage ──────────────────────────────────────────────
@@ -75,7 +97,7 @@ function createCart() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ items: state.value.items, promo: state.value.promo })
+        JSON.stringify({ items: state.value.items, promo: state.value.promo }),
       )
     } catch (error) {
       console.error('Error saving cart:', error)
@@ -140,7 +162,9 @@ function createCart() {
         originalPrice: product.originalPrice || product.price || 0,
         quantity: 1,
         image: product.image || '',
-        category: product.categories?.[0] || 'Другое',
+        // Категория через resolveCategory: строка / объект / массив —
+        // всё покрывается (раньше только categories?.[0] → всегда «Другое»)
+        category: resolveCategory(product),
         stockQuantity: product.stockQuantity || 0,
         inStock: product.inStock ?? true,
         discount: product.discount || 0,
@@ -187,6 +211,7 @@ function createCart() {
   }
 
   const applyPromoCode = async (code) => {
+    // ⚙️ НАСТРОЙКА: промокоды (SALE10 = скидка 10%, см. discount)
     if (code.toUpperCase() === 'SALE10') {
       state.value.promo = code
       state.value.error = ''
@@ -213,8 +238,16 @@ function createCart() {
     }
   }
 
-  const getMaxQuantity = (productId) => {
-    const item = state.value.items.find((i) => i.id === productId)
+  /**
+   * Лимит склада для позиции корзины.
+   * Принимает и id, и объект позиции: страница корзины вызывает
+   * getMaxQuantity(item), другие места — getMaxQuantity(id).
+   * (Раньше при передаче объекта сравнение i.id === объект всегда
+   *  было false → возврат 999 → блок «Доступно: N шт.» не показывался)
+   */
+  const getMaxQuantity = (productOrId) => {
+    const id = typeof productOrId === 'object' ? productOrId?.id : productOrId
+    const item = state.value.items.find((i) => i.id === id)
     return item?.stockQuantity || 999
   }
 

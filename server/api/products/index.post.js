@@ -1,7 +1,27 @@
 // server/api/products/index.post.js
+// Создание товара (POST /api/products). Только админ.
+// Категории ОБЯЗАТЕЛЬНЫ, принимаются в форматах:
+//   categories: ['Электроника']         — массив строк
+//   categories: 'Электроника, Техника'  — строка через запятую
+//   categoriesInput: '...'              — строка через запятую (форма админки)
+// Фиктивная категория «Другое» больше не подставляется:
+// раньше она записывалась в KV при пустом поле и доезжала до корзины.
 import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
+
+/** Нормализует категории из любого поддерживаемого формата → массив строк */
+function normalizeCategories(body) {
+  const raw = body.categories ?? body.categoriesInput
+  if (Array.isArray(raw)) {
+    // Массив строк или массив объектов { name }
+    return raw.map((c) => (typeof c === 'string' ? c.trim() : c?.name ?? '')).filter(Boolean)
+  }
+  if (typeof raw === 'string') {
+    return raw.split(',').map((c) => c.trim()).filter(Boolean)
+  }
+  return []
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,24 +35,26 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Цена товара обязательна' })
     }
 
+    // Категории: обязательны (сообщения согласованы с валидацией в админке)
+    const categories = normalizeCategories(body)
+    if (categories.length === 0) {
+      throw createError({ statusCode: 400, statusMessage: 'Укажите хотя бы одну категорию' })
+    }
+
     const products = await readProducts(event)
 
     const newId = products.length > 0 ? Math.max(...products.map((p) => Number(p.id) || 0)) + 1 : 1
     const slug = generateUniqueSlug(slugify(body.name) || `product-${newId}`, products)
 
-    let imageUrl = body.image || '/images/products/placeholder.webp'
+    // Fallback-картинка — СУЩЕСТВУЮЩИЙ файл (раньше был
+    // /images/products/placeholder.webp, которого нет в public/images)
+    let imageUrl = body.image || '/images/placeholder.jpg'
     if (body.image?.startsWith('data:image/')) {
       imageUrl = await processImage(body.image, 'main')
     }
     const gallery = await processGallery(body.gallery)
 
     const stockQuantity = parseInt(body.stockQuantity) || 0
-    let categories = ['Другое']
-    if (Array.isArray(body.categories) && body.categories.length > 0) {
-      categories = body.categories
-    } else if (body.categoriesInput) {
-      categories = body.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
-    }
 
     const now = new Date().toISOString()
     const newProduct = {
