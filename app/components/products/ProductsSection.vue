@@ -1,11 +1,19 @@
-<!-- components/products/ProductsSection.vue - С Infinite Scroll -->
+<!-- components/products/ProductsSection.vue — секция каталога:
+    пагинация с infinite scroll (IntersectionObserver), упрощённая
+    виртуализация, скелетоны при первой загрузке и подгрузке
+    (вместо блокирующих спиннеров), пустое состояние и ошибки. -->
 <template lang="pug">
 .products-section.pb-12(class="sm:pb-0")
-  //- Загрузка первой страницы
-  .initial-loading.flex.justify-center.items-center.py-20(
-    v-if="isLoadingInitial"
-  )
-    span.loading.loading-spinner.loading-lg.text-primary
+  //- ─── Первая загрузка: скелетон-сетка вместо спиннера.
+  //- Та же сетка, что реальный каталог (gridClasses) — при подмене
+  //- контентом ничего не прыгает ───
+  .initial-skeleton(v-if="isLoadingInitial")
+    .products-grid(:class="gridClasses")
+      ProductCardSkeleton(
+        v-for="i in initialSkeletonCount"
+        :key="`sk-init-${i}`"
+        :variant="isMobile ? 'list' : 'grid'"
+      )
 
   //- Основной контент
   template(v-else)
@@ -13,9 +21,10 @@
     .search-results.mb-4(v-if="searchQuery && displayedProducts.length > 0")
       .flex.items-center.justify-between.gap-2.flex-wrap
         .text-sm.text-base-content.opacity-70
-          | Найдено {{ displayedProducts.length }} товаров по запросу 
+          | Найдено {{ displayedProducts.length }} товаров по запросу
           span.font-medium "{{ searchQuery }}"
         button.btn.btn-sm.btn-ghost.gap-1(
+          type="button"
           @click="$emit('clearSearch')"
         )
           Icon(name="mdi:close" size="16")
@@ -29,6 +38,7 @@
       h3.text-xl.font-medium.mb-2 Товары не найдены
       p.text-base-content.opacity-60.mb-4 {{ emptyMessage }}
       button.btn.btn-primary(
+        type="button"
         v-if="activeFiltersCount > 0"
         @click="$emit('resetFilters')"
       ) Сбросить фильтры
@@ -44,7 +54,9 @@
       )
         | Показано {{ visibleProducts.length }} из {{ displayedProducts.length }} товаров
 
-      //- Сетка товаров
+      //- Сетка товаров.
+      //- Скелетоны подгрузки рендерятся ВНУТРИ сетки после карточек —
+      //- выглядят как продолжение списка, без прыжков раскладки
       .products-grid(
         :class="gridClasses"
       )
@@ -58,17 +70,18 @@
           @addToCart="$emit('addToCart', $event)"
         )
 
+        //- Скелетоны подгрузки следующей страницы
+        template(v-if="isLoadingMore")
+          ProductCardSkeleton(
+            v-for="i in moreSkeletonCount"
+            :key="`sk-more-${i}`"
+            :variant="isMobile ? 'list' : 'grid'"
+          )
+
       //- Sentinel для IntersectionObserver
       .scroll-sentinel(
         ref="sentinelRef"
       )
-
-      //- Индикатор загрузки
-      .loading-more.flex.justify-center.items-center.py-6(
-        v-if="isLoadingMore"
-      )
-        span.loading.loading-spinner.loading-md.text-primary
-        span.ml-2.text-sm.opacity-60 Загрузка товаров...
 
       //- Конец списка
       .end-of-list.text-center.py-2.text-sm.opacity-50(
@@ -76,11 +89,12 @@
       )
         | Вы просмотрели все товары ({{ displayedProducts.length }})
 
-    //- Кнопка "Показать ещё" (fallback)
+    //- Кнопка "Показать ещё" (fallback без infinite scroll)
     .load-more-section.py-6.text-center(
       v-if="showLoadMoreButton && hasMore && !isLoadingMore"
     )
       button.btn.btn-outline.btn-primary(
+        type="button"
         @click="loadMore"
       )
         | Показать ещё
@@ -94,6 +108,7 @@
     h3.text-xl.font-medium.mb-2 Ошибка загрузки
     p.text-base-content.opacity-60.mb-4 {{ loadError }}
     button.btn.btn-primary(
+      type="button"
       @click="$emit('refreshProducts')"
     ) Попробовать снова
 </template>
@@ -107,43 +122,43 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 const props = defineProps({
   products: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   isLoading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isMobile: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isHorizontal: {
     type: Boolean,
-    default: false
+    default: false,
   },
   searchQuery: {
     type: String,
-    default: ''
+    default: '',
   },
   activeFiltersCount: {
     type: Number,
-    default: 0
+    default: 0,
   },
   // Включить infinite scroll (иначе показать кнопку)
   useInfiniteScroll: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // Размер страницы для загрузки
   pageSize: {
     type: Number,
-    default: 20
+    default: 20,
   },
   // Максимальное количество элементов в DOM
   maxRendered: {
     type: Number,
-    default: 100
-  }
+    default: 100,
+  },
 })
 
 // ==========================================
@@ -154,7 +169,7 @@ const emit = defineEmits([
   'addToCart',
   'resetFilters',
   'refreshProducts',
-  'clearSearch'
+  'clearSearch',
 ])
 
 // ==========================================
@@ -197,22 +212,30 @@ const showLoadMoreButton = computed(() => {
   return !props.useInfiniteScroll
 })
 
+// Скелетоны первой загрузки: заполняют экран.
+// ⚙️ НАСТРОЙКА: количество призрачных карточек
+const initialSkeletonCount = computed(() => (props.isMobile ? 6 : 10))
+
+// Скелетоны подгрузки: короткий ряд внизу сетки.
+// ⚙️ НАСТРОЙКА: при 2 колонках 4 = два ряда, при 4–5 колонках — один ряд
+const moreSkeletonCount = computed(() => (props.isMobile ? 4 : 5))
+
 const gridClasses = computed(() => {
   const classes = ['grid', 'gap-2', 'sm:gap-4']
-  
+
   if (props.isMobile) {
     if (props.isHorizontal) {
-      // Горизонтальный режим на мобильном - 4 колонки
+      // Горизонтальный режим на мобильном — 4 колонки
       classes.push('grid-cols-4', 'gap-1', 'sm:gap-2')
     } else {
-      // Вертикальный режим на мобильном - 2 колонки
+      // Вертикальный режим на мобильном — 2 колонки
       classes.push('grid-cols-2')
     }
   } else {
     // Десктоп
     classes.push('grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4', 'xl:grid-cols-5')
   }
-  
+
   return classes
 })
 
@@ -236,37 +259,42 @@ const emptyMessage = computed(() => {
 const updateVisibleProducts = () => {
   const total = displayedProducts.value.length
   const maxStart = Math.max(0, total - props.maxRendered)
-  
+
   if (startIndex.value > maxStart) {
     startIndex.value = maxStart
   }
-  
+
   const endIndex = Math.min(startIndex.value + props.maxRendered, total)
   visibleProducts.value = displayedProducts.value.slice(startIndex.value, endIndex)
 }
 
 /**
- * Загрузка следующей страницы
+ * Загрузка следующей страницы.
+ * Данные уже локальные (props) — пагинация виртуальная; пауза нужна
+ * только чтобы скелетоны были различимы глазом и переход был плавным.
+ * ⚙️ НАСТРОЙКА: длительность показа скелетонов подгрузки, мс
+ * (раньше 100 — скелетоны мелькали нечитаемо)
  */
+const LOAD_MORE_DELAY_MS = 300
+
 const loadMore = async () => {
   if (isLoadingMore.value || !hasMore.value) return
-  
+
   isLoadingMore.value = true
-  
+
   try {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
+    await new Promise((resolve) => setTimeout(resolve, LOAD_MORE_DELAY_MS))
+
     const total = displayedProducts.value.length
     const nextEnd = (currentPage.value + 1) * props.pageSize
-    
+
     if (nextEnd >= total) {
       hasMore.value = false
     } else {
       currentPage.value++
     }
-    
+
     updateVisibleProducts()
-    
   } catch (error) {
     console.error('[ProductsSection] Error loading more:', error)
     loadError.value = 'Не удалось загрузить товары'
@@ -280,18 +308,18 @@ const loadMore = async () => {
  */
 const cleanupTopItems = () => {
   if (!containerRef.value || isScrolling.value || startIndex.value === 0) return
-  
+
   const scrollTop = containerRef.value.scrollTop
   const scrolledItems = Math.floor(scrollTop / ESTIMATED_ITEM_HEIGHT)
   const newStartIndex = Math.max(0, scrolledItems - 5)
-  
+
   if (newStartIndex !== startIndex.value && newStartIndex > 0) {
     const oldStartIndex = startIndex.value
     startIndex.value = newStartIndex
-    
+
     const scrollDiff = (newStartIndex - oldStartIndex) * ESTIMATED_ITEM_HEIGHT
     containerRef.value.scrollTop = scrollTop - scrollDiff
-    
+
     updateVisibleProducts()
   }
 }
@@ -300,12 +328,12 @@ const cleanupTopItems = () => {
  * Инициализация IntersectionObserver
  */
 const setupObserver = () => {
-  if (!process.client || !sentinelRef.value) return
-  
+  if (!import.meta.client || !sentinelRef.value) return
+
   if (observer.value) {
     observer.value.disconnect()
   }
-  
+
   observer.value = new IntersectionObserver(
     async ([entry]) => {
       if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
@@ -315,10 +343,10 @@ const setupObserver = () => {
     {
       root: containerRef.value || null,
       rootMargin: '300px',
-      threshold: 0
-    }
+      threshold: 0,
+    },
   )
-  
+
   observer.value.observe(sentinelRef.value)
 }
 
@@ -327,9 +355,9 @@ const setupObserver = () => {
  */
 const handleScroll = () => {
   isScrolling.value = true
-  
+
   if (scrollTimeout) clearTimeout(scrollTimeout)
-  
+
   scrollTimeout = setTimeout(() => {
     isScrolling.value = false
     cleanupTopItems()
@@ -345,13 +373,13 @@ const reset = async () => {
   hasMore.value = true
   isLoadingMore.value = false
   loadError.value = null
-  
+
   visibleProducts.value = []
-  
+
   if (containerRef.value) {
     containerRef.value.scrollTop = 0
   }
-  
+
   await nextTick()
   updateVisibleProducts()
   setupObserver()
@@ -364,23 +392,23 @@ const reset = async () => {
 watch(
   () => props.products,
   async (newProducts, oldProducts) => {
-    const newIds = newProducts?.map(p => p.id).join(',')
-    const oldIds = oldProducts?.map(p => p.id).join(',')
-    
+    const newIds = newProducts?.map((p) => p.id).join(',')
+    const oldIds = oldProducts?.map((p) => p.id).join(',')
+
     if (newIds !== oldIds) {
       await reset()
     }
-    
+
     isLoadingInitial.value = false
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 )
 
 watch(
   () => props.isLoading,
   (loading) => {
     isLoadingInitial.value = loading
-  }
+  },
 )
 
 // ==========================================
@@ -388,14 +416,14 @@ watch(
 // ==========================================
 
 onMounted(() => {
-  if (!process.client) return
-  
+  if (!import.meta.client) return
+
   updateVisibleProducts()
-  
+
   setTimeout(() => {
     setupObserver()
   }, 100)
-  
+
   if (containerRef.value) {
     containerRef.value.addEventListener('scroll', handleScroll, { passive: true })
   }
@@ -405,11 +433,11 @@ onUnmounted(() => {
   if (observer.value) {
     observer.value.disconnect()
   }
-  
+
   if (containerRef.value) {
     containerRef.value.removeEventListener('scroll', handleScroll)
   }
-  
+
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
   }
@@ -420,7 +448,7 @@ onUnmounted(() => {
 // ==========================================
 defineExpose({
   reset,
-  loadMore
+  loadMore,
 })
 </script>
 
@@ -453,10 +481,6 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.loading-more {
-  contain: layout;
-}
-
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -469,7 +493,6 @@ defineExpose({
   margin-bottom: 1rem;
 }
 
-.initial-loading,
 .error-state {
   display: flex;
   flex-direction: column;

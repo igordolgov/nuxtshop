@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useSearchHighlight } from '@/composables/useSearchHighlight'
 
 const props = defineProps({
@@ -155,14 +155,6 @@ const hasSearchHighlight = computed(() => {
   return categories.some(category => categoryHasHighlight(category))
 })
 
-// Следим за изменениями searchQuery
-watch(() => props.searchQuery, (newQuery) => {
-  console.log('🔄 ProductCardList searchQuery:', newQuery, 
-    'valid for highlight:', queryValidForHighlight.value,
-    'nameHasHighlight:', nameHasHighlight.value,
-    'descriptionHasHighlight:', descriptionHasHighlight.value)
-})
-
 // Ограничиваем количество отображаемых категорий для компактности
 const displayedCategories = computed(() => {
   const categories = props.product.categories || []
@@ -176,7 +168,7 @@ const isFavorite = computed(() => {
 
 // Обработчик избранного
 const toggleFavorite = () => {
-  app.toggleFavorite(props.product.id)
+  app.toggleFavorite(props.product)
 }
 </script>
 

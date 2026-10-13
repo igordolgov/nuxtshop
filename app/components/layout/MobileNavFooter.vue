@@ -188,17 +188,17 @@ ClientOnly
 ============================================================ */
 .nav-item.is-active {
   background-color: color-mix(in oklab, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
+  color: var(--color-blue-400);
   font-weight: 600;
 }
 
 .nav-item.is-active .nav-icon svg {
-  stroke: var(--color-primary);
+  stroke: var(--color-blue-400);
   stroke-width: 2.5px;
 }
 
 .nav-item.is-active .nav-label {
-  color: var(--color-primary);
+  color: var(--color-blue-400);
 }
 
 /* ============================================================
