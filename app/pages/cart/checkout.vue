@@ -1,4 +1,6 @@
-<!-- pages/cart/checkout.vue -->
+<!-- pages/cart/checkout.vue — оформление заказа: 4 шага (контакты, доставка,
+     оплата, подтверждение), отправка заказа на сервер (POST /api/orders —
+     деньги пересчитывает сервер), экран успеха с реальным номером заказа. -->
 <template lang="pug">
 .checkout-page
   Header
@@ -8,66 +10,66 @@
       .card-body.p-2.w-auto.flex.items-center.justify-center(class="lg:p-4")
         .steps-container
           .step-horizontal.flex.items-center.text-center.mx-2(
-            v-for="(step, index) in checkoutSteps" 
+            v-for="(step, index) in checkoutSteps"
             :key="index"
-            :class="{ 'step-active': currentStep === index + 1, 'step-completed': currentStep > index + 1 }" )
+            :class="{ 'step-active': currentStep === index + 1, 'step-completed': currentStep > index + 1 }"
+          )
             .step-content.flex.flex-col.items-center.px-2
               .step-number.mb-1(:class="{ 'bg-primary text-white': currentStep >= index + 1, 'bg-base-300': currentStep < index + 1 }") {{ index + 1 }}
-              span.step-name.whitespace-normal.break-words.text-center(class="text-[0.65rem] lg:text-sm lg:font-medium") {{ step.name }}
+              span.step-name.whitespace-normal.break-words.text-center(class="lg:font-medium text-[0.65rem] lg:text-sm") {{ step.name }}
             .step-connector(v-if="index < checkoutSteps.length - 1")
 
     //- Основная сетка
-    .grid.grid-cols-1.gap-2(class="lg:grid-cols-3 lg:gap-6")
-      //- Левая колонка - Товары и итоги (только десктоп)
+    .grid.grid-cols-1.gap-2(class="lg:gap-6 lg:grid-cols-3")
+      //- Левая колонка — Товары и итоги (только десктоп)
       .checkout-sticky-sidebar.hidden(class="lg:block lg:col-span-1")
-          //- Карточка с товарами в заказе
-          .card.bg-base-100.shadow-lg
-            .card-body.p-3(class="lg:pt-0")
-              h2.card-title.text-md.mb-2(class="lg:text-2xl") Товары в заказе
-              .max-h-80.overflow-y-auto(v-if="cartItems?.length")
-                .space-y-2
-                  .flex.items-center.gap-2.p-2.rounded-lg.bg-base-200(
-                    v-for="item in cartItems"
-                    :key="item.id"
-                  )
-                    .avatar.flex-shrink-0
-                      .w-10.h-10.rounded
-                        NuxtImg(
-                          :src="getSafeImage(item?.image)" 
-                          :alt="item?.name" 
-                          class="object-cover"
-                          fetchpriority="high"
-                        )
-                    .flex-1.min-w-0
-                      .font-medium.text-sm.truncate(class="lg:text-md") {{ item?.name }}
-                      .flex.items-center.justify-between.mt-1
-                        span.text-base-content(class="text-[0.65rem] opacity-70") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
-                        .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
-              .text-xs.text-center.py-4(v-else class="text-base-content/70") Корзина пуста
+        .card.bg-base-100.shadow-lg
+          .card-body.p-3(class="lg:pt-0")
+            h2.card-title.text-md.mb-2(class="lg:text-2xl") Товары в заказе
+            .max-h-80.overflow-y-auto(v-if="cartItems?.length")
+              .space-y-2
+                .flex.items-center.gap-2.p-2.rounded-lg.bg-base-200(
+                  v-for="item in cartItems"
+                  :key="item.id"
+                )
+                  .avatar.flex-shrink-0
+                    .w-10.h-10.rounded
+                      NuxtImg(
+                        :src="getSafeImage(item?.image)"
+                        :alt="item?.name"
+                        class="object-cover"
+                        fetchpriority="high"
+                      )
+                  .flex-1.min-w-0
+                    .font-medium.text-sm.truncate(class="lg:text-md") {{ item?.name }}
+                    .flex.items-center.justify-between.mt-1
+                      span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
+                      .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
+            .text-xs.text-center.py-4(v-else class="text-base-content/70") Корзина пуста
 
-              .mt-2.pt-2.border-t.border-base-300
-                .space-y-1
-                  .flex.justify-between.text-xs
-                    span Товары ({{ totalItems || 0 }})
-                    span.font-medium {{ formatPrice(subtotal || 0) }} ₽
-                  .flex.justify-between.text-xs(v-if="discount > 0")
-                    span Скидка
-                    span.text-error.font-medium -{{ formatPrice(discount) }} ₽
-                  .flex.justify-between.text-xs
-                    span Доставка
-                    span.font-medium {{ selectedDeliveryPrice === 0 ? 'Бесплатно' : formatPrice(selectedDeliveryPrice) + ' ₽' }}
-                  .divider.my-1
-                  .flex.justify-between.text-base.font-bold.text-sky-600
-                    span Итого
-                    span {{ formatPrice(finalTotal) }} ₽
+            .mt-2.pt-2.border-t.border-base-300
+              .space-y-1
+                .flex.justify-between.text-xs
+                  span Товары ({{ totalItems || 0 }})
+                  span.font-medium {{ formatPrice(subtotal || 0) }} ₽
+                .flex.justify-between.text-xs(v-if="discount > 0")
+                  span Скидка
+                  span.text-error.font-medium -{{ formatPrice(discount) }} ₽
+                .flex.justify-between.text-xs
+                  span Доставка
+                  span.font-medium {{ selectedDeliveryPrice === 0 ? 'Бесплатно' : formatPrice(selectedDeliveryPrice) + ' ₽' }}
+                .divider.my-1
+                .flex.justify-between.text-base.font-bold.text-primary
+                  span Итого
+                  span {{ formatPrice(finalTotal) }} ₽
 
-      //- Правая колонка - Форма оформления
+      //- Правая колонка — Форма оформления
       .checkout-form.flex.flex-col(class="lg:col-span-2")
         .card.bg-base-100.shadow-xl.flex-1.flex.flex-col.h-full
           .card-body.p-2.pt-4.flex.flex-col.h-full(class="lg:p-6 lg:pt-0")
             //- Заголовок текущего шага
-            h1.card-title.text-lg.mb-3(class="lg:text-2xl lg:mb-4") {{ checkoutSteps[currentStep - 1]?.title }}
-            
+            h1.card-title.text-lg.mb-3(class="lg:mb-4 lg:text-2xl") {{ checkoutSteps[currentStep - 1]?.title }}
+
             //- Контент формы
             .step-content.flex-1.overflow-y-auto
               //- Шаг 1: Контактная информация
@@ -80,6 +82,7 @@
                       type="text"
                       v-model="orderForm.firstName"
                       placeholder="Введите имя"
+                      autocomplete="given-name"
                       :class="{ 'input-error': errors.firstName }"
                       class="lg:input-md"
                     )
@@ -93,6 +96,7 @@
                       type="text"
                       v-model="orderForm.lastName"
                       placeholder="Введите фамилию"
+                      autocomplete="family-name"
                       :class="{ 'input-error': errors.lastName }"
                       class="lg:input-md"
                     )
@@ -106,6 +110,8 @@
                       type="email"
                       v-model="orderForm.email"
                       placeholder="your@email.com"
+                      autocomplete="email"
+                      inputmode="email"
                       :class="{ 'input-error': errors.email }"
                       class="lg:input-md"
                     )
@@ -115,10 +121,12 @@
                   .form-control(class="sm:col-span-2")
                     label.label.block.text-base-content.font-bold.py-0
                       span.label-text.text-xs(class="lg:text-sm") Телефон *
-                    input.input.input-bordered.input-sm(
+                    input.input.input-bordered.input-sm.text-base(
                       type="tel"
                       v-model="orderForm.phone"
                       placeholder="+7 (XXX) XXX-XX-XX"
+                      autocomplete="tel"
+                      inputmode="tel"
                       :class="{ 'input-error': errors.phone }"
                       class="lg:input-md"
                     )
@@ -147,14 +155,14 @@
                           span.text-sm(v-else) 📮
                         .flex-1
                           .font-bold.text-sm {{ method.name }}
-                          span.text-base-content(class="text-[0.65rem] opacity-70") {{ method.description }}
+                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ method.description }}
                       .mt-1.text-right
                         .text-sm.font-bold {{ method.price === 0 ? 'Бесплатно' : `+${formatPrice(method.price)}` }}
 
                 //- Адрес доставки (для курьера и почты)
                 .mt-4(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
                   h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? 'Адрес для посылки' : 'Адрес доставки' }}
-                  
+
                   .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                     .form-control(class="lg:col-span-2")
                       label.label.py-0
@@ -162,6 +170,7 @@
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.address"
+                        autocomplete="street-address"
                         :placeholder="orderForm.deliveryMethod === 'post' ? 'Улица, дом, квартира, населенный пункт' : 'Улица, дом, квартира'"
                         :class="{ 'input-error': errors.address }"
                         class="lg:input-md"
@@ -175,6 +184,7 @@
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.city"
+                        autocomplete="address-level2"
                         placeholder="Город"
                         :class="{ 'input-error': errors.city }"
                         class="lg:input-md"
@@ -188,7 +198,10 @@
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.postalCode"
+                        autocomplete="postal-code"
+                        inputmode="numeric"
                         placeholder="Почтовый индекс"
+                        maxlength="6"
                         :class="{ 'input-error': errors.postalCode }"
                         class="lg:input-md"
                       )
@@ -197,7 +210,7 @@
 
               //- Шаг 3: Оплата
               div(v-if="currentStep === 3")
-                .grid.grid-cols-1.gap-3(class="lg:grid-cols-3")
+                .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                   label.card.cursor-pointer.border-2.transition-all.duration-200.rounded-xl(
                     v-for="method in paymentMethods"
                     :key="method.id"
@@ -213,18 +226,22 @@
                       .flex.items-center.gap-2.mb-1
                         .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-200
                           span.text-sm(v-if="method.id === 'card'") 💳
-                          span.text-sm(v-else-if="method.id === 'cash'") 💵
-                          span.text-sm(v-else) ₿
+                          span.text-sm(v-else) 💵
                         .flex-1
                           .font-bold.text-sm {{ method.name }}
-                          span.text-base-content(class="text-[0.65rem] opacity-70") {{ method.description }}
+                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ method.description }}
 
-                //- Данные карты
+                //- Данные карты.
+                //- ⚠️ ЗАГЛУШКА: поля визуальные, данные НЕ покидают браузер
+                //- и НЕ отправляются на сервер (PCI DSS). Реальная оплата —
+                //- задача платёжного эквайринга, а не собственной формы.
                 .mt-4(v-if="orderForm.paymentMethod === 'card'")
                   .card.bg-base-200.border.border-base-300
                     .card-body.p-4
                       h3.text-md.font-bold.mb-2(class="lg:text-lg") Данные банковской карты
-                      
+                      p.text-xs.mb-3(class="text-base-content/60")
+                        | Оплата при подтверждении заказа. Данные карты не сохраняются.
+
                       .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                         .form-control(class="lg:col-span-2")
                           label.label.py-0
@@ -234,6 +251,8 @@
                             v-model="paymentData.cardNumber"
                             placeholder="0000 0000 0000 0000"
                             maxlength="19"
+                            inputmode="numeric"
+                            autocomplete="off"
                             class="lg:input-md"
                           )
 
@@ -245,6 +264,8 @@
                             v-model="paymentData.expiryDate"
                             placeholder="MM/YY"
                             maxlength="5"
+                            inputmode="numeric"
+                            autocomplete="off"
                             class="lg:input-md"
                           )
 
@@ -252,10 +273,12 @@
                           label.label.py-0
                             span.label-text.pr-2.text-xs(class="lg:text-sm") CVV/CVC
                           input.input.input-bordered.input-sm(
-                            type="text"
+                            type="password"
                             v-model="paymentData.cvv"
-                            placeholder="123"
+                            placeholder="•••"
                             maxlength="3"
+                            inputmode="numeric"
+                            autocomplete="off"
                             class="lg:input-md"
                           )
 
@@ -287,8 +310,7 @@
                     .flex.items-center.gap-2
                       .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-300
                         span.text-sm(v-if="orderForm.paymentMethod === 'card'") 💳
-                        span.text-sm(v-else-if="orderForm.paymentMethod === 'cash'") 💵
-                        span.text-sm(v-else) ₿
+                        span.text-sm(v-else) 💵
                       div
                         .font-medium.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.name }}
                         p.text-sm(class="text-base-content/70") {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.description }}
@@ -297,22 +319,25 @@
             .flex.justify-between.mt-4.pt-2.border-t.border-base-200.flex-shrink-0.sticky-navigation
               button.btn.btn-outline.btn-sm.rounded-lg(
                 v-if="currentStep > 1"
+                type="button"
                 @click="previousStep"
-                class="lg:btn-md lg:min-w-28"
+                class="lg:min-w-28 lg:btn-md"
               ) Назад
               .flex-1(v-if="currentStep > 1")
               button.btn.btn-primary.btn-sm.rounded-lg(
                 v-if="currentStep < 4"
+                type="button"
                 @click="nextStep"
                 :disabled="!isStepValid"
-                class="lg:btn-md lg:min-w-40"
+                class="lg:min-w-40 lg:btn-md"
               ) Продолжить
-              
+
               button.btn.btn-success.btn-sm.rounded-lg(
                 v-if="currentStep === 4"
+                type="button"
                 @click="placeOrder"
                 :disabled="isProcessing"
-                class="lg:btn-md lg:min-w-56"
+                class="lg:min-w-56 lg:btn-md"
               )
                 span(v-if="!isProcessing" class="lg:text-base") Подтвердить заказ
                 span.loading.loading-spinner.loading-sm(v-else class="lg:loading-md")
@@ -331,15 +356,15 @@
                 .avatar.flex-shrink-0
                   .w-10.h-10.rounded
                     NuxtImg(
-                      :src="getSafeImage(item?.image)" 
-                      :alt="item?.name" 
+                      :src="getSafeImage(item?.image)"
+                      :alt="item?.name"
                       class="object-cover"
                       fetchpriority="high"
                     )
                 .flex-1.min-w-0
                   .font-medium.text-xs.truncate {{ item?.name }}
                   .flex.items-center.justify-between.mt-1
-                    span.text-base-content(class="text-[0.65rem] opacity-70") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
+                    span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                     .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
           .text-xs.text-center.py-4(v-else class="text-base-content/70") Корзина пуста
 
@@ -355,7 +380,7 @@
                 span Доставка
                 span.font-medium {{ selectedDeliveryPrice === 0 ? 'Бесплатно' : formatPrice(selectedDeliveryPrice) + ' ₽' }}
               .divider.my-1
-              .flex.justify-between.text-sm.font-bold.text-sky-600
+              .flex.justify-between.text-sm.font-bold.text-primary
                 span Итого
                 span {{ formatPrice(finalTotal) }} ₽
 
@@ -363,15 +388,17 @@
     .mb-16(class="lg:mt-4")
       .card.bg-base-100.shadow-lg
         .card-body.p-3(class="lg:p-5")
-          h3.card-title.text-sm.mb-2(class="lg:text-base lg:mb-3") Применить промокод:
+          h3.card-title.text-sm.mb-2(class="lg:mb-3 lg:text-base") Применить промокод:
           .flex.gap-2
-            input.input.input-bordered.flex-1.input-sm(
+            input.input.input-bordered.flex-1.input-sm.text-base(
               type="text"
               placeholder="Введите промокод"
               v-model="promoCode"
+              autocomplete="off"
               class="lg:input-md"
             )
             button.btn.btn-primary.btn-sm(
+              type="button"
               @click="applyPromo"
               :disabled="!promoCode"
               class="lg:btn-md"
@@ -379,36 +406,36 @@
           .alert.alert-success.mt-2(v-if="appliedPromo")
             .flex.items-center.justify-between
               span(class="text-[0.65rem] lg:text-xs") Промокод "{{ appliedPromo }}" применен
-              button.btn.btn-ghost.btn-xs(@click="removePromo") ✕
+              button.btn.btn-ghost.btn-xs(type="button" @click="removePromo") ✕
 
     //- Модальное окно успешного заказа
     dialog.modal(:class="{ 'modal-open': showSuccessModal }")
       .modal-box.py-8.text-center.rounded-xl(class="lg:max-w-2xl")
         h3.text-2xl.font-bold.text-success.mb-4(class="lg:text-4xl") Заказ успешно оформлен!
         .text-6xl.mb-4(class="lg:text-6xl") 🎉
-        p(class="lg:text-xl lg:mb-2") Ваш заказ №{{ orderNumber }}
-        p.mb-2(class="lg:text-xl lg:mb-4") принят в обработку.
-        p.mb-4(class="lg:text-xl lg:mb-8") На указанную почту отправлено письмо с деталями заказа.
+        p(class="lg:mb-2 lg:text-xl") Ваш заказ №{{ orderNumber }}
+        p.mb-2(class="lg:mb-4 lg:text-xl") принят в обработку.
+        p.mb-4(class="lg:mb-8 lg:text-xl")
+          | Сумма заказа: {{ formatPrice(orderTotal) }} ₽.
+          br
+          | Для подтверждения мы свяжемся с вами по указанному телефону.
         .modal-action.justify-center
-          NuxtLink.btn.btn-primary.rounded-xl(to="/" class="lg:btn-lg" prefetch) Вернуться на главную
+          NuxtLink.btn.btn-primary.rounded-xl(to="/" class="lg:btn-lg" prefetch)
+            | Вернуться на главную
 
   //- Мобильный футер
   MobileNavFooter(class="lg:hidden")
 </template>
 
 <script setup>
-// Отключаем SSR для этой страницы полностью
+// Отключаем SSR для этой страницы: корзина и форма живут в localStorage/клиенте
 definePageMeta({
-  ssr: false
+  ssr: false,
 })
 
-import Header from '~/components/layout/Header.vue'
-import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
-import { useCart } from '@/composables/useCart'
-import { useProductUtils } from '@/composables/useProductUtils'
-
+// Header/MobileNavFooter/useCart/useProductUtils/useOrders — автоимпорт Nuxt
 const { $notify } = useNuxtApp()
-const { 
+const {
   cartItems,
   subtotal,
   discount,
@@ -416,27 +443,28 @@ const {
   appliedPromo,
   applyPromoCode,
   removePromoCode,
-  clearCart
+  clearCart,
 } = useCart()
-
 const { getSafeImage, formatPrice } = useProductUtils()
+const { createOrder } = useOrders()
 
-// Шаги оформления
+//- Шаги оформления
 const checkoutSteps = [
   { name: 'Контакты', title: 'Контактная информация' },
   { name: 'Доставка', title: 'Способ доставки' },
   { name: 'Оплата', title: 'Способ оплаты' },
-  { name: 'Подтверждение', title: 'Подтверждение заказа' }
+  { name: 'Подтверждение', title: 'Подтверждение заказа' },
 ]
 
-// Состояние оформления заказа
+//- Состояние
 const currentStep = ref(1)
 const isProcessing = ref(false)
 const showSuccessModal = ref(false)
 const orderNumber = ref('')
+const orderTotal = ref(0)
 const promoCode = ref('')
 
-// Форма заказа
+//- Форма заказа
 const orderForm = ref({
   firstName: '',
   lastName: '',
@@ -446,40 +474,45 @@ const orderForm = ref({
   address: '',
   city: '',
   postalCode: '',
-  paymentMethod: 'card'
+  paymentMethod: 'card',
 })
 
-// Данные оплаты
+//- Данные карты — ВИЗУАЛЬНАЯ ЗАГЛУШКА: никуда не отправляются
 const paymentData = ref({
   cardNumber: '',
   expiryDate: '',
-  cvv: ''
+  cvv: '',
 })
 
-// Ошибки валидации
+//- Ошибки валидации
 const errors = ref({})
 
-// Методы доставки
+//- Методы доставки (id/цены согласованы с server/lib/orderHelpers.ts)
 const deliveryMethods = [
   { id: 'courier', name: 'Курьерская доставка', description: 'Доставка до двери', price: 300 },
   { id: 'pickup', name: 'Самовывоз', description: 'Из пункта выдачи', price: 0 },
-  { id: 'post', name: 'Почта России', description: 'Доставка почтой', price: 200 }
+  { id: 'post', name: 'Почта России', description: 'Доставка почтой', price: 200 },
 ]
 
-// Методы оплаты
+//- Методы оплаты (только поддерживаемые сервером; способ 'online' убран)
 const paymentMethods = [
-  { id: 'card', name: 'Банковская карта', description: 'Онлайн оплата картой' },
+  { id: 'card', name: 'Банковская карта', description: 'Оплата при подтверждении заказа' },
   { id: 'cash', name: 'Наличными', description: 'При получении заказа' },
-  { id: 'online', name: 'Электронные деньги', description: 'ЮMoney, Qiwi и др.' }
 ]
 
-// Вычисляемые свойства
+//- Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
+const errorMessage = (err) =>
+  err?.data?.statusMessage || err?.data?.message || err?.message || 'Неизвестная ошибка'
+
+//- Вычисляемые свойства
 const selectedDeliveryPrice = computed(() => {
   if (!orderForm.value?.deliveryMethod) return 0
-  const method = deliveryMethods.find(m => m.id === orderForm.value.deliveryMethod)
+  const method = deliveryMethods.find((m) => m.id === orderForm.value.deliveryMethod)
   return method ? method.price : 0
 })
 
+//- Предпросмотр итога. Финальную сумму считает сервер — при изменении
+//- цен в KV возможна небольшая разница с реальным заказом
 const finalTotal = computed(() => {
   const sub = subtotal.value || 0
   const disc = discount.value || 0
@@ -489,16 +522,22 @@ const finalTotal = computed(() => {
 const isStepValid = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return orderForm.value.firstName?.trim() && 
-            orderForm.value.lastName?.trim() && 
-            orderForm.value.email?.trim() && 
-            orderForm.value.phone?.trim()
+      return (
+        orderForm.value.firstName?.trim() &&
+        orderForm.value.lastName?.trim() &&
+        orderForm.value.email?.trim() &&
+        orderForm.value.phone?.trim()
+      )
     case 2:
       if (orderForm.value.deliveryMethod === 'courier') {
         return orderForm.value.address?.trim() && orderForm.value.city?.trim()
       }
       if (orderForm.value.deliveryMethod === 'post') {
-        return orderForm.value.address?.trim() && orderForm.value.city?.trim() && orderForm.value.postalCode?.trim()
+        return (
+          orderForm.value.address?.trim() &&
+          orderForm.value.city?.trim() &&
+          /^\d{6}$/.test(orderForm.value.postalCode?.trim() || '')
+        )
       }
       return true
     case 3:
@@ -510,7 +549,7 @@ const isStepValid = computed(() => {
   }
 })
 
-// Методы
+//- Навигация по шагам
 const nextStep = () => {
   if (validateStep(currentStep.value)) {
     currentStep.value++
@@ -523,7 +562,7 @@ const previousStep = () => {
 
 const validateStep = (step) => {
   errors.value = {}
-  
+
   switch (step) {
     case 1:
       if (!orderForm.value.firstName?.trim()) errors.value.firstName = 'Введите имя'
@@ -540,22 +579,24 @@ const validateStep = (step) => {
       if (orderForm.value.deliveryMethod === 'post') {
         if (!orderForm.value.address?.trim()) errors.value.address = 'Введите адрес'
         if (!orderForm.value.city?.trim()) errors.value.city = 'Введите город'
-        if (!orderForm.value.postalCode?.trim()) errors.value.postalCode = 'Введите почтовый индекс'
+        if (!/^\d{6}$/.test(orderForm.value.postalCode?.trim() || ''))
+          errors.value.postalCode = 'Индекс: 6 цифр'
       }
       break
   }
-  
+
   return Object.keys(errors.value).length === 0
 }
 
+//- Промокод
 const applyPromo = async () => {
   if (!promoCode.value?.trim()) return
-  
+
   try {
     await applyPromoCode(promoCode.value)
     $notify.success('Промокод применен!')
     promoCode.value = ''
-  } catch (error) {
+  } catch {
     $notify.error('Неверный промокод')
   }
 }
@@ -565,58 +606,61 @@ const removePromo = async () => {
   $notify.info('Промокод удален')
 }
 
+//- ============================================
+//- ОФОРМЛЕНИЕ ЗАКАЗА — реальная отправка на сервер.
+//- Сервер сам пересчитывает суммы и проверяет склад:
+//- клиент передаёт только id+количество и контакты.
+//- ============================================
 const placeOrder = async () => {
-  if (!validateStep(4)) return
-  
   isProcessing.value = true
-  
+
   try {
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    orderNumber.value = 'ORD-' + Date.now().toString().slice(-6)
-    
-    // Сохраняем заказ в localStorage для истории пользователя
-    if (process.client) {
-      const savedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]')
-      const newOrder = {
-        id: orderNumber.value,
-        createdAt: new Date().toISOString(),
-        total: finalTotal.value,
-        subtotal: subtotal.value,
-        discount: discount.value,
-        deliveryPrice: selectedDeliveryPrice.value,
-        deliveryMethod: orderForm.value.deliveryMethod,
-        paymentMethod: orderForm.value.paymentMethod,
-        status: 'processing',
-        items: cartItems.value.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.currentPrice,
-          quantity: item.quantity,
-          image: item.image
-        })),
-        customer: {
-          name: `${orderForm.value.firstName} ${orderForm.value.lastName}`,
-          email: orderForm.value.email,
-          phone: orderForm.value.phone,
-          address: orderForm.value.address,
-          city: orderForm.value.city,
-          postalCode: orderForm.value.postalCode
-        }
-      }
-      savedOrders.unshift(newOrder)
-      localStorage.setItem('userOrders', JSON.stringify(savedOrders))
+    const payload = {
+      items: cartItems.value.map((item) => ({ id: item.id, quantity: item.quantity })),
+      deliveryMethod: orderForm.value.deliveryMethod,
+      paymentMethod: orderForm.value.paymentMethod,
+      promoCode: appliedPromo.value || null,
+      customer: {
+        name: `${orderForm.value.firstName} ${orderForm.value.lastName}`.trim(),
+        email: orderForm.value.email,
+        phone: orderForm.value.phone,
+        address: orderForm.value.address || undefined,
+        city: orderForm.value.city || undefined,
+        postalCode: orderForm.value.postalCode || undefined,
+      },
+      notify: { email: orderForm.value.email, pushSubscribed: false },
     }
-    
+
+    // Отправка; при 4xx сервер вернёт понятный текст
+    // (склад, контакты, категории ошибок — см. orderHelpers)
+    const order = await createOrder(payload)
+
+    orderNumber.value = order.id
+    orderTotal.value = order.total
+
+    // История заказов пользователя (localStorage) — теперь из серверного
+    // ответа, а не локальной выдумки; пригодится странице «Мои заказы»
+    if (import.meta.client) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('userOrders') || '[]')
+        saved.unshift(order)
+        localStorage.setItem('userOrders', JSON.stringify(saved))
+      } catch (e) {
+        console.warn('[checkout] Не удалось сохранить историю заказов:', e?.message)
+      }
+    }
+
     await clearCart()
     showSuccessModal.value = true
-  } catch (error) {
-    $notify.error('Ошибка при оформлении заказа')
+  } catch (err) {
+    // Текст сервера (склад/валидация) или общий — в уведомление
+    $notify.error(errorMessage(err))
   } finally {
     isProcessing.value = false
   }
 }
 
-// Загрузка данных пользователя
+//- Автозаполнение контактов из профиля авторизованного пользователя
 onMounted(async () => {
   try {
     const { isAuthenticated, user } = useAppState()
@@ -651,7 +695,7 @@ onMounted(async () => {
   }
 }
 
-/* ========== ШАГИ - ОБЩИЕ СТИЛИ ========== */
+/* ========== ШАГИ ========== */
 .steps-horizontal-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
@@ -712,11 +756,14 @@ onMounted(async () => {
   font-size: 0.875rem;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  /* Раньше rgba(255,255,255,.2) — в тёмной теме кольцо исчезало */
+  border: 3px solid color-mix(in oklab, var(--color-base-content) 15%, transparent);
 }
 
 .step-horizontal .step-name {
-  color: oklch(var(--bc) / 0.7);
+  /* daisyUI 5: --color-* — готовые цвета; старый oklch(var(--bc)/x)
+     был невалидным значением и не применялся */
+  color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
   font-weight: 400;
   line-height: 1.2;
   max-width: 100px;
@@ -728,20 +775,20 @@ onMounted(async () => {
   height: 1.5rem;
   margin-left: 0.5rem;
   margin-right: 0.5rem;
-  background-color: oklch(var(--b3));
+  background-color: var(--color-base-300);
   border-radius: 1px;
 }
 
 .step-horizontal.step-active .step-name {
-  color: oklch(var(--p));
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .step-horizontal.step-completed + .step-connector {
-  background-color: oklch(var(--p));
+  background-color: var(--color-primary);
 }
 
-/* ========== ДЕСКТОП СТИЛИ (lg: 1024px+) ========== */
+/* ========== ДЕСКТОП (lg: 1024px+) ========== */
 @media (min-width: 1024px) {
   .steps-horizontal-wrapper {
     min-height: 110px;
@@ -751,39 +798,39 @@ onMounted(async () => {
     padding-top: 1.25rem;
     padding-bottom: 1.25rem;
   }
-  
+
   .step-horizontal .step-number {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1rem;
     margin-bottom: 0.25rem;
   }
-  
+
   .step-horizontal .step-name {
     font-size: 0.875rem;
     white-space: nowrap;
     max-width: none;
   }
-  
+
   .step-connector {
     width: 2px;
     height: 2rem;
     margin-left: 1rem;
     margin-right: 1rem;
   }
-  
+
   .steps-container {
     gap: 1rem;
   }
 }
 
-/* ========== МОБИЛЬНЫЕ СТИЛИ (до 1023px) ========== */
+/* ========== МОБИЛЬНЫЕ (до 1023px) ========== */
 @media (max-width: 1023px) {
   .container {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-  
+
   .steps-horizontal-wrapper {
     margin-left: -0.75rem;
     margin-right: -0.75rem;
@@ -791,12 +838,12 @@ onMounted(async () => {
     width: calc(100% + 1.5rem);
     justify-content: center;
   }
-  
+
   .steps-horizontal-wrapper .card-body {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
   }
-  
+
   .steps-container {
     justify-content: center;
     padding-left: 0.75rem;
@@ -827,7 +874,9 @@ onMounted(async () => {
 .checkout-form .sticky-navigation {
   flex-shrink: 0;
   margin-top: auto;
-  background-color: oklch(var(--b1));
+  /* Фикс просвечивания: старое oklch(var(--b1)) было невалидным,
+     фон получался прозрачным и контент светился под кнопками */
+  background-color: var(--color-base-100);
   padding-top: 1rem;
 }
 
@@ -835,11 +884,11 @@ onMounted(async () => {
   .checkout-form .card {
     min-height: calc(10vh - 250px);
   }
-  
+
   .checkout-form .card-body {
     padding-bottom: 0.75rem;
   }
-  
+
   .checkout-form .sticky-navigation {
     padding-top: 0.75rem;
   }
@@ -851,37 +900,18 @@ onMounted(async () => {
     padding-left: 2rem;
     padding-right: 2rem;
   }
-  
+
   .checkout-sticky-sidebar {
     height: auto;
     overflow-y: auto;
     padding-right: 0.5rem;
   }
-  
+
   .checkout-form .card-body {
     min-height: 60px;
   }
 }
 
-/* Темная тема */
-:global(.dark) .card {
-  background-color: oklch(var(--b2));
-}
-
-:global(.dark) .card.bg-base-200 {
-  background-color: oklch(var(--b3));
-}
-
-:global(.dark) .input-bordered {
-  background-color: oklch(var(--b1));
-  border-color: oklch(var(--b3));
-}
-
-:global(.dark) .steps-horizontal-wrapper {
-  background-color: oklch(var(--b2));
-}
-
-:global(.dark) .checkout-form .sticky-navigation {
-  background-color: oklch(var(--b2));
-}
+/* Блок :global(.dark) удалён: проект темизируется через data-theme
+   (daisyUI меняет переменные сам) — селектор .dark никогда не совпадал */
 </style>
