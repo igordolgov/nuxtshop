@@ -300,6 +300,7 @@ onlyBuiltDependencies: - '@parcel/watcher' - electron-winstaller - esbuild
     Стили: TailwindCSS utility-классы, кастомные — в app/assets/css/
     В pug-шаблонах классы со спецсимволами (:, ., /, [, ], включая десятичные Tailwind-классы вроде py-2.5) пишутся только внутри class="..."
     Типы: в app/types/ или локально в <script setup>
+    в server-коде: catch (error) — unknown; для текста — error instanceof Error ? error.message : String(error); сужение опциональных полей секретов — через локальные переменные с прямой проверкой
     Комментарии: на русском, для сложной логики — «почему», а не «что»
 
 Лицензия

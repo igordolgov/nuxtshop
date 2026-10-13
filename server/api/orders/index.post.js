@@ -1,9 +1,12 @@
 // server/api/orders/index.post.js
-// Создание заказа (POST /api/orders). Публичный эндпоинт: заказ можно
-// оформить без авторизации; для авторизованных заказ связывается с
-// пользователем через сессию. Все деньги пересчитываются на сервере.
+// Создание заказа (POST /api/orders). Публичный эндпоинт.
+// ⚠️ ВРЕМЕННАЯ ОТЛАДОЧНАЯ ВЕРСИЯ: отправка в Telegram синхронная (await),
+// чтобы все логи гарантированно попадали в wrangler tail — логи из
+// waitUntil в tail не показываются (источник «немой» отладки).
+// После диагностики вернуть waitUntil-версию (дам отдельно).
 import { createOrder } from '../../lib/orderHelpers'
 import { getSessionUser } from '../../utils/auth'
+import { notifyAdmin, formatNewOrderMessage } from '../../lib/telegram'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -23,9 +26,20 @@ export default defineEventHandler(async (event) => {
       comment: body?.comment,
     })
 
-    // TODO(этап 1, Telegram): notifyAdmin(...) — уведомление о новом заказе.
-    // Отправка будет через waitUntil, чтобы не задерживать ответ покупателю,
-    // и не должна ломать создание заказа при недоступности Telegram
+    // ── Telegram: СИНХРОННО для отладки (все логи видны в tail) ──
+    const env = event.context.cloudflare?.env
+    console.log(
+      '[orders-v3] telegram: env=', Boolean(env),
+      'token=', Boolean(env?.TELEGRAM_BOT_TOKEN),
+      'chatId=', Boolean(env?.TELEGRAM_ADMIN_CHAT_ID),
+    )
+    if (env?.TELEGRAM_BOT_TOKEN && env?.TELEGRAM_ADMIN_CHAT_ID) {
+      const text = formatNewOrderMessage(order)
+      const ok = await notifyAdmin(env, text)
+      console.log(`[orders-v3] отправка по ${order.id}: ${ok ? 'успех ✅' : 'ОШИБКА — см. [telegram] ... failed выше'}`)
+    } else {
+      console.warn('[orders-v3] skip: секретов нет в env')
+    }
 
     return { success: true, order, message: `Заказ ${order.id} создан` }
   } catch (error) {
