@@ -1,9 +1,13 @@
 {
-  // wrangler.jsonc — единственный конфиг Wrangler (wrangler.toml удалён как устаревший).
+  // wrangler.jsonc — единственный конфиг Wrangler (wrangler.toml удалён ранее).
   "$schema": "node_modules/wrangler/config-schema.json",
+
+  // ⚠️ Имя воркера: должно совпадать с существующим воркером Cloudflare.
+  // НЕ менять — иначе создастся ДРУГОЙ воркер без KV, секретов и домена.
   "name": "nuxt-shop",
+
   "main": ".output/server/index.mjs",
-  // Совпадает с compatibilityDate в nuxt.config.ts
+  // Согласовано с compatibilityDate в nuxt.config.ts
   "compatibility_date": "2025-07-15",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -18,15 +22,16 @@
   },
   "kv_namespaces": [
     {
-      // ⚠️ КРИТИЧНО: биндинг обязан называться "KV" — это имя читает
-      // server/lib/storage.ts через event.context.cloudflare.env.KV.
-      // Было "SHOP_KV" — из-за несовпадения в проде работала in-memory
-      // заглушка, и данные не переживали перезапуск изолята.
+      // ⚠️ Биндинг обязан называться "KV" — его читает server/lib/storage.ts
       "binding": "KV",
-      // ⚙️ НАСТРОЙКА: ID вашего KV namespace (npx wrangler kv namespace create)
+      // ⚙️ НАСТРОЙКА: ID вашего KV namespace
       "id": "2882e3a4601940b881c2140f1401989f",
-      // Удалённое KV при wrangler dev (nuxt dev всё равно работает in-memory)
+      // Удалённое KV при wrangler dev
       "remote": true,
     },
   ],
+  // Telegram-секреты (TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID,
+  // TELEGRAM_WEBHOOK_SECRET, TELEGRAM_ADMIN_USER_IDS) ЗДЕСЬ НЕ ОБЪЯВЛЯЮТСЯ:
+  // схемы не существует, секреты управляются через
+  // `npx wrangler secret put` / дашборд и переживают деплой сами.
 }

@@ -2,12 +2,14 @@
 // Создание заказа (POST /api/orders). Публичный эндпоинт: заказ можно
 // оформить без авторизации; для авторизованных заказ связывается с
 // пользователем через сессию. Все деньги пересчитываются на сервере.
-// После сохранения — уведомление админу в Telegram через waitUntil:
-// ответ покупателю не ждёт Telegram; недоступность Telegram не влияет
-// на заказ. Итог отправки логируется (виден в wrangler tail).
+// После сохранения — карточка заказа админу в Telegram с кнопками
+// «Подтвердить/Отменить» (этап 2). Отправка через waitUntil: ответ
+// покупателю не ждёт Telegram; недоступность Telegram не влияет на заказ.
+// ⚠️ Урок отладки: логируются ОБА исхода отправки — тишина в логах
+// больше никогда не означает «вероятно, отправилось»
 import { createOrder } from '../../lib/orderHelpers'
 import { getSessionUser } from '../../utils/auth'
-import { notifyAdmin, formatNewOrderMessage } from '../../lib/telegram'
+import { sendOrderCard } from '../../lib/telegram'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,18 +29,24 @@ export default defineEventHandler(async (event) => {
       comment: body?.comment,
     })
 
-    // ── Telegram: уведомление админа о новом заказе ──
+    // ── Telegram: карточка заказа с кнопками ──
     const env = event.context.cloudflare?.env
     const ctx = event.context.cloudflare?.ctx
-    const text = formatNewOrderMessage(order)
 
     const send = async () => {
-      // ⚠️ ЗНАНИЕ ИЗ ОТЛАДКИ: логи внутри waitUntil НЕ попадают в tail.
-      // Это осознанный компромисс: ради неблокирующего ответа покупателю.
-      // Наблюдаемость обеспечена самим фактом доставки в чат + ретраи
-      // не нужны (упавшую отправку видно по отсутствию карточки в чате)
-      const ok = await notifyAdmin(env, text)
-      if (!ok) console.warn(`[telegram] не удалось отправить уведомление по ${order.id}`)
+      if (!env?.TELEGRAM_BOT_TOKEN || !env?.TELEGRAM_ADMIN_CHAT_ID) {
+        console.warn('[telegram] skip: секреты отсутствуют в env', {
+          hasEnv: Boolean(env),
+          hasToken: Boolean(env?.TELEGRAM_BOT_TOKEN),
+          hasChatId: Boolean(env?.TELEGRAM_ADMIN_CHAT_ID),
+        })
+        return
+      }
+      const ok = await sendOrderCard(env, order)
+      // Явный лог успеха и провала — полная наблюдаемость каждого заказа
+      console.log(
+        `[telegram] карточка ${order.id}: ${ok ? 'отправлена ✅' : 'НЕ отправлена (причина строкой выше)'}`,
+      )
     }
 
     if (ctx?.waitUntil) {
