@@ -335,6 +335,14 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
             )
               span Личный кабинет
 
+            //- После кнопки «Личный кабинет» добавить:
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
+              type="button"
+              @click="navigateToPath('/user/orders')"
+              :class="isExactActiveRoute('/user/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+            )
+              span Мои заказы
+
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               v-if="isAdmin"
               type="button"
