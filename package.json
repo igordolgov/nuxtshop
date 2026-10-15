@@ -32,7 +32,7 @@
     "@markuplint/pug-parser": "^5.2.0",
     "@markuplint/vue-parser": "^5.2.0",
     "@markuplint/vue-spec": "^5.2.0",
-    "@pinia/nuxt": "^1.0.2",
+    "@pinia/nuxt": "^1.0.3",
     "@types/node": "^26.6.5",
     "cross-env": "^10.1.0",
     "h3": "^1.15.11",
@@ -41,11 +41,11 @@
     "nuxt": "4.6.1",
     "oxfmt": "^0.73.0",
     "oxlint": "^1.88.0",
-    "pinia": "^4.0.3",
+    "pinia": "^4.1.0",
     "pug": "^3.0.4",
     "vite-plugin-remove-console": "^2.2.0",
     "vue": "^3.5.44",
-    "wrangler": "^4.150.0"
+    "wrangler": "^4.151.0"
   },
   "packageManager": "pnpm@12.6.0"
 }

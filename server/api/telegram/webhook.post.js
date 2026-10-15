@@ -1,15 +1,16 @@
 // server/api/telegram/webhook.post.js
-// Приём обновлений Telegram (этап 2): нажатия inline-кнопок на карточке
-// заказа. Вызывается СЕРВЕРАМИ TELEGRAM (не браузером) — без сессий.
+// Приём обновлений Telegram: inline-кнопки (callback_query) И
+// слэш-команды (message → telegramCommands).
+// Вызывается СЕРВЕРАМИ TELEGRAM (не браузером) — без сессий.
 // Безопасность, слои:
 //   1. X-Telegram-Bot-Api-Secret-Token === секрет (только настоящий Telegram);
-//   2. whitelist: кнопки жмут только пользователи из TELEGRAM_ADMIN_USER_IDS
-//      (fallback: TELEGRAM_ADMIN_CHAT_ID) — поддерживает несколько админов;
+//   2. whitelist: действия доступны только админам (TELEGRAM_ADMIN_USER_IDS);
 //   3. дедуп update_id в KV (TTL 1ч) от повторных доставок Telegram —
 //      бизнес-логика и так идемпотентна, дедуп — защита от лишних правок.
 import { getOrderById, updateOrderStatus, ORDER_STATUS_LABELS } from '../../lib/orderHelpers'
 import { kvGetJSON, kvPutJSON } from '../../lib/storage'
 import { answerCallbackQuery, editOrderCard, getAdminUserIds } from '../../lib/telegram'
+import { handleMessage } from '../../lib/telegramCommands'
 
 export default defineEventHandler(async (event) => {
   const env = event.context.cloudflare?.env
@@ -27,18 +28,28 @@ export default defineEventHandler(async (event) => {
   if (await kvGetJSON(event, dedupeKey)) return { ok: true }
   await kvPutJSON(event, dedupeKey, true, 3600)
 
-  // Обрабатываем только нажатия кнопок; остальные апдейты игнорируем
-  const cq = update?.callback_query
-  if (!cq) return { ok: true }
-
-  // ── 3. Whitelist: только администраторы (список id) ──
+  // ── 3. Whitelist: только администраторы (общий для кнопок и команд) ──
+  const senderId = String(update?.callback_query?.from?.id ?? update?.message?.from?.id ?? '')
   const adminIds = getAdminUserIds(env)
-  if (!adminIds.includes(String(cq.from?.id))) {
-    await answerCallbackQuery(env, cq.id, '⛔ Недостаточно прав', true)
+  if (!senderId || !adminIds.includes(senderId)) {
+    // Кнопки чужому не отвечаем подробно — только тихий отказ
+    if (update?.callback_query) {
+      await answerCallbackQuery(env, update.callback_query.id, '⛔ Недостаточно прав', true)
+    }
     return { ok: true }
   }
 
-  // ── 4. Разбор callback_data: order:confirm:ORD-xxx | order:cancel:ORD-xxx
+  // ── 4а. Слэш-команды (/pending, /stats, /stock, /help) ──
+  if (update.message) {
+    await handleMessage(event, env, update.message)
+    return { ok: true }
+  }
+
+  // ── 4б. Нажатия кнопок на карточках ──
+  const cq = update.callback_query
+  if (!cq) return { ok: true }
+
+  // Разбор callback_data: order:confirm:ORD-xxx | order:cancel:ORD-xxx
   const [scope, action, orderId] = String(cq.data || '').split(':')
   if (scope !== 'order' || !orderId || !['confirm', 'cancel'].includes(action)) {
     await answerCallbackQuery(env, cq.id, 'Неизвестная команда')
@@ -47,8 +58,8 @@ export default defineEventHandler(async (event) => {
   const status = action === 'confirm' ? 'confirmed' : 'cancelled'
 
   try {
-    // ── 5. Бизнес-охрана переходов (webhook-слой; HTTP-эндпоинт остаётся
-    // гибким для админки). Из финальных статусов менять нельзя ──
+    // Бизнес-охрана переходов (webhook-слой; HTTP-эндпоинт остаётся
+    // гибким для админки). Из финальных статусов менять нельзя
     const existing = await getOrderById(event, orderId)
     if (!existing) {
       await answerCallbackQuery(env, cq.id, 'Заказ не найден', true)
@@ -68,7 +79,7 @@ export default defineEventHandler(async (event) => {
       return { ok: true }
     }
 
-    // ── 6. Смена статуса (та же логика, что у админки) + перерисовка карточки
+    // Смена статуса (та же логика, что у админки) + перерисовка карточки
     const order = await updateOrderStatus(event, orderId, status)
     await editOrderCard(env, cq.message.chat.id, cq.message.message_id, order)
     await answerCallbackQuery(env, cq.id, `Заказ: ${ORDER_STATUS_LABELS[order.status]}`)
