@@ -107,17 +107,21 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+      // SSR-режим: HTML НЕ кэшируем — навигации всегда в сеть,
+      // страницы рендерит сервер. Раньше html был в globPatterns и
+      // navigateFallback отдавал кэшированную главную вместо
+      // динамических страниц (/user и др.): «/user открывает главную».
+      globPatterns: ['**/*.{js,css,png,svg,ico,woff,woff2}'],
+
+      // Явно отключаем navigateFallback (для SSR он не нужен).
+      // Оффлайн-UX обеспечивает /offline-страница через OfflineIndicator.
+      navigateFallback: undefined,
+
       runtimeCaching: [
-        {
-          urlPattern: /\/(cart|favorites|user|product)/i,
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'pages-cache',
-            networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 50, maxAgeSeconds: 86400 },
-          },
-        },
+        // ⚠️ Запись «pages-cache» с паттерном /(cart|favorites|user|product)/i
+        // УДАЛЕНА: кэшировала SSR-HTML (персональные страницы!) и по
+        // подстроке цепляла /api/auth/user и /api/products.
+        // JSON каталога кэшируем точечно:
         {
           urlPattern: /\/api\/products/i,
           handler: 'NetworkFirst',
