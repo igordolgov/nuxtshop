@@ -25,6 +25,7 @@
 
   Transition(name="fade")
     LazyMobileFiltersPanel.mobile-filters(
+      class="md:hidden"
       v-if="showMobileFilters"
       :searchQuery="searchQuery"
       :categories="categories"
@@ -284,8 +285,7 @@ const headerEvents = {
 
 const sidebarEvents = {
   'update:filters': handleFiltersUpdate,
-  'update:sort': handleSortUpdate,
-  'update:searchQuery': setSearchQuery,
+  'update:sort': handleSortUpdate,'update:searchQuery': setSearchQuery,
   'reset-filters': resetFilters,
   'scroll-to-top': scrollToTop,
 }

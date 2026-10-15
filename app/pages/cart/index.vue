@@ -37,7 +37,7 @@
         //- grid-cols-1 ОБЯЗАТЕЛЕН на мобильных: без явной колонки grid
         //- раздувает неявную auto-колонку до max-content ленты карточек —
         //- лента перестаёт переполняться и не свайпается
-        .cart-grid.grid.grid-cols-1.gap-4(class="lg:gap-6 lg:grid-cols-4")
+        .cart-grid.grid.grid-cols-1.gap-4(class="md:gap-6 lg:grid-cols-4")
           //- ЛЕВАЯ КОЛОНКА — ТОВАРЫ
           .cart-left.col-span-2.max-w-full.min-w-0
             //- Подзаголовок: на мобильных — sticky-чип под шапкой сайта,
@@ -69,7 +69,7 @@
               //- МОБИЛЬНАЯ ВЕРСИЯ: горизонтальная лента карточек.
               //- overflow и snap — в scoped-CSS класса (единая точка правды);
               //- -mx-3 px-3 — лента выходит к краям экрана (peek)
-              .cart-items-scroll-wrapper(class="lg:hidden -mx-3 mb-1 px-3 pb-2")
+              .cart-items-scroll-wrapper(class="md:hidden -mx-3 mb-1 px-3 pb-2")
                 .cart-items.flex.flex-nowrap.gap-3.pb-1
                   .cart-item-card.bg-base-100.flex-shrink-0.border.rounded-2xl(
                     v-for="item in cartItems"

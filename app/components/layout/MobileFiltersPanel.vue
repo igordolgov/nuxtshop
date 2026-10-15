@@ -2,7 +2,7 @@
     bottom-sheet (выезжает снизу), sticky-подвал «Сбросить · Показать N».
     Канонический паттерн маркетплейсов вместо fullscreen-оверлея. -->
 <template lang="pug">
-.mobile-filters-wrapper(class="lg:hidden")
+.mobile-filters-wrapper(class="md:hidden")
   .mobile-filters-overlay(@click="handleClose")
 
   .mobile-filters-panel(

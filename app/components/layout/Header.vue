@@ -220,7 +220,7 @@ header.app-header.sticky.top-0.z-50.border-b(
     //- Правая группа: поиск (десктоп) · корзина (десктоп) · тема · профиль
     .flex.items-center.gap-1.shrink-0(class="lg:gap-2")
       //- Поиск — только десктоп (на мобильных строка 2)
-      .search-desktop.hidden(class="lg:block lg:w-64 xl:w-80")
+      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80")
         SmartSearchInput(
           :products="allProducts"
           :isActive="true"
@@ -342,7 +342,7 @@ header.app-header.sticky.top-0.z-50.border-b(
               span Выйти
 
       //- Кнопка входа (неавторизованные)
-      NuxtLink.btn.btn-primary.rounded-xl(
+      NuxtLink.btn.btn-primary.mr-3.rounded-xl(
         v-else
         to="/auth/login"
         class="min-h-11"
@@ -350,7 +350,7 @@ header.app-header.sticky.top-0.z-50.border-b(
         span Войти
 
   //- ═══ Строка 2 (только мобильные): поиск на всю ширину ═══
-  .px-3.pb-2(class="lg:hidden")
+  .px-3.pb-2(class="md:hidden")
     .flex.items-center.gap-2
       .flex-1.min-w-0
         SmartSearchInput(
@@ -377,38 +377,6 @@ header.app-header.sticky.top-0.z-50.border-b(
 /* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает) */
 .app-header {
   padding-top: var(--safe-area-top, 0px);
-}
-
-/* Кнопка фильтров (строка 2): плоская, под высоту поля поиска */
-.filters-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-base-200);
-  color: var(--color-base-content);
-  border: 1px solid var(--color-base-300);
-  border-radius: var(--radius-xl, 0.75rem);
-  cursor: pointer;
-  transition:
-    background 150ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  flex-shrink: 0;
-  /* Ровно под высоту поискового поля + тач-таргет 44px */
-  width: 44px;
-  height: 44px;
-}
-
-@media (hover: hover) {
-  .filters-button:hover {
-    border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  }
-}
-
-.filters-button.active {
-  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
-  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  color: var(--color-primary);
 }
 
 .filters-icon {

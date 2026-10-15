@@ -1,7 +1,7 @@
 <!-- components/products/ProductsSection.vue — секция каталога:
-     пагинация с infinite scroll (IntersectionObserver), упрощённая
-     виртуализация, скелетоны при первой загрузке и подгрузке,
-     4 колонки в landscape — чистым CSS (см. style). -->
+    пагинация с infinite scroll (IntersectionObserver), упрощённая
+    виртуализация, скелетоны при первой загрузке и подгрузке,
+    4 колонки в landscape — чистым CSS (см. style). -->
 <template lang="pug">
 .products-section.pb-12(class="sm:pb-0")
   //- Первая загрузка: скелетон-сетка вместо спиннера
@@ -183,7 +183,7 @@ const gridClasses = computed(() => {
     // Portrait: 2 колонки. Landscape: 4 — чистый CSS (media-блок в style)
     classes.push('grid-cols-2')
   } else {
-    classes.push('grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4', 'xl:grid-cols-5')
+    classes.push('grid-cols-2', 'sm:grid-cols-4', 'lg:grid-cols-4', 'xl:grid-cols-5')
   }
 
   return classes

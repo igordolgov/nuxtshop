@@ -15,10 +15,8 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
     :searchQuery="searchQuery"
     :categories="categories"
     :filters="filters"
-    :sort="sort"
     :priceRange="priceRange"
     @update:filters="handleFiltersUpdate"
-    @update:sort="handleSortUpdate"
     @update:searchQuery="handleSearchQueryUpdate"
     @reset-filters="handleResetFilters"
     @scroll-to-top="handleScrollToTop"
@@ -65,10 +63,6 @@ const handleFiltersUpdate = (filters) => {
   emit('update:filters', filters)
 }
 
-const handleSortUpdate = (sort) => {
-  emit('update:sort', sort)
-}
-
 const handleSearchQueryUpdate = (query) => {
   emit('update:searchQuery', query)
 }
@@ -86,7 +80,6 @@ defineProps({
   searchQuery: { type: String, default: '' },
   categories: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) },
-  sort: { type: Object, default: () => ({}) },
   priceRange: { type: Object, default: () => ({}) },
   totalCount: { type: Number, default: 0 },
   filteredCount: { type: Number, default: 0 },
@@ -94,7 +87,6 @@ defineProps({
 
 const emit = defineEmits([
   'update:filters',
-  'update:sort',
   'update:searchQuery',
   'reset-filters',
   'scroll-to-top',
