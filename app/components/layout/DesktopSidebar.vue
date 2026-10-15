@@ -1,4 +1,9 @@
-<!-- components/layout/DesktopSidebar.vue -->
+<!-- components/layout/DesktopSidebar.vue — сайдбар фильтров каталога
+    (только десктоп: в index.vue стоит v-if="!isMobile").
+    Пропс isHorizontal удалён: раньше им включали горизонтальную
+    компоновку ProductFilter для мобильного сайдбара — с тех пор,
+    как сайдбар спрятали на мобильных, пропс стал мёртвым
+    (и передавал isMobile вместо ориентации — след рефакторингов). -->
 <template lang="pug">
 aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
   :class="sidebarClasses"
@@ -12,7 +17,6 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
     :filters="filters"
     :sort="sort"
     :priceRange="priceRange"
-    :isHorizontal="isMobile"
     @update:filters="handleFiltersUpdate"
     @update:sort="handleSortUpdate"
     @update:searchQuery="handleSearchQueryUpdate"
@@ -24,7 +28,7 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
 <style scoped>
 .desktop-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  scrollbar-color: color-mix(in oklab, var(--color-base-content) 20%, transparent) transparent;
 }
 
 .desktop-sidebar::-webkit-scrollbar {
@@ -38,100 +42,54 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
 }
 
 .desktop-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in oklab, var(--color-base-content) 20%, transparent);
   border-radius: 3px;
 }
 
 .desktop-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* На мобильных делаем горизонтальную прокрутку */
-@media (max-width: 1023px) {
-  .desktop-sidebar {
-    max-height: 300px;
-    margin-bottom: 1rem;
-  }
+  background: color-mix(in oklab, var(--color-base-content) 30%, transparent);
 }
 </style>
 
 <script setup>
-import ProductFilter from '~/components/products/ProductFilter.vue'
-import { useMobileDetection } from '@/composables/useMobileDetection'
+//- ProductFilter автоимпортится Nuxt.
+//- isMobile больше не нужен: сайдбар рендерится ТОЛЬКО на десктопе
+//- (v-if="!isMobile" в index.vue), мобильная ветка стилей удалена
 
-const { isMobile } = useMobileDetection()
+//- Sticky под шапкой сайта (56px): фиксированная высота с внутренним
+//- скроллом, чтобы фильтры не уезжали за экран
+const sidebarClasses = ['sticky', 'top-16', 'h-[calc(100dvh-5rem)]', 'overflow-y-auto']
 
-// Адаптивные классы для сайдбара
-const sidebarClasses = computed(() => {
-  const base = ['sticky', 'top-0']
-  
-  if (isMobile.value) {
-    // На мобильных: горизонтальный скролл, другая высота
-    return [...base, 'h-auto', 'overflow-x-auto', 'pb-4']
-  } else {
-    // На десктопе: вертикальный скролл, фиксированная высота
-    return [...base, 'h-[calc(100dvh-5rem)]', 'overflow-y-auto']
-  }
-})
-
-// Обработчик обновления фильтров (сохраняем сортировку)
+//- Обработчик обновления фильтров (сохраняем сортировку)
 const handleFiltersUpdate = (filters) => {
   emit('update:filters', filters)
 }
 
-// Обработчик обновления сортировки
 const handleSortUpdate = (sort) => {
-  console.log('📱 DesktopSidebar: обновление сортировки', sort)
   emit('update:sort', sort)
 }
 
-// Обработчик обновления поискового запроса
 const handleSearchQueryUpdate = (query) => {
   emit('update:searchQuery', query)
 }
 
-// Обработчик сброса фильтров (БЕЗ сброса сортировки)
+//- Сброс фильтров (БЕЗ сброса сортировки)
 const handleResetFilters = () => {
-  console.log('🔄 DesktopSidebar: сброс фильтров (без сортировки)')
   emit('reset-filters')
 }
 
-// Обработчик прокрутки к началу
 const handleScrollToTop = () => {
   emit('scroll-to-top')
 }
 
-// ДОБАВЬТЕ эти пропсы
 defineProps({
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  categories: {
-    type: Array,
-    default: () => []
-  },
-  filters: {
-    type: Object,
-    default: () => ({})
-  },
-  sort: {
-    type: Object,
-    default: () => ({})
-  },
-  priceRange: {
-    type: Object,
-    default: () => ({})
-  },
-  // ДОБАВЬТЕ эти пропсы для количества товаров
-  totalCount: {
-    type: Number,
-    default: 0
-  },
-  filteredCount: {
-    type: Number,
-    default: 0
-  }
+  searchQuery: { type: String, default: '' },
+  categories: { type: Array, default: () => [] },
+  filters: { type: Object, default: () => ({}) },
+  sort: { type: Object, default: () => ({}) },
+  priceRange: { type: Object, default: () => ({}) },
+  totalCount: { type: Number, default: 0 },
+  filteredCount: { type: Number, default: 0 },
 })
 
 const emit = defineEmits([
@@ -139,6 +97,6 @@ const emit = defineEmits([
   'update:sort',
   'update:searchQuery',
   'reset-filters',
-  'scroll-to-top'
+  'scroll-to-top',
 ])
 </script>

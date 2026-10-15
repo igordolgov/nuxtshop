@@ -1,12 +1,11 @@
-<!-- app/pages/product/[slug].vue -->
+<!-- app/pages/product/[slug].vue — карточка товара: галерея, информация,
+    похожие товары, фиксированная кнопка «В корзину» (мобильные). -->
 <template lang="pug">
-.product-page.min-h-screen.bg-base-100.text-base-content.flex.flex-col(
-  :class="{ 'horizontal-orientation': isHorizontal }"
-)
+.product-page.bg-base-100.text-base-content.flex.flex-col
   Header
 
-  //- Хлебные крошки
-  .sticky.top-0.z-10.bg-base-100.border-b.border-base-200.shadow-sm
+  //- Хлебные крошки: sticky ПОД шапкой сайта (раньше top-0 — уезжали под неё)
+  .breadcrumbs-bar.sticky.z-10.bg-base-100.border-b.border-base-200.shadow-sm
     .container.min-h-10.mx-auto.px-2(class="sm:hidden lg:p-4 lg:pb-0")
       nav(aria-label="Хлебные крошки")
         .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
@@ -18,10 +17,7 @@
 
   //- Основной контент
   .flex-1.overflow-auto.flex.flex-col.pb-14(class="lg:pb-0")
-    .container.mx-auto.px-2.flex-1(
-      class="lg:px-4 lg:pb-0"
-      :class="{ 'horizontal-layout': isHorizontal }"
-    )
+    .container.mx-auto.px-2.flex-1(class="lg:px-4 lg:pb-0")
       //- Состояние загрузки
       .flex.flex-col.items-center.justify-center.min-h-96(v-if="isLoading")
         .loading.loading-spinner.loading-lg
@@ -34,20 +30,17 @@
           h1.text-xl.font-bold.mb-4 Товар не найден
           p.mb-6.text-sm(class="text-base-content/70") {{ error || 'Запрошенный товар не существует' }}
           .flex.flex-col.gap-3
-            button.btn.btn-primary.btn-sm(@click="$router.back()") Вернуться назад
+            button.btn.btn-primary.btn-sm(type="button" @click="$router.back()") Вернуться назад
             NuxtLink.btn.btn-secondary.btn-sm(to="/" prefetch) В каталог
 
-      //- Контент товара
+      //- Контент товара.
+      //- В landscape двухколоночная раскладка больше не используется:
+      //- вертикальный поток на всех мобильных (как в крупных магазинах),
+      //- двухколоночная — только на десктопе (lg:flex-row)
       template(v-else)
-        .flex.flex-col(
-          class="lg:flex-row lg:gap-6"
-          :class="{ 'horizontal-product-layout': isHorizontal }"
-        )
+        .flex.flex-col(class="lg:flex-row lg:gap-6")
           //- Галерея изображений
-          .product-image.flex-1(
-            class="lg:p-3"
-            :class="{ 'horizontal-image-section': isHorizontal }"
-          )
+          .product-image.flex-1(class="lg:p-3")
             ProductGallery(
               :product="product"
               :gallery="productGallery"
@@ -55,10 +48,7 @@
             )
 
           //- Информация о товаре
-          .product-info.flex-1(
-            class="sm:pt-4"
-            :class="{ 'horizontal-info-section': isHorizontal }"
-          )
+          .product-info.flex-1(class="sm:pt-4")
             ProductInfo(
               :product="product"
               :is-favorite="isFavorite"
@@ -77,13 +67,14 @@
       @add-to-cart="addSimilarToCart"
     )
 
-  //- Мобильная кнопка "В корзину"
+  //- Мобильная кнопка «В корзину»: над нижней навигацией + safe-area
+  //- (раньше — магические 57px)
   .fixed-bottom-cart-button(
     v-if="product && !isLoading && !error"
-    :class="{ 'horizontal-button': isHorizontal }"
     class="lg:hidden"
   )
     button.btn.btn-lg.w-full.rounded-t-box(
+      type="button"
       :disabled="!product.inStock || isInCart(product.id)"
       @click="addToCartHandler"
       :class="isInCart(product.id) ? 'btn-success' : 'btn-primary'"
@@ -101,15 +92,9 @@
 </template>
 
 <script setup>
-import Header from '~/components/layout/Header.vue'
-import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
-import ProductGallery from '~/components/products/ProductGallery.vue'
-import ProductInfo from '~/components/products/ProductInfo.vue'
-import SimilarProducts from '~/components/products/SimilarProducts.vue'
-
 const route = useRoute()
 const { $notify } = useNuxtApp()
-const { isMobile, isHorizontal } = useMobileDetection()
+const { isMobile } = useMobileDetection()
 const appState = useAppState()
 const { products, loadProducts } = appState
 const { addToCart, cartItems } = useCart()
@@ -132,9 +117,9 @@ const productGallery = computed(() => {
 const similarProducts = computed(() => {
   if (!product.value || !products.value) return []
   return products.value
-    .filter(p =>
+    .filter((p) =>
       p.id !== product.value.id &&
-      p.categories?.some(cat => product.value.categories?.includes(cat))
+      p.categories?.some((cat) => product.value.categories?.includes(cat)),
     )
     .slice(0, 4)
 })
@@ -148,7 +133,7 @@ const isInCart = (productId) => {
   if (!productId) return false
   const items = cartItems.value
   if (!items || !Array.isArray(items)) return false
-  return items.some(item => {
+  return items.some((item) => {
     if (!item || item.id === undefined || item.id === null) return false
     return String(item.id) === String(productId)
   })
@@ -176,9 +161,9 @@ const loadProductData = async () => {
   } catch (err) {
     console.error('Ошибка загрузки товара:', err)
     await loadProducts()
-    const found = products.value?.find(p =>
+    const found = products.value?.find((p) =>
       p.slug === productSlug.value ||
-      String(p.id) === String(productSlug.value)
+      String(p.id) === String(productSlug.value),
     )
     if (found) {
       product.value = found
@@ -204,7 +189,7 @@ const addToCartHandler = async () => {
   try {
     await addToCart(product.value)
     $notify.success('Товар добавлен в корзину!')
-  } catch (err) {
+  } catch {
     $notify.error('Не удалось добавить товар в корзину')
   }
 }
@@ -241,10 +226,15 @@ watch(() => route.params.slug, () => {
   overflow-x: hidden;
 }
 
-/* Вертикальный режим - кнопка снизу над футером */
+/* Крошки прилипают ПОД шапкой сайта (56px), а не к верху экрана */
+.breadcrumbs-bar {
+  top: var(--header-height, 56px);
+}
+
+/* Кнопка «В корзину» — над нижней навигацией с учётом safe-area */
 .fixed-bottom-cart-button {
   position: fixed;
-  bottom: 57px;
+  bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px));
   left: 0;
   right: 0;
   z-index: 40;
@@ -253,42 +243,5 @@ watch(() => route.params.slug, () => {
 
 .fixed-bottom-cart-button .btn {
   height: 52px;
-}
-
-/* Горизонтальный режим - кнопка с отступом слева */
-.fixed-bottom-cart-button.horizontal-button {
-  left: 62px;
-  bottom: 0;
-  padding: 8px 6px;
-  margin-bottom: -8px;
-}
-
-.fixed-bottom-cart-button.horizontal-button .btn {
-  height: 48px;
-  border-radius: 0.5rem 0.5rem 0 0;
-}
-
-/* Горизонтальный layout */
-.horizontal-orientation .horizontal-layout {
-  /* Убираем padding-left, чтобы не дублировать отступ, он будет на .flex-1.overflow-auto */
-  /* padding-left: 62px; */
-}
-
-.horizontal-orientation .flex-1.overflow-auto {
-  padding-bottom: 70px;
-  padding-left: var(--horizontal-nav-width, 70px);
-}
-
-.horizontal-product-layout {
-  flex-direction: row !important;
-}
-
-.horizontal-image-section {
-  max-width: 50%;
-}
-
-.horizontal-info-section {
-  max-width: 50%;
-  overflow-y: auto;
 }
 </style>

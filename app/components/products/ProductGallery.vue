@@ -4,11 +4,14 @@
   Назначение: галерея изображений товара с зумом
   Props: product, gallery, productName
   Emits: image-load, image-error
+  Ориентация экрана не используется: свайп работает
+  в обеих ориентациях; пересчёт позиции слайда при
+  повороте покрывает useResizeObserver(imageWrapper).
 ============================================ -->
 <template lang="pug">
 .product-gallery
   .main-image-container(
-    :class="{ 'swiping': !isHorizontal && (isSwiping || isDragging) }"
+    :class="{ 'swiping': isSwiping || isDragging }"
     @touchstart="handleTouchStart"
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
@@ -23,6 +26,7 @@
       //- Кнопка "Назад"
       button.image-nav-btn.prev-btn(
         v-if="gallery.length > 1"
+        type="button"
         @click.stop="prevImage"
         @touchstart.stop.prevent="prevImage"
         class="top-1/2 left-2 z-20 absolute -translate-y-1/2"
@@ -58,7 +62,7 @@
               :src="getValidImageUrl(image)"
               :alt="`${productName} - изображение ${index + 1}`"
               class="z-10 relative product-main-image"
-              :class="{ 'cursor-zoom-in': isDesktop, 'horizontal-zoom-image': isHorizontal }"
+              :class="{ 'cursor-zoom-in': isDesktop }"
               @load="handleImageLoad(index)"
               @error="(e) => handleImageError(e, index)"
               @click="isDesktop ? openZoom(index) : null"
@@ -74,6 +78,7 @@
       //- Кнопка "Вперёд"
       button.image-nav-btn.next-btn(
         v-if="gallery.length > 1"
+        type="button"
         @click.stop="nextImage"
         @touchstart.stop.prevent="nextImage"
         class="top-1/2 right-2 z-20 absolute -translate-y-1/2"
@@ -91,6 +96,7 @@
       //- Кнопка зума
       button.zoom-icon-btn(
         v-if="gallery.length > 0"
+        type="button"
         @click.stop="openZoom(currentIndex)"
         @touchstart.stop="openZoom(currentIndex)"
         class="right-4 bottom-4 z-30 absolute flex justify-center items-center bg-black/30 hover:bg-black/50 rounded-full size-12 transition-all"
@@ -123,7 +129,7 @@
   Teleport(to="body")
     Transition(name="fade")
       .zoom-modal(v-if="isZoomOpen")
-        button.close-btn(@click="closeZoom" aria-label="Закрыть")
+        button.close-btn(type="button" @click="closeZoom" aria-label="Закрыть")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
 
@@ -174,9 +180,12 @@ const props = defineProps({
 const emit = defineEmits(['image-load', 'image-error'])
 
 // ============================================
-// Composables
+// Composables.
+//- isHorizontal удалён вместе с боковой навигацией: свайп галереи
+//- работает в обеих ориентациях, позиция слайда при повороте
+//- пересчитывается через useResizeObserver
 // ============================================
-const { isDesktop, isHorizontal } = useMobileDetection()
+const { isDesktop } = useMobileDetection()
 
 // ============================================
 // Реактивное состояние
@@ -243,7 +252,6 @@ const updateSlidePosition = async () => {
   }
 }
 
-// ИСПРАВЛЕНО: убран бессмысленный if/else, обе ветки делали одно и то же
 const goToImage = async (index) => {
   if (index >= 0 && index < props.gallery.length) {
     currentIndex.value = index
@@ -282,7 +290,9 @@ const handleImageError = (event, index) => {
 // Touch/Slide обработчики
 // ============================================
 const handleTouchStart = (event) => {
-  if (isHorizontal.value || props.gallery.length <= 1) return
+  // Свайп работает в обеих ориентациях; блокируем только для
+  // одиночного изображения (свайпать нечего)
+  if (props.gallery.length <= 1) return
   touchStartX.value = event.touches[0].clientX
   isSwiping.value = true
 }
@@ -301,7 +311,6 @@ const handleTouchEnd = async (event) => {
   if (!isSwiping.value) return
   const diff = (event.changedTouches?.[0]?.clientX || 0) - touchStartX.value
   if (Math.abs(diff) > 50) {
-    // ИСПРАВЛЕНО: if/else вместо тернарника с await
     if (diff > 0) {
       await prevImage()
     } else {
@@ -338,7 +347,6 @@ const handleMouseUp = async (event) => {
   if (!isDragging.value) return
   const diff = event.clientX - dragStartX.value
   if (Math.abs(diff) > 50) {
-    // ИСПРАВЛЕНО: if/else вместо тернарника с await
     if (diff > 0) {
       await prevImage()
     } else {
@@ -358,7 +366,7 @@ const handleMouseLeave = async () => {
 }
 
 // ============================================
-// Zoom обработчики (без изменений)
+// Zoom обработчики
 // ============================================
 const openZoom = (index = null) => {
   const imageIndex = index ?? currentIndex.value
@@ -449,18 +457,15 @@ const handleZoomMouseUp = () => {
 // Lifecycle
 // ============================================
 
-// ИСПРАВЛЕНО: вынесен обработчик resize, чтобы можно было удалить его в onUnmounted
 const handleResize = () => updateSlidePosition()
 
 onMounted(async () => {
-  // ИСПРАВЛЕНО: Array.from вместо new Array(...).fill(...)
   loadingStates.value = Array.from({ length: props.gallery.length }, () => true)
   await updateSlidePosition()
   window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
-  // ИСПРАВЛЕНО: удаляем именно ту функцию, которую добавили
   window.removeEventListener('resize', handleResize)
   if (isZoomOpen.value) document.body.style.overflow = ''
 })
@@ -470,16 +475,13 @@ onUnmounted(() => {
 // ============================================
 watch(() => props.gallery, async (newGallery) => {
   currentIndex.value = 0
-  // ИСПРАВЛЕНО: Array.from вместо new Array(...).fill(...)
   loadingStates.value = Array.from({ length: newGallery.length }, () => true)
   await nextTick()
   await updateSlidePosition()
 }, { immediate: true })
 
-watch(isHorizontal, async () => {
-  await nextTick()
-  await updateSlidePosition()
-})
+//- watch(isHorizontal) УДАЛЁН: пересчёт при повороте экрана
+//- покрывает useResizeObserver(imageWrapper) ниже
 
 watch(currentIndex, async () => {
   await updateSlidePosition()
@@ -487,6 +489,7 @@ watch(currentIndex, async () => {
 
 // ============================================
 // ResizeObserver – автоматическое обновление при изменении размеров контейнера
+// (в т.ч. при повороте экрана — поэтому отдельный watch ориентации не нужен)
 // ============================================
 useResizeObserver(imageWrapper, async () => {
   await updateSlidePosition()
@@ -494,7 +497,6 @@ useResizeObserver(imageWrapper, async () => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений (ваши исходные стили) */
 .product-gallery {
   width: 100%;
 }

@@ -67,7 +67,6 @@
               :products="displayedProducts"
               :isLoading="isLoading"
               :isMobile="isMobile"
-              :isHorizontal="isHorizontal"
               :searchQuery="searchQuery"
               :activeFiltersCount="activeFiltersCount"
               useInfiniteScroll
@@ -92,15 +91,17 @@ import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
 //- Composables.
-//- isMobile и isHorizontal — из ЕДИНОГО композабла: локальные
-//- определения с собственными порогами удалены (источник бага
-//- «меню слева и снизу одновременно»)
+//- isMobile — из единого композабла. isHorizontal удалён вместе с
+//- боковой навигацией: landscape ничем не отличается от portrait
+//- (4-колоночная сетка в landscape отключена; при желании вернётся
+//- чистым CSS через media (orientation: landscape))
+const { isMobile } = useMobileDetection()
 //- ============================================
+
 const route = useRoute()
 const router = useRouter()
 const { addToCart } = useCart()
 const appState = useAppState()
-const { isMobile, isHorizontal } = useMobileDetection()
 
 //- ============================================
 //- Реактивные переменные
@@ -271,12 +272,7 @@ const sidebarEvents = {
 //- ============================================
 //- Классы
 //- ============================================
-const mainAreaClasses = computed(() => {
-  const classes = []
-  if (isMobile.value) classes.push('mobile-layout')
-  if (isMobile.value && isHorizontal.value) classes.push('horizontal-orientation')
-  return classes
-})
+const mainAreaClasses = computed(() => (isMobile.value ? ['mobile-layout'] : []))
 
 //- ============================================
 //- Активные фильтры
@@ -467,25 +463,6 @@ watch(showMobileFilters, updateBodyScroll)
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* ─── Горизонтальная ориентация: сдвиг под боковую навигацию.
-   Ширины синхронизированы с MobileNavFooter (70/60px) ───────── */
-
-.main-area.horizontal-orientation {
-  margin-left: 70px;
-  width: calc(100% - 70px);
-
-  @media (max-width: 740px) and (orientation: landscape) {
-    margin-left: 60px;
-    width: calc(100% - 60px);
-  }
-}
-
-.main-area.horizontal-orientation .products-container {
-  padding: 0 0.5rem;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* ─── Оверлей мобильных фильтров ────────────────────────────── */

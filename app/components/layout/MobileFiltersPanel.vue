@@ -1,32 +1,26 @@
-<!-- components/layout/MobileFiltersPanel.vue -->
+<!-- components/layout/MobileFiltersPanel.vue — мобильная панель фильтров
+    (полноэкранный оверлей). Горизонтальные варианты удалены вместе
+    с боковой навигацией. -->
 <template lang="pug">
-.mobile-filters-wrapper(
-  class="lg:hidden"
-  :class="{ 'horizontal-orientation': isHorizontal }"
-)
+.mobile-filters-wrapper(class="lg:hidden")
   .mobile-filters-overlay(@click="handleClose")
-  .mobile-filters-panel(
-    :class="{ 'horizontal-panel': isHorizontal }"
-  )
+  .mobile-filters-panel
     .filters-header.flex.items-center.justify-between.p-4.bg-base-100.border-b.border-base-300(
       class="sm:px-3 sm:py-1"
-      :class="{ 'horizontal-header': isHorizontal }"
     )
       .flex.items-center
-        h2.text-lg.font-bold.text-base-content(class="hidden sm:block") 
-      
+        h2.text-lg.font-bold.text-base-content(class="hidden sm:block")
+
       .flex.items-center.gap-2
-        //- Кнопка "Применить" для закрытия панели
+        //- Кнопка «Применить» — закрывает панель и скроллит к товарам
         button.btn.btn-info.btn-sm.rounded-lg(
+          type="button"
           @click="handleApplyAndClose"
           class="px-3 py-1"
         )
           span.text-xs.text-white Применить
 
-    .filters-content.p-4.bg-base-100.overflow-y-auto(
-      class="sm:p-1"
-      :class="{ 'horizontal-content': isHorizontal }"
-    )
+    .filters-content.p-4.bg-base-100.overflow-y-auto(class="sm:p-1")
       ProductFilter(
         :total-count="totalCount"
         :filtered-count="filteredCount"
@@ -36,7 +30,6 @@
         :filters="filters"
         :sort="sort"
         :priceRange="priceRange"
-        :isHorizontal="isHorizontal"
         @update:filters="handleFiltersUpdate"
         @update:sort="handleSortUpdate"
         @update:searchQuery="handleSearchQueryUpdate"
@@ -46,121 +39,54 @@
 </template>
 
 <script setup>
-import ProductFilter from '~/components/products/ProductFilter.vue'
-import { useMobileDetection } from '@/composables/useMobileDetection'
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+//- ProductFilter автоимпортится Nuxt.
+//- Система ориентации удалена (боковой навигации больше нет);
+//- console.log на каждое действие фильтрами убраны
 
-const { isMobile } = useMobileDetection()
-const isHorizontal = ref(false)
-
-const checkOrientation = () => {
-  if (process.client) {
-    isHorizontal.value = window.innerWidth > window.innerHeight && window.innerWidth <= 926
-  }
-}
-
-const initOrientationListeners = () => {
-  if (process.client) {
-    checkOrientation()
-    window.addEventListener('resize', checkOrientation)
-    window.addEventListener('orientationchange', checkOrientation)
-  }
-}
-
-const destroyOrientationListeners = () => {
-  if (process.client) {
-    window.removeEventListener('resize', checkOrientation)
-    window.removeEventListener('orientationchange', checkOrientation)
-  }
-}
-
-// Обработчик обновления фильтров (НЕ закрываем панель сразу)
+//- Обработчик обновления фильтров (панель НЕ закрываем —
+//- пользователь видит пересчёт счётчика в реальном времени)
 const handleFiltersUpdate = (filters) => {
-  console.log('📱 MobileFiltersPanel: обновление фильтров', filters)
   emit('update:filters', filters)
 }
 
-// Обработчик обновления сортировки (НЕ закрываем панель сразу)
 const handleSortUpdate = (sort) => {
-  console.log('📱 MobileFiltersPanel: обновление сортировки', sort)
   emit('update:sort', sort)
 }
 
-// Обработчик обновления поискового запроса
 const handleSearchQueryUpdate = (query) => {
   emit('update:searchQuery', query)
 }
 
-// Обработчик сброса фильтров (БЕЗ сброса сортировки)
+//- Сброс фильтров (БЕЗ сброса сортировки)
 const handleResetFilters = () => {
-  console.log('🔄 MobileFiltersPanel: сброс фильтров (без сортировки)')
   emit('reset-filters')
 }
 
-// Обработчик прокрутки к началу
 const handleScrollToTop = () => {
   emit('scroll-to-top')
 }
 
-// Обработчик "Применить и закрыть"
+//- «Применить и закрыть»: закрыть панель, затем плавно к товарам
 const handleApplyAndClose = () => {
-  console.log('✅ MobileFiltersPanel: применение фильтров и закрытие')
   emit('close')
-  
-  // Даем небольшой таймаут для обновления DOM перед прокруткой
+  // Небольшая задержка: дать DOM обновиться после закрытия панели
   setTimeout(() => {
     emit('scroll-to-top')
   }, 150)
 }
 
-// Обработчик закрытия панели
 const handleClose = () => {
   emit('close')
 }
 
-onMounted(() => {
-  initOrientationListeners()
-})
-
-onUnmounted(() => {
-  destroyOrientationListeners()
-})
-
-watch(isMobile, () => {
-  checkOrientation()
-})
-
-// пропсы
 defineProps({
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  categories: {
-    type: Array,
-    default: () => []
-  },
-  filters: {
-    type: Object,
-    default: () => ({})
-  },
-  sort: {
-    type: Object,
-    default: () => ({})
-  },
-  priceRange: {
-    type: Object,
-    default: () => ({})
-  },
-  // ДОБАВЬТЕ эти пропсы для количества товаров
-  totalCount: {
-    type: Number,
-    default: 0
-  },
-  filteredCount: {
-    type: Number,
-    default: 0
-  }
+  searchQuery: { type: String, default: '' },
+  categories: { type: Array, default: () => [] },
+  filters: { type: Object, default: () => ({}) },
+  sort: { type: Object, default: () => ({}) },
+  priceRange: { type: Object, default: () => ({}) },
+  totalCount: { type: Number, default: 0 },
+  filteredCount: { type: Number, default: 0 },
 })
 
 const emit = defineEmits([
@@ -169,6 +95,6 @@ const emit = defineEmits([
   'update:sort',
   'update:searchQuery',
   'reset-filters',
-  'scroll-to-top'
+  'scroll-to-top',
 ])
 </script>

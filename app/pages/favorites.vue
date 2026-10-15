@@ -7,9 +7,7 @@
   недоступен, иначе — мигание «пусто → список» и hydration mismatch.
 ============================================ -->
 <template lang="pug">
-.favorites-page.min-h-screen.bg-base-100.flex.flex-col(
-  :class="{ 'ml-16': isHorizontal }"
-)
+.favorites-page.min-h-screen.bg-base-100.flex.flex-col
   Header
 
   main.flex-1.flex.flex-col.max-w-7xl.w-full.mx-auto.px-3.py-4(class="lg:px-6 lg:py-8")
@@ -61,11 +59,7 @@
 </template>
 
 <script setup>
-import Header from '~/components/layout/Header.vue'
-import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
-import ProductCardFavorite from '~/components/products/ProductCardFavorite.vue'
-
-const { isMobile, isHorizontal } = useMobileDetection()
+const { isMobile } = useMobileDetection()
 const { addToCart, cartItems } = useCart()
 const { $notify } = useNuxtApp()
 

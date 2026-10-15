@@ -32,10 +32,7 @@
           span Перейти в каталог
 
     //- КОРЗИНА С ТОВАРАМИ
-    .main-content.bg-base-100.flex-1.flex.flex-col.max-w-full(
-      v-else
-      :class="{ 'horizontal-orientation': isHorizontal }"
-    )
+    .main-content.bg-base-100.flex-1.flex.flex-col.max-w-full(v-else)
       .container.mx-auto.flex-1.max-w-full(class="px-3 sm:px-4 lg:px-6 pt-3 lg:pt-4")
         //- grid-cols-1 ОБЯЗАТЕЛЕН на мобильных: без явной колонки grid
         //- раздувает неявную auto-колонку до max-content ленты карточек —
@@ -319,10 +316,7 @@
   //- ПЛАВАЮЩАЯ ПАНЕЛЬ ОФОРМЛЕНИЯ (мобильные).
   //- Вся позиция/видимость — в scoped-CSS класса (не на Tailwind-утилитах):
   //- один источник правды, ничего не теряется при генерации утилит
-  .mobile-checkout-button(
-    v-if="isMounted && cartItems && cartItems.length > 0"
-    :class="{ 'with-horizontal-offset': isHorizontal }"
-  )
+  .mobile-checkout-button(v-if="isMounted && cartItems && cartItems.length > 0")
     button.btn.btn-primary.btn-lg.w-full.rounded-xl(
       type="button"
       :disabled="isProcessing || hasOutOfStockItems"
@@ -420,19 +414,6 @@
 @media (max-width: 1023.98px) {
   .main-content {
     padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 84px);
-  }
-}
-
-/* Landscape: навигация ушла влево колонкой — снизу только панель.
-   Сдвиг контента = ширине колонки навигации (70/60px) */
-.main-content.horizontal-orientation {
-  margin-left: 70px;
-}
-
-@media (max-width: 926px) and (orientation: landscape) {
-  .main-content.horizontal-orientation {
-    margin-left: 60px;
-    padding-bottom: calc(var(--safe-area-bottom, 0px) + 84px);
   }
 }
 
@@ -586,18 +567,6 @@
   }
 }
 
-/* Landscape: навигация — колонка слева, панель прижата к низу */
-.mobile-checkout-button.with-horizontal-offset {
-  left: 70px;
-  bottom: var(--safe-area-bottom, 0px);
-}
-
-@media (max-width: 740px) and (orientation: landscape) {
-  .mobile-checkout-button.with-horizontal-offset {
-    left: 60px;
-  }
-}
-
 /* ============================================
   УТИЛИТЫ
 ============================================ */
@@ -644,36 +613,19 @@ const promoCode = ref('')
 const selectedDelivery = ref('courier')
 const selectedPayment = ref('card')
 const isMobile = ref(false)
-const isHorizontal = ref(false)
 
 //- ============================================
-//- Устройство и ориентация.
-//- Пороги согласованы с useMobileDetection и MobileNavFooter:
-//- мобайл < 1024; боковая навигация — landscape 768–926
+//- Устройство.
+//- Локальные isHorizontal/checkOrientation удалены: боковая навигация
+//- в landscape больше не существует, нижнее меню постоянно.
+//- Порог мобайла согласован с useMobileDetection (< 1024)
 //- ============================================
 const checkMobile = () => {
   if (!import.meta.client) return
   isMobile.value = window.innerWidth < 1024
 }
 
-const checkOrientation = () => {
-  if (!import.meta.client) return
-  const width = window.innerWidth
-  const height = window.innerHeight
-  isHorizontal.value = width > height && width >= 768 && width <= 926
-}
-
-//- Именованные обработчики — обязательны для корректного
-//- removeEventListener в onUnmounted
-const onResize = () => {
-  checkMobile()
-  checkOrientation()
-}
-
-const onOrientationChange = () => {
-  // Небольшая задержка: iOS меняет размеры окна позже события
-  setTimeout(onResize, 100)
-}
+const onResize = () => checkMobile()
 
 //- ============================================
 //- Форматирование и утилиты
@@ -751,15 +703,12 @@ const goToProduct = (product) => {
 onMounted(() => {
   isMounted.value = true
   checkMobile()
-  checkOrientation()
   window.addEventListener('resize', onResize, { passive: true })
-  window.addEventListener('orientationchange', onOrientationChange)
   window.scrollTo(0, 0)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', onResize)
-  window.removeEventListener('orientationchange', onOrientationChange)
 })
 
 useHead({ title: 'Корзина' })
