@@ -40,7 +40,7 @@
   .price-inputs(v-if="!useSlider")
     .flex.gap-2.mt-1
       .input-group.flex-1.relative
-        label.absolute.left-3(class="top-1/2 -translate-y-1/2 text-xs text-base-content/70") от
+        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") от
         input.input.input-bordered.input-sm.w-full.pl-4.rounded-lg(
           class="border-base-content/50 focus:border-primary",
           type="number"
@@ -55,7 +55,7 @@
           :class="{ 'border-primary!': inputMin !== minPrice }"
         )
       .input-group.flex-1.relative
-        label.absolute.left-3(class="top-1/2 -translate-y-1/2 text-xs text-base-content/70") до
+        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") до
         input.input.input-bordered.input-sm.w-full.pl-4.rounded-lg(
           class="border-base-content/50 focus:border-primary",
           type="number"
@@ -78,10 +78,10 @@
       :style="{ width: sliderWidth }"
       @click="handleSliderClick"
     )
-      .slider-track.absolute.inset-x-0.h-2.bg-base-300.rounded-full.transform(class="-translate-y-1/2 top-1/2")
+      .slider-track.absolute.inset-x-0.h-2.bg-base-300.rounded-full.transform(class="top-1/2 -translate-y-1/2")
       
       .slider-range.absolute.h-1.bg-primary.rounded-full.transform(
-        class="-translate-y-1/2 top-1/2" 
+        class="top-1/2 -translate-y-1/2" 
         :style="sliderRangeStyle"
       )
       
@@ -394,13 +394,6 @@ const applyInputs = () => {
   inputMinValue.value = finalMin === props.minPrice ? '' : finalMin.toString()
   inputMaxValue.value = finalMax === props.maxPrice ? '' : finalMax.toString()
   
-  console.log('💰 Применяем диапазон цен:', { 
-    min: finalMin, 
-    max: finalMax,
-    sliderMin: sliderMin.value,
-    sliderMax: sliderMax.value
-  })
-  
   // Отправляем точные значения (без округления)
   emit('update:priceRange', {
     min: finalMin === props.minPrice ? null : finalMin,
@@ -413,7 +406,6 @@ const resetPriceRange = async () => {
   if (isResetting.value) return
   
   isResetting.value = true
-  console.log('💰 Сброс диапазона цен')
   
   // Сбрасываем значения
   inputMin.value = props.minPrice
@@ -573,17 +565,6 @@ defineExpose({ resetPriceRange })
     left: -12px;
     right: -12px;
     bottom: -12px;
-  }
-}
-
-/* Темная тема */
-@media (prefers-color-scheme: dark) {
-  .slider-track {
-    background: var(--color-base-300);
-  }
-  
-  .thumb-indicator {
-    border-color: var(--color-base-100);
   }
 }
 </style>

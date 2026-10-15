@@ -28,7 +28,7 @@
             :value="category"
             v-model="localSelectedCategories"
           )
-          span.whitespace-nowrap(v-html="highlightSearchText(category)")
+          span.whitespace-nowrap {{ category }}
       
       //- Пустое состояние внутри того же контейнера
       .empty-state.py-6.w-full.text-center(v-else)
@@ -66,17 +66,6 @@ const availableCategories = computed(() => sortedCategories.value)
 
 const isSelected = (category) => {
   return localSelectedCategories.value.includes(category)
-}
-
-const highlightSearchText = (text) => {
-  if (!props.searchQuery || !text) return text
-  
-  const searchRegex = new RegExp(`(${escapeRegex(props.searchQuery)})`, 'gi')
-  return text.replace(searchRegex, '<mark class="search-highlight">$1</mark>')
-}
-
-const escapeRegex = (string) => {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 const selectAllCategories = () => {
@@ -135,10 +124,4 @@ defineExpose({
 </style>
 
 <style>
-.search-highlight {
-  background: linear-gradient(120deg, #ffd05a, #ffe572) !important;
-  color: #1f2937 !important;
-  border-radius: 3px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-}
 </style>

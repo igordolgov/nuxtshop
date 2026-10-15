@@ -29,11 +29,13 @@
       :searchQuery="searchQuery"
       :categories="categories"
       :filters="filters"
-      :sort="sort"
       :priceRange="priceRange"
       :total-count="totalProductsCount"
       :filtered-count="displayedProducts.length"
-      v-on="mobileFiltersEvents"
+      @close="closeMobileFilters"
+      @update:filters="handleFiltersUpdate"
+      @reset-filters="resetFilters"
+      @scroll-to-top="scrollToTop"
     )
 
   .main-content-wrapper
@@ -63,6 +65,16 @@
         .main-area(:class="mainAreaClasses")
           .products-container(ref="productsContainerRef")
             .scroll-sentinel
+            //- Строка-пилюля: Фильтры · Сортировка · чипы (паттерн WB/Ozon)
+            ProductSortBar(
+              :filters="filters"
+              :priceRange="priceRange"
+              :sort="sort"
+              @toggle-filters="toggleMobileFilters"
+              @remove-filter="removeFilter"
+              @reset-all="resetFilters"
+              @update:sort="handleSortUpdate"
+            )
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
@@ -233,6 +245,24 @@ const resetFilters = async () => {
   scrollToTop()
 }
 
+//- Снятие одного фильтра чипом из ProductSortBar
+const removeFilter = (key) => {
+  const f = { ...filters.value }
+
+  if (key.startsWith('cat:')) {
+    const cat = key.slice(4)
+    f.categories = (f.categories ?? []).filter((c) => c !== cat)
+  } else if (key === 'price') {
+    f.priceRange = { min: null, max: null }
+  } else if (key === 'onlyInStock') {
+    f.onlyInStock = false
+  } else if (key === 'onlyFavorites') {
+    f.onlyFavorites = false
+  }
+
+  appState.handleFiltersUpdate(f)
+}
+
 //- ============================================
 //- Объекты событий
 //- ============================================
@@ -250,15 +280,6 @@ const headerEvents = {
   'sort-update': handleSortUpdate,
   'search-query-update': setSearchQuery,
   'reset-filters': resetFilters,
-}
-
-const mobileFiltersEvents = {
-  close: closeMobileFilters,
-  'update:filters': handleFiltersUpdate,
-  'update:sort': handleSortUpdate,
-  'update:searchQuery': setSearchQuery,
-  'reset-filters': resetFilters,
-  'scroll-to-top': scrollToTop,
 }
 
 const sidebarEvents = {
