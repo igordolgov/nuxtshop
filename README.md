@@ -1,6 +1,6 @@
 NuxtShop
 
-Учебный интернет-магазин с фейковыми товарами. Демонстрационный проект на Nuxt 4с SSR, авторизацией, корзиной, избранным и админ-панелью.
+Учебный интернет-магазин с фейковыми товарами. Демонстрационный проект на Nuxt 4с SSR, авторизацией, корзиной, избранным, заказами и админ-панелью.
 
     ⚠️ Учебный проект. Товары, пользователи и пароли — вымышленные.Не использовать в production без существенной доработки.
 
@@ -8,11 +8,13 @@ NuxtShop
 
     Фреймворк: Nuxt 4.6.1 (закреплён в package.json без ^) + Vue 3.5
     Роутинг: файловый роутинг Nuxt (Vue Router 4)
-    Стили: TailwindCSS 4 + daisyUI 5
+    Стили: TailwindCSS 4 + daisyUI 5 (темы: corporate/business)
     Стейт: Pinia 4 (@pinia/nuxt), локальное состояние — useState
     Сервер: Nitro (Nuxt), пресет cloudflare-module → Cloudflare Workers
     Хранилище: Cloudflare KV (production); dev — in-memory(данные сбрасываются при перезапуске) — см. server/lib/storage.ts
     Аутентификация: PBKDF2-SHA256 через Web Crypto API, сессии в KV
+    Заказы: KV (data:orders), цены считает сервер, статусы с историей
+    Уведомления админу: Telegram Bot API (карточки заказов с кнопками,команды /pending /stats /stock)
     PWA: @vite-pwa/nuxt (Workbox, оффлайн-режим)
     Модули: @nuxt/image, @nuxt/icon
     Утилиты: @vueuse/core, idb (IndexedDB)
@@ -41,6 +43,8 @@ pnpm rebuild
 pnpm dev
 
 Открыть: http://localhost:3000/
+
+⚠️ В dev-режиме Telegram и KV недоступны (секретов и биндингов нет):KV работает in-memory, Telegram-отправка корректно пропускается.Интеграцию с ботом тестируйте на проде или через pnpm preview + .dev.vars.
 Продакшн-сборка
 
 pnpm buildpnpm preview # локальная эмуляция Workers (wrangler dev)
@@ -58,18 +62,38 @@ pnpm deploy # = nuxt build && wrangler deploy
     Создать KV namespace: npx wrangler kv namespace create <name>
     Прописать ID namespace в wrangler.jsonc. ⚙️ Настройка: биндингобязан называться KV — это имя читает server/lib/storage.ts
 
+Секреты и переменные воркера (Settings → Variables and Secrets)
+Имя Тип Назначение
+KV KV Namespace хранилище (товары, пользователи, заказы, сессии)
+TELEGRAM_BOT_TOKEN Secret токен бота (BotFather)
+TELEGRAM_ADMIN_CHAT_ID Secret адресат карточек: id группы (-100...) и/или список через запятую
+TELEGRAM_ADMIN_USER_IDS Secret кто может жать кнопки/слать команды (id пользователей, через запятую)
+TELEGRAM_WEBHOOK_SECRET Secret проверка, что webhook зовёт Telegram
+NUXT_PUBLIC_API_BASE Text пусто (API на том же домене)
+
+Регистрация webhook (один раз после деплоя):
+
+npx wrangler secret put TELEGRAM_WEBHOOK_SECRETInvoke-RestMethod "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https://<домен>/api/telegram/webhook&secret_token=<СЕКРЕТ>"
+
+⚠️ Правило деплоя (проверено болезненно)
+
+    Ctrl+S всем изменённым файлам; контроль ключевой строки: rg "маркер" файл
+    pnpm build — дождаться ✨ Build complete в конце
+    pnpm deploy — дождаться Current Version ID: в конце (записать)
+    Секреты переживают деплой сами (wrangler secret put не требуется повторять)
+
 Данные для входа
 
 Администратор задаётся сидом server/data/users.json: при первом обращениик хранилищу пользователей readUsers() (server/lib/userHelpers.ts)загружает сид в Workers KV. Отдельный скрипт инициализации не нужен.
 Роль Email Пароль
 Администратор admin@shop.ru admin123
 
-⚠️ Смените пароль после первого входа — через админ-панель(раздел «Пользователи»).
+⚠️ Смените пароль после первого входа — через админ-панель.
 
 ⚠️ PBKDF2-хэш пароля по умолчанию хранится прямо в сиде(алгоритм — server/lib/password.ts). Для реального проекта не оставляйтепублично известные учётные данные: замените хэш в сиде до первого деплояили смените пароль сразу после входа.
 Экстренный сброс пароля администратора
 
-Если доступ ко всем админ-аккаунтам потерян, пароль меняется напрямую в KV(ключ data:users, биндинг KV — команды по умолчанию работают с удалённымnamespace; для локального dev-хранилища добавьте флаг --local):
+Если доступ ко всем админ-аккаунтам потерян, пароль меняется напрямую в KV(ключ data:users, биндинг KV; команды по умолчанию работают с удалённымnamespace; для локального dev-хранилища добавьте флаг --local):
 
 # 1. Бэкап текущих пользователей — ОБЯЗАТЕЛЬНО перед правкамиnpx wrangler kv key get "data:users" --binding=KV > users-backup.json# В Windows PowerShell 5.x '>' пишет файл в UTF-16 — надёжнее так:# npx wrangler kv key get "data:users" --binding=KV | Out-File -Encoding utf8 users-backup.json# 2. В users-backup.json замените поле "password" нужного пользователя# на хэш, сгенерированный сниппетом ниже.# 3. Залить обратноnpx wrangler kv key put "data:users" --path users-backup.json --binding=KV
 
@@ -77,11 +101,25 @@ pnpm deploy # = nuxt build && wrangler deploy
 
 Хэш генерируется тем же алгоритмом, что в server/lib/password.ts(консоль браузера, F12):
 
-// ⚙️ Настройка: подставьте новый пароль вместо 'НОВЫЙ_ПАРОЛЬ'(async (pw = 'НОВЫЙ_ПАРОЛЬ') => { // ⚙️ Настройка: 20000 — как в текущем сиде (безопасно для Free-плана, // лимит 10ms CPU). Число итераций читается из самого хэша, поэтому // любое значение совместимо с comparePassword(). const ITER = 20000; const enc = new TextEncoder(); const salt = crypto.getRandomValues(new Uint8Array(16)); const key = await crypto.subtle.importKey( 'raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits'], ); const bits = new Uint8Array(await crypto.subtle.deriveBits( { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: ITER }, key, 256, )); const b64 = (b) => btoa(String.fromCharCode(...b)); console.log(`pbkdf2$${ITER}$${b64(salt)}$${b64(bits)}`);})();
+// ⚙️ Настройка: подставьте новый пароль вместо 'НОВЫЙ_ПАРОЛЬ'(async (pw = 'НОВЫЙ_ПАРОЛЬ') => { // ⚙️ 20000 — как в текущем сиде (безопасно для Free-плана, // лимит 10ms CPU). Число итераций читается из самого хэша, // поэтому любое значение совместимо с comparePassword() const ITER = 20000; const enc = new TextEncoder(); const salt = crypto.getRandomValues(new Uint8Array(16)); const key = await crypto.subtle.importKey( 'raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits'], ); const bits = new Uint8Array(await crypto.subtle.deriveBits( { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: ITER }, key, 256, )); const b64 = (b) => btoa(String.fromCharCode(...b)); console.log(`pbkdf2$${ITER}$${b64(salt)}$${b64(bits)}`);})();
 
+Заказы и Telegram-бот
+
+Подсистема заказов: клиент оформляет заказ (POST /api/orders), серверсам пересчитывает суммы (клиентские суммы игнорируются), проверяет склад,создаёт запись в KV со статусом new и историей изменений.
+
+Telegram-бот (server/lib/telegram.ts, telegramCommands.js, webhook):
+
+    Карточка нового заказа в группу админов: состав, сумма, контакты
+        inline-кнопки «✅ Подтвердить / ❌ Отменить»;
+    Нажатие кнопки → статус меняется в KV, карточка перерисовывается;
+    Команды: /pending (новые заказы), /stats (статистика за сегодня),/stock (заканчивающиеся товары), /help;
+    Доступ: whitelist по TELEGRAM_ADMIN_USER_IDS + проверкаX-Telegram-Bot-Api-Secret-Token;
+    Идемпотентность: повторные нажатия/доставки не дублируют историю.
+
+Клиент видит свои заказы и их статусы на странице «Мои заказы»(/user/orders) — источник правды сервер, не localStorage.
 Структура проекта
 
-app/ assets/ # CSS (Tailwind, токены тем) components/ # Vue-компоненты (admin/, cart/, products/ и др.) composables/ # useApi, useAuth, useCart, useFavorites и др. layouts/ # Макеты страниц middleware/ # Роут- и глобальные middleware pages/ # Маршруты (файловый роутинг Nuxt) plugins/ # Клиентские плагиныpublic/ # Статика (favicon, images/products)server/ api/ # API-роуты Nitro data/ # Сиды: users.json, products.json lib/ # Бизнес-логика (storage, password, helpers) middleware/ # Серверные middleware utils/ # Серверные утилиты (автоимпорт Nitro)nuxt.config.ts # Конфигурация Nuxtwrangler.jsonc # Конфигурация Cloudflare Workers
+app/ assets/ # CSS (Tailwind, токены тем) components/ # Vue-компоненты (admin/, cart/, layout/, products/) composables/ # useApi, useAuth, useCart, useFavorites и др. layouts/ # Макеты страниц middleware/ # Роут- и глобальные middleware pages/ # Маршруты (файловый роутинг Nuxt) plugins/ # Клиентские плагиныpublic/ # Статика (favicon, images/products)server/ api/ # API-роуты Nitro (products, orders, auth, telegram) data/ # Сиды: users.json, products.json lib/ # Бизнес-логика (storage, password, helpers, telegram, email) middleware/ # Серверные middleware utils/ # Серверные утилиты (автоимпорт Nitro)nuxt.config.ts # Конфигурация Nuxtwrangler.jsonc # Конфигурация Cloudflare Workers
 
 Скрипты
 Команда Что делает
@@ -204,7 +242,7 @@ git diff
 Список исключений — в файле .gitignore. Не коммитятся:
 
     node_modules/, .nuxt/, .output/, dist/
-    .env, .env.local — секреты
+    .env, .env.local, .dev.vars — секреты
     server/logs/ — логи приложения
     *.rar, *.zip, *.tar.gz — архивы
     dump-*.txt, nuxt-shop.txt — дампы и выгрузки проекта
@@ -266,14 +304,14 @@ git status# должно быть: "Your branch is up to date with 'origin/main'
 git push -u origin main
 
 Флаг -u нужен только один раз — потом git push работает без аргументов.
-Известные проблемы
+Известные проблемы и уроки
 Windows + Nuxt 4.6.0
 
 Симптом: ошибка 500 Either manifest or precomputed data must be providedв vue-bundle-renderer.
 
 Причина: баг в Nuxt 4.6.0, специфичный для Windows. На Linux та же версияработала нормально.
 
-Решение: в проекте закреплён Nuxt 4.6.1 (в package.json без ^ —pnpm не подтянет более новую версию). На 4.6.1 проблема не воспроизводится.Перед обновлением Nuxt проверяйте сборку на Windows.
+Решение: в проекте закреплён Nuxt 4.6.1 (в package.json без ^ —pnpm не подтянет более новую версию). Перед обновлением Nuxt проверяйтесборку на Windows.
 pnpm 10–12 блокируют postinstall
 
 Симптом: ERR_PNPM_IGNORED_BUILDS при pnpm install, отсутствие нативныхбинарников (esbuild, @parcel/watcher).
@@ -292,15 +330,45 @@ onlyBuiltDependencies: - '@parcel/watcher' - electron-winstaller - esbuild
     pnpm approve-builds — разрешить postinstall
     pnpm dev
 
+Telegram-уведомления не приходят — чек-порядок диагностики
+
+    Тест бота в браузере (исключает токен/chat_id):https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID>&text=тест
+    npx wrangler secret list — все секреты на месте(наличие ≠ валидность значения — пункт 1 проверяет значения)
+    npx wrangler deployments list — код на проде новее последнейсмены секретов
+    Синхронная отладочная версия + npx wrangler tail — читать строки[telegram] ...
+    Тестировать только на проде — в pnpm dev секретов нет,отправка корректно пропускается (тихий no-op)
+
+⚠️ ctx.waitUntil() не доставляет фоновые задачи
+
+В связке Nitro cloudflare-module + Nuxt 4.6 фоновые задачи черезctx.waitUntil() не выполняются (изолят завершается с ответом;проверено A/B-тестом: синхронная версия доставляет, waitUntil — нет).Все внешние отправки (Telegram, email) — синхронные await,fail-safe (try/catch, не ломают основной ответ). Решение зафиксированов шапке server/api/orders/index.post.js — не «улучшать» обратно.
+pug + Tailwind: классы со спецсимволами
+
+В pug точка — разделитель классов, двоеточие — block-expansion.Классы со спецсимволами (lg:block, hover:bg-*, w-3/4, py-2.5,sm:hidden) — ТОЛЬКО внутри class="...". Точечный синтаксис —только классы из букв/цифр/дефисов.
+
+Контроль перед коммитом (ожидание: пусто):
+
+rg -n "[\w]+\.[\w-]_:" app -g "_.vue"
+
+Другие уроки отладки
+
+    Файл не сохранён до деплоя — в прод уходит старый код; правило:Ctrl+S → rg "маркер" файла → build (дочитать до Build complete) →deploy (дочитать до Current Version ID)
+    Ghost-серверы: «Port 3000 is in use» — старый dev жив; передстартом: taskkill /F /IM node.exe
+    Две среды — два поведения: Telegram/KV работают только на проде(или preview + .dev.vars); dev — для UI
+    knip не отслеживает auto-imported компоненты — «unused» по нимпроверять только rg по имени
+    wrangler secret list показывает наличие, не валидность — значенияпроверять ручным вызовом API
+    PowerShell: пути с [id] — только -LiteralPath; > пишет UTF-16
+
 Соглашения по коду
 
     Компоненты: PascalCase (ProductCard.vue)
     Composables: camelCase с префиксом use (useCart.ts)
-    API-роуты: kebab-case (server/api/products/add.post.js)
+    API-роуты: kebab-case (server/api/products/index.post.js)
     Стили: TailwindCSS utility-классы, кастомные — в app/assets/css/
-    В pug-шаблонах классы со спецсимволами (:, ., /, [, ], включая десятичные Tailwind-классы вроде py-2.5) пишутся только внутри class="..."
+    В pug-шаблонах классы со спецсимволами (:, ., /, [, ],включая десятичные (py-2.5) и брейкпоинты (lg:block)) — тольковнутри class="..."; контроль: rg -n "[\w]+\.[\w-]*:" app -g "*.vue"
     Типы: в app/types/ или локально в <script setup>
-    в server-коде: catch (error) — unknown; для текста — error instanceof Error ? error.message : String(error); сужение опциональных полей секретов — через локальные переменные с прямой проверкой
+    Server TS: catch (error) — unknown; текст ошибки —error instanceof Error ? error.message : String(error); сужениеопциональных полей секретов — локальные переменные с прямой проверкой
+    Внешние отправки (Telegram/email) — синхронные, fail-safe(не бросают, логируют оба исхода), не ломают основной ответ
+    Пороги устройства/ориентации — только в useMobileDetection.js,не дублировать локальными вычислениями
     Комментарии: на русском, для сложной логики — «почему», а не «что»
 
 Лицензия

@@ -1,12 +1,10 @@
 <!-- components/products/ProductsSection.vue — секция каталога:
-    пагинация с infinite scroll (IntersectionObserver), упрощённая
-    виртуализация, скелетоны при первой загрузке и подгрузке
-    (вместо блокирующих спиннеров), пустое состояние и ошибки. -->
+     пагинация с infinite scroll (IntersectionObserver), упрощённая
+     виртуализация, скелетоны при первой загрузке и подгрузке,
+     4 колонки в landscape — чистым CSS (см. style). -->
 <template lang="pug">
 .products-section.pb-12(class="sm:pb-0")
-  //- ─── Первая загрузка: скелетон-сетка вместо спиннера.
-  //- Та же сетка, что реальный каталог (gridClasses) — при подмене
-  //- контентом ничего не прыгает ───
+  //- Первая загрузка: скелетон-сетка вместо спиннера
   .initial-skeleton(v-if="isLoadingInitial")
     .products-grid(:class="gridClasses")
       ProductCardSkeleton(
@@ -15,7 +13,6 @@
         :variant="isMobile ? 'list' : 'grid'"
       )
 
-  //- Основной контент
   template(v-else)
     //- Результаты поиска
     .search-results.mb-4(v-if="searchQuery && displayedProducts.length > 0")
@@ -48,15 +45,11 @@
       v-if="displayedProducts.length > 0"
       ref="containerRef"
     )
-      //- Счётчик товаров
       .products-counter.text-sm.text-base-content.opacity-60.mb-0.py-1(
         v-if="!searchQuery"
       )
         | Показано {{ visibleProducts.length }} из {{ displayedProducts.length }} товаров
 
-      //- Сетка товаров.
-      //- Скелетоны подгрузки рендерятся ВНУТРИ сетки после карточек —
-      //- выглядят как продолжение списка, без прыжков раскладки
       .products-grid(
         :class="gridClasses"
       )
@@ -78,18 +71,16 @@
             :variant="isMobile ? 'list' : 'grid'"
           )
 
-      //- Sentinel для IntersectionObserver
       .scroll-sentinel(
         ref="sentinelRef"
       )
 
-      //- Конец списка
       .end-of-list.text-center.py-2.text-sm.opacity-50(
         v-if="!hasMore && displayedProducts.length > 0"
       )
         | Вы просмотрели все товары ({{ displayedProducts.length }})
 
-    //- Кнопка "Показать ещё" (fallback без infinite scroll)
+    //- Кнопка «Показать ещё» (fallback без infinite scroll)
     .load-more-section.py-6.text-center(
       v-if="showLoadMoreButton && hasMore && !isLoadingMore"
     )
@@ -117,48 +108,19 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 // ==========================================
-// Props
+// Props.
+// isHorizontal удалён: 4 колонки в landscape теперь чистый CSS
+// (media-блок в <style>). Пропс больше никем не передаётся
 // ==========================================
 const props = defineProps({
-  products: {
-    type: Array,
-    default: () => [],
-  },
-  isLoading: {
-    type: Boolean,
-    default: false,
-  },
-  isMobile: {
-    type: Boolean,
-    default: false,
-  },
-  isHorizontal: {
-    type: Boolean,
-    default: false,
-  },
-  searchQuery: {
-    type: String,
-    default: '',
-  },
-  activeFiltersCount: {
-    type: Number,
-    default: 0,
-  },
-  // Включить infinite scroll (иначе показать кнопку)
-  useInfiniteScroll: {
-    type: Boolean,
-    default: true,
-  },
-  // Размер страницы для загрузки
-  pageSize: {
-    type: Number,
-    default: 20,
-  },
-  // Максимальное количество элементов в DOM
-  maxRendered: {
-    type: Number,
-    default: 100,
-  },
+  products: { type: Array, default: () => [] },
+  isLoading: { type: Boolean, default: false },
+  isMobile: { type: Boolean, default: false },
+  searchQuery: { type: String, default: '' },
+  activeFiltersCount: { type: Number, default: 0 },
+  useInfiniteScroll: { type: Boolean, default: true },
+  pageSize: { type: Number, default: 20 },
+  maxRendered: { type: Number, default: 100 },
 })
 
 // ==========================================
@@ -184,19 +146,16 @@ const containerRef = ref(null)
 const sentinelRef = ref(null)
 const observer = ref(null)
 
-// Пагинация
 const currentPage = ref(1)
 const isLoadingMore = ref(false)
 const isLoadingInitial = ref(true)
 const hasMore = ref(true)
 
-// Виртуализация
 const visibleProducts = ref([])
 const startIndex = ref(0)
 const isScrolling = ref(false)
 let scrollTimeout = null
 
-// Ошибка
 const loadError = ref(null)
 
 // ==========================================
@@ -208,31 +167,22 @@ const remainingCount = computed(() => {
   return Math.max(0, displayedProducts.value.length - visibleProducts.value.length)
 })
 
-const showLoadMoreButton = computed(() => {
-  return !props.useInfiniteScroll
-})
+const showLoadMoreButton = computed(() => !props.useInfiniteScroll)
 
 // Скелетоны первой загрузки: заполняют экран.
 // ⚙️ НАСТРОЙКА: количество призрачных карточек
 const initialSkeletonCount = computed(() => (props.isMobile ? 6 : 10))
 
-// Скелетоны подгрузки: короткий ряд внизу сетки.
-// ⚙️ НАСТРОЙКА: при 2 колонках 4 = два ряда, при 4–5 колонках — один ряд
+// Скелетоны подгрузки: короткий ряд внизу сетки
 const moreSkeletonCount = computed(() => (props.isMobile ? 4 : 5))
 
 const gridClasses = computed(() => {
   const classes = ['grid', 'gap-2', 'sm:gap-4']
 
   if (props.isMobile) {
-    if (props.isHorizontal) {
-      // Горизонтальный режим на мобильном — 4 колонки
-      classes.push('grid-cols-4', 'gap-1', 'sm:gap-2')
-    } else {
-      // Вертикальный режим на мобильном — 2 колонки
-      classes.push('grid-cols-2')
-    }
+    // Portrait: 2 колонки. Landscape: 4 — чистый CSS (media-блок в style)
+    classes.push('grid-cols-2')
   } else {
-    // Десктоп
     classes.push('grid-cols-2', 'sm:grid-cols-3', 'lg:grid-cols-4', 'xl:grid-cols-5')
   }
 
@@ -253,9 +203,6 @@ const emptyMessage = computed(() => {
 // Методы
 // ==========================================
 
-/**
- * Обновление видимых товаров (с учётом виртуализации)
- */
 const updateVisibleProducts = () => {
   const total = displayedProducts.value.length
   const maxStart = Math.max(0, total - props.maxRendered)
@@ -268,13 +215,7 @@ const updateVisibleProducts = () => {
   visibleProducts.value = displayedProducts.value.slice(startIndex.value, endIndex)
 }
 
-/**
- * Загрузка следующей страницы.
- * Данные уже локальные (props) — пагинация виртуальная; пауза нужна
- * только чтобы скелетоны были различимы глазом и переход был плавным.
- * ⚙️ НАСТРОЙКА: длительность показа скелетонов подгрузки, мс
- * (раньше 100 — скелетоны мелькали нечитаемо)
- */
+// ⚙️ НАСТРОЙКА: длительность показа скелетонов подгрузки, мс
 const LOAD_MORE_DELAY_MS = 300
 
 const loadMore = async () => {
@@ -303,9 +244,6 @@ const loadMore = async () => {
   }
 }
 
-/**
- * Очистка элементов сверху при скролле
- */
 const cleanupTopItems = () => {
   if (!containerRef.value || isScrolling.value || startIndex.value === 0) return
 
@@ -324,9 +262,6 @@ const cleanupTopItems = () => {
   }
 }
 
-/**
- * Инициализация IntersectionObserver
- */
 const setupObserver = () => {
   if (!import.meta.client || !sentinelRef.value) return
 
@@ -350,9 +285,6 @@ const setupObserver = () => {
   observer.value.observe(sentinelRef.value)
 }
 
-/**
- * Обработчик скролла
- */
 const handleScroll = () => {
   isScrolling.value = true
 
@@ -364,9 +296,6 @@ const handleScroll = () => {
   }, 150)
 }
 
-/**
- * Сброс состояния
- */
 const reset = async () => {
   currentPage.value = 1
   startIndex.value = 0

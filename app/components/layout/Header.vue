@@ -1,17 +1,19 @@
-<!-- app/components/layout/Header.vue — sticky-шапка: бургер-меню на управляемом
-    состоянии (закрытие при навигации/Escape/клике вне), поиск с фильтрами,
-    переключение темы, корзина, пользовательское и админское меню. -->
+<!-- app/components/layout/Header.vue — шапка по паттерну маркетплейсов.
+    Мобильные (<1024px) — ДВЕ строки всегда (и в landscape):
+      строка 1: бургер + логотип … тема + профиль
+      строка 2: поиск на всю ширину (+ «Фильтры» на главной)
+    Десктоп (≥1024px) — одна строка: лого · меню · поиск · действия.
+    Поиск ГЛОБАЛЬНЫЙ: состояние из appState.search напрямую. -->
 <template lang="pug">
-header.navbar.min-h-14.sticky.top-0.z-50.border-b(
-  class="bg-base-100/95 backdrop-blur px-3 sm:px-4 lg:px-6 border-base-300"
+header.app-header.sticky.top-0.z-50.border-b(
+  class="bg-base-100/95 backdrop-blur border-base-300"
 )
-  //- ─── Левая часть: бургер (мобильные) + логотип ─────────────
-  .navbar-start.flex-0
-    .flex.items-center.gap-1
-      //- Бургер-меню: управляемое состояние вместо focus-хака dropdown.
-      //- Раньше closeMobileMenu() искал несуществующий чекбокс —
-      //- меню не закрывалось после навигации
-      .relative(v-if="isMobile" class="mr-1" ref="mobileMenuRef")
+  //- ═══ Строка 1: навигация и действия ═══
+  .flex.items-center.justify-between.gap-2(class="px-0 lg:px-6 h-14")
+    //- Левая группа: бургер (моб) + логотип
+    .flex.items-center.gap-1.min-w-0
+      //- Бургер-меню (мобильные)
+      .relative(v-if="isMobile" ref="mobileMenuRef")
         button.btn.btn-ghost.btn-circle(
           type="button"
           :aria-expanded="isMobileMenuOpen"
@@ -23,120 +25,126 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70")
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
 
-        //- Панель меню. Пункты py-3 = тач-таргет 44px
-        ul#mobile-menu.absolute.top-full.left-0.mt-2.z-50(
+        //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
+        ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           v-show="isMobileMenuOpen"
-          class="gap-1 bg-base-100 shadow-lg p-2 border border-base-300 rounded-2xl w-60"
+          class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 overflow-hidden"
         )
-          li
-            NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-              :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-              to="/"
-              @click="onMenuItemClick"
-              prefetch
-            ) Главная
-          li
-            NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-              :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-              to="/news"
-              @click="onMenuItemClick"
-              prefetch
-            ) Новости
-          li
-            NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm.flex.items-center.justify-between(
-              :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-              to="/favorites"
-              @click="onMenuItemClick"
-              prefetch
-            )
-              span Избранное
-              span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
-                | {{ favoritesCount }}
-          li
-            NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-              :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-              to="/about"
-              @click="onMenuItemClick"
-              prefetch
-            ) О нас
-          li
-            NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-              :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-              to="/contacts"
-              @click="onMenuItemClick"
-              prefetch
-            ) Контакты
+          //- Шапка меню: кто вошёл / приглашение войти
+          .px-5.pt-5.pb-4.border-b.border-base-300(class="bg-base-200/50")
+            .text-xs.font-medium.uppercase.tracking-wider(class="text-base-content/40")
+              | Меню
+            .text-sm.font-semibold.text-base-content.mt-1(v-if="isAuthenticated")
+              | {{ userName }}
+            .text-sm.mt-1(v-else class="text-base-content/50")
+              | Гость — войдите для заказов
 
-          //- Админка для мобильных
+          //- Раздел: Магазин
+          .px-3.py-3
+            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+              | Магазин
+            ul.space-y-1
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  :class="isActiveRoute('/') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  to="/"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                    path(stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6")
+                  span Главная
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.justify-between(
+                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  :class="isActiveRoute('/favorites') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  to="/favorites"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  span.flex.items-center.gap-3
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
+                    span Избранное
+                  span.badge.badge-sm.badge-primary.rounded-full(v-if="favoritesCount > 0")
+                    | {{ favoritesCount }}
+
+          //- Раздел: Информация
+          .px-3.pb-3
+            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+              | Информация
+            ul.space-y-1
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  :class="isActiveRoute('/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  to="/news"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                    path(stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 0h2a2 2 0 012 2v10a2 2 0 01-2 2h-4l-2-3h-4l-2 3z")
+                  span Новости
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  :class="isActiveRoute('/about') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  to="/about"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                    path(stroke-linecap="round" stroke-linejoin="round" d="M13 16h8v-8l-8-5-8 5v8h8zm-8 0v4a2 2 0 002 2h4")
+                  span О нас
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  :class="isActiveRoute('/contacts') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  to="/contacts"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                    path(stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
+                  span Контакты
+
+          //- Раздел: Админка
           template(v-if="isAdmin")
-            li
-              .divider.my-1.text-xs.opacity-50 Админка
-            li
-              NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-                :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-                to="/admin/products"
-                @click="onMenuItemClick"
-                prefetch
-              ) Товары
-            li
-              NuxtLink.px-4.py-3.rounded-xl.font-medium.text-sm(
-                :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200'"
-                to="/admin/users"
-                @click="onMenuItemClick"
-                prefetch
-              ) Пользователи
+            .px-3.pb-4
+              .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+                | Админка
+              ul.space-y-1
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin/products"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
+                    span Товары
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin/users"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 8 4 4 0 010-8zM6 20a7 7 0 0114 0")
+                    span Пользователи
 
-      //- Логотип
-      NuxtLink.flex.items-center.gap-2.shrink-0(to="/" class="lg:mr-6" prefetch)
+      //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
+      NuxtLink.flex.items-center.gap-2.shrink-0(to="/" prefetch)
         .bg-primary.rounded-xl.flex.items-center.justify-center.size-8
           span.text-white.font-bold.text-sm М
-        span.font-semibold.text-base-content.tracking-tight(v-show="!isHomePageVertical")
-          | Магазин
+        span.font-semibold.text-base-content.tracking-tight Магазин
 
-  //- ─── Центр: поиск на мобильных, меню на десктопе ───────────
-  .navbar-center.flex-1.min-w-0
-    //- Мобильные: поиск + кнопка фильтров (единственный вход в фильтры —
-    //- FAB в MainContent удалён)
-    .search-and-filters-container.flex.items-center.gap-2.w-full.ml-2(
-      v-if="isMobile"
-      class="lg:hidden"
-    )
-      .search-container.flex-1.min-w-0
-        SmartSearchInput(
-          v-show="isHomePage"
-          :products="allProducts"
-          :isActive="isHomePage"
-          :searchQuery="searchQuery"
-          :isSearching="isSearching"
-          :showSuggestions="showSuggestions"
-          :suggestions="searchSuggestions"
-          :hasSuggestions="hasSearchSuggestions"
-          :activeSuggestionIndex="activeSuggestionIndex"
-          @search="emit('search', $event)"
-          @selectProduct="emit('suggestionSelected', $event)"
-          @update:searchQuery="emit('update:searchQuery', $event)"
-          @suggestionSelected="emit('suggestionSelected', $event)"
-          @performSearch="emit('performSearch')"
-          @resetSearch="emit('resetSearch')"
-          @update:activeSuggestionIndex="emit('update:activeSuggestionIndex', $event)"
-          @update:showSuggestions="emit('update:showSuggestions', $event)"
-        )
-
-      //- Кнопка мобильных фильтров (тач-таргет 44px)
-      button.filters-button(
-        v-if="isHomePage"
-        type="button"
-        :aria-expanded="showFilters"
-        aria-label="Фильтры"
-        :class="showFilters ? 'active' : ''"
-        @click="emit('toggleFilters', !showFilters)"
-      )
-        .filters-icon
-          svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z")
-          .filters-badge(v-if="activeFiltersCount > 0") {{ activeFiltersCount }}
-
-    //- Десктоп: меню навигации
+    //- Десктоп-меню (центр строки 1)
     nav.hidden(class="lg:block")
       ul.flex.items-center.gap-1
         li
@@ -163,20 +171,15 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
             to="/contacts"
             prefetch
           ) Контакты
-
-        //- Избранное с бейджем
         li.relative
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-1.transition-colors(
+          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-2.transition-colors(
             :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
             to="/favorites"
           )
             span Избранное
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
               | {{ favoritesCount }}
-
-        //- Админка (только для админов на десктопе) — aria-expanded,
-        //- закрытие по Escape глобальному и клику вне (по ref)
-        li.relative(v-if="isAdmin" class="hidden md:block" ref="adminMenuRef")
+        li.relative(v-if="isAdmin" ref="adminMenuRef")
           button.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-1.transition-colors(
             type="button"
             :aria-expanded="isAdminMenuOpen"
@@ -186,15 +189,11 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
           )
             span Админка
             svg.w-4.h-4.transition-transform(
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              :class="isAdminMenuOpen ? 'rotate-180' : ''"
+              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor" :class="isAdminMenuOpen ? 'rotate-180' : ''"
             )
               path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 9l-7 7-7-7")
 
-          //- Выпадающее меню админки
           .absolute.top-full.left-0.mt-2.z-50(
             v-show="isAdminMenuOpen"
             class="bg-base-100 shadow-lg border border-base-300 rounded-2xl min-w-48"
@@ -205,14 +204,12 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
               ) Дашборд
-
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/products"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) Товары
-
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/users"
                 @click="closeAdminMenu"
@@ -220,14 +217,10 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
                 prefetch
               ) Пользователи
 
-  //- ─── Правая часть: корзина, тема, пользователь ─────────────
-  .navbar-end.flex-shrink-0
-    .flex.items-center.gap-1(class="lg:gap-2")
-      //- Поиск на десктопе
-      .search-desktop.hidden(
-        v-if="isHomePage"
-        class="lg:block lg:flex-1 lg:max-w-md"
-      )
+    //- Правая группа: поиск (десктоп) · корзина (десктоп) · тема · профиль
+    .flex.items-center.gap-1.shrink-0(class="lg:gap-2")
+      //- Поиск — только десктоп (на мобильных строка 2)
+      .search-desktop.hidden(class="lg:block lg:w-64 xl:w-80")
         SmartSearchInput(
           :products="allProducts"
           :isActive="true"
@@ -237,30 +230,26 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
           :suggestions="searchSuggestions"
           :hasSuggestions="hasSearchSuggestions"
           :activeSuggestionIndex="activeSuggestionIndex"
-          @search="emit('search', $event)"
-          @selectProduct="emit('suggestionSelected', $event)"
-          @update:searchQuery="emit('update:searchQuery', $event)"
-          @suggestionSelected="emit('suggestionSelected', $event)"
-          @performSearch="emit('performSearch')"
-          @resetSearch="emit('resetSearch')"
-          @update:activeSuggestionIndex="emit('update:activeSuggestionIndex', $event)"
-          @update:showSuggestions="emit('update:showSuggestions', $event)"
+          @search="onSearch"
+          @selectProduct="onSuggestionSelected"
+          @update:searchQuery="onSearchQueryUpdate"
+          @suggestionSelected="onSuggestionSelected"
+          @performSearch="onPerformSearch"
+          @resetSearch="onResetSearch"
+          @update:activeSuggestionIndex="onActiveSuggestionIndex"
+          @update:showSuggestions="onShowSuggestions"
         )
 
-      //- Корзина на десктопе (тач-таргет 44px)
-      .indicator(class="hidden lg:block")
-        NuxtLink.btn.btn-ghost.btn-circle(
-          to="/cart"
-          aria-label="Корзина"
-          class="w-11 h-11 min-h-0"
-        )
+      //- Корзина — десктоп (на мобильных нижнее меню)
+      .indicator.hidden(class="lg:block")
+        NuxtLink.btn.btn-ghost.btn-circle(to="/cart" aria-label="Корзина" class="w-11 h-11 min-h-0")
           svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70" stroke-width="1.75")
             path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
-        span.badge.badge-xs.badge-primary.absolute.top-3.right-2.indicator-item.rounded-full.px-1(
+        span.badge.badge-xs.badge-primary.absolute.top-0.right-0.indicator-item.rounded-full.px-1(
           v-if="cartItemsCount > 0"
         ) {{ cartItemsCount }}
 
-      //- Переключатель тем (тач-таргет 44px)
+      //- Тема
       button.btn.btn-ghost.btn-circle(
         type="button"
         :title="currentTheme === 'corporate' ? 'Включить тёмную тему' : 'Включить светлую тему'"
@@ -270,27 +259,19 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
       )
         svg.w-5.h-5(
           v-if="currentTheme === 'corporate'"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="1.75"
-          class="text-base-content/70"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="1.75" class="text-base-content/70"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z")
         svg.w-5.h-5(
           v-else
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="1.75"
-          class="text-base-content/70"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="1.75" class="text-base-content/70"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646A9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z")
 
-      //- Меню пользователя — aria-expanded, закрытие по Escape/клику вне
-      .relative.ml-0.flex-shrink-0(v-if="isAuthenticated" ref="userMenuRef")
+      //- Меню пользователя
+      .relative(v-if="isAuthenticated" ref="userMenuRef")
         button.flex.items-center.gap-2.cursor-pointer.rounded-xl.transition-colors(
           type="button"
           :aria-expanded="isUserMenuOpen"
@@ -304,22 +285,17 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
               span {{ userInitials }}
           span.font-medium.text-sm(class="hidden sm:block") {{ userName }}
           svg.w-4.h-4.transition-transform(
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            class="text-base-content/50"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" class="text-base-content/50"
             :class="isUserMenuOpen ? 'rotate-180' : ''"
           )
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 9l-7 7-7-7")
 
-        //- Выпадающее меню пользователя
         .absolute.top-full.right-0.mt-2.z-50(
           v-show="isUserMenuOpen"
           class="bg-base-100 shadow-lg border border-base-300 rounded-2xl min-w-56"
         )
           .flex.flex-col.p-2
-            //- Информация о пользователе
             .px-3.py-2.border-b.border-base-300.mb-1
               .text-xs.text-base-content.opacity-60.truncate {{ userEmail }}
               .badge.badge-sm.mt-1.rounded-full(
@@ -327,7 +303,6 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
               )
                 | {{ userRole === 'admin' ? 'Администратор' : userRole === 'manager' ? 'Менеджер' : 'Пользователь' }}
 
-            //- Пункты меню (py-2.5 → тач-таргет ~44px)
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user')"
@@ -335,7 +310,6 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
             )
               span Личный кабинет
 
-            //- После кнопки «Личный кабинет» добавить:
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user/orders')"
@@ -360,57 +334,85 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
 
             .divider.my-1
 
-            button.flex.items-center.gap-3.px-3.py-2.rounded-xl.w-full.text-left.cursor-pointer.text-sm.text-error.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.text-error.transition-colors(
               type="button"
               class="hover:bg-error/10"
               @click="handleLogout"
             )
               span Выйти
 
-      //- Кнопка входа (только для неавторизованных, тач-таргет 44px)
-      NuxtLink.btn.btn-primary.rounded-xl.ml-1(
+      //- Кнопка входа (неавторизованные)
+      NuxtLink.btn.btn-primary.rounded-xl(
         v-else
         to="/auth/login"
         class="min-h-11"
       )
         span Войти
+
+  //- ═══ Строка 2 (только мобильные): поиск на всю ширину ═══
+  .px-3.pb-2(class="lg:hidden")
+    .flex.items-center.gap-2
+      .flex-1.min-w-0
+        SmartSearchInput(
+          :products="allProducts"
+          :isActive="true"
+          :searchQuery="searchQuery"
+          :isSearching="isSearching"
+          :showSuggestions="showSuggestions"
+          :suggestions="searchSuggestions"
+          :hasSuggestions="hasSearchSuggestions"
+          :activeSuggestionIndex="activeSuggestionIndex"
+          @search="onSearch"
+          @selectProduct="onSuggestionSelected"
+          @update:searchQuery="onSearchQueryUpdate"
+          @suggestionSelected="onSuggestionSelected"
+          @performSearch="onPerformSearch"
+          @resetSearch="onResetSearch"
+          @update:activeSuggestionIndex="onActiveSuggestionIndex"
+          @update:showSuggestions="onShowSuggestions"
+        )
+
+      //- «Фильтры» — только на главной (там, где они работают)
+      button.filters-button(
+        v-if="isHomePage"
+        type="button"
+        :aria-expanded="showFilters"
+        aria-label="Фильтры"
+        :class="showFilters ? 'active' : ''"
+        @click="emit('toggleFilters', !showFilters)"
+      )
+        .filters-icon
+          svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z")
+          .filters-badge(v-if="activeFiltersCount > 0") {{ activeFiltersCount }}
 </template>
 
 <style scoped>
-/* Safe-area-top: в standalone-PWA контент шапки не прилипает
-   к статус-бару (в браузере inset = 0 — ничего не меняется).
-   Примечание: при большом inset шапка становится выше 56px —
-   sticky-чипы страниц используют --header-height, см. main.css */
-.navbar {
+/* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает) */
+.app-header {
   padding-top: var(--safe-area-top, 0px);
 }
 
-/* Кнопка фильтров — минималистичный плоский стиль.
-   ВАЖНО: --color-* в daisyUI 5 — готовые цвета (oklch), rgb()-обёртка
-   делает значение невалидным. Прозрачность — через color-mix() */
+/* Кнопка фильтров (строка 2): плоская, под высоту поля поиска */
 .filters-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
+  justify-content: center;
   background: var(--color-base-200);
   color: var(--color-base-content);
   border: 1px solid var(--color-base-300);
   border-radius: var(--radius-xl, 0.75rem);
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
   cursor: pointer;
   transition:
     background 150ms cubic-bezier(0.4, 0, 0.2, 1),
     border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0;
-  /* Тач-таргет 44px по высоте */
-  min-height: 44px;
+  /* Ровно под высоту поискового поля + тач-таргет 44px */
+  width: 44px;
+  height: 44px;
 }
 
-/* Hover — только для устройств с курсором (на таче прилипает) */
 @media (hover: hover) {
   .filters-button:hover {
     border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
@@ -446,108 +448,39 @@ header.navbar.min-h-14.sticky.top-0.z-50.border-b(
   border: 2px solid var(--color-base-100);
 }
 
-/* Контейнеры поиска */
-.search-and-filters-container {
-  min-width: 0;
+/* ─── Люксовое меню: плавное появление ─────────────────────────── */
+.mobile-menu {
+  animation: menuIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
 }
 
-.search-container {
-  min-width: 0;
-  flex: 1;
-}
-
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-nav ul li a,
-nav ul li button {
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.search-desktop {
-  min-width: 280px;
-  max-width: 460px;
-  flex: 1;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .search-and-filters-container {
-    gap: 8px;
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
   }
-
-  .search-container {
-    min-width: 140px;
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-@media (max-width: 480px) {
-  .search-container {
-    min-width: 100px;
-    margin-right: 4px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .navbar-center nav {
-    display: block;
-  }
-
-  .search-and-filters-container {
-    display: none;
-  }
-}
-
-@media (min-width: 1025px) {
-  .filters-button {
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu {
+    animation: none;
   }
 }
 </style>
 
 <script setup>
-//- ============================================
-//- Props
-//- ============================================
-const props = defineProps({
-  displayedProductsCount: { type: Number, default: 0 },
-  totalProductsCount: { type: Number, default: 0 },
+//- Props: только каталог-специфика (фильтры). Поиск — самодостаточен
+defineProps({
   activeFiltersCount: { type: Number, default: 0 },
-  searchQuery: { type: String, default: '' },
-  isSearching: { type: Boolean, default: false },
-  showSuggestions: { type: Boolean, default: false },
-  searchSuggestions: { type: Array, default: () => [] },
-  hasSearchSuggestions: { type: Boolean, default: false },
-  activeSuggestionIndex: { type: Number, default: -1 },
   showFilters: { type: Boolean, default: false },
 })
 
-//- ============================================
-//- Emits (полный список — index.vue подключает через v-on="headerEvents")
-//- ============================================
-const emit = defineEmits([
-  'update:searchQuery',
-  'suggestionSelected',
-  'performSearch',
-  'resetSearch',
-  'toggleFilters',
-  'search',
-  'clear-search',
-  'update:activeSuggestionIndex',
-  'update:showSuggestions',
-  'filters-update',
-  'sort-update',
-  'search-query-update',
-  'reset-filters',
-])
+const emit = defineEmits(['toggleFilters'])
 
-//- ============================================
-//- Composables (SmartSearchInput автоимпортится Nuxt)
-//- ============================================
 const route = useRoute()
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
@@ -556,31 +489,74 @@ const { totalItems } = useCart()
 const appState = useAppState()
 
 //- ============================================
-//- Состояние меню — всё управляемое (ref), никаких focus-хаков
+//- ГЛОБАЛЬНЫЙ ПОИСК: состояние из appState.search
+//- ============================================
+const searchQuery = computed(() => appState.search?.query?.value ?? '')
+const isSearching = computed(() => appState.search?.isSearching?.value ?? false)
+const showSuggestions = computed(() => appState.search?.showSuggestions?.value ?? false)
+const searchSuggestions = computed(() => appState.search?.suggestions?.value ?? [])
+const hasSearchSuggestions = computed(() => appState.search?.hasSuggestions?.value ?? false)
+const activeSuggestionIndex = computed(() => appState.search?.activeSuggestionIndex?.value ?? -1)
+const allProducts = computed(() => appState.products?.value || [])
+
+//- Ленивая загрузка товаров для подсказок на «чужих» страницах
+watch(searchQuery, (q) => {
+  if (q && !allProducts.value.length && import.meta.client) {
+    appState.loadProducts?.()
+  }
+})
+
+const onSearchQueryUpdate = (q) => appState.setSearchQuery?.(q)
+const onSearch = (q) => appState.setSearchQuery?.(q)
+
+//- Enter: с чужой страницы → каталог с запросом; на главной — штатно
+const onPerformSearch = () => {
+  const q = searchQuery.value?.trim()
+  if (!isHomePage.value && q) {
+    navigateTo({ path: '/', query: { search: q } })
+    return
+  }
+  appState.search?.performSearch?.()
+}
+
+//- Подсказка → карточка товара + сброс поиска
+const onSuggestionSelected = async (item) => {
+  if (!item) return
+  await navigateTo(`/product/${item.id}`)
+  appState.search?.resetSearch?.()
+}
+
+const onResetSearch = () => appState.search?.resetSearch?.()
+
+const onActiveSuggestionIndex = (i) => {
+  if (appState.search?.activeSuggestionIndex) {
+    appState.search.activeSuggestionIndex.value = i
+  }
+}
+
+const onShowSuggestions = (v) => {
+  if (appState.search?.showSuggestions) {
+    appState.search.showSuggestions.value = v
+  }
+}
+
+//- ============================================
+//- Меню (управляемое состояние)
 //- ============================================
 const isMobileMenuOpen = ref(false)
 const isAdminMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
 
-//- Refs контейнеров — для закрытия по клику вне (раньше были
-//- хрупкие closest('li.relative')/closest('.relative'))
 const mobileMenuRef = ref(null)
 const adminMenuRef = ref(null)
 const userMenuRef = ref(null)
 
-// Зеркало текущей темы для иконки/титула кнопки.
-// Инлайн-скрипт в <head> выставляет data-theme до первой отрисовки
 const currentTheme = ref('corporate')
 
-//- ============================================
-//- Вычисляемые свойства
-//- ============================================
 const isHomePage = computed(() => route.path === '/')
-const isHomePageVertical = computed(() => isHomePage.value && isMobile.value)
 const user = computed(() => appState.user?.value)
 const isAuthenticated = computed(() => appState.isAuthenticated?.value)
 const isAdmin = computed(() => appState.isAdmin?.value)
-const allProducts = computed(() => appState.products?.value || [])
 const cartItemsCount = computed(() => totalItems.value)
 
 const userInitials = computed(() => {
@@ -598,58 +574,27 @@ const userEmail = computed(() => user.value?.email || '')
 const userRole = computed(() => user.value?.role || 'user')
 const isAdminRouteActive = computed(() => route.path.startsWith('/admin'))
 
-//- ============================================
-//- Функции маршрутизации
-//- ============================================
 const isActiveRoute = (path) => route.path === path || route.path.startsWith(path + '/')
 const isExactActiveRoute = (path) => route.path === path
 
-//- ============================================
-//- Функции меню
-//- ============================================
-const closeMobileMenu = () => {
-  isMobileMenuOpen.value = false
-}
-
-const closeAdminMenu = () => {
-  isAdminMenuOpen.value = false
-}
-
-const closeUserMenu = () => {
-  isUserMenuOpen.value = false
-}
-
-const closeAllMenus = () => {
-  closeMobileMenu()
-  closeAdminMenu()
-  closeUserMenu()
-}
+const closeMobileMenu = () => { isMobileMenuOpen.value = false }
+const closeAdminMenu = () => { isAdminMenuOpen.value = false }
+const closeUserMenu = () => { isUserMenuOpen.value = false }
+const closeAllMenus = () => { closeMobileMenu(); closeAdminMenu(); closeUserMenu() }
 
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
-  if (isMobileMenuOpen.value) {
-    closeAdminMenu()
-    closeUserMenu()
-  }
+  if (isMobileMenuOpen.value) { closeAdminMenu(); closeUserMenu() }
 }
-
 const toggleAdminMenu = () => {
   isAdminMenuOpen.value = !isAdminMenuOpen.value
-  if (isAdminMenuOpen.value) {
-    closeUserMenu()
-    closeMobileMenu()
-  }
+  if (isAdminMenuOpen.value) { closeUserMenu(); closeMobileMenu() }
 }
-
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value
-  if (isUserMenuOpen.value) {
-    closeAdminMenu()
-    closeMobileMenu()
-  }
+  if (isUserMenuOpen.value) { closeAdminMenu(); closeMobileMenu() }
 }
 
-//- Клик по пункту бургер-меню: закрыть меню (переход сделает NuxtLink)
 const onMenuItemClick = () => closeAllMenus()
 
 const navigateToPath = async (path) => {
@@ -657,10 +602,6 @@ const navigateToPath = async (path) => {
   await navigateTo(path)
 }
 
-//- ============================================
-//- Переключение темы.
-//- Имена тем строго corporate/business — их же читает инлайн-скрипт
-//- ============================================
 const toggleTheme = () => {
   if (!import.meta.client) return
   currentTheme.value = currentTheme.value === 'corporate' ? 'business' : 'corporate'
@@ -668,12 +609,8 @@ const toggleTheme = () => {
   localStorage.setItem('theme', currentTheme.value)
 }
 
-//- ============================================
-//- Выход
-//- ============================================
 const handleLogout = async () => {
   closeAllMenus()
-
   const result = await appState.logout()
   if (result.success) {
     $notify.success('Вы успешно вышли из системы')
@@ -681,9 +618,6 @@ const handleLogout = async () => {
   }
 }
 
-//- ============================================
-//- Глобальные слушатели: клик вне (по refs) + Escape
-//- ============================================
 const closeMenusOnClickOutside = (event) => {
   if (!import.meta.client) return
   const target = event.target
@@ -696,15 +630,10 @@ const onGlobalKeydown = (event) => {
   if (event.key === 'Escape') closeAllMenus()
 }
 
-//- ============================================
-//- Lifecycle
-//- ============================================
 onMounted(() => {
   if (!import.meta.client) return
-  // data-theme уже выставлен инлайн-скриптом — синхронизируем кнопку темы
   const applied = document.documentElement.getAttribute('data-theme')
   currentTheme.value = applied === 'business' ? 'business' : 'corporate'
-
   document.addEventListener('click', closeMenusOnClickOutside)
   document.addEventListener('keydown', onGlobalKeydown)
 })
@@ -715,14 +644,8 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onGlobalKeydown)
 })
 
-//- Закрытие всех меню при любом переходе (раньше не работало:
-//- closeMobileMenu искала несуществующий чекбокс)
-watch(
-  () => route.path,
-  () => closeAllMenus(),
-)
+watch(() => route.path, () => closeAllMenus())
 
-//- Ушли в десктопный режим — мобильное меню не должно висеть открытым
 watch(isMobile, (mobile) => {
   if (!mobile) closeMobileMenu()
 })

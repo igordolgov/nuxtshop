@@ -6,7 +6,7 @@
   .text-center.py-8(v-if="safeDisplayedProducts.length === 0")
     .text-4xl.mb-4 🔍
     h3.text-lg.font-semibold.text-base-content.mb-2 Товары не найдены
-    p.mb-4.text-base-content/70 Попробуйте изменить параметры поиска или фильтрации
+    p.mb-4(class="text-base-content/70") Попробуйте изменить параметры поиска или фильтрации
 </template>
 
 <script setup>
