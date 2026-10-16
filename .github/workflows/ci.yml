@@ -1,0 +1,42 @@
+name: CI
+
+# Проверка каждой ветки: линтер, разметка, юнит-тесты, сборка.
+# Матрица Node 22/24 — проект поддерживает оба LTS-канала.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        # Версия pnpm читается из packageManager в package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Установка зависимостей
+        run: pnpm install --frozen-lockfile
+
+      - name: Oxlint (быстрый JS/TS линтер)
+        run: pnpm exec oxlint
+
+      - name: Markuplint (шаблоны .vue/pug)
+        run: pnpm lint:markup
+
+      - name: Юнит-тесты
+        run: pnpm test
+
+      - name: Сборка
+        run: pnpm build
