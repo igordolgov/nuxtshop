@@ -70,6 +70,7 @@ TELEGRAM_ADMIN_CHAT_ID Secret адресат карточек: id группы (
 TELEGRAM_ADMIN_USER_IDS Secret кто может жать кнопки/слать команды (id пользователей, через запятую)
 TELEGRAM_WEBHOOK_SECRET Secret проверка, что webhook зовёт Telegram
 NUXT_PUBLIC_API_BASE Text пусто (API на том же домене)
+NUXT_PUBLIC_SITE_URL Text пусто — канонический адрес сайта для robots.txt/sitemap.xml/JSON-LD (см. раздел SEO); без него берётся домен запроса
 
 Регистрация webhook (один раз после деплоя):
 
@@ -119,7 +120,7 @@ Telegram-бот (server/lib/telegram.ts, telegramCommands.js, webhook):
 Клиент видит свои заказы и их статусы на странице «Мои заказы»(/user/orders) — источник правды сервер, не localStorage.
 Структура проекта
 
-app/ assets/ # CSS (Tailwind, токены тем) components/ # Vue-компоненты (admin/, cart/, layout/, products/) composables/ # useApi, useAuth, useCart, useFavorites и др. layouts/ # Макеты страниц middleware/ # Роут- и глобальные middleware pages/ # Маршруты (файловый роутинг Nuxt) plugins/ # Клиентские плагиныpublic/ # Статика (favicon, images/products)server/ api/ # API-роуты Nitro (products, orders, auth, telegram) data/ # Сиды: users.json, products.json lib/ # Бизнес-логика (storage, password, helpers, telegram, email) middleware/ # Серверные middleware utils/ # Серверные утилиты (автоимпорт Nitro)nuxt.config.ts # Конфигурация Nuxtwrangler.jsonc # Конфигурация Cloudflare Workers
+app/ assets/ # CSS (Tailwind, токены тем) components/ # Vue-компоненты (admin/, cart/, layout/, products/) composables/ # useApi, useAuth, useCart, useFavorites и др. layouts/ # Макеты страниц middleware/ # Роут- и глобальные middleware pages/ # Маршруты (файловый роутинг Nuxt) plugins/ # Клиентские плагиныpublic/ # Статика (favicon, images/products)server/ api/ # API-роуты Nitro (products, orders, auth, telegram) data/ # Сиды: users.json, products.json lib/ # Бизнес-логика (storage, password, helpers, telegram, email) middleware/ # Серверные middleware routes/ # Файловые роуты Nitro: robots.txt, sitemap.xml utils/ # Серверные утилиты (автоимпорт Nitro)tests/ # Юнит-тесты vitest (tests/unit)nuxt.config.ts # Конфигурация Nuxtwrangler.jsonc # Конфигурация Cloudflare Workers
 
 Скрипты
 Команда Что делает
@@ -129,6 +130,7 @@ pnpm preview Локальная эмуляция Workers (wrangler dev; снач
 pnpm deploy Сборка + деплой на Cloudflare
 pnpm generate Генерация статического сайта
 pnpm lint:markup Проверка шаблонов markuplint
+pnpm test Юнит-тесты серверной логики (vitest)
 pnpm fmt / pnpm fmt:check Форматирование oxfmt
 pnpm knip Поиск неиспользуемых файлов и экспортов
 pnpm cf:typegen Генерация типов Cloudflare (wrangler types)
@@ -304,6 +306,18 @@ git status# должно быть: "Your branch is up to date with 'origin/main'
 git push -u origin main
 
 Флаг -u нужен только один раз — потом git push работает без аргументов.
+SEO: robots.txt, sitemap.xml, JSON-LD
+
+Что генерируется (server/routes/, логика — server/lib/seoHelpers.ts, покрыта юнит-тестами):
+
+    robots.txt — закрывает /admin, /user, /cart, /favorites, /api/; ссылается на sitemap (кэш Cloudflare сутки, swr 86400);
+    sitemap.xml — статические страницы + все товары из KV с lastmod (кэш час, swr 3600);
+    карточка товара — SSR-мета: title, description, Open Graph, twitter:card, canonical и JSON-LD schema.org/Product (цена, валюта, наличие InStock/OutOfStock, абсолютные ссылки на изображения).
+
+Настройка домена: по умолчанию берётся домен входящего запроса. За прокси Cloudflare этого обычно достаточно, но для гарантии задайте в Workers Settings переменную NUXT_PUBLIC_SITE_URL (например, https://ваш-домен) — она приоритетнее.
+
+После деплоя проверьте https://ваш-домен/robots.txt и https://ваш-домен/sitemap.xml (домены в sitemap должны быть продакшенские), затем отправьте sitemap в Google Search Console и Яндекс Вебмастер.
+
 Известные проблемы и уроки
 Windows + Nuxt 4.6.0
 
