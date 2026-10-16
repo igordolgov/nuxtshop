@@ -1,5 +1,6 @@
 // server/api/product/[slug].js
 import { getProductBySlug, getSimilarProducts } from '../../lib/productHelpers'
+import { buildProductJsonLd, resolveSiteUrl } from '../../lib/seoHelpers'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,8 +15,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const similarProducts = await getSimilarProducts(event, product, 4)
+    // JSON-LD строится на сервере — страница и бот используют один источник
+    const jsonLd = buildProductJsonLd(product, resolveSiteUrl(event))
 
-    return { success: true, product, similarProducts }
+    return { success: true, product, similarProducts, jsonLd }
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка получения товара:', error)

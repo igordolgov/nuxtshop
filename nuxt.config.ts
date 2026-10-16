@@ -66,6 +66,10 @@ export default defineNuxtConfig({
     },
     routeRules: {
       '/product/**': { swr: 3600 },
+      // SEO-файлы генерируются сервером (server/routes); кэш с фоновым
+      // обновлением: robots — сутки, sitemap — час
+      '/robots.txt': { swr: 86400 },
+      '/sitemap.xml': { swr: 3600 },
     },
   },
 
