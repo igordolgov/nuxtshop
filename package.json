@@ -11,6 +11,7 @@
     "cf:typegen": "wrangler types",
     "postinstall": "nuxt prepare",
     "lint:markup": "markuplint \"app/**/*.vue\"",
+    "test": "vitest run",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "knip": "cross-env KNIP_DISABLE_RAW_TRANSFER=1 knip"
@@ -44,6 +45,7 @@
     "pinia": "^4.1.0",
     "pug": "^3.0.4",
     "vite-plugin-remove-console": "^2.2.0",
+    "vitest": "^5.0.5",
     "vue": "^3.5.44",
     "wrangler": "^4.151.0"
   },
