@@ -28,7 +28,7 @@ function transliterate(text) {
   result = result.replace(/ч/g, 'ch')
   result = result.replace(/ц/g, 'ts')
   result = result.replace(/ю/g, 'yu')
-  result = result.replace(/я', 'ya')
+  result = result.replace(/я/g, 'ya')
   result = result.replace(/ё/g, 'yo')
   result = result.replace(/ж/g, 'zh')
   
