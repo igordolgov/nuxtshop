@@ -54,12 +54,12 @@
 </template>
 
 <script setup>
-//- Пилюля фильтров+сортировки. События родителю (index.vue):
-//- toggle-filters, remove-filter (ключ чипа), reset-all, update:sort
+//- Пилюля фильтров+сортировки. События родителю:
+//- toggle-filters, remove-filter, reset-all, update:sort
 const props = defineProps({
   filters: { type: Object, default: () => ({}) },
   priceRange: { type: Object, default: () => ({ min: 0, max: 100000 }) },
-  sort: { type: Object, default: () => ({ field: 'createdAt', order: 'desc' }) },
+  sort: { type: Object, default: () => ({}) },
 })
 
 const emit = defineEmits(['toggle-filters', 'remove-filter', 'reset-all', 'update:sort'])
@@ -67,17 +67,28 @@ const emit = defineEmits(['toggle-filters', 'remove-filter', 'reset-all', 'updat
 const formatRub = (n) =>
   new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n ?? 0)
 
-//- Значение select из стейта: "field:order"
-const sortValue = computed(
-  () => `${props.sort?.field ?? 'createdAt'}:${props.sort?.order ?? 'desc'}`,
-)
+//- Нормализация: поддерживаем и {field, order}, и legacy {sortBy, sortOrder}
+const normalizedSort = computed(() => {
+  const s = props.sort ?? {}
+  const field = s.field ?? s.sortBy ?? 'createdAt'
+  const order = s.order ?? s.sortOrder ?? 'desc'
+  return { field, order }
+})
+
+//- Ключ должен СОВПАДАТЬ с одним из option, иначе select пустой
+const SORT_OPTIONS = ['createdAt:desc', 'price:asc', 'price:desc', 'name:asc']
+
+const sortValue = computed(() => {
+  const key = `${normalizedSort.value.field}:${normalizedSort.value.order}`
+  return SORT_OPTIONS.includes(key) ? key : 'createdAt:desc'
+})
 
 const onSortChange = (e) => {
   const [field, order] = e.target.value.split(':')
   emit('update:sort', { field, order })
 }
 
-//- Счётчик активных фильтров (та же логика, что в index.vue)
+//- Счётчик активных фильтров
 const activeFiltersCount = computed(() => {
   const f = props.filters ?? {}
   let count = 0
@@ -90,7 +101,7 @@ const activeFiltersCount = computed(() => {
   return count
 })
 
-//- Чипы активных фильтров с ключами для снятия
+//- Чипы
 const activeChips = computed(() => {
   const chips = []
   const f = props.filters ?? {}
@@ -148,5 +159,17 @@ const activeChips = computed(() => {
 
 .sort-pill select:focus {
   outline: none;
+}
+
+.sort-pill select {
+  min-width: 9.5rem;      /* всегда влезает «Сначала новые» */
+  height: 2.25rem;        /* ровно с пилюлей «Фильтры» */
+  background: var(--color-base-200);
+  border: 1px solid var(--color-base-300);
+}
+
+.sort-pill select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 </style>
