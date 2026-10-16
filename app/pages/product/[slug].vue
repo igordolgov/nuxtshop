@@ -96,14 +96,57 @@ const route = useRoute()
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
 const appState = useAppState()
-const { products, loadProducts } = appState
+const { products } = appState
 const { addToCart, cartItems } = useCart()
 
-const product = ref(null)
-const isLoading = ref(true)
-const error = ref(null)
-
 const productSlug = computed(() => route.params.slug)
+
+// SSR-загрузка карточки: данные и мета-теги попадают в исходный HTML —
+// это видят поисковики и превью в мессенджерах. watch перезагружает
+// данные при смене slug без размонтирования компонента.
+const { data: responseData, status, error: fetchError } = await useAsyncData(
+  'product-page',
+  () => $fetch(`/api/product/${productSlug.value}`),
+  { watch: [productSlug] },
+)
+
+const isLoading = computed(() => status.value === 'pending')
+
+// API отдаёт { product, similarProducts, jsonLd } — достаём вложенный товар
+const product = computed(() => {
+  const response = responseData.value
+  if (!response) return null
+  return response.product ?? response
+})
+
+const error = computed(() => (fetchError.value ? 'Товар не найден' : null))
+
+const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
+
+// ─── SEO-мета (SSR) ─────────────────────────────────────────────────
+useSeoMeta({
+  title: () => (product.value ? `${product.value.name} — купить` : 'Товар не найден'),
+  description: () => product.value?.description?.slice(0, 160) ?? '',
+  ogTitle: () => product.value?.name ?? '',
+  ogDescription: () => product.value?.description?.slice(0, 160) ?? '',
+  ogType: 'product',
+  ogImage: () => jsonLd.value?.image?.[0] ?? null,
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  // canonical ведёт на канонический адрес карточки из JSON-LD
+  link: [{ rel: 'canonical', href: () => jsonLd.value?.offers?.url ?? null }],
+  script: [
+    {
+      type: 'application/ld+json',
+      // Открывающий угол строки JSON экранируется, иначе сериализованный
+      // объект мог бы преждевременно закрыть тег скрипта в head
+      innerHTML: () =>
+        jsonLd.value ? JSON.stringify(jsonLd.value).replace(/</g, '\\u003c') : '',
+    },
+  ],
+})
 
 const productGallery = computed(() => {
   if (!product.value) return []
@@ -144,37 +187,6 @@ const formatPrice = (price) => {
   return `${price.toLocaleString('ru-RU')} ₽`
 }
 
-const loadProductData = async () => {
-  isLoading.value = true
-  error.value = null
-  product.value = null
-
-  try {
-    const response = await $fetch(`/api/product/${productSlug.value}`)
-    if (response?.product) {
-      product.value = response.product
-    } else if (response) {
-      product.value = response
-    } else {
-      throw new Error('Товар не найден')
-    }
-  } catch (err) {
-    console.error('Ошибка загрузки товара:', err)
-    await loadProducts()
-    const found = products.value?.find((p) =>
-      p.slug === productSlug.value ||
-      String(p.id) === String(productSlug.value),
-    )
-    if (found) {
-      product.value = found
-    } else {
-      error.value = 'Товар не найден'
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
 const toggleFavorite = () => {
   if (!product.value) return
   appState.toggleFavorite(product.value)
@@ -205,12 +217,10 @@ const addSimilarToCart = async (item) => {
 }
 
 onMounted(() => {
-  loadProductData()
   window.scrollTo(0, 0)
 })
 
 watch(() => route.params.slug, () => {
-  loadProductData()
   window.scrollTo(0, 0)
 })
 </script>
