@@ -18,7 +18,8 @@
         "@markuplint/vue-spec",
         "@iconify-json/heroicons",
         "@iconify-json/mdi",
-        "pug"
+        "pug",
+        "vue-tsc"
       ]
     }
   }

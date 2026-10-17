@@ -11,6 +11,7 @@
     "cf:typegen": "wrangler types",
     "postinstall": "nuxt prepare",
     "lint:markup": "markuplint \"app/**/*.vue\"",
+    "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
@@ -44,9 +45,11 @@
     "oxlint": "^1.88.0",
     "pinia": "^4.1.0",
     "pug": "^3.0.4",
+    "typescript": "^5.9.3",
     "vite-plugin-remove-console": "^2.2.0",
     "vitest": "^5.0.5",
     "vue": "^3.5.44",
+    "vue-tsc": "^3.3.13",
     "wrangler": "^4.151.0"
   },
   "packageManager": "pnpm@12.6.0"

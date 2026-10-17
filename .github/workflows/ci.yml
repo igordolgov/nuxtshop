@@ -1,6 +1,6 @@
 name: CI
 
-# Проверка каждой ветки: линтер, разметка, юнит-тесты, сборка.
+# Проверка каждой ветки: линтер, разметка, типы, юнит-тесты, сборка.
 # Матрица Node 22/24 — проект поддерживает оба LTS-канала.
 on:
   push:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Markuplint (шаблоны .vue/pug)
         run: pnpm lint:markup
+
+      - name: Typecheck (vue-tsc, проекты app/server из .nuxt)
+        run: pnpm typecheck
 
       - name: Юнит-тесты
         run: pnpm test
