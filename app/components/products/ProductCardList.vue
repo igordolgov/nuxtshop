@@ -29,10 +29,18 @@
       div
         //- Фиксированная ширина изображения
         figure.overflow-hidden.rounded-xl.flex-shrink-0
+          //- width/height дублируют классы w-24 h-24: браузер резервирует
+          //- квадрат 96px до загрузки (аудит «explicit dimensions», CLS).
+          //- lazy — карточки каталога ниже первого экрана догружаются по мере
+          //- скролла, decoding=async — декодирование вне главного потока.
           NuxtImg(
             class="w-24 h-24 object-cover group-hover:scale-110 transition-transform duration-700",
             :src="getSafeImage(product.image)",
             :alt="product.name",
+            width="96",
+            height="96",
+            loading="lazy",
+            decoding="async",
           )
             //- Цена
         .pt-3

@@ -15,8 +15,14 @@ dialog.modal(:class="{ 'modal-open': isOpen }")
           :class="{ 'border-primary': selectedImage === image }"
           @click="selectImage(image)"
         )
+          //- lazy + async: сетка пресетов может быть длинной,
+          //- картинки догружаются по мере скролла модалки
           NuxtImg.w-full.h-full.object-cover.rounded(
             :src="image"
+            width="150"
+            height="150"
+            loading="lazy"
+            decoding="async"
             @error="handleImageError"
           )
       

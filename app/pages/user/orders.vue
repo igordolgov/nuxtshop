@@ -90,10 +90,14 @@
               :key="item.id"
             )
               .w-12.h-12.rounded-lg.overflow-hidden.flex-shrink-0.bg-base-300
+                //- width/height = 48px (w-12 h-12) + decoding=async
                 NuxtImg.w-full.h-full.object-cover(
                   :src="item.image || '/images/placeholder.jpg'"
                   :alt="item.name"
+                  width="48"
+                  height="48"
                   loading="lazy"
+                  decoding="async"
                 )
               .flex-1.min-w-0
                 .text-sm.font-medium.truncate {{ item.name }}

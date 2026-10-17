@@ -119,10 +119,12 @@
               class="sm:h-20"
             )
               template(v-if="form.image && isValidImage(form.image)")
+                //- decoding=async: декодирование превью вне главного потока
                 NuxtImg(
                   :src="form.image"
                   alt="Preview"
                   class="w-full h-full object-cover"
+                  decoding="async"
                   @error="handleImageError"
                 )
               template(v-else)
@@ -154,10 +156,13 @@
             :key="index"
           )
             .w-12.h-12.border.rounded.overflow-hidden(class="sm:w-14 sm:h-14")
+              //- lazy: превью галереи догружаются по мере видимости
               NuxtImg(
                 :src="image"
                 :alt="`Изображение ${index + 1}`"
                 class="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
                 @error="handleGalleryImageError(index)"
               )
             button.btn.btn-xs.btn-circle.btn-error.absolute.-top-1.-right-1.p-0(

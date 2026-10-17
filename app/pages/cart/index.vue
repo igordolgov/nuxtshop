@@ -80,10 +80,14 @@
                       .flex.items-start.gap-3
                         .flex-shrink-0
                           .item-image.w-20.h-20.rounded-xl.bg-base-200.flex.items-center.justify-center.overflow-hidden
+                            //- width/height = 80px (w-20 h-20): резерв места до загрузки
                             NuxtImg.w-full.h-full.object-cover(
                               :src="item.image || '/images/placeholder.jpg'"
                               :alt="item.name"
+                              width="80"
+                              height="80"
                               loading="lazy"
+                              decoding="async"
                               @error="handleImageError"
                             )
                           .price-info.mt-2

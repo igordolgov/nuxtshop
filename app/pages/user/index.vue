@@ -184,9 +184,15 @@
                           v-for="item in order.items"
                           :key="item.id"
                         )
+                          //- width/height = 48px (w-12 h-12) + lazy: резерв места
+                          //- и загрузка по мере попадания в viewport
                           NuxtImg.w-12.h-12.rounded.object-cover.flex-shrink-0(
                             :src="item.image || '/images/placeholder.jpg'"
                             :alt="item.name"
+                            width="48"
+                            height="48"
+                            loading="lazy"
+                            decoding="async"
                           )
                           .flex-1.min-w-0
                             .font-medium.text-sm.truncate {{ item.name }}
@@ -237,9 +243,15 @@
                   class="hover:bg-base-200"
                   @click="goToProduct(product)"
                 )
+                  //- width/height = 56px (w-14 h-14) + lazy: резерв места
+                  //- и загрузка по мере попадания в viewport
                   NuxtImg.w-14.h-14.rounded.object-cover.flex-shrink-0(
                     :src="product.image || '/images/placeholder.jpg'"
                     :alt="product.name"
+                    width="56"
+                    height="56"
+                    loading="lazy"
+                    decoding="async"
                   )
                   .flex-1.min-w-0
                     .font-medium.text-sm.truncate {{ product.name }}
