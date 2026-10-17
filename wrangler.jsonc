@@ -18,7 +18,13 @@
     "enabled": true,
   },
   "vars": {
-    "NUXT_PUBLIC_API_BASE": "",
+    // Клиентский API-базовый URL (runtimeConfig.public.apiBaseUrl).
+    // Пусто → useApi ходит на /api/** того же origin. Если задать URL
+    // внешнего API: useApi переключится на него СРАЗУ (runtimeConfig
+    // читается на рантайме), а preconnect в <head> появится после
+    // ПЕРЕСБОРКИ (он вшивается в prerender/<head> при билде).
+    // См. nuxt.config.ts → app.head.link.
+    "NUXT_PUBLIC_API_BASE_URL": "",
   },
   "kv_namespaces": [
     {

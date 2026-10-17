@@ -12,6 +12,16 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
 
+  // Клиентский API-базовый URL. Пусто по умолчанию → useApi ходит на
+  // /api/** того же origin (Nitro). Задать на рантайме можно env-ом
+  // NUXT_PUBLIC_API_BASE_URL (см. vars в wrangler.jsonc) — тогда useApi
+  // будет ходить на внешний сервер, а в <head> добавится preconnect.
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: '',
+    },
+  },
+
   experimental: {
     componentIslands: true,
     inlineRouteRules: true,
@@ -203,7 +213,18 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'preconnect', href: process.env.API_BASE || 'http://localhost:3001' },
+        // preconnect — ТОЛЬКО на внешний API, если он задан на сборке.
+        // Раньше здесь был жёсткий preconnect на API_BASE || 'http://localhost:3001':
+        // в проде API_BASE не задан → каждый посетитель открывал TCP+TLS к
+        // localhost:3001 (аудит Lighthouse «Preconnect to required origins»).
+        // Клиент ходит на /api/** того же origin — preconnect ему не нужен.
+        // Имя переменной согласовано с runtimeConfig.public.apiBaseUrl.
+        ...(process.env.NUXT_PUBLIC_API_BASE_URL
+          ? [{ rel: 'preconnect', href: process.env.NUXT_PUBLIC_API_BASE_URL }]
+          : []),
+        // Страховка для иконок, не попавших в клиентский бандл
+        // (clientBundle.scan покрывает шаблоны). dns-prefetch — дешёвый hint,
+        // соединение не открывает.
         { rel: 'dns-prefetch', href: 'https://api.iconify.design' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
