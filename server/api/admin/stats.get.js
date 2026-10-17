@@ -1,6 +1,7 @@
 // server/api/admin/stats.get.js
 import { readUsers, stripPassword } from '../../lib/userHelpers'
 import { readProducts } from '../../lib/productHelpers'
+import { cacheStats } from '../../lib/cache'
 import { requireAdmin } from '../../utils/auth'
 import { adminActionLog } from '../../lib/logger'
 
@@ -58,6 +59,10 @@ export default defineEventHandler(async (event) => {
       orders: orderStats,
       products: productStats,
       adminActions: adminActionsCount,
+      // Счётчики кэша каталога (cache.ts): hits/misses за жизнь изолята.
+      // Hit ratio = hits / (hits + misses) — доля запросов, обошедшихся
+      // без чтения KV. Снимается ПОСЛЕ readProducts выше.
+      cache: cacheStats(),
     },
     recentUsers,
   }
