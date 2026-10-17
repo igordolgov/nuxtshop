@@ -307,6 +307,76 @@ function createProducts() {
     }
   }
 
+  // ─── Массовые операции ────────────────────────────────────
+
+  // Один PATCH на весь выбор: сервер применяет патч атомарно (одно
+  // чтение и одна запись KV) и возвращает только реально изменённые
+  // товары — мерджим их в стейт, сохраняя isFavorite этого устройства.
+  const bulkUpdateProducts = async (ids, patch) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await $fetch('/api/products/bulk', {
+        method: 'PATCH',
+        body: { ids, ...patch },
+      })
+      if (!response.success) {
+        throw new Error(response.message || 'Сервер не подтвердил обновление')
+      }
+
+      const byId = new Map((response.products || []).map((p) => [String(p.id), p]))
+      products.value = products.value.map((p) => {
+        const upd = byId.get(String(p.id))
+        if (!upd) return p
+        return updateProductStockStatus(
+          fixProductImages({ ...upd, isFavorite: favorites.isFavorite(p.id) })
+        )
+      })
+      persist()
+      return response
+    } catch (err) {
+      console.error('[useProducts] Ошибка массового обновления товаров:', err)
+      error.value = errorMessage(err)
+      showNotification('error', `Массовое обновление: ${errorMessage(err)}`)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // DELETE с телом { ids } — h3 readBody читает тело и из DELETE.
+  // Удалённые id приходят в deletedIds — вычищаем стейт и избранное.
+  const bulkDeleteProducts = async (ids) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await $fetch('/api/products/bulk', {
+        method: 'DELETE',
+        body: { ids },
+      })
+      if (!response.success) {
+        throw new Error(response.message || 'Сервер не подтвердил удаление')
+      }
+
+      const gone = new Set((response.deletedIds || []).map(String))
+      products.value = products.value.filter((p) => !gone.has(String(p.id)))
+      gone.forEach((id) => {
+        if (favorites.isFavorite(id)) favorites.removeFromFavorites(id)
+      })
+      persist()
+      return response
+    } catch (err) {
+      console.error('[useProducts] Ошибка массового удаления товаров:', err)
+      error.value = errorMessage(err)
+      showNotification('error', `Массовое удаление: ${errorMessage(err)}`)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ─── Поиск ────────────────────────────────────────────────
 
   const getProductBySlug = async (slug) => {
@@ -475,6 +545,8 @@ function createProducts() {
     updateProduct,
     createProduct,
     deleteProduct,
+    bulkUpdateProducts,
+    bulkDeleteProducts,
     getProductBySlug,
     getProductById,
 

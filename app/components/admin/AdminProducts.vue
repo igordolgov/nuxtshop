@@ -36,14 +36,32 @@
       :searchQuery="searchQuery"
       :emptyMessage="emptyMessage"
       :stats="stats"
+      :selectedIds="selectedIds"
       @edit="handleEdit"
       @delete="handleDelete"
       @refresh="handleRefresh"
+      @toggleSelect="toggleSelect"
+      @toggleSelectAll="toggleSelectAll"
     )
 
   //- Мобильный футер (только на мобильных)
   .block(class="sm:hidden")
     MobileNavFooter
+
+  //- Групповые операции над выбранными товарами
+  AdminBulkActionBar(
+    :count="selectedIds.length"
+    @edit="showBulkModal = true"
+    @remove="handleBulkDelete"
+    @clear="clearSelection"
+  )
+
+  AdminBulkEditModal(
+    v-model:isOpen="showBulkModal"
+    :products="selectedProducts"
+    :allCategories="availableCategories"
+    @applied="handleBulkApplied"
+  )
 
   AdminAddProductModal(
     v-model:isOpen="showAddModal"
@@ -69,6 +87,10 @@
 // Удаление: один confirm здесь; результат запроса уважается —
 // success-тост только при реальном удалении (useProducts сам
 // показывает ошибку с текстом от сервера).
+// Выделение: массив id выбранных товаров живёт здесь; таблица
+// только сообщает toggle/toggleAll. «Выбрать все» действует на
+// показанные (отфильтрованные) товары; выделение переживает смену
+// фильтров и очищается после массовых операций.
 // Перезагрузка списка после добавления/редактирования выполняет
 // модалка — здесь дублируемый loadProducts убран.
 // ============================================
@@ -81,6 +103,7 @@ const products = appState.products
 const isLoading = appState.loading
 const loadProducts = appState.loadProducts
 const deleteProduct = appState.deleteProduct
+const bulkDeleteProducts = appState.bulkDeleteProducts
 const initializeApp = appState.initializeApp
 
 const notify = useNotifyQueue()
@@ -100,10 +123,12 @@ const statusFilters = [
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
+const showBulkModal = ref(false)
 const currentProduct = ref(null)
 const searchQuery = ref('')
 const currentFilter = ref('all')
 const selectedCategories = ref([])
+const selectedIds = ref([])
 const sortField = ref('createdAt')
 const sortDirection = ref('desc')
 
@@ -208,7 +233,62 @@ const handleDelete = async (product) => {
   // useProducts.deleteProduct сам показывает ошибку с текстом от сервера
   // (в т.ч. «Требуется авторизация» при мёртвой сессии) и возвращает boolean
   const ok = await deleteProduct(product.id)
-  if (ok) notify.success(`"${product.name}" удалён`)
+  if (ok) {
+    notify.success(`"${product.name}" удалён`)
+    // Если товар был выделен — убираем из выделения, чтобы панель
+    // групповых операций не считала уже несуществующий товар
+    selectedIds.value = selectedIds.value.filter((id) => id !== String(product.id))
+  }
+}
+
+// ─── Выделение и групповые операции ─────────────────────
+
+const selectedProducts = computed(() =>
+  products.value.filter((p) => selectedIds.value.includes(String(p.id)))
+)
+
+const toggleSelect = (id) => {
+  const sid = String(id)
+  const idx = selectedIds.value.indexOf(sid)
+  if (idx > -1) selectedIds.value.splice(idx, 1)
+  else selectedIds.value.push(sid)
+}
+
+const toggleSelectAll = () => {
+  const visible = processedProducts.value.map((p) => String(p.id))
+  const allSelected =
+    visible.length > 0 && visible.every((id) => selectedIds.value.includes(id))
+  if (allSelected) {
+    // Снимаем только с показанных: выделение вне текущего фильтра не трогаем
+    const visibleSet = new Set(visible)
+    selectedIds.value = selectedIds.value.filter((id) => !visibleSet.has(id))
+  } else {
+    selectedIds.value = [...new Set([...selectedIds.value, ...visible])]
+  }
+}
+
+const clearSelection = () => {
+  selectedIds.value = []
+}
+
+const handleBulkDelete = async () => {
+  const count = selectedIds.value.length
+  if (!confirm(`Удалить выбранные товары (${count})? Действие необратимо.`)) return
+  try {
+    // useProducts сам показывает тост с ошибкой сервера при неудаче
+    const result = await bulkDeleteProducts(selectedIds.value)
+    notify.success(result.message || `Удалено товаров: ${count}`)
+    clearSelection()
+  } catch {
+    // Ошибка уже показана в useProducts — здесь только не падаем
+  }
+}
+
+const handleBulkApplied = () => {
+  // Список уже обновлён в стейте (bulkUpdateProducts мерджит ответ);
+  // снимаем выделение — после массовой операции оно обычно больше не нужно
+  clearSelection()
+  showBulkModal.value = false
 }
 
 const handleSort = (field) => {

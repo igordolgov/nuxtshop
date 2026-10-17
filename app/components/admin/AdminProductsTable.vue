@@ -24,6 +24,14 @@
         table.table.table-zebra.w-full
           thead.sticky.top-0.bg-base-200.z-10
             tr
+              th.w-10
+                input.checkbox.checkbox-xs.checkbox-primary.cursor-pointer(
+                  type="checkbox"
+                  aria-label="Выбрать все показанные товары"
+                  :checked="allSelected"
+                  :indeterminate.prop="someSelected && !allSelected"
+                  @change="$emit('toggleSelectAll')"
+                )
               th.w-14 Фото
               th Название
               th.w-20.text-right Цена
@@ -31,7 +39,18 @@
               th.w-20 Кол-во
               th.w-20 Действия
           tbody
-            tr(v-for="product in products" :key="product.id")
+            tr(
+              v-for="product in products"
+              :key="product.id"
+              :class="{ 'row-selected': isSelected(product.id) }"
+            )
+              td
+                input.checkbox.checkbox-xs.checkbox-primary.cursor-pointer(
+                  type="checkbox"
+                  :aria-label="`Выбрать «${product.name}»`"
+                  :checked="isSelected(product.id)"
+                  @change="$emit('toggleSelect', product.id)"
+                )
               td
                 .avatar
                   .mask.mask-squircle.w-9.h-9.bg-base-200
@@ -87,6 +106,7 @@
         .card.bg-base-200.shadow-sm(
           v-for="product in products"
           :key="product.id"
+          :class="{ 'card-selected': isSelected(product.id) }"
         )
           .card-body.p-3
             .flex.gap-3
@@ -116,8 +136,14 @@
                   )
                     | {{ product.inStock ? `${product.stockQuantity || 0} шт` : 'Нет' }}
 
-              //- Действия - увеличенные кнопки
+              //- Действия - увеличенные кнопки + чекбокс выбора
               .flex.gap-2.items-center
+                input.checkbox.checkbox-sm.checkbox-primary(
+                  type="checkbox"
+                  :aria-label="`Выбрать «${product.name}»`"
+                  :checked="isSelected(product.id)"
+                  @change="$emit('toggleSelect', product.id)"
+                )
                 button.btn.btn-circle.btn-ghost.text-info(
                   @click="$emit('edit', product)"
                   type="button"
@@ -136,10 +162,24 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   searchQuery: { type: String, default: '' },
   emptyMessage: { type: String, default: 'Добавьте первый товар' },
-  stats: { type: Object, default: () => ({}) }
+  stats: { type: Object, default: () => ({}) },
+  // id выбранных товаров (строки) — источник правды живёт в AdminProducts
+  selectedIds: { type: Array, default: () => [] }
 })
 
-defineEmits(['edit', 'delete', 'refresh'])
+defineEmits(['edit', 'delete', 'refresh', 'toggleSelect', 'toggleSelectAll'])
+
+const selectedSet = computed(() => new Set(props.selectedIds.map(String)))
+
+const isSelected = (id) => selectedSet.value.has(String(id))
+
+const allSelected = computed(() =>
+  props.products.length > 0 && props.products.every((p) => selectedSet.value.has(String(p.id)))
+)
+
+const someSelected = computed(() =>
+  props.products.some((p) => selectedSet.value.has(String(p.id)))
+)
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('ru-RU').format(price || 0)
@@ -193,6 +233,21 @@ const onImageError = (e) => { e.target.style.display = 'none' }
 
 .hover-underline:hover {
   text-decoration: underline;
+}
+
+/* Наведение и выбор строки: фон на td — перекрывает и zebra, и друг друга
+   (правило выбора стоит после hover, при равной специфичности он сильнее) */
+.table tbody tr:hover td {
+  background-color: color-mix(in oklab, var(--color-base-content) 4%, transparent);
+}
+
+.table tbody tr.row-selected td {
+  background-color: color-mix(in oklab, var(--color-primary) 8%, transparent);
+}
+
+.card-selected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .table-wrapper {
