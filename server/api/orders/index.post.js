@@ -53,6 +53,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка создания заказа:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось создать заказ' })
+    throw createError({ statusCode: 500, message: 'Не удалось создать заказ' })
   }
 })

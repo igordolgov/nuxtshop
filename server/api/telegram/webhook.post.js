@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   // ── 1. Только настоящий Telegram ──
   const secret = getHeader(event, 'X-Telegram-Bot-Api-Secret-Token')
   if (!env?.TELEGRAM_WEBHOOK_SECRET || secret !== env.TELEGRAM_WEBHOOK_SECRET) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+    throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
   const update = await readBody(event)

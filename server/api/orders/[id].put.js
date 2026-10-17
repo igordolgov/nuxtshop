@@ -12,14 +12,14 @@ export default defineEventHandler(async (event) => {
 
     const id = getRouterParam(event, 'id')
     if (!id) {
-      throw createError({ statusCode: 400, statusMessage: 'ID заказа не указан' })
+      throw createError({ statusCode: 400, message: 'ID заказа не указан' })
     }
 
     const body = await readBody(event)
     if (!body?.status || !ORDER_STATUSES.includes(body.status)) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
+        message: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
       })
     }
 
@@ -36,6 +36,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка смены статуса заказа:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось изменить статус' })
+    throw createError({ statusCode: 500, message: 'Не удалось изменить статус' })
   }
 })

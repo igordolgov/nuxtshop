@@ -48,7 +48,7 @@ export async function destroySession(event: H3Event) {
 
 export async function requireUser(event: H3Event) {
   const user = await getSessionUser(event);
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Требуется авторизация' });
+  if (!user) throw createError({ statusCode: 401, message: 'Требуется авторизация' });
   return user;
 }
 
@@ -57,7 +57,7 @@ export async function requireAdmin(event: H3Event) {
   if (user.role !== 'admin') {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Доступ запрещён. Требуются права администратора',
+      message: 'Доступ запрещён. Требуются права администратора',
     });
   }
   return user;

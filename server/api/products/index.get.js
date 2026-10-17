@@ -61,6 +61,6 @@ export default defineEventHandler(async (event) => {
     return list
   } catch (error) {
     console.error('Ошибка получения товаров:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось загрузить товары' })
+    throw createError({ statusCode: 500, message: 'Не удалось загрузить товары' })
   }
 })

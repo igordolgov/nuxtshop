@@ -169,7 +169,7 @@ const loadOrders = async () => {
   } catch (err) {
     // 401 — не авторизован: middleware всё равно не пустит на страницу,
     // но на случай протухшей сессии — показываем тост, а не падаем
-    console.error('[my-orders] Ошибка загрузки:', err?.data?.statusMessage || err?.message)
+    console.error('[my-orders] Ошибка загрузки:', err?.data?.message || err?.message)
     $notify.error('Не удалось загрузить заказы')
   } finally {
     isLoading.value = false

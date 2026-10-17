@@ -6,12 +6,12 @@ export default defineEventHandler(async (event) => {
   try {
     const slugOrId = getRouterParam(event, 'slug')
     if (!slugOrId) {
-      throw createError({ statusCode: 400, statusMessage: 'Не указан идентификатор товара' })
+      throw createError({ statusCode: 400, message: 'Не указан идентификатор товара' })
     }
 
     const product = await getProductBySlug(event, slugOrId)
     if (!product) {
-      throw createError({ statusCode: 404, statusMessage: 'Товар не найден' })
+      throw createError({ statusCode: 404, message: 'Товар не найден' })
     }
 
     const similarProducts = await getSimilarProducts(event, product, 4)
@@ -22,6 +22,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка получения товара:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось загрузить товар' })
+    throw createError({ statusCode: 500, message: 'Не удалось загрузить товар' })
   }
 })

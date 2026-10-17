@@ -157,7 +157,7 @@ describe('createOrder — корзина и склад', () => {
   it('запрос больше склада — 409 с названием товара', async () => {
     await expect(
       createOrder(event, makeInput({ items: [{ id: '1', quantity: 6 }] })),
-    ).rejects.toMatchObject({ statusCode: 409, statusMessage: expect.stringContaining('Тестовый товар') });
+    ).rejects.toMatchObject({ statusCode: 409, message: expect.stringContaining('Тестовый товар') });
   });
 
   it('неизвестный товар — 400', async () => {

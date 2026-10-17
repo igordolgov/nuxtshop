@@ -8,12 +8,12 @@ export default defineEventHandler(async (event) => {
 
   const users = await readUsers(event)
   const user = users.find((u) => u.id === current.id)
-  if (!user) throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+  if (!user) throw createError({ statusCode: 404, message: 'Пользователь не найден' })
 
   if (body.name !== undefined) {
     const name = String(body.name).trim()
     if (name.length < 2 || name.length > 50) {
-      throw createError({ statusCode: 400, statusMessage: 'Имя должно содержать от 2 до 50 символов' })
+      throw createError({ statusCode: 400, message: 'Имя должно содержать от 2 до 50 символов' })
     }
     user.name = name
   }

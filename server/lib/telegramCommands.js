@@ -33,7 +33,9 @@ function formatRub(n) {
 async function sendMessageSafe(env, text) {
   const { sendMessage } = await import('./telegram');
   const ok = await sendMessage(env, env.TELEGRAM_ADMIN_CHAT_ID, text);
-  console.log(`[telegram-cmd] ответ на команду: ${ok ? 'отправлен ✅' : 'НЕ отправлен'}`);
+  // Логируем ТОЛЬКО неудачу: успешные отправки шумели в stdout тестов,
+  // а в проде полезная информация — сам текст отправленного сообщения.
+  if (!ok) console.warn('[telegram-cmd] ответ на команду НЕ отправлен');
   return ok;
 }
 

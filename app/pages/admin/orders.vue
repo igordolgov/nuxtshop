@@ -259,7 +259,7 @@ const loadOrders = async () => {
     }
   } catch (err) {
     // 401 при протухшей сессии: middleware не пустит, но и тут не падаем
-    console.error('[admin-orders] Ошибка загрузки:', err?.data?.statusMessage || err?.message)
+    console.error('[admin-orders] Ошибка загрузки:', err?.data?.message || err?.message)
     $notify.error('Не удалось загрузить заказы')
   } finally {
     isLoading.value = false
@@ -330,8 +330,8 @@ const applyStatus = async (order) => {
       $notify.success(resp.message || `Статус заказа ${order.id} обновлён`)
     }
   } catch (err) {
-    console.error('[admin-orders] Ошибка смены статуса:', err?.data?.statusMessage || err?.message)
-    $notify.error(err?.data?.statusMessage || 'Не удалось сменить статус')
+    console.error('[admin-orders] Ошибка смены статуса:', err?.data?.message || err?.message)
+    $notify.error(err?.data?.message || 'Не удалось сменить статус')
   } finally {
     const done = new Set(updating.value)
     done.delete(order.id)

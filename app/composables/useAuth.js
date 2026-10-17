@@ -70,7 +70,7 @@ function createAuth() {
       return data
     } catch (error) {
       let msg = 'Ошибка при входе в систему'
-      if (error.data?.statusMessage) msg = error.data.statusMessage
+      if (error.data?.message) msg = error.data.message
       else if (error.status === 401) msg = 'Неверный email или пароль'
       else if (error.status === 500) msg = 'Ошибка сервера. Попробуйте позже.'
       else if (error.message) msg = error.message
@@ -94,7 +94,7 @@ function createAuth() {
       return data
     } catch (error) {
       let msg = 'Ошибка при регистрации'
-      if (error.data?.statusMessage) msg = error.data.statusMessage
+      if (error.data?.message) msg = error.data.message
       else if (error.message) msg = error.message
       throw new Error(msg)
     } finally {

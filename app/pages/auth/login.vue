@@ -187,8 +187,8 @@ const handleLogin = async () => {
       loginError.value = result?.error || 'Ошибка входа. Проверьте правильность данных.'
     }
   } catch (error) {
-    if (error.data?.statusMessage || error.data?.message) {
-      loginError.value = error.data.statusMessage || error.data.message
+    if (error.data?.message || error.data?.statusMessage) {
+      loginError.value = error.data.message || error.data.statusMessage
     } else if (error.status === 401) {
       loginError.value = 'Неверный email или пароль'
     } else if (error.status === 500) {

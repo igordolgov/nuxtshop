@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
     const id = getRouterParam(event, 'id')
     if (!id) {
-      throw createError({ statusCode: 400, statusMessage: 'ID товара не указан', message: 'ID товара не указан' })
+      throw createError({ statusCode: 400, message: 'ID товара не указан' })
     }
 
     const body = await readBody(event)
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     const products = await readProducts(event)
     const index = products.findIndex((p) => String(p.id) === String(id))
     if (index === -1) {
-      throw createError({ statusCode: 404, statusMessage: 'Товар не найден', message: 'Товар не найден' })
+      throw createError({ statusCode: 404, message: 'Товар не найден' })
     }
 
     const existing = products[index]
@@ -70,6 +70,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка обновления товара:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось обновить товар', message: 'Не удалось обновить товар' })
+    throw createError({ statusCode: 500, message: 'Не удалось обновить товар' })
   }
 })

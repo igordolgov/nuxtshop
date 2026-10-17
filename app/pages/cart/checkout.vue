@@ -502,7 +502,7 @@ const paymentMethods = [
 
 //- Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
 const errorMessage = (err) =>
-  err?.data?.statusMessage || err?.data?.message || err?.message || 'Неизвестная ошибка'
+  err?.data?.message || err?.data?.statusMessage || err?.message || 'Неизвестная ошибка'
 
 //- Вычисляемые свойства
 const selectedDeliveryPrice = computed(() => {

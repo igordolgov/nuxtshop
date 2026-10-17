@@ -8,24 +8,24 @@ export default defineEventHandler(async (event) => {
 
   const userId = getRouterParam(event, 'id')
   if (!userId) {
-    throw createError({ statusCode: 400, statusMessage: 'ID пользователя не указан' })
+    throw createError({ statusCode: 400, message: 'ID пользователя не указан' })
   }
 
   const users = await readUsers(event)
   const userIndex = users.findIndex((u) => u.id === userId)
   if (userIndex === -1) {
-    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+    throw createError({ statusCode: 404, message: 'Пользователь не найден' })
   }
 
   const targetUser = users[userIndex]
 
   if (targetUser.id === adminUser.id) {
-    throw createError({ statusCode: 400, statusMessage: 'Нельзя удалить свою учётную запись' })
+    throw createError({ statusCode: 400, message: 'Нельзя удалить свою учётную запись' })
   }
 
   const adminCount = users.filter((u) => u.role === 'admin').length
   if (targetUser.role === 'admin' && adminCount <= 1) {
-    throw createError({ statusCode: 400, statusMessage: 'Нельзя удалить последнего администратора' })
+    throw createError({ statusCode: 400, message: 'Нельзя удалить последнего администратора' })
   }
 
   users.splice(userIndex, 1)

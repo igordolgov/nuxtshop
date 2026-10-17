@@ -316,7 +316,7 @@ const testApiConnection = async () => {
     const { data, error } = await useFetch('/api/admin/stats')
     
     if (error.value) {
-      debugInfo.value = `Ошибка API: ${error.value.statusCode} - ${error.value.statusMessage}`
+      debugInfo.value = `Ошибка API: ${error.value.statusCode} - ${error.value.data?.message || error.value.statusMessage}`
     } else {
       debugInfo.value = `Ответ API: ${JSON.stringify(data.value, null, 2)}`
     }

@@ -331,7 +331,7 @@ const loadOrders = async () => {
     const response = await $fetch('/api/my/orders')
     if (response.success) orders.value = response.orders
   } catch (e) {
-    console.warn('[user] Заказы с сервера не получились:', e?.data?.statusMessage || e?.message)
+    console.warn('[user] Заказы с сервера не получились:', e?.data?.message || e?.message)
     try {
       const saved = localStorage.getItem('userOrders')
       if (saved) orders.value = JSON.parse(saved)
@@ -436,7 +436,7 @@ const updateProfile = async () => {
     }
   } catch (error) {
     console.error('Ошибка:', error)
-    $notify.error(error.data?.statusMessage || error.message || 'Ошибка обновления')
+    $notify.error(error.data?.message || error.message || 'Ошибка обновления')
   } finally {
     updatingProfile.value = false
   }

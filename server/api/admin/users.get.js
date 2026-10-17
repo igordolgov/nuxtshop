@@ -64,6 +64,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка получения пользователей:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Ошибка сервера' })
+    throw createError({ statusCode: 500, message: 'Ошибка сервера' })
   }
 })

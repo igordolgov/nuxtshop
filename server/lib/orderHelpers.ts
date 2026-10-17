@@ -145,19 +145,19 @@ function validateCustomer(
 ) {
   const name = customer?.name?.trim() ?? '';
   if (name.length < 2 || name.length > 100) {
-    throw createError({ statusCode: 400, statusMessage: 'Укажите имя (2–100 символов)' });
+    throw createError({ statusCode: 400, message: 'Укажите имя (2–100 символов)' });
   }
 
   const email = customer?.email?.trim().toLowerCase() ?? '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw createError({ statusCode: 400, statusMessage: 'Укажите корректный email' });
+    throw createError({ statusCode: 400, message: 'Укажите корректный email' });
   }
 
   const phone = customer?.phone?.trim() ?? '';
   if (phone.replace(/\D/g, '').length < 10) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Укажите корректный телефон (минимум 10 цифр)',
+      message: 'Укажите корректный телефон (минимум 10 цифр)',
     });
   }
 
@@ -165,18 +165,18 @@ function validateCustomer(
 
   const address = customer?.address?.trim() ?? '';
   if (needsAddress && address.length < 5) {
-    throw createError({ statusCode: 400, statusMessage: 'Укажите адрес доставки' });
+    throw createError({ statusCode: 400, message: 'Укажите адрес доставки' });
   }
 
   const city = customer?.city?.trim() ?? '';
   if (needsAddress && city.length < 2) {
-    throw createError({ statusCode: 400, statusMessage: 'Укажите город' });
+    throw createError({ statusCode: 400, message: 'Укажите город' });
   }
 
   // Почта России: индекс обязателен, ровно 6 цифр
   const postalCode = customer?.postalCode?.trim() ?? '';
   if (deliveryMethod === 'post' && !/^\d{6}$/.test(postalCode)) {
-    throw createError({ statusCode: 400, statusMessage: 'Почтовый индекс: 6 цифр' });
+    throw createError({ statusCode: 400, message: 'Почтовый индекс: 6 цифр' });
   }
 
   return { name, email, phone, address, city, postalCode };
@@ -194,7 +194,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     qtyById.set(id, (qtyById.get(id) ?? 0) + qty);
   }
   if (qtyById.size === 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Корзина пуста' });
+    throw createError({ statusCode: 400, message: 'Корзина пуста' });
   }
 
   // 2. Способы доставки/оплаты — только допустимые значения
@@ -204,7 +204,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     ? (input.deliveryMethod as DeliveryMethod)
     : null;
   if (!deliveryMethod) {
-    throw createError({ statusCode: 400, statusMessage: 'Выберите способ доставки' });
+    throw createError({ statusCode: 400, message: 'Выберите способ доставки' });
   }
   const paymentMethod: PaymentMethod | null = (
     ['card', 'cash'] as const
@@ -212,7 +212,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     ? (input.paymentMethod as PaymentMethod)
     : null;
   if (!paymentMethod) {
-    throw createError({ statusCode: 400, statusMessage: 'Выберите способ оплаты' });
+    throw createError({ statusCode: 400, message: 'Выберите способ оплаты' });
   }
 
   // 3. Товары из KV: цены и наличие — серверные
@@ -221,13 +221,13 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   for (const [id, quantity] of qtyById) {
     const product = products.find((p) => String(p.id) === id);
     if (!product) {
-      throw createError({ statusCode: 400, statusMessage: `Товар с ID ${id} не найден` });
+      throw createError({ statusCode: 400, message: `Товар с ID ${id} не найден` });
     }
     const stock = product.stockQuantity ?? 0;
     if (quantity > stock) {
       throw createError({
         statusCode: 409,
-        statusMessage: `«${product.name}»: доступно ${stock} шт., запрошено ${quantity}`,
+        message: `«${product.name}»: доступно ${stock} шт., запрошено ${quantity}`,
       });
     }
     items.push({
@@ -305,14 +305,14 @@ export async function updateOrderStatus(
   if (!ORDER_STATUSES.includes(status)) {
     throw createError({
       statusCode: 400,
-      statusMessage: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
+      message: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
     });
   }
 
   const orders = await readOrders(event);
   const order = orders.find((o) => o.id === id);
   if (!order) {
-    throw createError({ statusCode: 404, statusMessage: 'Заказ не найден' });
+    throw createError({ statusCode: 404, message: 'Заказ не найден' });
   }
 
   // Идемпотентность: повторная установка того же статуса не дублирует

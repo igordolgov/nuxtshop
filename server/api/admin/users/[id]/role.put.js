@@ -10,20 +10,20 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   if (!body?.role || !['user', 'manager', 'admin'].includes(body.role)) {
-    throw createError({ statusCode: 400, statusMessage: 'Недопустимая роль' })
+    throw createError({ statusCode: 400, message: 'Недопустимая роль' })
   }
 
   const users = await readUsers(event)
   const userIndex = users.findIndex((u) => u.id === userId)
   if (userIndex === -1) {
-    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
+    throw createError({ statusCode: 404, message: 'Пользователь не найден' })
   }
 
   const targetUser = users[userIndex]
   if (targetUser.role === 'admin' && body.role !== 'admin') {
     const adminCount = users.filter((u) => u.role === 'admin').length
     if (adminCount <= 1) {
-      throw createError({ statusCode: 400, statusMessage: 'Нельзя снять роль с последнего администратора' })
+      throw createError({ statusCode: 400, message: 'Нельзя снять роль с последнего администратора' })
     }
   }
 

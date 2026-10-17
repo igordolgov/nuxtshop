@@ -180,7 +180,7 @@ const handleRegister = async () => {
     }
   } catch (error) {
     console.error('❌ Ошибка регистрации:', error)
-    registerError.value = error.data?.statusMessage || 'Ошибка при регистрации'
+    registerError.value = error.data?.message || 'Ошибка при регистрации'
   } finally {
     loading.value = false
   }

@@ -29,16 +29,16 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event)
     if (!body?.name?.trim()) {
-      throw createError({ statusCode: 400, statusMessage: 'Название товара обязательно' })
+      throw createError({ statusCode: 400, message: 'Название товара обязательно' })
     }
     if (!body.price || Number.isNaN(parseFloat(body.price))) {
-      throw createError({ statusCode: 400, statusMessage: 'Цена товара обязательна' })
+      throw createError({ statusCode: 400, message: 'Цена товара обязательна' })
     }
 
     // Категории: обязательны (сообщения согласованы с валидацией в админке)
     const categories = normalizeCategories(body)
     if (categories.length === 0) {
-      throw createError({ statusCode: 400, statusMessage: 'Укажите хотя бы одну категорию' })
+      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' })
     }
 
     const products = await readProducts(event)
@@ -80,6 +80,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error.statusCode) throw error
     console.error('Ошибка добавления товара:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Не удалось добавить товар' })
+    throw createError({ statusCode: 500, message: 'Не удалось добавить товар' })
   }
 })
