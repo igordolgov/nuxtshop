@@ -19,16 +19,20 @@
   //- Ссылка на товар
   .card-content
     NuxtLink.block(:to="productUrl", prefetch)
-      .image-container.relative.w-full.aspect-square.overflow-hidden.bg-base-200.flex.items-center.justify-center
-        //- Placeholder при загрузке/ошибке
+      .image-container.relative.w-full.aspect-square.overflow-hidden.bg-base-200.flex.items-center.justify-center(
+        :class="{ 'is-loading': isLoading }"
+      )
+        //- Иконка только когда картинки нет вовсе: нет URL или ошибка.
+        //- Обычная загрузка — нейтральный shimmer-скелетон, без иконки поверх фото.
         .placeholder.absolute.inset-0.flex.items-center.justify-center(
-          v-if="showPlaceholder"
+          v-if="showMissingImage"
         )
           icon(name="heroicons:photo" size="32" class="text-base-300")
 
         //- Изображение
         img.product-image(
           v-if="currentImage && !imageError",
+          ref="imageEl",
           :src="currentImage",
           :alt="product.name",
           :loading="loadingAttr",
@@ -108,6 +112,7 @@ const fetchPriority = computed(() => props.index < 4 ? 'high' : 'low')
 //- ============================================
 const imageLoaded = ref(false)
 const imageError = ref(false)
+const imageEl = ref(null)
 
 // ✅ ИСПРАВЛЕНО: обратные кавычки везде, где формируется URL
 const currentImage = computed(() => {
@@ -126,7 +131,23 @@ const currentImage = computed(() => {
   return `/images/${url}`
 })
 
-const showPlaceholder = computed(() => !currentImage.value || imageError.value || !imageLoaded.value)
+//- Иконка показывается только когда картинки нет вовсе (нет URL или ошибка);
+//- во время обычной загрузки вместо неё — shimmer-скелетон на контейнере
+const showMissingImage = computed(() => !currentImage.value || imageError.value)
+const isLoading = computed(() => !!currentImage.value && !imageError.value && !imageLoaded.value)
+
+//- Гонка гидратации: картинка из кэша успевает загрузиться до того,
+//- как Vue навесит обработчик @load — событие уже не придёт и состояние
+//- навсегда останется «загружается». Снимаем вручную по img.complete.
+onMounted(() => {
+  const el = imageEl.value
+  if (!el || !el.complete) return
+  if (el.naturalWidth > 0) {
+    imageLoaded.value = true
+  } else {
+    imageError.value = true
+  }
+})
 
 const onImageLoad = () => {
   imageLoaded.value = true
@@ -195,7 +216,36 @@ const toggleFavorite = () => {
   position: relative;
 }
 
+/* Shimmer-скелетон, пока картинка грузится; стоит ПОД изображением
+   (::before — первый ребёнок, img.position:relative рисуется выше) */
+.image-container.is-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-base-content) 7%, transparent) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: card-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes card-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-container.is-loading::before {
+    animation: none;
+  }
+}
+
 .product-image {
+  position: relative;
   width: 100%;
   height: 100%;
   object-fit: cover;
