@@ -130,6 +130,7 @@ pnpm preview Локальная эмуляция Workers (wrangler dev; снач
 pnpm deploy Сборка + деплой на Cloudflare
 pnpm generate Генерация статического сайта
 pnpm lint:markup Проверка шаблонов markuplint
+pnpm typecheck Проверка типов (nuxt typecheck: vue-tsc по проектам app/server/shared/node)
 pnpm test Юнит-тесты серверной логики (vitest)
 pnpm fmt / pnpm fmt:check Форматирование oxfmt
 pnpm knip Поиск неиспользуемых файлов и экспортов
