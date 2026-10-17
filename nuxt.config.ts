@@ -230,7 +230,7 @@ export default defineNuxtConfig({
         // Клиент ходит на /api/** того же origin — preconnect ему не нужен.
         // Имя переменной согласовано с runtimeConfig.public.apiBaseUrl.
         ...(process.env.NUXT_PUBLIC_API_BASE_URL
-          ? [{ rel: 'preconnect', href: process.env.NUXT_PUBLIC_API_BASE_URL }]
+          ? [{ rel: 'preconnect', href: process.env.NUXT_PUBLIC_API_BASE_URL } as const]
           : []),
         // Страховка для иконок, не попавших в клиентский бандл
         // (clientBundle.scan покрывает шаблоны). dns-prefetch — дешёвый hint,
