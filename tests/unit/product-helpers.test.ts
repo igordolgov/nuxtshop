@@ -26,6 +26,7 @@ import {
   writeProducts,
   type Product,
 } from '../../server/lib/productHelpers';
+import { cacheClear } from '../../server/lib/cache';
 
 const event = {} as never;
 
@@ -52,6 +53,7 @@ let catalog: Product[];
 
 beforeEach(() => {
   kvStore.clear();
+  cacheClear(); // readProducts кэшируется module-scope — между тестами сбрасываем
   catalog = [
     makeProduct({ id: '1', slug: 'kruzhka', name: 'Кружка', categories: ['посуда'] }),
     makeProduct({ id: '2', slug: 'kastryulya', name: 'Кастрюля', categories: ['посуда'] }),
@@ -121,6 +123,33 @@ describe('readProducts / writeProducts — сид каталога', () => {
 
   it('writeProducts отклоняет не-массив', async () => {
     await expect(writeProducts(event, null as never)).rejects.toThrow(/array/i);
+  });
+});
+
+describe('readProducts — TTL-кэш каталога', () => {
+  it('второй вызов в пределах TTL не читает KV заново (правка KV мимо API не видна)', async () => {
+    const first = await readProducts(event);
+    // Пишем в «KV» напрямую, мимо writeProducts — кэш изолята не должен заметить
+    kvStore.set('data:products', [makeProduct({ id: '50', slug: 'tolko-v-kv' })]);
+    const second = await readProducts(event);
+    expect(second.some((p) => p.id === '50')).toBe(false);
+    expect(second.map((p) => p.id)).toEqual(first.map((p) => p.id));
+  });
+
+  it('мутация прочитанного массива не портит кэш (cached отдаёт копию)', async () => {
+    const first = await readProducts(event);
+    const ids = first.map((p) => p.id);
+    first.length = 0; // «испортили» свою копию
+    const second = await readProducts(event);
+    expect(second.map((p) => p.id)).toEqual(ids);
+  });
+
+  it('writeProducts инвалидирует кэш — следующее чтение видит новую запись', async () => {
+    await readProducts(event); // прогрев кэша
+    const base = await readProducts(event); // уже из кэша
+    await writeProducts(event, [...base, makeProduct({ id: '77', slug: 'novyy' })]);
+    const fresh = await readProducts(event);
+    expect(fresh.some((p) => p.id === '77')).toBe(true);
   });
 });
 

@@ -6,27 +6,15 @@
 
 import { readProducts } from '../lib/productHelpers'
 
-// Кэш товаров для редиректов /product/<id>. module-scope живёт в изоляте
-// Workers между запросами; TTL защищает от чтения KV на каждый запрос.
-let productsCache = null
-let cacheTime = 0
-const CACHE_TTL = 60_000 // ⚙️ НАСТРОЙКА: время кэша товаров, мс
-
 /**
- * Товары для редиректов (KV через readProducts, с кэшем в памяти изолята)
+ * Товары для редиректов /product/<id>. Раньше здесь был собственный
+ * module-scope кэш с TTL — теперь общая логика живёт в cache.ts, а
+ * readProducts уже кэширован (один запрос KV за TTL на изолят).
  */
 async function getProductsForRedirect(event) {
-  const now = Date.now()
-
-  if (productsCache && now - cacheTime < CACHE_TTL) {
-    return productsCache
-  }
-
   try {
     const products = await readProducts(event)
-    productsCache = Array.isArray(products) ? products : []
-    cacheTime = now
-    return productsCache
+    return Array.isArray(products) ? products : []
   } catch (error) {
     // KV недоступен — редиректы товаров деградируют, запрос не ломаем
     console.error('❌ Ошибка чтения товаров для редиректов:', error.message)

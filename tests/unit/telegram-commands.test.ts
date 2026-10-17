@@ -21,6 +21,7 @@ vi.mock('../../server/lib/telegram', () => ({
   sendMessage: vi.fn(async () => true),
 }));
 
+import { cacheClear } from '../../server/lib/cache';
 import { sendMessage } from '../../server/lib/telegram';
 import { handleMessage } from '../../server/lib/telegramCommands';
 
@@ -36,6 +37,7 @@ function lastReply(): string {
 
 beforeEach(() => {
   kvStore.clear();
+  cacheClear(); // readProducts кэшируется module-scope — между тестами сбрасываем
   vi.mocked(sendMessage).mockClear();
 });
 

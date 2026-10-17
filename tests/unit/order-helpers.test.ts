@@ -26,6 +26,7 @@ import {
   type CreateOrderInput,
 } from '../../server/lib/orderHelpers';
 import type { Product } from '../../server/lib/productHelpers';
+import { cacheClear } from '../../server/lib/cache';
 
 const event = {} as never;
 
@@ -65,6 +66,7 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
 
 beforeEach(() => {
   kvStore.clear();
+  cacheClear(); // readProducts кэшируется module-scope — между тестами сбрасываем
   kvStore.set('data:products', structuredClone([product]));
 });
 
