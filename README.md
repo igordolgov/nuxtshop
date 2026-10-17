@@ -330,6 +330,25 @@ SEO: robots.txt, sitemap.xml, JSON-LD
 
 Инвалидация: writeProducts (любое изменение товара — админка, Telegram) сбрасывает кэш текущего изолята; изменения с других изолятов подтянутся не позже TTL. Счётчики видны в /api/admin/stats (поле stats.cache): hit ratio = hits / (hits + misses) — доля запросов, обошедшихся без чтения KV.
 
+Lighthouse и Core Web Vitals
+
+Что уже сделано для метрик (LCP / CLS / TBT):
+
+    галерея товара (ProductGallery): первый слайд — eager + fetchpriority=high (кандидат в LCP), остальные — loading=lazy: лежат за overflow-hidden границей и догружаются при свайпе, не конкурируя с главной картинкой за пропускную способность;
+    все превью (каталог, корзина, профиль, заказы, админ-модалки) — явные width/height, совпадающие с классами w-24/w-20/w-14/w-12 (резерв места до загрузки, CLS), loading=lazy вне первого экрана, decoding=async;
+    HTTP-кэш статики (public/_headers): /_nuxt/* и /images/products/* — год, immutable (хэшированные имена), /sw.js и /registerSW.js — no-cache, иначе обновления PWA застрянут в HTTP-кэше;
+    head: preconnect добавляется только на внешний API (NUXT_PUBLIC_API_BASE_URL); мёртвый preconnect на localhost:3001 убран — раньше каждый посетитель открывал TCP+TLS-соединение в никуда (аудит «Preconnect to required origins»).
+
+Как мерить:
+
+    PageSpeed Insights (pagespeed.web.dev) по URL прода — самый быстрый способ;
+    локально: pnpm build && pnpm preview, затем npx lighthouse http://localhost:8787 --view (нужен Chrome);
+    полевые данные — Search Console, отчёт Core Web Vitals (CrUX).
+
+Известное ограничение: каталог на главной рендерится на клиенте (store заполняется в onMounted) — SSR отдаёт скелетон, и LCP главной зависит от скорости /api/products. Перенос загрузки каталога на сервер (SSR-гидратация стейта) — отдельная архитектурная задача, в этот пакет не входит.
+
+Про картинки и IPX: провайдер ipx @nuxt/image на Cloudflare Workers не работает (sharp недоступен на воркерах), поэтому image.provider = none: картинки сжимаются в webp при загрузке в админке (useImageResize, canvas) и отдаются как есть. Не указывайте provider="ipx" на NuxtImg — компонент не распознаёт лишний пропс и сльёт его в DOM как невалидный атрибут.
+
 Известные проблемы и уроки
 Windows + Nuxt 4.6.0
 
