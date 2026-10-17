@@ -70,7 +70,7 @@
             div
               p.text-lg.font-bold.text-base-content {{ formatPrice(realStats.revenue) }}
               p.text-xs.text-base-content.opacity-70 Доход
-          .badge.badge-xs.badge-outline.badge-success.mt-1 За месяц
+          .badge.badge-xs.badge-outline.badge-success.mt-1 За всё время
 
     //- Три колонки: пользователи, заказы, действия
     .grid.grid-cols-1.lg_grid-cols-3.gap-3.mb-4(class="sm:ml-16")
@@ -87,12 +87,12 @@
               .badge.badge-sm.badge-success +{{ realStats.todayUsers }}
             
             .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs
-              span Активные сессии
-              .badge.badge-sm.badge-info {{ realStats.activeSessions }}
+              span Новые за неделю
+              .badge.badge-sm.badge-info +{{ realStats.newUsers }}
             
             .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs
-              span Онлайн сейчас
-              .badge.badge-sm.badge-primary {{ realStats.onlineNow }}
+              span Ожидают обработки
+              .badge.badge-sm.badge-primary {{ realStats.pendingOrders }}
 
       //- Последние заказы
       .card.compact.bg-base-100.shadow-xs.border
@@ -117,7 +117,7 @@
                   .text-xs.opacity-70 {{ order.date }}
               .badge.badge-sm(
                 :class="getOrderStatusClass(order.status)"
-              ) {{ order.status }}
+              ) {{ statusLabel(order.status) }}
           
           .text-center.py-2(v-else)
             .text-sm.text-base-content.opacity-60 Нет заказов
@@ -141,11 +141,7 @@
               svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                 path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z")
               span.text-xs Заказы
-            
-            button.btn.btn-outline.btn-xs(@click="navigateToPath('/admin/categories')")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10")
-              span.text-xs Категории
+
 
     //- Две колонки: пользователи и статистика
     .grid.grid-cols-1.lg_grid-cols-2.gap-3(class="sm:ml-16")
@@ -190,20 +186,20 @@
           
           .space-y-2
             .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Загрузка сервера
-              .badge.badge-sm(:class="getLoadClass(realStats.serverLoad)") {{ realStats.serverLoad }}%
+              span Товары в наличии
+              .badge.badge-sm.badge-success {{ realStats.inStock }}
             
             .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Использование памяти
-              .badge.badge-sm.badge-info {{ realStats.memoryUsage }}
+              span Нет в наличии
+              .badge.badge-sm(:class="realStats.outOfStock > 0 ? 'badge-error' : 'badge-neutral'") {{ realStats.outOfStock }}
             
             .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Активные подключения
-              .badge.badge-sm.badge-warning {{ realStats.activeConnections }}
+              span Кэш каталога: попадания
+              .badge.badge-sm.badge-success {{ realStats.cacheHits }}
             
             .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Время работы
-              .badge.badge-sm.badge-success {{ realStats.uptime }}
+              span Кэш: промахи / записей
+              .badge.badge-sm.badge-info {{ realStats.cacheMisses }} / {{ realStats.cacheSize }}
 
     //- Отладочная информация (скрыта по умолчанию)
     .card.bg-warning.bg-opacity-10.border.border-warning.border-opacity-20.mt-3(v-if="debugInfo && showDebug")
@@ -244,34 +240,25 @@ import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 const { $notify } = useNuxtApp()
 const appState = useAppState()
 
-// Реальная статистика с демо-данными
+// Реальная статистика: сводка с /api/admin/stats + последние заказы
+// с /api/orders. Всё, что отображается, приходит с сервера — демо-данные
+// и рандом-«метрики» (сервер/память/uptime) убраны: воркеры Cloudflare
+// их не отдают.
 const realStats = ref({
-  totalUsers: 1247,
-  totalProducts: 563,
-  totalOrders: 892,
-  revenue: 284500,
-  newUsers: 23,
-  todayUsers: 8,
-  activeSessions: 42,
-  onlineNow: 18,
-  pendingOrders: 12,
-  serverLoad: 45,
-  memoryUsage: '1.2/4GB',
-  activeConnections: 156,
-  uptime: '12д 4ч',
-  recentUsers: [
-    { id: 1, name: 'Иван Петров', email: 'ivan@mail.com', role: 'user' },
-    { id: 2, name: 'Мария Сидорова', email: 'maria@mail.com', role: 'user' },
-    { id: 3, name: 'Алексей Козлов', email: 'alex@mail.com', role: 'manager' },
-    { id: 4, name: 'Елена Новикова', email: 'elena@mail.com', role: 'user' },
-    { id: 5, name: 'Дмитрий Волков', email: 'dmitry@mail.com', role: 'user' }
-  ],
-  recentOrders: [
-    { id: 1001, date: '2 мин назад', status: 'Обработан', amount: 12500 },
-    { id: 1002, date: '5 мин назад', status: 'В обработке', amount: 8400 },
-    { id: 1003, date: '12 мин назад', status: 'Доставляется', amount: 15600 },
-    { id: 1004, date: '18 мин назад', status: 'Новый', amount: 9200 }
-  ]
+  totalUsers: 0,
+  totalProducts: 0,
+  totalOrders: 0,
+  revenue: 0,
+  newUsers: 0,
+  todayUsers: 0,
+  pendingOrders: 0,
+  inStock: 0,
+  outOfStock: 0,
+  cacheHits: 0,
+  cacheMisses: 0,
+  cacheSize: 0,
+  recentUsers: [],
+  recentOrders: []
 })
 
 const loading = ref(false)
@@ -279,21 +266,37 @@ const debugInfo = ref('')
 const showDebug = ref(false)
 const currentTime = ref('')
 
-// Загрузка статистики
+// Загрузка реальной статистики: сводка + последние заказы одним параллельным
+// запросом. Сбой /api/orders не роняет карточку статистики (catch → null).
 const loadStats = async () => {
   try {
     loading.value = true
-    
-    // Симуляция загрузки реальных данных
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Обновляем некоторые данные для реализма
-    realStats.value.todayUsers = Math.floor(Math.random() * 10) + 5
-    realStats.value.onlineNow = Math.floor(Math.random() * 10) + 15
-    realStats.value.activeSessions = Math.floor(Math.random() * 20) + 35
-    realStats.value.serverLoad = Math.floor(Math.random() * 30) + 30
-    realStats.value.pendingOrders = Math.floor(Math.random() * 5) + 8
-    
+
+    const [stats, ordersResp] = await Promise.all([
+      $fetch('/api/admin/stats'),
+      $fetch('/api/orders', { query: { limit: 5 } }).catch(() => null),
+    ])
+
+    const s = stats?.stats ?? {}
+    realStats.value.totalUsers = s.users?.total ?? 0
+    realStats.value.totalProducts = s.products?.total ?? 0
+    realStats.value.totalOrders = s.orders?.total ?? 0
+    realStats.value.revenue = s.orders?.totalRevenue ?? 0
+    realStats.value.newUsers = s.users?.newWeek ?? 0
+    realStats.value.todayUsers = s.users?.newToday ?? 0
+    realStats.value.pendingOrders = s.orders?.pending ?? 0
+    realStats.value.inStock = s.products?.inStock ?? 0
+    realStats.value.outOfStock = s.products?.outOfStock ?? 0
+    realStats.value.cacheHits = s.cache?.hits ?? 0
+    realStats.value.cacheMisses = s.cache?.misses ?? 0
+    realStats.value.cacheSize = s.cache?.size ?? 0
+    realStats.value.recentUsers = (stats?.recentUsers ?? []).slice(0, 5)
+    realStats.value.recentOrders = (ordersResp?.orders ?? []).map((o) => ({
+      id: o.id,
+      status: o.status,
+      date: relativeTime(o.createdAt),
+    }))
+
     debugInfo.value = 'Статистика обновлена: ' + new Date().toLocaleString()
     
   } catch (err) {
@@ -369,21 +372,41 @@ const getUserRoleText = (role) => {
   return texts[role] || role
 }
 
+// Статусы заказов: зеркалим ORDER_STATUS_LABELS сервера (ключи 'new'…)
+const STATUS_LABELS = {
+  new: 'Новый',
+  confirmed: 'Подтверждён',
+  shipped: 'В доставке',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
+}
+const statusLabel = (s) => STATUS_LABELS[s] ?? s
+
 const getOrderStatusClass = (status) => {
   const classes = {
-    'Новый': 'badge-warning',
-    'В обработке': 'badge-info',
-    'Обработан': 'badge-success',
-    'Доставляется': 'badge-primary',
-    'Отменен': 'badge-error'
+    new: 'badge-warning',
+    confirmed: 'badge-info',
+    shipped: 'badge-primary',
+    delivered: 'badge-success',
+    cancelled: 'badge-error'
   }
   return classes[status] || 'badge-neutral'
 }
 
-const getLoadClass = (load) => {
-  if (load < 50) return 'badge-success'
-  if (load < 80) return 'badge-warning'
-  return 'badge-error'
+// «2 мин назад» для последних заказов
+const relativeTime = (iso) => {
+  if (!iso) return ''
+  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (diffMin < 1) return 'только что'
+  if (diffMin < 60) return `${diffMin} мин назад`
+  const h = Math.floor(diffMin / 60)
+  if (h < 24) return `${h} ч назад`
+  return new Date(iso).toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 const formatPrice = (price) => {
