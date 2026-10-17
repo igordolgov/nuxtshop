@@ -117,6 +117,18 @@ const { addToCart } = useCart()
 const appState = useAppState()
 
 //- ============================================
+//- SSR-каталог: товары должны быть в серверном HTML (LCP главной).
+//- loadProducts на сервере пишет в useState('catalog-products') →
+//- Nuxt кладёт их в payload → гидратация рендерит карточки сразу,
+//- без повторного /api/products и без скелетона.
+//- Хендлер возвращает true, чтобы массив не дублировался в payload.
+//- ============================================
+await useAsyncData('catalog-load', async () => {
+  await appState.loadProducts()
+  return true
+})
+
+//- ============================================
 //- Реактивные переменные
 //- ============================================
 const isMounted = ref(false)
@@ -124,11 +136,13 @@ const showMobileFilters = ref(false)
 const productsContainerRef = ref(null)
 
 //- ============================================
-//- Чтение состояния (SSR-safe)
-//- TODO: заменить на прямой доступ к appState.*, когда useAppState.js будет отрефакторен
+//- Чтение состояния (SSR + клиент).
+//- Раньше на сервере возвращался defaultValue: каталог был CSR и на SSR
+//- данных всё равно не было. Теперь каталог приходит из payload —
+//- читаем состояние и на сервере. Все читаемые поля — useState/computed
+//- из useProducts/useFilters и существуют в обоих окружениях.
 //- ============================================
 const getState = (path, defaultValue = null) => {
-  if (!import.meta.client) return defaultValue
   const keys = path.split('.')
   let result = appState
   for (const key of keys) {
@@ -157,11 +171,13 @@ const displayedProducts = computed(() => getState('displayedProducts', []))
 const products = computed(() => getState('products', []))
 const totalProductsCount = computed(() => products.value?.length ?? 0)
 
-//- Скелетон: до монтирования ИЛИ пока идёт первая загрузка пустого каталога.
+//- Скелетон: только пока каталог пуст и его нечего показать —
+//- при SSR-загрузке (данные в payload) карточки рендерятся сразу,
+//- а скелетон остаётся фолбэком для ошибки/офлайна/чистого CSR.
 //- Важно: ProductsSection с пустым списком показал бы empty-state
 //- «ничего не найдено» — не пускаем его до появления данных
 const showSkeleton = computed(
-  () => !isMounted.value || (products.value.length === 0 && isLoading.value),
+  () => products.value.length === 0 && (!isMounted.value || isLoading.value),
 )
 
 //- ============================================

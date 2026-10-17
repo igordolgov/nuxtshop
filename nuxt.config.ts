@@ -72,9 +72,19 @@ export default defineNuxtConfig({
     },
     prerender: {
       crawlLinks: false,
-      routes: ['/', '/about', '/contacts', '/news', '/offline'],
+      // ВАЖНО: '/' здесь НЕТ — каталог должен рендериться на рантайме
+      // (SSR со свежими товарами из KV, см. useAsyncData в index.vue).
+      // Пререндер главной запёк бы товары на момент билда: новые товары
+      // из /admin не появлялись бы до следующего деплоя.
+      routes: ['/about', '/contacts', '/news', '/offline'],
     },
     routeRules: {
+      // Главная — SSR на рантайме + SWR-кэш: первый запрос рендерит HTML
+      // с актуальным каталогом, дальше отдаётся из кэша с фоновой
+      // ревалидацией раз в минуту. Окно согласовано с TTL кэша
+      // readProducts (60 c, см. server/lib/productHelpers.ts).
+      // Паттерн уже проверен на /product/** (swr 3600).
+      '/': { swr: 60 },
       '/product/**': { swr: 3600 },
       // SEO-файлы генерируются сервером (server/routes); кэш с фоновым
       // обновлением: robots — сутки, sitemap — час

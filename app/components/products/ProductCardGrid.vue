@@ -87,7 +87,17 @@ const app = useAppState()
 // ✅ ИСПРАВЛЕНО: использованы обратные кавычки для шаблонной строки
 const productUrl = computed(() => `/product/${props.product.slug}`)
 
-const isFavorite = computed(() => app.isFavorite(props.product.id))
+//- Гидратация: избранное живёт в localStorage, сервер его не знает и
+//- рендерит все сердечки «пустыми». Первый кадр обязан совпасть с SSR —
+//- реальное состояние показываем после монтирования (у пользователей
+//- с избранным сердечко дожмётся сразу после гидратации, без
+//- hydration mismatch-варнингов)
+const isHydrated = ref(false)
+onMounted(() => {
+  isHydrated.value = true
+})
+
+const isFavorite = computed(() => isHydrated.value && app.isFavorite(props.product.id))
 
 //- Оптимизация загрузки изображений - lazy для всех кроме первых 4
 const loadingAttr = computed(() => props.index < 4 ? 'eager' : 'lazy')

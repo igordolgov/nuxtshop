@@ -8,7 +8,20 @@ export const useFilters = (products) => {
         const savedSort = localStorage.getItem('productSort')
         if (savedSort) {
           const parsed = JSON.parse(savedSort)
-          if (parsed?.field && parsed.order) return parsed
+          if (parsed?.field && parsed.order) {
+            // Гидратация: сервер не видит localStorage и рендерит каталог
+            // с дефолтной сортировкой — первый кадр обязан совпасть с ним,
+            // иначе Vue засыпает hydration-варнингами (порядок карточек).
+            // Сохранённую сортировку применяем сразу после монтирования —
+            // список пересортируется реактивно, без рассинхрона.
+            if (useNuxtApp().isHydrating) {
+              onNuxtReady(() => {
+                sort.value = parsed
+              })
+              return { field: 'createdAt', order: 'desc' }
+            }
+            return parsed
+          }
         }
       } catch {
         // ignore

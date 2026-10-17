@@ -27,7 +27,14 @@ export const useMobileDetection = () => {
 
   if (import.meta.client && !isInitialized) {
     isInitialized = true
-    checkAll()
+    // Первый кадр гидратации обязан совпасть с сервером (isMobile=false),
+    // иначе мобильный клиент расходится с SSR по v-if сайдбара/футера
+    // и классам сетки карточек. Реальную ширину окна применяем через
+    // onNuxtReady: при гидратации он срабатывает после app:suspense:resolve,
+    // при чистом клиентском запуске (SPA-навигация) — на ближайшем idle.
+    // Синхронный checkAll здесь давал hydration mismatch и падения
+    // patch'а после гидратации на мобильных.
+    onNuxtReady(() => checkAll())
     window.addEventListener('resize', checkAll, { passive: true })
     window.addEventListener('orientationchange', () => {
       setTimeout(checkAll, 100)

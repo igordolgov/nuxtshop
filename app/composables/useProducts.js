@@ -7,6 +7,12 @@
 // НЕ имеют локальных fallback: ошибка сервера — ошибка в UI.
 // Избранное: делегация в useFavorites, реактивность автоматическая.
 // Подтверждение удаления (confirm) — ответственность вызывающего компонента.
+//
+// SSR-каталог: состояние товаров живёт в useState('catalog-products') —
+// Nuxt сериализует его в payload, и гидратация получает каталог БЕЗ
+// повторного запроса /api/products. Заполняет состояние на сервере
+// страница каталога (useAsyncData в index.vue); остальные страницы
+// на сервере видят пустой список, как и раньше.
 // ============================================
 
 import { ref, computed } from 'vue'
@@ -25,7 +31,10 @@ export const useProducts = () => {
 function createProducts() {
   const { $notify } = useNuxtApp()
 
-  const products = ref([])
+  // useState вместо ref: на сервере значение попадает в payload запроса,
+  // на клиенте при гидратации ref сразу инициализируется данными с сервера.
+  // Все присваивания products.value = ... работают как раньше.
+  const products = useState('catalog-products', () => [])
   const loading = ref(false)
   const error = ref(null)
 
@@ -418,9 +427,24 @@ function createProducts() {
   if (import.meta.client && !isInitialized) {
     isInitialized = true
 
-    loadProducts(true).catch((err) => {
-      console.warn('[useProducts] Загрузка не удалась:', err)
-    })
+    if (products.value.length > 0) {
+      // Гидратация из SSR-payload: каталог уже в состоянии, повторный
+      // запрос /api/products не нужен. Но на сервере localStorage
+      // недоступен и все isFavorite=false — проставляем реальные флаги
+      // из избранного этого устройства (load() в useFavorites отработал
+      // синхронно при создании инстанса выше). Мутируем на месте:
+      // замена массива оставила бы уже отрендеренные карточки со
+      // ссылками на устаревшие объекты.
+      products.value.forEach((product) => {
+        product.isFavorite = favorites.isFavorite(product.id)
+      })
+    } else {
+      // Чистый клиентский запуск (прямой заход на не-каталожную страницу,
+      // или SSR не смог отдать каталог): грузим как раньше.
+      loadProducts().catch((err) => {
+        console.warn('[useProducts] Загрузка не удалась:', err)
+      })
+    }
   }
 
   // ─── Публичный API ────────────────────────────────────────

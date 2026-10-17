@@ -303,14 +303,17 @@ const reset = async () => {
   isLoadingMore.value = false
   loadError.value = null
 
-  visibleProducts.value = []
+  // Синхронно: на SSR рендер происходит сразу после setup, до nextTick —
+  // отложенное заполнение оставляло бы серверный HTML с пустой сеткой.
+  // Обновление от watcher'а (immediate) попадает в первый кадр и на сервере,
+  // и при гидратации → карточки в SSR HTML без рассинхрона.
+  updateVisibleProducts()
 
   if (containerRef.value) {
     containerRef.value.scrollTop = 0
   }
 
   await nextTick()
-  updateVisibleProducts()
   setupObserver()
 }
 
@@ -324,11 +327,14 @@ watch(
     const newIds = newProducts?.map((p) => p.id).join(',')
     const oldIds = oldProducts?.map((p) => p.id).join(',')
 
+    // Синхронно до первого await: SSR рендерит сразу после setup, и всё,
+    // что исполнится после await, в серверный HTML уже не попадёт
+    // (иначе сервер снова отрисует скелетон вместо карточек)
+    isLoadingInitial.value = false
+
     if (newIds !== oldIds) {
       await reset()
     }
-
-    isLoadingInitial.value = false
   },
   { immediate: true, deep: true },
 )
