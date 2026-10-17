@@ -1,4 +1,8 @@
 <!-- app/components/admin/AdminEditProductModal.vue -->
+<!-- Категории — мультвыбор с подсказками (AdminCategoryPicker, обяз.
+    поле с валидацией; раньше — голое CSV-поле без подсказок, при этом
+    allCategories не использовался вовсе, а очистка поля молча
+    сохраняла прежние категории). -->
 <template lang="pug">
 .modal(v-if="isOpen" class="modal-open")
   .modal-box.max-w-2xl.relative.w-full.max-h-screen.p-3(class="sm:p-6 sm:w-auto")
@@ -24,16 +28,19 @@
             :disabled="isSubmitting"
           )
 
-        //- Категории
-        .form-control(class="sm:col-span-1")
+        //- Категории — обязательное поле, мультвыбор с подсказками
+        .form-control(class="sm:col-span-2")
           label.label.py-1
-            span.label-text.text-xs Категории
-          input.input.input-bordered.input-sm.w-full(
-            type="text"
-            v-model="form.categoriesInput"
-            placeholder="Категории"
+            span.label-text.text-xs Категории *
+          AdminCategoryPicker(
+            v-model="form.categories"
+            :allCategories="props.allCategories || []"
             :disabled="isSubmitting"
+            :error="categoriesEmpty"
+            placeholder="Выбрать или ввести новую"
           )
+          label.label.py-1(v-if="categoriesEmpty")
+            span.label-text-alt.text-error Укажите хотя бы одну категорию
 
         //- Цена
         .form-control(class="sm:col-span-1")
@@ -61,22 +68,19 @@
             :disabled="isSubmitting"
           )
 
-        //- Статус наличия
-        .form-control.flex.items-center.justify-end(
-          class="sm:justify-center sm:items-end sm:col-span-1 sm:pb-1"
-        )
-          label.cursor-pointer.label.gap-1
-            input.checkbox.checkbox-primary.checkbox-sm(
+      //- Описание товара + наличие (чекбокс раньше занимал колонку в гриде,
+      //-  тесня категории; сейчас живёт в шапке описания)
+      .form-control.mb-2
+        .flex.items-center.justify-between
+          label.label.py-1
+            span.label-text.text-xs Описание
+          label.cursor-pointer.flex.items-center.gap-1.text-xs
+            input.checkbox.checkbox-primary.checkbox-xs(
               type="checkbox"
               v-model="form.inStock"
               :disabled="isSubmitting"
             )
-            span.label-text.text-xs В наличии
-
-      //- Описание товара
-      .form-control.mb-2
-        label.label.py-1
-          span.label-text.text-xs Описание
+            | В наличии
         textarea.textarea.textarea-bordered.textarea-sm.w-full(
           v-model="form.description"
           placeholder="Описание товара"
@@ -201,6 +205,9 @@
 // ============================================
 // Компонент: AdminEditProductModal
 // Модалка редактирования товара.
+// Категории — обязательное поле с мультвыбором (AdminCategoryPicker):
+// раньше голый CSV-инпут без подсказок, при очистке которого сервер
+// молча сохранял прежние категории.
 // Изображения ресайзятся на клиенте в WebP (useImageResize).
 // ============================================
 const { updateProduct } = useProducts()
@@ -228,8 +235,12 @@ const isFormValid = computed(() => {
   if (!form.value) return false
   const hasName = form.value.name && form.value.name.trim().length > 0
   const hasValidPrice = form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
-  return hasName && hasValidPrice
+  // Категории обязательны — согласовано с POST/PUT («Укажите хотя бы одну категорию»)
+  const hasCategories = form.value.categories.length > 0
+  return hasName && hasValidPrice && hasCategories
 })
+
+const categoriesEmpty = computed(() => !form.value || form.value.categories.length === 0)
 
 const hasTooManyGalleryImages = computed(() => {
   return form.value && form.value.gallery.length > MAX_GALLERY_IMAGES
@@ -330,10 +341,7 @@ const handleSubmit = async () => {
   formError.value = ''
 
   try {
-    const categories = form.value.categoriesInput
-      .split(',')
-      .map((cat) => cat.trim())
-      .filter((cat) => cat.length > 0)
+    const categories = [...form.value.categories]
 
     const updatedProduct = {
       name: form.value.name.trim(),
@@ -363,7 +371,9 @@ const handleSubmit = async () => {
       emit('update:isOpen', false)
     }, 300)
   } catch (error) {
-    formError.value = error.message || 'Ошибка'
+    // ofetch кладёт тело ответа в error.data — там текст ошибки сервера;
+    // error.message у FetchError — безликое «[PUT] /api/...: 400»
+    formError.value = error?.data?.message || error.message || 'Ошибка'
     uploadProgress.value = 0
     isSubmitting.value = false
   }
@@ -390,7 +400,7 @@ const initializeForm = () => {
       name: props.product.name || '',
       description: props.product.description || '',
       price: props.product.price || 0,
-      categoriesInput: Array.isArray(props.product.categories) ? props.product.categories.join(', ') : '',
+      categories: Array.isArray(props.product.categories) ? [...props.product.categories] : [],
       image: props.product.image || '',
       gallery: Array.isArray(props.product.gallery) ? [...props.product.gallery] : [],
       inStock: props.product.inStock !== undefined ? props.product.inStock : true,

@@ -1,8 +1,10 @@
 <!-- app/components/admin/AdminAddProductModal.vue — модалка добавления товара:
-    категории ОБЯЗАТЕЛЬНЫ (раньше пустое поле молча подставляло фиктивную
-    категорию «Другое», которая сохранялась в KV и доезжала до корзины),
-    изображения ресайзятся на клиенте в WebP (useImageResize) —
-    в JSON уходит ~50–150 КБ вместо мегабайт base64. -->
+    категории ОБЯЗАТЕЛЬНЫ и выбираются мультиселектом AdminCategoryPicker
+    (чипы + автодополнение; раньше — одиночный select + ручной CSV-инпут),
+    пустое поле молча подставляло фиктивную категорию «Другое», которая
+    сохранялась в KV и доезжала до корзины; изображения ресайзятся на
+    клиенте в WebP (useImageResize) — в JSON уходит ~50–150 КБ вместо
+    мегабайт base64. -->
 <template lang="pug">
 .modal(v-if="isOpen" class="modal-open")
   .modal-box.max-w-2xl.relative.w-full.max-h-screen.p-3(class="sm:p-6 sm:w-auto")
@@ -35,24 +37,15 @@
           label.label.py-1(v-if="errors.name")
             span.label-text-alt.text-error {{ errors.name }}
 
-        //- Категории — обязательное поле
+        //- Категории — обязательное поле, мультвыбор с подсказками
         .form-control(class="sm:col-span-2")
           label.label.py-1
             span.label-text.text-xs Категории *
-          select.select.select-bordered.select-sm.w-full(
-            v-model="form.categorySelect"
+          AdminCategoryPicker(
+            v-model="form.categories"
+            :allCategories="props.allCategories"
             :disabled="isSubmitting"
-            @change="onCategorySelect"
-          )
-            option(value="") -- Выбрать --
-            option(v-for="cat in props.allCategories" :key="cat" :value="cat") {{ cat }}
-          input.input.input-bordered.input-sm.w-full.mt-1(
-            type="text"
-            v-model="form.categoriesInput"
-            placeholder="или через запятую"
-            :disabled="isSubmitting"
-            :class="{ 'input-error': errors.categories }"
-            @blur="validateField('categories')"
+            :error="Boolean(errors.categories)"
           )
           label.label.py-1(v-if="errors.categories")
             span.label-text-alt.text-error {{ errors.categories }}
@@ -244,24 +237,28 @@ const form = ref({
   name: '',
   description: '',
   price: null,
-  categorySelect: '',
-  categoriesInput: '',
+  categories: [],
   image: '',
   gallery: [],
   inStock: true,
   stockQuantity: 0,
 })
 
-//- Категории из текстового поля: строка «A, B» → ['A', 'B']
-const parsedCategories = computed(() =>
-  form.value.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean),
+//- Категории меняются пикером — перечитываем ошибку обязательности
+//- (снимаем сразу, как только выбрана первая категория)
+watch(
+  () => form.value.categories,
+  () => {
+    if (errors.value.categories) validateField('categories')
+  },
+  { deep: true },
 )
 
 const isFormValid = computed(() => {
   const hasName = form.value.name?.trim().length > 0
   const hasValidPrice =
     form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
-  const hasCategories = parsedCategories.value.length > 0
+  const hasCategories = form.value.categories.length > 0
   const noErrors = !errors.value.name && !errors.value.price && !errors.value.categories
   return hasName && hasValidPrice && hasCategories && noErrors
 })
@@ -285,7 +282,7 @@ const validateField = (field) => {
       else errors.value.price = ''
       break
     case 'categories':
-      if (parsedCategories.value.length === 0)
+      if (form.value.categories.length === 0)
         errors.value.categories = 'Укажите хотя бы одну категорию'
       else errors.value.categories = ''
       break
@@ -380,19 +377,6 @@ const triggerGalleryUpload = () => {
   galleryInput.value?.click()
 }
 
-const onCategorySelect = () => {
-  if (form.value.categorySelect) {
-    const current = form.value.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
-    if (!current.includes(form.value.categorySelect)) {
-      current.push(form.value.categorySelect)
-      form.value.categoriesInput = current.join(', ')
-    }
-    form.value.categorySelect = ''
-    // Категория добавлена — снимаем ошибку обязательности
-    validateField('categories')
-  }
-}
-
 const clearMainImage = () => {
   form.value.image = ''
   if (mainImageInput.value) mainImageInput.value.value = ''
@@ -428,7 +412,7 @@ const handleSubmit = async () => {
   try {
     // Категории обязательны — фиктивная «Другое» больше не подставляется.
     // (Раньше здесь было: if (categories.length === 0) categories.push('Другое'))
-    const categories = parsedCategories.value
+    const categories = [...form.value.categories]
 
     const newProduct = {
       name: form.value.name.trim(),
@@ -456,7 +440,10 @@ const handleSubmit = async () => {
       emit('update:isOpen', false)
     }, 300)
   } catch (error) {
-    formError.value = error.message || 'Ошибка'
+    // ofetch кладёт тело ответа в error.data — там живёт текст ошибки
+    // от сервера («Укажите хотя бы одну категорию», «Требуется авторизация»);
+    // error.message у FetchError — безликое «[POST] /api/...: 400»
+    formError.value = error?.data?.message || error.message || 'Ошибка'
   } finally {
     isSubmitting.value = false
     uploadProgress.value = 0
@@ -468,8 +455,7 @@ const resetForm = () => {
     name: '',
     description: '',
     price: null,
-    categorySelect: '',
-    categoriesInput: '',
+    categories: [],
     image: '',
     gallery: [],
     inStock: true,
