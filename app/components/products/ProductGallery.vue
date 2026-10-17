@@ -58,6 +58,16 @@
               v-if="loadingStates[index]"
               aria-hidden="true"
             )
+            //- ⚡ LCP: первый (видимый) слайд — eager + fetchpriority=high.
+            //- Остальные слайды лежат за overflow-hidden границей (translateX),
+            //- loading="lazy" откладывает их загрузку до свайпа — они не
+            //- конкурируют с главной картинкой за пропускную способность.
+            //- Мёртвые пропсы provider="ipx"/placeholder/:fallback УДАЛЕНЫ:
+            //- NuxtImg v2 их не распознаёт и сливает в DOM как невалидные
+            //- атрибуты. IPX на cloudflare-module недоступен в принципе
+            //- (sharp не работает на Workers), картинки уже webp — ресайз
+            //- делается при загрузке в админке (useImageResize). Подмену битых
+            //- картинок делает handleImageError → fallbackImage.
             img(
               :src="getValidImageUrl(image)"
               :alt="`${productName} - изображение ${index + 1}`"
@@ -67,12 +77,11 @@
               @error="(e) => handleImageError(e, index)"
               @click="isDesktop ? openZoom(index) : null"
               draggable="false"
-              placeholder
-              fetchpriority="high"
-              :fallback="fallbackImage"
+              decoding="async"
+              :fetchpriority="index === 0 ? 'high' : 'low'"
+              :loading="index === 0 ? 'eager' : 'lazy'"
               :width="800"
               :height="600"
-              provider="ipx"
             )
 
       //- Кнопка "Вперёд"
@@ -146,19 +155,18 @@
           @mouseup="handleZoomMouseUp"
           @mouseleave="handleZoomMouseUp"
         )
+          //- Зум-модалка: открывается по клику (сдвиги после user input
+          //- в CLS не учитываются), декодируем асинхронно. Мёртвые пропсы
+          //- provider/placeholder/fallback удалены — см. комментарий выше.
           img(
             :src="zoomImageUrl"
             :alt="`${productName} - увеличенное изображение`"
             class="modal-zoom-image"
             :style="zoomStyle"
             draggable="false"
+            decoding="async"
             @load="zoomLoading = false"
             @error="handleZoomError"
-            placeholder
-            :fallback="fallbackImage"
-            :width="1200"
-            :height="800"
-            provider="ipx"
           )
 </template>
 
