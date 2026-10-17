@@ -1,5 +1,11 @@
 // server/api/products/[id].put.js
-import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
+import {
+  readProducts,
+  writeProducts,
+  slugify,
+  generateUniqueSlug,
+  normalizeCategories,
+} from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
 
@@ -41,11 +47,13 @@ export default defineEventHandler(async (event) => {
     const stockQuantity =
       body.stockQuantity !== undefined ? parseInt(body.stockQuantity) || 0 : existing.stockQuantity
 
-    let categories = existing.categories
-    if (Array.isArray(body.categories) && body.categories.length > 0) {
-      categories = body.categories
-    } else if (body.categoriesInput) {
-      categories = body.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
+    // Категории: нормализуем все поддерживаемые форматы (массив, [{name}], CSV).
+    // Поле пришло пустым — явная ошибка, а не молчаливое сохранение старых
+    // (раньше очистка поля в редакторе незаметно оставляла прежние категории).
+    // Поле не пришло вовсе (null) — категории не трогаем.
+    const categories = normalizeCategories(body)
+    if (categories !== null && categories.length === 0) {
+      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' })
     }
 
     const updated = {
@@ -55,7 +63,7 @@ export default defineEventHandler(async (event) => {
       price: body.price !== undefined ? parseFloat(body.price) : existing.price,
       image: imageUrl,
       gallery,
-      categories,
+      categories: categories ?? existing.categories,
       inStock: stockQuantity > 0,
       stockQuantity,
       characteristics: body.characteristics ?? existing.characteristics,

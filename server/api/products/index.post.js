@@ -1,27 +1,21 @@
 // server/api/products/index.post.js
 // Создание товара (POST /api/products). Только админ.
-// Категории ОБЯЗАТЕЛЬНЫ, принимаются в форматах:
+// Категории ОБЯЗАТЕЛЬНЫ, форматы нормализует normalizeCategories
+// (в productHelpers, общая с PUT):
 //   categories: ['Электроника']         — массив строк
 //   categories: 'Электроника, Техника'  — строка через запятую
 //   categoriesInput: '...'              — строка через запятую (форма админки)
 // Фиктивная категория «Другое» больше не подставляется:
 // раньше она записывалась в KV при пустом поле и доезжала до корзины.
-import { readProducts, writeProducts, slugify, generateUniqueSlug } from '../../lib/productHelpers'
+import {
+  readProducts,
+  writeProducts,
+  slugify,
+  generateUniqueSlug,
+  normalizeCategories,
+} from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
-
-/** Нормализует категории из любого поддерживаемого формата → массив строк */
-function normalizeCategories(body) {
-  const raw = body.categories ?? body.categoriesInput
-  if (Array.isArray(raw)) {
-    // Массив строк или массив объектов { name }
-    return raw.map((c) => (typeof c === 'string' ? c.trim() : c?.name ?? '')).filter(Boolean)
-  }
-  if (typeof raw === 'string') {
-    return raw.split(',').map((c) => c.trim()).filter(Boolean)
-  }
-  return []
-}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,8 +29,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Цена товара обязательна' })
     }
 
-    // Категории: обязательны (сообщения согласованы с валидацией в админке)
-    const categories = normalizeCategories(body)
+    // Категории: обязательны (сообщения согласованы с валидацией в админке).
+    // null → поле не пришло; для POST это так же пусто, как []
+    const categories = normalizeCategories(body) ?? []
     if (categories.length === 0) {
       throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' })
     }

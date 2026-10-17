@@ -113,6 +113,42 @@ export function generateUniqueSlug(
   return `${baseSlug}-${i}`;
 }
 
+/**
+ * Нормализует категории из любого поддерживаемого формата → массив строк:
+ *   categories: ['Электроника']         — массив строк
+ *   categories: [{ name: 'Электроника' }] — массив объектов { name }
+ *   categories: 'Электроника, Техника'  — строка через запятую (CSV)
+ *   categoriesInput: '...'              — алиас CSV (старая форма админки)
+ * Пробелы по краям срезаются, пустые элементы отбрасываются, дубликаты
+ * схлопываются (последнее вхождение сохраняет порядок первого).
+ * Возвращает null, если поле вообще не пришло в теле запроса —
+ * для PUT это сигнал «категории не трогаем»; для POST null трактуется
+ * как пустой список и отклоняется валидацией.
+ */
+export function normalizeCategories(
+  body: Record<string, unknown> | null | undefined,
+): string[] | null {
+  const raw = body?.categories ?? body?.categoriesInput;
+  if (raw === undefined) return null;
+  let list: string[];
+  if (Array.isArray(raw)) {
+    list = raw
+      .map((c) => (typeof c === 'string' ? c : (c as { name?: unknown })?.name ?? ''))
+      .map((c) => String(c).trim());
+  } else if (typeof raw === 'string') {
+    list = raw.split(',').map((c) => c.trim());
+  } else {
+    list = [];
+  }
+  const seen = new Set<string>();
+  return list.filter((c) => {
+    if (!c) return false;
+    if (seen.has(c)) return false;
+    seen.add(c);
+    return true;
+  });
+}
+
 export async function getProductBySlug(event: H3Event, slugOrId: string): Promise<Product | null> {
   const products = await readProducts(event);
   return products.find((p) => p.slug === slugOrId || String(p.id) === slugOrId) ?? null;

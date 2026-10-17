@@ -21,6 +21,7 @@ import {
   generateUniqueSlug,
   getProductBySlug,
   getSimilarProducts,
+  normalizeCategories,
   readProducts,
   slugify,
   writeProducts,
@@ -190,5 +191,65 @@ describe('getSimilarProducts', () => {
     ]);
     const similar = await getSimilarProducts(event, makeProduct({ id: '10', categories: ['тест'] }));
     expect(similar.map((p) => p.id)).toEqual(['11', '12']);
+  });
+});
+
+describe('normalizeCategories — форматы поля категорий', () => {
+  it('массив строк: срезает пробелы, отбрасывает пустые', () => {
+    expect(normalizeCategories({ categories: ['  Электроника ', '', 'Книги'] })).toEqual([
+      'Электроника',
+      'Книги',
+    ]);
+  });
+
+  it('массив объектов { name } (формат мультиселектов)', () => {
+    expect(normalizeCategories({ categories: [{ name: 'Спорт' }, { name: ' Велосипеды ' }] })).toEqual(
+      ['Спорт', 'Велосипеды'],
+    );
+  });
+
+  it('смешанный массив: строки и объекты вперемешку', () => {
+    expect(normalizeCategories({ categories: ['Книги', { name: 'Программирование' }] })).toEqual([
+      'Книги',
+      'Программирование',
+    ]);
+  });
+
+  it('CSV-строка — старый формат поля админки', () => {
+    expect(normalizeCategories({ categories: 'Электроника, Техника ,, Книги' })).toEqual([
+      'Электроника',
+      'Техника',
+      'Книги',
+    ]);
+  });
+
+  it('categoriesInput — алиас CSV, проигрывается при отсутствии categories', () => {
+    expect(normalizeCategories({ categoriesInput: ' A , B ' })).toEqual(['A', 'B']);
+  });
+
+  it('categories имеет приоритет над categoriesInput', () => {
+    expect(normalizeCategories({ categories: 'X', categoriesInput: 'Y' })).toEqual(['X']);
+  });
+
+  it('дубликаты схлопываются, порядок первого вхождения сохраняется', () => {
+    expect(normalizeCategories({ categories: ['A', ' B', 'A ', 'B', 'C'] })).toEqual(['A', 'B', 'C']);
+  });
+
+  it('поле не пришло вовсе — null (для PUT: категории не трогаем)', () => {
+    expect(normalizeCategories({ name: 'Товар' })).toBeNull();
+    expect(normalizeCategories({})).toBeNull();
+    expect(normalizeCategories(null)).toBeNull();
+    expect(normalizeCategories(undefined)).toBeNull();
+  });
+
+  it('категории явные, но пустые — [] (для PUT: валидация 400)', () => {
+    expect(normalizeCategories({ categories: [] })).toEqual([]);
+    expect(normalizeCategories({ categories: '' })).toEqual([]);
+    expect(normalizeCategories({ categories: ',,,' })).toEqual([]);
+    expect(normalizeCategories({ categories: 42 })).toEqual([]); // мусор вместо массива
+  });
+
+  it('мусор внутри массива (null, числа, объекты без name) отбрасывается, не роняя нормализацию', () => {
+    expect(normalizeCategories({ categories: ['A', null, 123, { nope: true }] })).toEqual(['A']);
   });
 });
