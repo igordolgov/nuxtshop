@@ -9,7 +9,7 @@
 import type { H3Event } from 'h3';
 import { createError } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
-import { readProducts } from './productHelpers';
+import { readProducts, writeProducts, type Product } from './productHelpers';
 
 const ORDERS_KEY = 'data:orders';
 
@@ -92,6 +92,9 @@ export interface Order {
   notify: OrderNotify;
   comment: string;
   statusHistory: Array<{ status: OrderStatus; at: string; comment?: string }>;
+  /** true — заказанное количество уже списано со склада (при подтверждении);
+   *  undefined у заказов до введения списания трактуется как false */
+  stockApplied?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -296,6 +299,61 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
 
 // ─── Смена статуса ───────────────────────────────────────────────────
 
+/**
+ * Списывает (mode 'deduct') или возвращает (mode 'restore') позиции заказа
+ * на складе. Возвращает обновлённый каталог — или null, если писать нечего.
+ * Недостаток товара при списании — 409 со списком нехваток: статус заказа
+ * при этом НЕ меняется, админ сначала пополняет остаток или отменяет заказ.
+ * Товары, удалённые из каталога, пропускаются (списывать нечего) —
+ * подтверждение заказа на такой товар не блокируется.
+ */
+async function adjustStockForOrder(
+  event: H3Event,
+  order: Order,
+  mode: 'deduct' | 'restore',
+): Promise<Product[] | null> {
+  const products = await readProducts(event);
+  const byId = new Map(products.map((p) => [String(p.id), p]));
+
+  if (mode === 'deduct') {
+    // Сначала проверяем ВСЕ позиции и только потом списываем —
+    // иначе ошибка на середине оставила бы склад списанным наполовину
+    const shortages: string[] = [];
+    for (const item of order.items) {
+      const product = byId.get(String(item.id));
+      if (!product) continue;
+      const stock = product.stockQuantity ?? 0;
+      if (item.quantity > stock) {
+        shortages.push(
+          `«${product.name}»: на складе ${stock} шт., в заказе ${item.quantity}`,
+        );
+      }
+    }
+    if (shortages.length) {
+      throw createError({
+        statusCode: 409,
+        message: `Недостаточно товара на складе: ${shortages.join('; ')}`,
+      });
+    }
+  }
+
+  let changed = false;
+  for (const item of order.items) {
+    const product = byId.get(String(item.id));
+    if (!product) continue;
+    const stock = product.stockQuantity ?? 0;
+    const next =
+      mode === 'deduct' ? Math.max(0, stock - item.quantity) : stock + item.quantity;
+    if (next !== stock) {
+      product.stockQuantity = next;
+      product.inStock = next > 0;
+      product.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  }
+  return changed ? products : null;
+}
+
 export async function updateOrderStatus(
   event: H3Event,
   id: string,
@@ -319,7 +377,21 @@ export async function updateOrderStatus(
   // историю (важно для повторных вызовов из Telegram-вебхука на этапе 1)
   if (order.status === status) return order;
 
+  // Склад: подтверждение списывает заказанное количество, отмена
+  // подтверждённого — возвращает. Флаг stockApplied делает списание
+  // одноразовым: повторные вызовы и ретраи вебхука не спишут дважды,
+  // а повторное подтверждение после отмены спишет заново.
+  const deduct = status === 'confirmed' && !order.stockApplied;
+  const restore = status === 'cancelled' && Boolean(order.stockApplied);
+  const updatedProducts = deduct
+    ? await adjustStockForOrder(event, order, 'deduct')
+    : restore
+      ? await adjustStockForOrder(event, order, 'restore')
+      : null;
+
   order.status = status;
+  if (deduct) order.stockApplied = true;
+  if (restore) order.stockApplied = false;
   order.statusHistory.push({
     status,
     at: new Date().toISOString(),
@@ -327,5 +399,11 @@ export async function updateOrderStatus(
   });
   order.updatedAt = new Date().toISOString();
   await writeOrders(event, orders);
+  // Склад пишем ПОСЛЕ заказа: если упадёт запись каталога, статус уже
+  // «confirmed» и stockApplied=true — повторный вызов не спишет дважды
+  // (остаток корректируется вручную). Обратный порядок опаснее: упавшая
+  // запись заказа оставила бы склад списанным при статусе «new», а ретрай
+  // списал бы снова.
+  if (updatedProducts) await writeProducts(event, updatedProducts);
   return order;
 }

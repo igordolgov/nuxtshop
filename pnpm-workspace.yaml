@@ -70,12 +70,12 @@ minimumReleaseAgeExclude:
   - '@markuplint/vue-parser@5.1.0 || 5.2.0'
   - '@markuplint/vue-spec@5.1.0 || 5.2.0'
   - markuplint@5.1.0 || 5.2.0
-  - '@nuxt/kit@4.6.1'
-  - '@nuxt/nitro-server@4.6.1'
-  - '@nuxt/schema@4.6.1'
-  - '@nuxt/vite-builder@4.6.1'
-  - '@nuxt/vite-server@4.6.1'
-  - nuxt@4.6.1
+  - '@nuxt/kit@4.6.1 || 4.6.2'
+  - '@nuxt/nitro-server@4.6.1 || 4.6.2'
+  - '@nuxt/schema@4.6.1 || 4.6.2'
+  - '@nuxt/vite-builder@4.6.1 || 4.6.2'
+  - '@nuxt/vite-server@4.6.1 || 4.6.2'
+  - nuxt@4.6.1 || 4.6.2
   - '@vue/compiler-core@3.5.44'
   - '@vue/compiler-dom@3.5.44'
   - '@vue/compiler-sfc@3.5.44'
