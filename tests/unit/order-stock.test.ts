@@ -62,9 +62,15 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
   };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   kvStore.clear();
   kvStore.set('data:products', structuredClone([product]));
+  // KV мы почистили напрямую, но модульный кэш каталога
+  // внутри productHelpers (readProducts) об этом не знает и переживает тесты:
+  // после 409 в тесте «нехватка» кэш остался со старым остатком, и проверка
+  // в createOrder видела stock=1 вместо 5. writeProducts синхронизирует кэш —
+  // следующий readProducts обязан прочитать KV заново.
+  await writeProducts(event, structuredClone([product]));
 });
 
 /** Текущее состояние товара '1' в KV (writeProducts сбрасывает кэш каталога) */
