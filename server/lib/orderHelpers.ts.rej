@@ -28,3 +28,12 @@ diff a/server/lib/orderHelpers.ts b/server/lib/orderHelpers.ts	(rejected hunks)
 +  if (deduct) order.stockApplied = true;
 +  if (restore) order.stockApplied = false;
    order.statusHistory.push({
+@@ -329,2 +401,8 @@ export async function updateOrderStatus(
+   await writeOrders(event, orders);
++  // Склад пишем ПОСЛЕ заказа: если упадёт запись каталога, статус уже
++  // «confirmed» и stockApplied=true — повторный вызов не спишет дважды
++  // (остаток корректируется вручную). Обратный порядок опаснее: упавшая
++  // запись заказа оставила бы склад списанным при статусе «new», а ретрай
++  // списал бы снова.
++  if (updatedProducts) await writeProducts(event, updatedProducts);
+   return order;

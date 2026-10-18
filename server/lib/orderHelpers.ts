@@ -415,6 +415,61 @@ async function adjustStockForOrder(
   return changed ? products : null;
 }
 
+/**
+ * Списывает (mode 'deduct') или возвращает (mode 'restore') позиции заказа
+ * на складе. Возвращает обновлённый каталог — или null, если писать нечего.
+ * Недостаток товара при списании — 409 со списком нехваток: статус заказа
+ * при этом НЕ меняется, админ сначала пополняет остаток или отменяет заказ.
+ * Товары, удалённые из каталога, пропускаются (списывать нечего) —
+ * подтверждение заказа на такой товар не блокируется.
+ */
+async function adjustStockForOrder(
+  event: H3Event,
+  order: Order,
+  mode: 'deduct' | 'restore',
+): Promise<Product[] | null> {
+  const products = await readProducts(event);
+  const byId = new Map(products.map((p) => [String(p.id), p]));
+
+  if (mode === 'deduct') {
+    // Сначала проверяем ВСЕ позиции и только потом списываем —
+    // иначе ошибка на середине оставила бы склад списанным наполовину
+    const shortages: string[] = [];
+    for (const item of order.items) {
+      const product = byId.get(String(item.id));
+      if (!product) continue;
+      const stock = product.stockQuantity ?? 0;
+      if (item.quantity > stock) {
+        shortages.push(
+          `«${product.name}»: на складе ${stock} шт., в заказе ${item.quantity}`,
+        );
+      }
+    }
+    if (shortages.length) {
+      throw createError({
+        statusCode: 409,
+        message: `Недостаточно товара на складе: ${shortages.join('; ')}`,
+      });
+    }
+  }
+
+  let changed = false;
+  for (const item of order.items) {
+    const product = byId.get(String(item.id));
+    if (!product) continue;
+    const stock = product.stockQuantity ?? 0;
+    const next =
+      mode === 'deduct' ? Math.max(0, stock - item.quantity) : stock + item.quantity;
+    if (next !== stock) {
+      product.stockQuantity = next;
+      product.inStock = next > 0;
+      product.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  }
+  return changed ? products : null;
+}
+
 export async function updateOrderStatus(
   event: H3Event,
   id: string,
