@@ -1,14 +1,18 @@
 // Тесты server/lib/productHelpers.ts — slugify, уникальные слаги,
-// чтение каталога с сидом, поиск по slug/id, похожие товары.
+// чтение каталога напрямую из KV (без TTL-кеша), поиск по slug/id, похожие товары.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Мок KV (тот же паттерн, что в order-helpers.test.ts) ───────────
+// kvGetJSON отдаёт structuredClone хранимого значения: реальный Workers KV
+// каждый раз парсит JSON-строку заново, то есть каждое чтение возвращает
+// НОВЫЕ объекты. Мок повторяет это поведение — тесты на мутации честные.
 const kvStore = new Map<string, unknown>();
 
 vi.mock('../../server/lib/storage', () => ({
-  kvGetJSON: vi.fn(async (_event: unknown, key: string) =>
-    (kvStore.get(key) as unknown) ?? null,
-  ),
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => {
+    const stored = kvStore.get(key);
+    return stored === undefined ? null : (structuredClone(stored) as unknown);
+  }),
   kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
     kvStore.set(key, structuredClone(value));
   }),
@@ -27,7 +31,6 @@ import {
   writeProducts,
   type Product,
 } from '../../server/lib/productHelpers';
-import { cacheClear } from '../../server/lib/cache';
 
 const event = {} as never;
 
@@ -54,7 +57,6 @@ let catalog: Product[];
 
 beforeEach(() => {
   kvStore.clear();
-  cacheClear(); // readProducts кэшируется module-scope — между тестами сбрасываем
   catalog = [
     makeProduct({ id: '1', slug: 'kruzhka', name: 'Кружка', categories: ['посуда'] }),
     makeProduct({ id: '2', slug: 'kastryulya', name: 'Кастрюля', categories: ['посуда'] }),
@@ -127,17 +129,22 @@ describe('readProducts / writeProducts — сид каталога', () => {
   });
 });
 
-describe('readProducts — TTL-кэш каталога', () => {
-  it('второй вызов в пределах TTL не читает KV заново (правка KV мимо API не видна)', async () => {
+// TTL-кеш изолята удалён: readProducts всегда читает KV напрямую.
+// Причина — разные изоляты Workers (вебхук/витрина/админка) держали свои
+// копии каталога, и writeProducts одного изолята затирал списание склада,
+// сделанное другим. Тесты ниже фиксируют новое поведение: видно всё сразу.
+describe('readProducts — прямое чтение KV (TTL-кеш удалён)', () => {
+  it('правка KV между вызовами видна сразу — кеша нет', async () => {
     const first = await readProducts(event);
-    // Пишем в «KV» напрямую, мимо writeProducts — кэш изолята не должен заметить
+    expect(first.some((p) => p.id === '50')).toBe(false);
+    // Пишем в «KV» напрямую, мимо writeProducts — readProducts обязан это увидеть
     kvStore.set('data:products', [makeProduct({ id: '50', slug: 'tolko-v-kv' })]);
     const second = await readProducts(event);
-    expect(second.some((p) => p.id === '50')).toBe(false);
-    expect(second.map((p) => p.id)).toEqual(first.map((p) => p.id));
+    expect(second.some((p) => p.id === '50')).toBe(true);
+    expect(second).toHaveLength(1);
   });
 
-  it('мутация прочитанного массива не портит кэш (cached отдаёт копию)', async () => {
+  it('мутация возвращённого массива не влияет на следующие чтения (каждое чтение — свежая копия)', async () => {
     const first = await readProducts(event);
     const ids = first.map((p) => p.id);
     first.length = 0; // «испортили» свою копию
@@ -145,9 +152,8 @@ describe('readProducts — TTL-кэш каталога', () => {
     expect(second.map((p) => p.id)).toEqual(ids);
   });
 
-  it('writeProducts инвалидирует кэш — следующее чтение видит новую запись', async () => {
-    await readProducts(event); // прогрев кэша
-    const base = await readProducts(event); // уже из кэша
+  it('writeProducts — следующее чтение видит новую запись', async () => {
+    const base = await readProducts(event);
     await writeProducts(event, [...base, makeProduct({ id: '77', slug: 'novyy' })]);
     const fresh = await readProducts(event);
     expect(fresh.some((p) => p.id === '77')).toBe(true);
