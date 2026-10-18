@@ -1,0 +1,30 @@
+diff a/server/lib/orderHelpers.ts b/server/lib/orderHelpers.ts	(rejected hunks)
+@@ -11,3 +11,3 @@ import { createError } from 'h3';
+ import { kvGetJSON, kvPutJSON } from './storage';
+-import { readProducts } from './productHelpers';
++import { readProducts, writeProducts, type Product } from './productHelpers';
+ 
+@@ -94,2 +94,5 @@ export interface Order {
+   statusHistory: Array<{ status: OrderStatus; at: string; comment?: string }>;
++  /** true — заказанное количество уже списано со склада (при подтверждении);
++   *  undefined у заказов до введения списания трактуется как false */
++  stockApplied?: boolean;
+   createdAt: string;
+@@ -321,3 +379,17 @@ export async function updateOrderStatus(
+ 
++  // Склад: подтверждение списывает заказанное количество, отмена
++  // подтверждённого — возвращает. Флаг stockApplied делает списание
++  // одноразовым: повторные вызовы и ретраи вебхука не спишут дважды,
++  // а повторное подтверждение после отмены спишет заново.
++  const deduct = status === 'confirmed' && !order.stockApplied;
++  const restore = status === 'cancelled' && Boolean(order.stockApplied);
++  const updatedProducts = deduct
++    ? await adjustStockForOrder(event, order, 'deduct')
++    : restore
++      ? await adjustStockForOrder(event, order, 'restore')
++      : null;
++
+   order.status = status;
++  if (deduct) order.stockApplied = true;
++  if (restore) order.stockApplied = false;
+   order.statusHistory.push({
