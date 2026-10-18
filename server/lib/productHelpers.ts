@@ -1,7 +1,6 @@
 // server/lib/productHelpers.ts
 import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
-import { cached, cacheInvalidate } from './cache';
 import productsSeed from '../data/products.json';
 
 const PRODUCTS_KEY = 'data:products';
@@ -70,35 +69,50 @@ export function slugify(str: string): string {
   return slug || `product-${Date.now()}`;
 }
 
-// Кэш каталога: 1 чтение KV за TTL на изолят вместо чтения на каждый запрос
-// (каталог, карточка, similar, sitemap, редиректы — всё идёт через readProducts).
-// TTL = окну глобальной консистентности KV (~60 c), поэтому дополнительной
-// «устареваемости» по сравнению с KV без кэша не появляется.
-const PRODUCTS_CACHE_KEY = 'products:all';
-const PRODUCTS_CACHE_TTL_MS = 60_000; // ⚙️ НАСТРОЙКА: TTL кэша каталога, мс
+// ⚠️ TTL-кэш каталога УДАЛЁН (раньше: cached('products:all', 60_000) из
+// ./cache — кэш в памяти изолята Cloudflare Workers).
+//
+// Почему он ломал склад: вебхук Telegram, витрина и админка попадают в
+// РАЗНЫЕ изоляты, и каждый держал свою копию каталога до 60 секунд
+// (cacheInvalidate сбрасывает кэш только в «своём» изоляте). Любая правка
+// каталога — это read-modify-write: изолят со старой копией в памяти
+// записывал её ЦЕЛИКОМ обратно в KV и затирал списания, сделанные другим
+// изолятом. Со стороны это выглядело как «склад не меняется при
+// подтверждении заказа» — при том что writeProducts отрабатывал без ошибок.
+//
+// Теперь readProducts всегда читает KV напрямую. Для каталога в десятки —
+// сотни товаров это 1–2 чтения KV на запрос, что свободно укладывается в
+// лимиты бесплатного тарифа (100 000 чтений/день). Плата за честность
+// данных оправдана. Если лимиты чтений когда-нибудь станут проблемой,
+// правильное решение — не кэш-в-изоляте, а единая точка записи
+// (D1 или Durable Object) с транзакционным read-modify-write.
 
 /**
  * Все товары. При первом обращении заливает сид из бандла.
- * Читается через TTL-кэш изолята (cache.ts): мутации возвращённого
- * массива (sort/filter) не затрагивают кэш — cached отдаёт копию.
+ *
+ * ⚠️ Всегда СВЕЖЕЕ чтение KV, без кеша: все мутирующие каталог сценарии
+ * (списание склада в orderHelpers при подтверждении, админка, bulk)
+ * начинаются с этого чтения — оно обязано видеть правки, сделанные
+ * другими изолятами, иначе read-modify-write вернёт устаревший массив
+ * и затрёт их при записи.
  */
 export async function readProducts(event: H3Event): Promise<Product[]> {
-  return cached(PRODUCTS_CACHE_KEY, PRODUCTS_CACHE_TTL_MS, async () => {
-    const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
-    if (stored) return stored;
-    const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
-    await kvPutJSON(event, PRODUCTS_KEY, seed);
-    return seed;
-  });
+  const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
+  if (stored) return stored;
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  await kvPutJSON(event, PRODUCTS_KEY, seed);
+  return seed;
 }
 
+/**
+ * Единственная точка записи каталога: пишет массив ЦЕЛИКОМ в KV.
+ * Вызов cacheInvalidate() больше не нужен — кэша нет. Метод оставлен,
+ * чтобы все записи каталога по-прежнему шли через одну проверенную
+ * точку (валидация «это точно массив товаров»).
+ */
 export async function writeProducts(event: H3Event, products: Product[]) {
   if (!Array.isArray(products)) throw new Error('Products must be an array');
   await kvPutJSON(event, PRODUCTS_KEY, products);
-  // Все три маршрута админки (создание/правка/удаление) идут через эту точку,
-  // поэтому одной инвалидации здесь достаточно. Кэш других изолятов устареет
-  // не позже TTL — это то же окно, что и у глобальной консистентности KV.
-  cacheInvalidate(PRODUCTS_CACHE_KEY);
 }
 
 export function generateUniqueSlug(

@@ -16,7 +16,7 @@
               span {{ product?.name || 'Товар не найден' }}
 
   //- Основной контент
-  .flex-1.overflow-auto.flex.flex-col.pb-14(class="lg:pb-0")
+  .flex-1.overflow-auto.flex.flex-col.pb-14(ref="scrollContainer" class="lg:pb-0")
     .container.mx-auto.px-2.flex-1(class="lg:px-4 lg:pb-0")
       //- Состояние загрузки
       .flex.flex-col.items-center.justify-center.min-h-96(v-if="isLoading")
@@ -92,6 +92,12 @@
 </template>
 
 <script setup>
+// Ключ страницы — по slug: при переходе «похожий товар → похожий товар»
+// страница пересоздаётся целиком (setup, данные, прокрутка), а не
+// переиспользуется с чужими данными — фикс «URL меняется, карточка
+// не открывается».
+definePageMeta({ key: (route) => route.params.slug })
+
 const route = useRoute()
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
@@ -102,15 +108,17 @@ const { addToCart, cartItems } = useCart()
 const productSlug = computed(() => route.params.slug)
 
 // SSR-загрузка карточки: данные и мета-теги попадают в исходный HTML —
-// это видят поисковики и превью в мессенджерах. watch перезагружает
-// данные при смене slug без размонтирования компонента.
-const { data: responseData, status, error: fetchError } = await useAsyncData(
-  'product-page',
+// это видят поисковики и превью в мессенджерах. Ключ — по slug, watch
+// перезагружает данные при смене slug (страховка к key в definePageMeta).
+const { data: responseData, status, error: fetchError, refresh } = await useAsyncData(
+  `product-page-${productSlug.value}`,
   () => $fetch(`/api/product/${productSlug.value}`),
   { watch: [productSlug] },
 )
 
-const isLoading = computed(() => status.value === 'pending')
+// Спиннер — только пока карточки нет вовсе. Фоновый рефетч остатка идёт
+// поверх уже показанного товара и не должен мигать спиннером.
+const isLoading = computed(() => status.value === 'pending' && !responseData.value)
 
 // API отдаёт { product, similarProducts, jsonLd } — достаём вложенный товар
 const product = computed(() => {
@@ -119,9 +127,24 @@ const product = computed(() => {
   return response.product ?? response
 })
 
-const error = computed(() => (fetchError.value ? 'Товар не найден' : null))
+// Ошибка валидна, только когда данных нет вовсе: упавший ФОНОВЫЙ рефетч
+// (мигание сети, оффлайн) не должен превращать открытую карточку
+// в «Товар не найден» — показываем последние успешные данные.
+const error = computed(() => (fetchError.value && !responseData.value ? 'Товар не найден' : null))
 
 const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
+
+// ─── Мгновенный остаток: свежие данные мимо SWR-кеша HTML ────────────
+// SSR-HTML маршрута /product/** отдаётся из SWR-кэша (swr: 60), а заказ
+// могут подтвердить в Telegram в любой момент. /api/product/[slug] при
+// этом НЕ кешируется — поэтому сразу после загрузки и при каждом
+// возвращении на вкладку перезапрашиваем его: «Осталось: N шт.» на
+// карточке актуально на момент показа, а не на момент рендера HTML.
+// Один лишний запрос на открытие карточки — это 2 чтения KV, копейки.
+const syncStock = () => {
+  if (document.visibilityState !== 'visible') return
+  refresh().catch(() => {})
+}
 
 // ─── SEO-мета (SSR) ─────────────────────────────────────────────────
 useSeoMeta({
@@ -216,12 +239,29 @@ const addSimilarToCart = async (item) => {
   }
 }
 
-onMounted(() => {
+// ─── Прокрутка: окно И внутренний контейнер ─────────────────────────
+// window.scrollTo внутренний контейнер не трогает — он скроллится
+// отдельно (фикс «карточка открылась с середины»)
+const scrollContainer = ref(null)
+const resetScroll = () => {
   window.scrollTo(0, 0)
+  if (scrollContainer.value) scrollContainer.value.scrollTop = 0
+}
+
+onMounted(() => {
+  resetScroll()
+  syncStock()
+  // Возврат на вкладку (подтвердили заказ в Telegram, вернулись в магазин) —
+  // дотягиваем свежий остаток
+  document.addEventListener('visibilitychange', syncStock)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', syncStock)
 })
 
 watch(() => route.params.slug, () => {
-  window.scrollTo(0, 0)
+  resetScroll()
 })
 </script>
 

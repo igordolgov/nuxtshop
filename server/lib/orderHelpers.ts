@@ -93,7 +93,7 @@ export interface Order {
   comment: string;
   statusHistory: Array<{ status: OrderStatus; at: string; comment?: string }>;
   /** true — заказанное количество уже списано со склада (при подтверждении);
-   *  undefined у заказов до введения списания трактуется как false */
+   *  undefined у заказов, созданных до введения списания, трактуется как false */
   stockApplied?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -297,7 +297,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   return order;
 }
 
-// ─── Смена статуса ───────────────────────────────────────────────────
+// ─── Склад: списание/возврат позиций заказа ──────────────────────────
 
 /**
  * Списывает (mode 'deduct') или возвращает (mode 'restore') позиции заказа
@@ -354,6 +354,8 @@ async function adjustStockForOrder(
   return changed ? products : null;
 }
 
+// ─── Смена статуса ───────────────────────────────────────────────────
+
 export async function updateOrderStatus(
   event: H3Event,
   id: string,
@@ -374,7 +376,7 @@ export async function updateOrderStatus(
   }
 
   // Идемпотентность: повторная установка того же статуса не дублирует
-  // историю (важно для повторных вызовов из Telegram-вебхука на этапе 1)
+  // историю и не трогает склад (важно для повторных вызовов из вебхука)
   if (order.status === status) return order;
 
   // Склад: подтверждение списывает заказанное количество, отмена
@@ -399,6 +401,7 @@ export async function updateOrderStatus(
   });
   order.updatedAt = new Date().toISOString();
   await writeOrders(event, orders);
+
   // Склад пишем ПОСЛЕ заказа: если упадёт запись каталога, статус уже
   // «confirmed» и stockApplied=true — повторный вызов не спишет дважды
   // (остаток корректируется вручную). Обратный порядок опаснее: упавшая
