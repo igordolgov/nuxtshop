@@ -44,32 +44,32 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0 || 1.88.0'
   - oxfmt@0.70.0 || 0.71.0 || 0.73.0
   - oxlint@1.85.0 || 1.86.0 || 1.88.0
-  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0
-  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta
+  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0 || 4.155.0
+  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta || 5.20261023.2-beta
   - daisyui@5.7.47 || 5.7.50
-  - knip@6.40.0 || 6.41.0
-  - '@markuplint/astro-parser@5.1.0 || 5.2.0'
+  - knip@6.40.0 || 6.41.0 || 6.42.0
+  - '@markuplint/astro-parser@5.1.0 || 5.2.0 || 5.4.0'
   - '@markuplint/cli-utils@5.1.0 || 5.2.0'
-  - '@markuplint/config-presets@5.1.0 || 5.2.0'
-  - '@markuplint/file-resolver@5.1.0 || 5.2.0'
-  - '@markuplint/html-parser@5.1.0 || 5.2.0'
-  - '@markuplint/html-spec@5.1.0 || 5.2.0'
+  - '@markuplint/config-presets@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/file-resolver@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/html-parser@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/html-spec@5.1.0 || 5.2.0 || 5.4.0'
   - '@markuplint/i18n@5.1.0'
   - '@markuplint/ml-ast@5.1.0'
-  - '@markuplint/ml-config@5.1.0 || 5.2.0'
-  - '@markuplint/ml-core@5.1.0 || 5.2.0'
-  - '@markuplint/ml-spec@5.1.0 || 5.2.0'
-  - '@markuplint/parser-utils@5.1.0 || 5.2.0'
-  - '@markuplint/pretenders@5.1.0 || 5.2.0'
-  - '@markuplint/pug-parser@5.1.0 || 5.2.0'
-  - '@markuplint/rules@5.1.0 || 5.2.0'
-  - '@markuplint/selector@5.1.0 || 5.2.0'
-  - '@markuplint/shared@5.1.0 || 5.2.0'
-  - '@markuplint/svelte-parser@5.1.0 || 5.2.0'
-  - '@markuplint/types@5.1.0 || 5.2.0'
-  - '@markuplint/vue-parser@5.1.0 || 5.2.0'
-  - '@markuplint/vue-spec@5.1.0 || 5.2.0'
-  - markuplint@5.1.0 || 5.2.0
+  - '@markuplint/ml-config@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/ml-core@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/ml-spec@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/parser-utils@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/pretenders@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/pug-parser@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/rules@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/selector@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/shared@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/svelte-parser@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/types@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/vue-parser@5.1.0 || 5.2.0 || 5.4.0'
+  - '@markuplint/vue-spec@5.1.0 || 5.2.0 || 5.4.0'
+  - markuplint@5.1.0 || 5.2.0 || 5.4.0
   - '@nuxt/kit@4.6.1 || 4.6.2'
   - '@nuxt/nitro-server@4.6.1 || 4.6.2'
   - '@nuxt/schema@4.6.1 || 4.6.2'
@@ -86,6 +86,11 @@ minimumReleaseAgeExclude:
   - '@vue/server-renderer@3.5.44'
   - '@vue/shared@3.5.44'
   - vue@3.5.44
+  - '@nuxt/icon@2.6.2'
+  - '@types/node@26.6.6'
+  - '@markuplint/jsx-parser@5.4.0'
+  - '@markuplint/markdown-parser@5.4.0'
+  - '@markuplint/mdx-parser@5.4.0'
 peerDependencyRules:
   allowedVersions:
     typescript: "6"
