@@ -104,8 +104,9 @@ const formatPrice = (price) => {
 const getValidImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined') return '/images/placeholder.jpg'
   if (url.startsWith('data:')) return url
-  if (url.startsWith('photo-')) return `https://images.unsplash.com/${url}`
-  if (url.includes('unsplash.com')) return url
+  // Unsplash: auto=format/q=75 (utils/productImage) — WebP/AVIF вместо JPEG
+  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}`)
+  if (url.includes('unsplash.com')) return withImageFormat(url)
   if (url.startsWith('/')) return url
   if (url.startsWith('http')) return url
   return '/images/placeholder.jpg'

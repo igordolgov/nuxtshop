@@ -236,10 +236,14 @@ export default defineNuxtConfig({
         ...(process.env.NUXT_PUBLIC_API_BASE_URL
           ? [{ rel: 'preconnect', href: process.env.NUXT_PUBLIC_API_BASE_URL } as const]
           : []),
-        // Страховка для иконок, не попавших в клиентский бандл
-        // (clientBundle.scan покрывает шаблоны). dns-prefetch — дешёвый hint,
-        // соединение не открывает.
-        { rel: 'dns-prefetch', href: 'https://api.iconify.design' },
+        // Все фото товаров лежат на Unsplash — preconnect прогревает
+        // TCP+TLS ещё до разбора первого <img>, экономя ~200-400 мс
+        // на соединении (аудит «Предварительное подключение»).
+        { rel: 'preconnect', href: 'https://images.unsplash.com' },
+        // Иконки, не попавшие в клиентский бандл (clientBundle.scan
+        // покрывает шаблоны), дозагружаются с api.iconify.design.
+        // preconnect вместо dns-prefetch: заранее открывает соединение.
+        { rel: 'preconnect', href: 'https://api.iconify.design' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
       ],

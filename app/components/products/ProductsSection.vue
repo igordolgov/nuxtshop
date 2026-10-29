@@ -120,7 +120,9 @@ const props = defineProps({
   activeFiltersCount: { type: Number, default: 0 },
   useInfiniteScroll: { type: Boolean, default: true },
   pageSize: { type: Number, default: 20 },
-  maxRendered: { type: Number, default: 100 },
+  // Окно рендера: сколько карточек реально держать в DOM (аудит
+  // «Структура DOM»). Остальное подгружает infinite scroll
+  maxRendered: { type: Number, default: 30 },
 })
 
 // ==========================================

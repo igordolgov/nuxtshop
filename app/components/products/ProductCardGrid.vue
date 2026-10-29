@@ -122,11 +122,13 @@ const currentImage = computed(() => {
   // Base64
   if (url.startsWith('data:')) return url
 
-  // Unsplash без домена
-  if (url.startsWith('photo-')) return `https://images.unsplash.com/${url}`
+  // Unsplash без домена — сразу с auto=format/q=75 (utils/productImage):
+  // без auto=format Unsplash отдаёт JPEG вместо WebP/AVIF
+  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}`)
 
-  // Полный URL
-  if (url.startsWith('http') || url.startsWith('/')) return url
+  // Полный URL (unsplash-ссылки получают auto=format, остальные не меняются)
+  if (url.startsWith('http')) return withImageFormat(url)
+  if (url.startsWith('/')) return url
 
   return `/images/${url}`
 })

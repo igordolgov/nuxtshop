@@ -12,8 +12,14 @@ header.app-header.sticky.top-0.z-50.border-b(
   .flex.items-center.justify-between.gap-2(class="px-0 lg:px-6 h-14")
     //- Левая группа: бургер (моб) + логотип
     .flex.items-center.gap-1.min-w-0
-      //- Бургер-меню (мобильные)
-      .relative(v-if="isMobile" ref="mobileMenuRef")
+      //- Бургер-меню: рендерится ВСЕГДА (и в SSR-HTML), на десктопе его
+      //- прячет CSS (lg:hidden = ≥1024px — брейкпоинт самой шапки).
+      //- Раньше v-if="isMobile" держал бургер вне серверного HTML:
+      //- навигация появлялась только после гидратации, раскладка
+      //- перестраивалась (SEO-аудит «Часть контента»). Бонус: на
+      //- планшетах 768-1023px меню теперь доступно (раньше не было
+      //- ни бургера, ни десктоп-меню — они включались с 1024px)
+      .relative(class="lg:hidden" ref="mobileMenuRef")
         button.btn.btn-ghost.btn-circle(
           type="button"
           :aria-expanded="isMobileMenuOpen"

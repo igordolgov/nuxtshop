@@ -272,10 +272,12 @@ const getValidImageUrl = (url) => {
   if (url.startsWith('/')) return url
   if (url.includes('unsplash.com')) {
     if (!url.includes('?')) url += '?w=800&h=600&fit=crop'
-    return url
+    return withImageFormat(url)
   }
   if (url.startsWith('http')) return url
-  if (url.startsWith('photo-')) return `https://images.unsplash.com/${url}`
+  // photo- без домена: раньше отдавался оригинал без ресайза (2-5 МБ),
+  // теперь размер галереи + auto=format/q=75 (utils/productImage)
+  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}?w=800&h=600&fit=crop`)
   return fallbackImage
 }
 

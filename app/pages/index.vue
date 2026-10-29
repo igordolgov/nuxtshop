@@ -3,25 +3,23 @@
     нижняя мобильная навигация. -->
 <template lang="pug">
 .grid-container
-  //- Шапка в ClientOnly: мобильные ветки зависят от window.innerWidth,
-  //- SSR-рендер давал hydration mismatch. Fallback — заглушка той же
-  //- высоты (--header-height), layout не прыгает
-  ClientOnly
-    Header.header-area(
-      :activeFiltersCount="activeFiltersCount"
-      :displayedProductsCount="displayedProducts.length"
-      :totalProductsCount="totalProductsCount"
-      :searchQuery="searchQuery"
-      :isSearching="isSearching"
-      :showSuggestions="showSuggestions"
-      :searchSuggestions="searchSuggestions"
-      :hasSearchSuggestions="hasSearchSuggestions"
-      :activeSuggestionIndex="activeSuggestionIndex"
-      :showFilters="showMobileFilters"
-      v-on="headerEvents"
-    )
-    template(#fallback)
-      .header-skeleton
+  //- Шапка в SSR-HTML: бургер-меню внутри Header переключается по CSS
+  //- (lg:hidden), а не по v-if="isMobile" — сервер и клиент рендерят
+  //- одинаково, навигация видна в HTML до гидратации (аудит «Часть
+  //- контента») и раскладка не прыгает после загрузки JS
+  Header.header-area(
+    :activeFiltersCount="activeFiltersCount"
+    :displayedProductsCount="displayedProducts.length"
+    :totalProductsCount="totalProductsCount"
+    :searchQuery="searchQuery"
+    :isSearching="isSearching"
+    :showSuggestions="showSuggestions"
+    :searchSuggestions="searchSuggestions"
+    :hasSearchSuggestions="hasSearchSuggestions"
+    :activeSuggestionIndex="activeSuggestionIndex"
+    :showFilters="showMobileFilters"
+    v-on="headerEvents"
+  )
 
   Transition(name="fade")
     LazyMobileFiltersPanel.mobile-filters(
@@ -76,6 +74,9 @@
               @reset-all="resetFilters"
               @update:sort="handleSortUpdate"
             )
+            //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу
+            //- гидратации (аудит «Структура DOM», «Время работы ЦП»);
+            //- дальне подгружает infinite scroll
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
@@ -84,7 +85,7 @@
               :activeFiltersCount="activeFiltersCount"
               useInfiniteScroll
               :pageSize="20"
-              :maxRendered="100"
+              :maxRendered="30"
               @toggleFavorite="toggleFavorite"
               @addToCart="addToCart"
               @resetFilters="resetFilters"
@@ -92,8 +93,11 @@
               @clearSearch="clearSearch"
             )
 
-  //- Футер сам управляет ориентацией и навигацией — ни props, ни событий
-  MobileNavFooter(v-if="isMobile")
+  //- Футер сам управляет ориентацией и навигацией — ни props, ни событий.
+  //- Рендерим всегда (как на admin-страницах), мобильную видимость даёт
+  //- CSS: md:hidden = видно <768px, ровно как v-if="isMobile" (768).
+  //- Нижняя навигация появляется в SSR-HTML без ожидания JS
+  MobileNavFooter(class="md:hidden")
 </template>
 
 <script setup>
@@ -375,13 +379,6 @@ watch(showMobileFilters, updateBodyScroll)
   flex-shrink: 0;
   width: 100%;
   z-index: 40;
-}
-
-/* Заглушка шапки на время ClientOnly-fallback: та же высота,
-   что Header (min-h-14 = 56px), чтобы контент не прыгал */
-.header-skeleton {
-  height: var(--header-height, 56px);
-  width: 100%;
 }
 
 .main-content-wrapper {
