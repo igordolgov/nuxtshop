@@ -36,6 +36,18 @@
       "remote": true,
     },
   ],
+  // Картинки из админки: R2 вместо base64 в JSON (server/lib/imageStorage.js).
+  // Раздача: server/routes/api/images/[...key].get.ts → /api/images/<key>.
+  // Перед первым деплоем создать бакет: npx wrangler r2 bucket create nuxtshop-images
+  // (лимит free-тарифа: 10 ГБ хранения, Class A 1 млн/мес — хватает с запасом).
+  "r2_buckets": [
+    {
+      // ⚠️ Биндинг обязан называться "IMAGES_BUCKET" — его читают
+      // imageStorage.js (запись) и routes/api/images (выдачу)
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "nuxtshop-images",
+    },
+  ],
   // Telegram-секреты (TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID,
   // TELEGRAM_WEBHOOK_SECRET, TELEGRAM_ADMIN_USER_IDS) ЗДЕСЬ НЕ ОБЪЯВЛЯЮТСЯ:
   // схемы не существует, секреты управляются через

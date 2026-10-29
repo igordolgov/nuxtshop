@@ -25,7 +25,9 @@ import {
   generateUniqueSlug,
   getProductBySlug,
   getSimilarProducts,
+  migrateProductImages,
   normalizeCategories,
+  photoIdOf,
   readProducts,
   slugify,
   writeProducts,
@@ -257,5 +259,63 @@ describe('normalizeCategories — форматы поля категорий', (
 
   it('мусор внутри массива (null, числа, объекты без name) отбрасывается, не роняя нормализацию', () => {
     expect(normalizeCategories({ categories: ['A', null, 123, { nope: true }] })).toEqual(['A']);
+  });
+});
+// ── Переезд фото каталога с hotlink Unsplash на /images/products/*.webp ──
+// Скачанные фото перечислены в server/lib/migratedPhotos.json; readProducts
+// подменяет URL только в памяти (KV не трогаем — гонки read-modify-write).
+describe('migrateProductImages / photoIdOf — локальные фото каталога', () => {
+  const MIGRATED_ID = 'photo-1481627834876-b7833e8f5570'; // есть в манифесте
+  const LOCAL = `/images/products/${MIGRATED_ID}.webp`;
+  const DEAD_ID = 'photo-1558618666-fcd25856cd25'; // удалён с Unsplash, файла нет
+
+  it('photoIdOf: полный URL, голый photo-, data-URI, локальный путь', () => {
+    expect(photoIdOf(`https://images.unsplash.com/${MIGRATED_ID}?w=500`)).toBe(MIGRATED_ID);
+    expect(photoIdOf(MIGRATED_ID)).toBe(MIGRATED_ID);
+    expect(photoIdOf('data:image/webp;base64,AAAA')).toBeNull();
+    expect(photoIdOf('/images/products/x.webp')).toBeNull();
+    expect(photoIdOf(null)).toBeNull();
+    expect(photoIdOf(42)).toBeNull();
+  });
+
+  it('migrateProductImages: image и gallery меняются на локальные пути', () => {
+    const products = [
+      makeProduct({
+        id: '1',
+        image: `https://images.unsplash.com/${MIGRATED_ID}?w=500&h=400&fit=crop`,
+        gallery: [MIGRATED_ID, 'data:image/png;base64,AAAA'],
+      }),
+    ];
+    migrateProductImages(products);
+    expect(products[0].image).toBe(LOCAL);
+    expect(products[0].gallery[0]).toBe(LOCAL);
+    expect(products[0].gallery[1]).toBe('data:image/png;base64,AAAA');
+  });
+
+  it('migrateProductImages: фото не из манифеста (удалено с Unsplash) не трогаем', () => {
+    const products = [makeProduct({ id: '1', image: `https://images.unsplash.com/${DEAD_ID}` })];
+    migrateProductImages(products);
+    expect(products[0].image).toBe(`https://images.unsplash.com/${DEAD_ID}`);
+  });
+
+  it('readProducts: unsplash-URL из KV самоисцеляется на выдаче, KV не перезаписывается', async () => {
+    kvStore.clear();
+    kvStore.set('data:products', [
+      makeProduct({ id: '9', image: `https://images.unsplash.com/${MIGRATED_ID}` }),
+    ]);
+    const products = await readProducts(event);
+    expect(products[0].image).toBe(LOCAL);
+    // В KV остался исходный URL — миграция не пишет на чтении
+    expect((kvStore.get('data:products') as { image: string }[])[0].image).toBe(
+      `https://images.unsplash.com/${MIGRATED_ID}`,
+    );
+  });
+
+  it('writeProducts: в KV уходят уже локальные пути', async () => {
+    kvStore.clear();
+    await writeProducts(event, [
+      makeProduct({ id: '10', image: `https://images.unsplash.com/${MIGRATED_ID}` }),
+    ]);
+    expect((kvStore.get('data:products') as { image: string }[])[0].image).toBe(LOCAL);
   });
 });

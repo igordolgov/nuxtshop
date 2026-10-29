@@ -45,9 +45,9 @@ export default defineEventHandler(async (event) => {
     // /images/products/placeholder.webp, которого нет в public/images)
     let imageUrl = body.image || '/images/placeholder.jpg'
     if (body.image?.startsWith('data:image/')) {
-      imageUrl = await processImage(body.image, 'main')
+      imageUrl = await processImage(event, body.image, 'main')
     }
-    const gallery = await processGallery(body.gallery)
+    const gallery = await processGallery(event, body.gallery)
 
     const stockQuantity = parseInt(body.stockQuantity) || 0
 

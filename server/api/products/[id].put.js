@@ -36,13 +36,13 @@ export default defineEventHandler(async (event) => {
 
     let imageUrl = existing.image
     if (body.image?.startsWith('data:image/')) {
-      imageUrl = await processImage(body.image, 'main')
+      imageUrl = await processImage(event, body.image, 'main')
     } else if (body.image) {
       imageUrl = body.image
     }
 
     const gallery =
-      body.gallery !== undefined ? await processGallery(body.gallery) : existing.gallery
+      body.gallery !== undefined ? await processGallery(event, body.gallery) : existing.gallery
 
     const stockQuantity =
       body.stockQuantity !== undefined ? parseInt(body.stockQuantity) || 0 : existing.stockQuantity

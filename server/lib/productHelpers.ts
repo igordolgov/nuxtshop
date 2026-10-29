@@ -2,8 +2,51 @@
 import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import productsSeed from '../data/products.json';
+import migratedPhotos from './migratedPhotos.json';
 
 const PRODUCTS_KEY = 'data:products';
+
+// ── Локальные фото каталога (переезд с hotlink Unsplash) ────────────────
+//
+// Фото из сида скачаны в /images/products/<photo-id>.webp (см. манифест).
+// Живой каталог лежит в KV и туда попали ещё ДО миграции — URL в KV
+// остаются unsplash. Менять KV на лету при чтении нельзя (read-modify-write
+// гонки — см. историю с удалённым кэшем изолята), поэтому старые
+// unsplash-URL для скачанных фото подменяются ТОЛЬКО в памяти при выдаче
+// (migrateProductImages). При следующей админ-правке товар уйдёт в KV уже
+// с локальным путём — данные сходятся без единой ручной операции.
+
+const MIGRATED_PHOTO_IDS = new Set(migratedPhotos as readonly string[]);
+const PHOTO_ID_RE = /(?:^|images\.unsplash\.com\/)(photo-\d+-[a-f0-9]+)/;
+
+/**
+ * photo-id из unsplash-URL или голого «photo-…»; null для data-URI,
+ * локальных путей и чужих URL (в т.ч. удалённых с Unsplash фото —
+ * их файл не скачан, URL должен остаться как есть).
+ */
+export function photoIdOf(url: unknown): string | null {
+  if (typeof url !== 'string' || url.startsWith('data:') || url.startsWith('/')) return null;
+  return url.match(PHOTO_ID_RE)?.[1] ?? null;
+}
+
+/**
+ * Заменяет unsplash-URL товаров на локальные /images/products/<id>.webp
+ * для всех фото из манифеста скачанных. Мутирует массив на месте
+ * (readProducts отдаёт свежую копию из KV, writeProducts пишет после
+ * валидации — внешних держателей ссылки нет).
+ */
+export function migrateProductImages(products: Product[]): void {
+  const swap = (url: unknown): unknown => {
+    const id = photoIdOf(url);
+    if (id && MIGRATED_PHOTO_IDS.has(id)) return `/images/products/${id}.webp`;
+    return url;
+  };
+  for (const p of products) {
+    if (!p || typeof p !== 'object') continue;
+    p.image = swap(p.image) as Product['image'];
+    if (Array.isArray(p.gallery)) p.gallery = p.gallery.map(swap) as Product['gallery'];
+  }
+}
 
 export interface Product {
   id: string;
@@ -98,8 +141,15 @@ export function slugify(str: string): string {
  */
 export async function readProducts(event: H3Event): Promise<Product[]> {
   const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
-  if (stored) return stored;
+  if (stored) {
+    // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
+    // локальные пути. KV НЕ перезаписываем (гонка read-modify-write);
+    // в KV новые пути доезжают при следующей админ-правке (writeProducts).
+    migrateProductImages(stored);
+    return stored;
+  }
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  migrateProductImages(seed);
   await kvPutJSON(event, PRODUCTS_KEY, seed);
   return seed;
 }
@@ -112,6 +162,9 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
  */
 export async function writeProducts(event: H3Event, products: Product[]) {
   if (!Array.isArray(products)) throw new Error('Products must be an array');
+  // Страховка: кто бы ни пришёл с записью, в KV уходят локальные пути
+  // (для скачанных фото) — hotlink Unsplash не возвращается в данные.
+  migrateProductImages(products);
   await kvPutJSON(event, PRODUCTS_KEY, products);
 }
 

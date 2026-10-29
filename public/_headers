@@ -19,10 +19,15 @@
   Cache-Control: no-cache
 
 # ── Общий кэш картинок сайта: сутки ────────────────────────────────
-# Имена стабильные (placeholder.jpg, no-image.svg), контент гипотетически
-# может меняться — держим умеренный TTL.
+# Только конкретные служебные файлы. ⚠️ Не использовать широкое правило
+# /images/*: оно пересекается с /images/products/*, и Cloudflare склеивает
+# одноимённые заголовки в один (проверено в wrangler dev): "public,
+# max-age=86400, public, max-age=31536000, immutable". Дубликаты директив
+# Cache-Control браузеры и CDN трактуют по-разному — надёжнее не допускать.
 
-/images/*
+/images/placeholder.jpg
+  Cache-Control: public, max-age=86400
+/images/no-image.svg
   Cache-Control: public, max-age=86400
 
 # ── Товарные фото: год, immutable ──────────────────────────────────
