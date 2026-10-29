@@ -1,0 +1,60 @@
+NUXTSHOP — TypeScript 7.0.2 + перераспределение зависимостей
+==============================================================
+
+ОТВЕТЫ НА ДВА ВОПРОСА
+----------------------
+1) TypeScript 7.0.2 — ДА, ПЕРЕВЕДЁН и проверен: vitest (132), oxlint,
+   markuplint, nuxt build — всё зелёное.
+   Цена: vue-tsc 3.3.13 (последняя версия) несовместим с TS 7 — он делает
+   require.resolve('typescript/lib/tsc'), а в нативном Go-порте TS 7
+   экспорта ./lib/tsc больше нет (ошибка ERR_PACKAGE_PATH_NOT_EXPORTED).
+   Поэтому vue-tsc удалён, скрипт "typecheck" убран из package.json,
+   шаг Typecheck убран из .github/workflows/ci.yml — тот же путь, что
+   уже пройден в journal-kpp (№36).
+
+2) h3 2.0.8 — НЕЛЬЗЯ, стек не готов:
+   nuxt 4.6.3 -> @nuxt/nitro-server 4.6.3 -> h3 ^1.15.11 + nitropack ^2.13.5
+   (2.13.5 — последняя ветка 2.x, тоже h3 ^1.15.11).
+   В nuxtshop серверный код напрямую импортирует h3 (H3Event, createError,
+   getRequestURL — 9 файлов в server/). При установке h3@2 возник бы
+   двойной h3: типы из h3 2 против рантайма nitro на h3 1 — конфликт типов
+   и риска в рантайме. h3 остаётся ^1.15.11; переезд на 2.x — вместе с
+   будущим nitro 3 / следующим мажором Nuxt.
+
+ПЕРЕРАСПРЕДЕЛЕНИЕ (версии не менялись, кроме typescript)
+--------------------------------------------------------
+  dependencies    += h3, pinia, @pinia/nuxt
+                     (серверный рантайм импортирует h3 напрямую;
+                      pinia + модуль @pinia/nuxt — рантайм приложения,
+                      как @nuxt/icon и @vite-pwa/nuxt)
+  devDependencies -= h3, pinia, @pinia/nuxt, vue-tsc
+  scripts         -= typecheck
+  knip.json       -= vue-tsc из игнора
+  pnpm-lock.yaml  перегенерирован (pnpm 12.6.0, lockfileVersion 9.0)
+
+КАК ПРИМЕНИТЬ (в корне nuxtshop)
+--------------------------------
+1) Скопировать ЧЕТЫРЕ файла с заменой:
+      package.json
+      pnpm-lock.yaml
+      knip.json
+      .github/workflows/ci.yml
+2) Обновить установку и проверить (локальный эквивалент CI):
+      pnpm install
+      pnpm exec oxlint
+      pnpm lint:markup
+      pnpm test            -> 132 passed
+      pnpm build
+3) Коммит и отправка:
+      git add -A
+      git commit -m "TS 7.0.2 (vue-tsc удалён, typecheck убран); h3/pinia/@pinia/nuxt -> dependencies; h3 остаётся 1.x (nuxt 4.6.3 = h3 1)"
+      git push origin main
+   CI после пуша прогонится без шага typecheck — это ожидаемо.
+
+ПРИМЕЧАНИЯ
+----------
+- Если позже захотите вернуть статическую проверку типов: можно добавить
+  "typecheck:ts": "tsc --noEmit" по server/ и общим утилитам (без .vue) —
+  tsc из TS 7 это умеет; полная проверка .vue вернётся, когда vue-tsc
+  догонит TS 7.
+- pnpm 12.6.0 соответствует packageManager в package.json.

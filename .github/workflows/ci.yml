@@ -1,6 +1,8 @@
 name: CI
 
-# Проверка каждой ветки: линтер, разметка, типы, юнит-тесты, сборка.
+# Проверка каждой ветки: линтер, разметка, юнит-тесты, сборка.
+# [TS7] шаг typecheck (vue-tsc) удалён: vue-tsc несовместим с TypeScript 7
+# (require.resolve('typescript/lib/tsc') — в нативном Go-порте lib/tsc нет).
 # Матрица Node 22/24 — проект поддерживает оба LTS-канала.
 on:
   push:
@@ -34,9 +36,6 @@ jobs:
 
       - name: Markuplint (шаблоны .vue/pug)
         run: pnpm lint:markup
-
-      - name: Typecheck (vue-tsc, проекты app/server из .nuxt)
-        run: pnpm typecheck
 
       - name: Юнит-тесты
         run: pnpm test
