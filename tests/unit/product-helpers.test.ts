@@ -292,10 +292,22 @@ describe('migrateProductImages / photoIdOf — локальные фото ка�
     expect(products[0].gallery[1]).toBe('data:image/png;base64,AAAA');
   });
 
-  it('migrateProductImages: фото не из манифеста (удалено с Unsplash) не трогаем', () => {
-    const products = [makeProduct({ id: '1', image: `https://images.unsplash.com/${DEAD_ID}` })];
+  it('migrateProductImages: удалённое с Unsplash фото заменяется живым аналогом', () => {
+    const REPLACEMENT_ID = 'photo-1607853202273-797f1c22a38e'; // PS5, скачан
+    const products = [
+      makeProduct({ id: '1', image: `https://images.unsplash.com/${DEAD_ID}?w=500&h=400&fit=crop` }),
+      makeProduct({ id: '2', image: '/images/products/already-local.webp' }),
+    ];
     migrateProductImages(products);
-    expect(products[0].image).toBe(`https://images.unsplash.com/${DEAD_ID}`);
+    expect(products[0].image).toBe(`/images/products/${REPLACEMENT_ID}.webp`);
+    expect(products[1].image).toBe('/images/products/already-local.webp');
+  });
+
+  it('migrateProductImages: неизвестный unsplash-ID (не в манифесте и не мёртвый) не трогаем', () => {
+    const UNKNOWN = 'photo-9999999999-aaaaaaaaaaaa';
+    const products = [makeProduct({ id: '1', image: `https://images.unsplash.com/${UNKNOWN}` })];
+    migrateProductImages(products);
+    expect(products[0].image).toBe(`https://images.unsplash.com/${UNKNOWN}`);
   });
 
   it('readProducts: unsplash-URL из KV самоисцеляется на выдаче, KV не перезаписывается', async () => {

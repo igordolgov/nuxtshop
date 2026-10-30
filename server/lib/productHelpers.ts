@@ -19,10 +19,17 @@ const PRODUCTS_KEY = 'data:products';
 const MIGRATED_PHOTO_IDS = new Set(migratedPhotos as readonly string[]);
 const PHOTO_ID_RE = /(?:^|images\.unsplash\.com\/)(photo-\d+-[a-f0-9]+)/;
 
+// Фото, удалённые с Unsplash (выдача отдаёт 404 — битая картинка на проде),
+// заменяем на живые аналоги, файлы которых скачаны в /images/products/.
+// Ключ — мёртвый photo-id, значение — живой.
+const DEAD_PHOTO_REPLACEMENTS: Record<string, string> = {
+  // Галерея «Игровая консоль PlayStation 5»: оригинал удалён с Unsplash.
+  'photo-1558618666-fcd25856cd25': 'photo-1607853202273-797f1c22a38e',
+};
+
 /**
- * photo-id из unsplash-URL или голого «photo-…»; null для data-URI,
- * локальных путей и чужих URL (в т.ч. удалённых с Unsplash фото —
- * их файл не скачан, URL должен остаться как есть).
+ * photo-id из unsplash-URL или голого «photo-…»; null для data-URI
+ * и локальных путей.
  */
 export function photoIdOf(url: unknown): string | null {
   if (typeof url !== 'string' || url.startsWith('data:') || url.startsWith('/')) return null;
@@ -31,15 +38,18 @@ export function photoIdOf(url: unknown): string | null {
 
 /**
  * Заменяет unsplash-URL товаров на локальные /images/products/<id>.webp
- * для всех фото из манифеста скачанных. Мутирует массив на месте
- * (readProducts отдаёт свежую копию из KV, writeProducts пишет после
- * валидации — внешних держателей ссылки нет).
+ * для всех фото из манифеста скачанных; фото, удалённые с Unsplash,
+ * заменяются живым аналогом из DEAD_PHOTO_REPLACEMENTS. Мутирует массив
+ * на месте (readProducts отдаёт свежую копию из KV, writeProducts пишет
+ * после валидации — внешних держателей ссылки нет).
  */
 export function migrateProductImages(products: Product[]): void {
   const swap = (url: unknown): unknown => {
     const id = photoIdOf(url);
-    if (id && MIGRATED_PHOTO_IDS.has(id)) return `/images/products/${id}.webp`;
-    return url;
+    if (!id) return url;
+    if (MIGRATED_PHOTO_IDS.has(id)) return `/images/products/${id}.webp`;
+    const replacement = DEAD_PHOTO_REPLACEMENTS[id];
+    return replacement ? `/images/products/${replacement}.webp` : url;
   };
   for (const p of products) {
     if (!p || typeof p !== 'object') continue;
