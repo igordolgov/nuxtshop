@@ -36,6 +36,8 @@
           NuxtImg(
             class="w-24 h-24 object-cover group-hover:scale-110 transition-transform duration-700",
             :src="getSafeImage(product.image)",
+            :srcset="productSrcset(getSafeImage(product.image))",
+            :sizes="productSrcset(getSafeImage(product.image)) ? '96px' : undefined",
             :alt="product.name",
             width="96",
             height="96",

@@ -23,3 +23,27 @@ export function withImageFormat(url: string): string {
     return url
   }
 }
+
+// ─── Миниатюры каталога (srcset) ─────────────────────────────────────────────
+//
+// Локальные фото существуют в двух версиях: /images/products/<id>.webp (800w)
+// и /images/products/small/<id>.webp (400w, тот же crop-параметр Unsplash).
+// Карточки каталога рисуют фото площадью ~180-300 CSS px (aspect-square,
+// object-fit:cover), поэтому 800w втрое-вшестеро избыточен — Lighthouse
+// «image-delivery» насчитывал ~674 KiB экономии на главной. productSrcset()
+// включает выбор версии браузером через srcset/sizes.
+//
+// Только для локальных файлов: data-URI, /api/images/<key> (админ-загрузки)
+// и внешние URL второй версии не имеют — возвращаем undefined, атрибут
+// не выводится и поведение остаётся прежним.
+
+const LOCAL_PRODUCT_IMAGE_RE = /^\/images\/products\/(photo-\d+-[a-f0-9]+)\.webp$/
+
+/** srcset «400w + 800w» для локальных фото каталога или undefined. */
+export function productSrcset(url: unknown): string | undefined {
+  if (typeof url !== 'string') return undefined
+  const m = url.match(LOCAL_PRODUCT_IMAGE_RE)
+  if (!m) return undefined
+  const id = m[1]
+  return `/images/products/small/${id}.webp 400w, /images/products/${id}.webp 800w`
+}

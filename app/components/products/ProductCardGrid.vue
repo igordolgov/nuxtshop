@@ -30,10 +30,14 @@
           icon(name="heroicons:photo" size="32" class="text-base-300")
 
         //- Изображение
+        //- srcset 400w+800w: карточка рисует ~180-300 CSS px (aspect-square),
+        //- полный 800w втрое избыточен — браузер берёт small/ 400w
         img.product-image(
           v-if="currentImage && !imageError",
           ref="imageEl",
           :src="currentImage",
+          :srcset="imageSrcset",
+          :sizes="imageSrcset ? '(max-width: 639px) 50vw, 300px' : undefined",
           :alt="product.name",
           :loading="loadingAttr",
           :fetchpriority="fetchPriority",
@@ -154,6 +158,10 @@ onMounted(() => {
 const onImageLoad = () => {
   imageLoaded.value = true
 }
+
+//- srcset только для локальных фото каталога (data-URI, /api/images/*,
+//- внешние URL — без второй версии, атрибут не выводится)
+const imageSrcset = computed(() => productSrcset(currentImage.value))
 
 const onImageError = () => {
   imageError.value = true

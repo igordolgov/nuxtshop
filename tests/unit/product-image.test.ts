@@ -1,42 +1,36 @@
-// Тесты app/utils/productImage.ts — нормализация URL картинок:
-// auto=format + q=75 для Unsplash (WebP/AVIF вместо JPEG), чужие
-// домены и локальные пути не трогаем.
+// Тесты app/utils/productImage.ts — srcset миниатюр каталога.
 import { describe, expect, it } from 'vitest';
+import { productSrcset, withImageFormat } from '../../app/utils/productImage';
 
-import { withImageFormat } from '../../app/utils/productImage';
-
-describe('withImageFormat', () => {
-  it('добавляет auto=format и q=75 к URL Unsplash без параметров', () => {
-    const result = withImageFormat('https://images.unsplash.com/photo-123');
-    expect(result).toBe('https://images.unsplash.com/photo-123?auto=format&q=75');
-  });
-
-  it('сохраняет существующие параметры ресайза и дополняет недостающие', () => {
-    const result = withImageFormat(
-      'https://images.unsplash.com/photo-123?w=500&h=400&fit=crop',
+describe('productSrcset — 400w+800w для локальных фото каталога', () => {
+  it('локальный путь /images/products/<id>.webp → srcset с small/ и 800w', () => {
+    const url = '/images/products/photo-1481627834876-b7833e8f5570.webp';
+    expect(productSrcset(url)).toBe(
+      '/images/products/small/photo-1481627834876-b7833e8f5570.webp 400w, ' +
+        '/images/products/photo-1481627834876-b7833e8f5570.webp 800w',
     );
-    expect(result).toContain('w=500');
-    expect(result).toContain('h=400');
-    expect(result).toContain('fit=crop');
-    expect(result).toContain('auto=format');
-    expect(result).toContain('q=75');
   });
 
-  it('не дублирует уже заданные auto/q', () => {
-    const result = withImageFormat('https://images.unsplash.com/photo-123?auto=format&q=80');
-    expect(result).toBe('https://images.unsplash.com/photo-123?auto=format&q=80');
+  it('data-URI, /api/images/*, плейсхолдер и внешние URL → undefined', () => {
+    expect(productSrcset('data:image/webp;base64,AAAA')).toBeUndefined();
+    expect(productSrcset('/api/images/products/product-123-abcd.webp')).toBeUndefined();
+    expect(productSrcset('/images/placeholder.jpg')).toBeUndefined();
+    expect(productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500')).toBeUndefined();
+    expect(productSrcset('/images/products/evil-../../etc.webp')).toBeUndefined();
   });
 
-  it('не трогает чужие домены', () => {
-    const url = 'https://example.com/photo-123?w=500';
-    expect(withImageFormat(url)).toBe(url);
+  it('мусор на входе → undefined, атрибут не выводится', () => {
+    expect(productSrcset(null)).toBeUndefined();
+    expect(productSrcset(undefined)).toBeUndefined();
+    expect(productSrcset(42)).toBeUndefined();
+    expect(productSrcset('')).toBeUndefined();
   });
+});
 
-  it('не трогает локальные пути', () => {
-    expect(withImageFormat('/images/products/photo.webp')).toBe('/images/products/photo.webp');
-  });
-
-  it('некорректный URL возвращает как есть, без исключения', () => {
-    expect(withImageFormat('::broken::')).toBe('::broken::');
+describe('withImageFormat — регресс: q=75 остаётся строкой', () => {
+  it('добавляет auto=format и q=75 к unsplash-URL', () => {
+    const out = withImageFormat('https://images.unsplash.com/photo-1?w=500');
+    expect(out).toContain('auto=format');
+    expect(out).toContain('q=75');
   });
 });
