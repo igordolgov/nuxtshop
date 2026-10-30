@@ -3,6 +3,7 @@ import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import productsSeed from '../data/products.json';
 import migratedPhotos from './migratedPhotos.json';
+import photoReplacementsJson from './photoReplacements.json';
 
 const PRODUCTS_KEY = 'data:products';
 
@@ -27,6 +28,20 @@ const DEAD_PHOTO_REPLACEMENTS: Record<string, string> = {
   'photo-1558618666-fcd25856cd25': 'photo-1607853202273-797f1c22a38e',
 };
 
+// ── Правдоподобные фото (пересборка несоответствующих картинок) ──────────
+//
+// У части товаров в сиде и live-KV оказались фото, не соответствующие
+// названию товара (пылесос → рис, монитор → камера Polaroid и т.п.).
+// Скачаны правдоподобные аналоги (см. photoReplacements.json: ключ —
+// productId, значение — карта «старое имя файла → новый локальный путь»).
+// Как и миграция Unsplash, применяется ТОЛЬКО в памяти при выдаче: live-KV
+// содержит старые пути, но после следующей админ-правки товар уйдёт в KV
+// уже с новыми путями — без ручных операций и без перезаписи KV целиком.
+const PHOTO_PATH_REPLACEMENTS = photoReplacementsJson as Record<
+  string,
+  Record<string, string>
+>;
+
 /**
  * photo-id из unsplash-URL или голого «photo-…»; null для data-URI
  * и локальных путей.
@@ -44,15 +59,31 @@ export function photoIdOf(url: unknown): string | null {
  * после валидации — внешних держателей ссылки нет).
  */
 export function migrateProductImages(products: Product[]): void {
-  const swap = (url: unknown): unknown => {
-    const id = photoIdOf(url);
-    if (!id) return url;
-    if (MIGRATED_PHOTO_IDS.has(id)) return `/images/products/${id}.webp`;
-    const replacement = DEAD_PHOTO_REPLACEMENTS[id];
-    return replacement ? `/images/products/${replacement}.webp` : url;
+  const forProduct = (p: Product): ((url: unknown) => unknown) => {
+    const map = PHOTO_PATH_REPLACEMENTS[p?.id];
+    return (url: unknown): unknown => {
+      // 1) миграция Unsplash → локальные пути (для скачанных/мёртвых фото)
+      const id = photoIdOf(url);
+      let cur: unknown = url;
+      if (id) {
+        if (MIGRATED_PHOTO_IDS.has(id)) cur = `/images/products/${id}.webp`;
+        else {
+          const replacement = DEAD_PHOTO_REPLACEMENTS[id];
+          if (replacement) cur = `/images/products/${replacement}.webp`;
+        }
+      }
+      // 2) замена несоответствующих фото на правдоподобные (per-product)
+      if (map && typeof cur === 'string') {
+        const base = cur.split('/').pop();
+        const better = base ? map[base] : undefined;
+        if (better) return better;
+      }
+      return cur;
+    };
   };
   for (const p of products) {
     if (!p || typeof p !== 'object') continue;
+    const swap = forProduct(p);
     p.image = swap(p.image) as Product['image'];
     if (Array.isArray(p.gallery)) p.gallery = p.gallery.map(swap) as Product['gallery'];
   }

@@ -310,6 +310,32 @@ describe('migrateProductImages / photoIdOf — локальные фото ка�
     expect(products[0].image).toBe(`https://images.unsplash.com/${UNKNOWN}`);
   });
 
+  it('migrateProductImages: несоответствующее фото заменяется правдоподобным только у своего товара', () => {
+    // «Пылесос робот Xiaomi» (id=12): рис → Roborock (скачан, photoReplacements.json)
+    const RICE = 'photo-1586201375761-83865001e31c';
+    const VACUUM = 'photo-920000100012-b59b25fbd2';
+    const products = [
+      makeProduct({ id: '12', image: `/images/products/${RICE}.webp`, gallery: [`/images/products/${RICE}.webp`] }),
+      // тот же файл у другого товара — его замены не задевают
+      makeProduct({ id: '23', image: `/images/products/${RICE}.webp` }),
+    ];
+    migrateProductImages(products);
+    expect(products[0].image).toBe(`/images/products/${VACUUM}.webp`);
+    expect(products[0].gallery[0]).toBe(`/images/products/${VACUUM}.webp`);
+    // у id=23 своя карта: рис → набор посуды
+    expect(products[1].image).toBe('/images/products/photo-920000100033-7e7a88c516.webp');
+  });
+
+  it('migrateProductImages: товар без карты замен и data-URI остаются как были', () => {
+    const products = [
+      makeProduct({ id: '42', image: '/images/products/photo-1586201375761-83865001e31c.webp' }),
+      makeProduct({ id: '12', image: 'data:image/webp;base64,AAAA' }),
+    ];
+    migrateProductImages(products);
+    expect(products[0].image).toBe('/images/products/photo-1586201375761-83865001e31c.webp');
+    expect(products[1].image).toBe('data:image/webp;base64,AAAA');
+  });
+
   it('readProducts: unsplash-URL из KV самоисцеляется на выдаче, KV не перезаписывается', async () => {
     kvStore.clear();
     kvStore.set('data:products', [
