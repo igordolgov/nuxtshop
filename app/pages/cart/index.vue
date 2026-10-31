@@ -94,7 +94,7 @@
                             .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
                             .text-xs(class="text-base-content/50") {{ formatPrice(item.currentPrice) }}/шт.
                         .flex-grow.min-w-0
-                          h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2(
+                          h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
                             class="hover:text-primary"
                             @click="goToProduct(item)"
                           ) {{ item.name }}
@@ -249,7 +249,9 @@
                   .form-control
                     label.label.p-0.mb-2
                       span.label-text.font-medium.text-sm Способ доставки
-                    .grid.grid-cols-1.gap-2(class="sm:grid-cols-2")
+                    //- Две колонки на всех экранах (и на телефоне):
+                    //- по 2 плитки в блоке — одна колонка выглядела пусто
+                    .grid.grid-cols-2.gap-2
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedDelivery === 'courier' }"
                       )
@@ -279,7 +281,7 @@
                   .form-control
                     label.label.p-0.mb-2
                       span.label-text.font-medium.text-sm Способ оплаты
-                    .grid.grid-cols-1.gap-2(class="sm:grid-cols-2")
+                    .grid.grid-cols-2.gap-2
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedPayment === 'card' }"
                       )
@@ -569,6 +571,43 @@
   .mobile-checkout-button {
     display: block;
   }
+}
+
+/* ============================================
+  ПЛИТКИ ВЫБОРА — «Способ доставки» / «Способ оплаты».
+  Класс использовался в шаблоне, но стилей не имел вовсе:
+  радио оказывалось на отдельной строке НАД названием, плитки
+  сливались с карточкой, активное состояние никак не читалось.
+  align-items: flex-start — радио на одной линии с названием.
+============================================ */
+.option-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.75rem;
+  background: var(--color-base-100);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast, 0.15s),
+    background var(--transition-fast, 0.15s);
+}
+
+.option-tile:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
+}
+
+/* Радио прижато к первой строке (названию), не сжимается текстом */
+.option-tile input.radio {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.option-tile-active {
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
 }
 
 /* ============================================

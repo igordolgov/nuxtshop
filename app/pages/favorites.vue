@@ -105,3 +105,16 @@ onMounted(() => window.scrollTo(0, 0))
 
 useHead({ title: 'Избранное' })
 </script>
+
+<style scoped>
+/* Нижний «воздух» под фиксированной мобильной навигацией: без него
+   последний ряд карточек прятался под меню — цена и кнопки были
+   недоступны для тапа (навигация fixed, из потока высоту не даёт).
+   Брейкпоинт совпадает с видимостью навигации: useMobileDetection
+   (< 768) / md:hidden на главной. */
+@media (max-width: 767.98px) {
+  .favorites-page {
+    padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
+  }
+}
+</style>

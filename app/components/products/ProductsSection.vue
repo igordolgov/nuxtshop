@@ -3,7 +3,11 @@
     виртуализация, скелетоны при первой загрузке и подгрузке,
     4 колонки в landscape — чистым CSS (см. style). -->
 <template lang="pug">
-.products-section.pb-12(class="sm:pb-0")
+//- Нижний отступ секции не нужен: на главной products-container уже даёт
+//- «воздух» под фиксированной навигацией (padding-bottom 60px+12px на
+//- мобильных). Раньше здесь был ещё pb-12 — суммарно ~137px пустоты
+//- под последним рядом карточек (жалоба «много лишнего пространства»).
+.products-section
   //- Первая загрузка: скелетон-сетка вместо спиннера
   .initial-skeleton(v-if="isLoadingInitial")
     .products-grid(:class="gridClasses")
