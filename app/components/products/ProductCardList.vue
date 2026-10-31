@@ -46,7 +46,7 @@
           )
             //- Цена
         .pt-3
-          .text-lg.font-bold.text-sky-600.transition-all.duration-300(
+          .text-lg.font-bold.text-primary.transition-all.duration-300(
             v-if="product.inStock"
             class="text-base md:text-xl group-hover:scale-105"
           ) {{ formatPrice(product.price) }} ₽

@@ -125,7 +125,7 @@
                             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
                       .text-xs.mt-2(
                         v-if="getMaxQuantity(item) < 999"
-                        :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/40'"
+                        :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/60'"
                       )
                         | Доступно: {{ getMaxQuantity(item) }} шт.
                         span.text-warning.ml-1(v-if="item.quantity > getMaxQuantity(item)") · превышено

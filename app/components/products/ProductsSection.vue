@@ -79,7 +79,7 @@
         ref="sentinelRef"
       )
 
-      .end-of-list.text-center.py-2.text-sm.opacity-50(
+      .end-of-list.text-center.py-2.text-sm.opacity-60(
         v-if="!hasMore && displayedProducts.length > 0"
       )
         | Вы просмотрели все товары ({{ displayedProducts.length }})

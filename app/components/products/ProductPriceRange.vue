@@ -26,13 +26,13 @@
     .mode-switcher.flex.gap-2.mb-2(v-if="!compact || !isMobile")
       button.chip.px-2.py-1.rounded-lg.text-xs.cursor-pointer(
         @click="useSlider = true"
-        :class="useSlider ? 'bg-primary border border-primary text-white' : 'border border-base-content/40'",
+        :class="useSlider ? 'bg-primary border border-primary text-primary-content' : 'border border-base-content/40'",
         class="hover:border-primary"
         title="Режим слайдера"
       ) слайдер
       button.chip.px-2.py-1.rounded-lg.text-xs.cursor-pointer(
         @click="useSlider = false"
-        :class="!useSlider ? 'bg-primary border border-primary text-white' : 'border border-base-content/40'",
+        :class="!useSlider ? 'bg-primary border border-primary text-primary-content' : 'border border-base-content/40'",
         class="hover:border-primary"
         title="Режим ввода"
       ) вручную

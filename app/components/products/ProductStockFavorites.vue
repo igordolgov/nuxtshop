@@ -4,7 +4,7 @@
   .flex.flex-wrap.gap-2.items-center
     //- Чипс "Только в наличии"
     label.btn.cursor-pointer.inline-flex.items-center(
-      :class="localOnlyInStock ? 'bg-success text-success-content' : 'bg-gray-400 text-base-100'"
+      :class="localOnlyInStock ? 'bg-success text-success-content' : 'bg-neutral text-neutral-content'"
       class="px-3 py-1 rounded-xl border text-xs transition-all duration-200 hover:scale-105 hover:shadow-sm"
     )
       input.hidden(

@@ -46,7 +46,7 @@
         .flex.items-center.gap-2.flex-wrap
           span.badge.badge-sm(:class="badgeClass(item.category)") {{ item.category }}
           span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date) }}
-          span.text-xs(class="text-base-content/35") · id {{ item.id }}
+          span.text-xs(class="text-base-content/55") · id {{ item.id }}
         .flex.gap-3.items-start
           img.w-14.h-14.rounded-lg.object-cover.flex-shrink-0(
             v-if="item.image"

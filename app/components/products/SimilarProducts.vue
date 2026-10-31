@@ -80,7 +80,7 @@
                                                                 p.text-xs.text-base-content.opacity-70.line-clamp-2.max-h-10(class="lg:text-xs") {{ item.description }}
                                                         
                                                         .flex.items-center.justify-between.-mt-1.border-t.border-base-200
-                                                                .text-md.font-bold.text-sky-600 {{ formatPrice(item.price) }}
+                                                                .text-md.font-bold.text-primary {{ formatPrice(item.price) }}
                                                                 .text-xs(
                                                                         :class="item.inStock ? 'text-success' : 'text-error'"
                                                                 ) {{ item.inStock ? 'В наличии' : 'Нет в наличии' }}

@@ -79,7 +79,7 @@
 
               td
                 .flex.flex-wrap(class="gap-0.5")
-                  span.badge.badge-xs.badge-secondary.text-white.opacity-70.rounded-sm(
+                  span.badge.badge-xs.badge-secondary.rounded-sm(
                     v-for="cat in getCategories(product.categories)"
                     :key="cat"
                   ) {{ cat }}

@@ -48,7 +48,15 @@
   }
 }
 
-[data-theme='corporate'] {
+/* ─── Контрастная коррекция тем (аудит WCAG, 2026-10) ────────────
+   Стоковые значения daisyUI проваливали контраст:
+   · business: primary (тёмно-синий) на тёмном фоне — 1.90:1 (цены!),
+     error 2.71:1, base-content/50 = 3.6:1;
+   · corporate: warning на белом 1.57:1, error 2.92:1, success 3.29:1.
+   Новые значения подобраны скриптом (scripts/token_solver*.cjs):
+   текст ≥4.5:1 на своём фоне (и на тинте bg-X/10 для business),
+   пара «фон ↔ *-content» тоже ≥4.5:1. Оттенок/тон сохранены. */
+html[data-theme='corporate'] {
   color-scheme: light;
 
   /* ⚠️ Раньше здесь был хак .badge/.btn/.checkbox { color: white } —
@@ -57,14 +65,28 @@
     сам подбирает контрастный цвет текста для всех вариантов.
     Если где-то не хватает контраста — чинить точечно на элементе. */
 
+  --color-primary: oklch(55.9% 0.158 241.966); /* #007bc7, было 58% #0082ce */
+  --color-error: oklch(59% 0.191 22.216); /* #d73c46, было 70% #ff6266 */
+  --color-warning: oklch(56.6% 0.199 91.936); /* #a06c00, было 85% #fdc700 */
+  --color-success: oklch(53.9% 0.194 149.214); /* #008a1f, было 62% #00a43b */
+  --color-info: oklch(55% 0.126 221.723); /* #0080a5, было 60% #0090b5 */
+
   .my-btn:hover {
     background-color: #1c96e1;
     border-color: #1c96e1;
   }
 }
 
-[data-theme='business'] {
+/* Повышенная специфичность (html) — перекрывает стоковые переменные
+   daisyUI при любом порядке каскада. */
+html[data-theme='business'] {
   color-scheme: dark;
+
+  --color-primary: oklch(65.75% 0.13 251.473); /* #5095de: 5.2:1 на base-100 */
+  --color-primary-content: oklch(28.5% 0.05 251.473); /* #162b42: 4.6:1 на primary */
+  --color-error: oklch(67.44% 0.17 25); /* #ed645f: 5.1:1 на base-100 */
+  --color-error-content: oklch(28.5% 0.05 25); /* #40201d: 4.6:1 на error */
+  --color-base-content: oklch(95% 0 0); /* /50 = 4.54:1 (стоково 3.6:1) */
 }
 
 /* ─── Мобильные touch-настройки и доступность ────────────────── */

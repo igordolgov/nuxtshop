@@ -144,9 +144,9 @@ ClientOnly
 
 /* Активная вкладка — цвет из темы (раньше был хардкод #3389d4).
    Цвет текста — с гарантированным контрастом на тинте 34% primary:
-   corporate (светлая): тинт ≈ #a8d4ee — blue-400 давал 1.67:1 (провал
-   Lighthouse color-contrast), blue-800 (#1e40af) даёт 5.5:1;
-   business (тёмная): тинт ≈ #2c3540 — blue-400 даёт ≈ 4.8:1. */
+   corporate (светлая): тинт ≈ #a8d2ed — blue-800 (#1e40af) даёт ≈ 6:1;
+   business (тёмная): тинт ≈ #304861 — blue-300 (#7cc0ff) даёт ≈ 4.9:1
+   (blue-400 #51a2ff после осветления primary — 3.6:1, заменён). */
 .nav-item.is-active {
   background-color: color-mix(in oklab, var(--color-primary) 34%, transparent);
   color: var(--color-blue-800, #1e40af);
@@ -158,16 +158,21 @@ ClientOnly
   stroke-width: 2.5px;
 }
 
+/* Иконка активной вкладки — тем же цветом, что и подпись (3:1+ на тинте) */
+[data-theme='business'] .nav-item.is-active .nav-icon svg {
+  stroke: var(--color-blue-300, #7cc0ff);
+}
+
 .nav-item.is-active .nav-label {
   color: var(--color-blue-800, #1e40af);
 }
 
 [data-theme='business'] .nav-item.is-active {
-  color: var(--color-blue-400, #51a2ff);
+  color: var(--color-blue-300, #7cc0ff);
 }
 
 [data-theme='business'] .nav-item.is-active .nav-label {
-  color: var(--color-blue-400, #51a2ff);
+  color: var(--color-blue-300, #7cc0ff);
 }
 
 /* Бейджи — цвет ошибки из темы (раньше #ef4444) */

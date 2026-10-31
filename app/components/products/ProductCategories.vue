@@ -21,7 +21,7 @@
           v-for="category in sortedCategories"
           :key="category"
           :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/40'",
-          class="hover:bg-primary/50 hover:text-white"
+          class="hover:bg-primary/50 hover:text-primary-content"
         )
           input.hidden(
             type="checkbox"

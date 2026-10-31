@@ -29,7 +29,7 @@
     button.btn.btn-xs.gap-1(
       v-for="opt in sortOptions"
       :key="opt.field"
-      :class="sortField === opt.field ? 'btn-primary' : 'btn-secondary opacity-70 text-white'"
+      :class="sortField === opt.field ? 'btn-primary' : 'btn-secondary'"
       @click="$emit('sort', opt.field)"
       type="button"
     )

@@ -38,16 +38,16 @@ header.app-header.sticky.top-0.z-50.border-b(
         )
           //- Шапка меню: кто вошёл / приглашение войти
           .px-5.pt-5.pb-4.border-b.border-base-300(class="bg-base-200/50")
-            .text-xs.font-medium.uppercase.tracking-wider(class="text-base-content/40")
+            .text-xs.font-medium.uppercase.tracking-wider(class="text-base-content/70")
               | Меню
             .text-sm.font-semibold.text-base-content.mt-1(v-if="isAuthenticated")
               | {{ userName }}
-            .text-sm.mt-1(v-else class="text-base-content/50")
+            .text-sm.mt-1(v-else class="text-base-content/70")
               | Гость — войдите для заказов
 
           //- Раздел: Магазин
           .px-3.py-3
-            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
               | Магазин
             ul.space-y-1
               li
@@ -78,7 +78,7 @@ header.app-header.sticky.top-0.z-50.border-b(
 
           //- Раздел: Информация
           .px-3.pb-3
-            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
               | Информация
             ul.space-y-1
               li
@@ -118,7 +118,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Раздел: Админка
           template(v-if="isAdmin")
             .px-3.pb-4
-              .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/35 uppercase tracking-wider")
+              .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
                 | Админка
               ul.space-y-1
                 li
@@ -147,7 +147,7 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
       NuxtLink.flex.items-center.gap-2.shrink-0(to="/" prefetch)
         .bg-primary.rounded-xl.flex.items-center.justify-center.size-8
-          span.text-white.font-bold.text-sm М
+          span.text-primary-content.font-bold.text-sm М
         span.font-semibold.text-base-content.tracking-tight Магазин
 
     //- Десктоп-меню (центр строки 1)
@@ -288,7 +288,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           @click="toggleUserMenu"
         )
           .avatar
-            .rounded-full.bg-primary.flex.items-center.justify-center.text-white.font-semibold.size-7.text-xs
+            .rounded-full.bg-primary.flex.items-center.justify-center.text-primary-content.font-semibold.size-7.text-xs
               span {{ userInitials }}
           span.font-medium.text-sm(class="hidden sm:block") {{ userName }}
           svg.w-4.h-4.transition-transform(

@@ -121,7 +121,7 @@
           .form-error(v-if="formError" role="alert") {{ formError }}
           .flex.items-center.gap-4.mt-4.flex-wrap
             button.btn.btn-primary.rounded-xl(type="submit") Отправить
-            p.text-xs(class="text-base-content/45")
+            p.text-xs(class="text-base-content/60")
               | Нажимая «Отправить», вы соглашаетесь на обработку персональных данных.
 
     //- FAQ

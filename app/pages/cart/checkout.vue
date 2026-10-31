@@ -15,7 +15,7 @@
             :class="{ 'step-active': currentStep === index + 1, 'step-completed': currentStep > index + 1 }"
           )
             .step-content.flex.flex-col.items-center.px-2
-              .step-number.mb-1(:class="{ 'bg-primary text-white': currentStep >= index + 1, 'bg-base-300': currentStep < index + 1 }") {{ index + 1 }}
+              .step-number.mb-1(:class="{ 'bg-primary text-primary-content': currentStep >= index + 1, 'bg-base-300': currentStep < index + 1 }") {{ index + 1 }}
               span.step-name.whitespace-normal.break-words.text-center(class="lg:font-medium text-[0.65rem] lg:text-sm") {{ step.name }}
             .step-connector(v-if="index < checkoutSteps.length - 1")
 

@@ -71,7 +71,7 @@
     
     //- Цена и статус
     .card-actions.justify-between.items-center.mt-0.px-3.pb-2
-      .text-base.font-bold.text-sky-700.transition-all.duration-300(
+      .text-base.font-bold.text-primary.transition-all.duration-300(
         v-if="product.inStock"
         class="lg:text-lg group-hover:scale-105"
       ) {{ formatPrice(product.price) }}

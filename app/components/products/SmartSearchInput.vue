@@ -45,7 +45,7 @@
         type="button"
         aria-label="Очистить поиск"
       )
-        span.text-xl(class="text-base-content/40 hover:text-base-content") x
+        span.text-xl(class="text-base-content/60 hover:text-base-content") x
 
   Transition(name="fade-slide")
     .suggestions-panel.absolute.top-full.left-0.right-0.mt-1.z-50.bg-base-100.shadow-xl.rounded-lg.overflow-hidden(
