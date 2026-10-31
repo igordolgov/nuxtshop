@@ -1,6 +1,6 @@
 <!-- pages/admin/index.vue -->
 <template lang="pug">
-.admin-dashboard
+.admin-dashboard.mobile-nav-safe
   Header
   .container.mx-auto.px-4
     //- Заголовок и управление
@@ -216,7 +216,8 @@
       
       .loading.loading-spinner.loading-xs.text-primary(v-if="loading")
 
-  MobileNavFooter
+  //- Мобильная навигация: только < 768px (как на витрине)
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <style scoped>
@@ -233,6 +234,8 @@
 definePageMeta({
   middleware: 'admin-auth'
 })
+
+const { isMobile } = useMobileDetection()
 
 import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'

@@ -1,7 +1,7 @@
 <!-- app/pages/user/index.vue — личный кабинет: профиль, статистика,
      последние заказы (серверные статусы), избранное. -->
 <template lang="pug">
-.user-account.min-h-screen.bg-base-200
+.user-account.min-h-screen.bg-base-200.mobile-nav-safe
   //- ХЕДЕР
   ClientOnly
     Header
@@ -19,8 +19,8 @@
         h2.text-xl.font-bold.mb-3 Требуется авторизация
         button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") Войти
 
-    //- Основной контент
-    .space-y-4.pb-20(v-else)
+    //- Основной контент (нижний «воздух» даёт .mobile-nav-safe на корне)
+    .space-y-4(v-else)
       //- Верхняя строка — информация о пользователе
       .card.bg-base-100.shadow-sm
         .card-body.p-4
@@ -274,13 +274,15 @@
                         path(d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")
 
   //- МОБИЛЬНЫЙ ФУТЕР
-  MobileNavFooter(class="lg:hidden")
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <script setup>
 definePageMeta({
   middleware: 'user-auth',
 })
+
+const { isMobile } = useMobileDetection()
 
 const { $notify } = useNuxtApp()
 const appState = useAppState()

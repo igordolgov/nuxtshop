@@ -3,7 +3,7 @@
     смена статуса (PUT /api/orders/:id). Витрина вместо голого API.
     Данные — сервер (KV), не localStorage-зеркало. -->
 <template lang="pug">
-.admin-orders-page.min-h-screen.bg-base-100.flex.flex-col
+.admin-orders-page.min-h-screen.bg-base-100.flex.flex-col.mobile-nav-safe
   Header
 
   main.flex-1.max-w-5xl.w-full.mx-auto.px-3.py-4(class="lg:px-6")
@@ -200,13 +200,16 @@
                 span.loading.loading-spinner.loading-xs(v-if="updating.has(order.id)")
                 | Применить
 
-  MobileNavFooter
+  //- Мобильная навигация: только < 768px (как на витрине)
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <script setup>
 definePageMeta({
   middleware: 'admin-auth',
 })
+
+const { isMobile } = useMobileDetection()
 
 import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'

@@ -243,3 +243,14 @@ body {
 .slide-leave-to {
   transform: translateX(100%);
 }
+
+/* ─── Нижний «воздух» под фиксированной мобильной навигацией ────
+   MobileNavFooter — position:fixed, высоту потока не даёт: контент
+   страницы доходит до низа и прячется под меню (цены/кнопки недоступны
+   для тапа). Класс добавляется на корень страницы. Брейкпоинт совпадает
+   с useMobileDetection (< 768) — там навигация и показывается. */
+@media (max-width: 767.98px) {
+  .mobile-nav-safe {
+    padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
+  }
+}

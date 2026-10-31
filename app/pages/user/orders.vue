@@ -2,7 +2,7 @@
     пользователя с актуальными статусами (источник — сервер, не
     localStorage-зеркало). Повторная загрузка — pull-refresh кнопкой. -->
 <template lang="pug">
-.my-orders-page.min-h-screen.bg-base-100.flex.flex-col
+.my-orders-page.min-h-screen.bg-base-100.flex.flex-col.mobile-nav-safe
   Header
 
   main.flex-1.flex.flex-col.max-w-4xl.w-full.mx-auto.px-3.py-4(class="lg:px-6")

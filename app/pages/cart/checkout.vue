@@ -2,7 +2,7 @@
      оплата, подтверждение), отправка заказа на сервер (POST /api/orders —
      деньги пересчитывает сервер), экран успеха с реальным номером заказа. -->
 <template lang="pug">
-.checkout-page
+.checkout-page.mobile-nav-safe
   Header
   .container.mx-auto(class="sm:ml-17")
     //- ГОРИЗОНТАЛЬНЫЕ ШАГИ
@@ -424,7 +424,7 @@
             | Вернуться на главную
 
   //- Мобильный футер
-  MobileNavFooter(class="lg:hidden")
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <script setup>
@@ -434,6 +434,7 @@ definePageMeta({
 })
 
 // Header/MobileNavFooter/useCart/useProductUtils/useOrders — автоимпорт Nuxt
+const { isMobile } = useMobileDetection()
 const { $notify } = useNuxtApp()
 const {
   cartItems,

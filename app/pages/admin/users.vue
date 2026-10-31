@@ -1,5 +1,5 @@
 <template lang="pug">
-.admin-users-page.min-h-screen.bg-base-200.pb-14
+.admin-users-page.min-h-screen.bg-base-200.mobile-nav-safe
   //- Хедер
   .bg-base-100.shadow-sm.sticky.top-0.z-10
     .container.mx-auto.p-2(class="sm:p-3 lg:p-4")
@@ -180,12 +180,15 @@
               .stat-title Пользователей
               .stat-value {{ userCount }}
 
-  //- Мобильный футер
-  MobileNavFooter(class="lg:hidden")
+  //- Мобильная навигация: только < 768px (как на витрине;
+  //- pb-14 на корне был неудачной компенсацией — 56px < 60px навигации)
+  MobileNavFooter(v-if="isMobile")
 </template>
 
 <script setup>
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
+
+const { isMobile } = useMobileDetection()
 
 definePageMeta({
   middleware: 'admin-auth'
