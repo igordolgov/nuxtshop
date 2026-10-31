@@ -19,11 +19,14 @@ vi.mock('../../server/lib/storage', () => ({
 }));
 
 import {
+  MAX_NEWS_PRODUCTS,
   NEWS_CATEGORIES,
   NewsValidationError,
+  attachProducts,
   newsSeed,
   nextNewsId,
   normalizeNewsBody,
+  normalizeNewsProductIds,
   readNews,
   sanitizeNewsItem,
   sortNewsDesc,
@@ -127,6 +130,77 @@ describe('sanitizeNewsItem', () => {
 
   it('excerpt длиннее 220 символов — ошибка', () => {
     expect(() => sanitizeNewsItem({ ...validPayload, excerpt: 'э'.repeat(221) })).toThrow(/220/);
+  });
+
+  it('productIds нормализуются мягко: без ошибок, дубли/пустые долой', () => {
+    const clean = sanitizeNewsItem({
+      ...validPayload,
+      productIds: [' 3 ', '', '3', 5, null, '  4'],
+    });
+    expect(clean.productIds).toEqual(['3', '5', '4']);
+  });
+
+  it('productIds не массив → пустой список', () => {
+    expect(sanitizeNewsItem({ ...validPayload, productIds: 'abc' }).productIds).toEqual([]);
+    expect(sanitizeNewsItem(validPayload).productIds).toEqual([]);
+  });
+});
+
+describe('normalizeNewsProductIds', () => {
+  it('тримминг, пустые и дубли отбрасываются', () => {
+    expect(normalizeNewsProductIds([' 2 ', '2', '', '1'])).toEqual(['2', '1']);
+  });
+
+  it('не больше MAX_NEWS_PRODUCTS, лишнее молча срезается', () => {
+    const many = Array.from({ length: 10 }, (_, i) => String(i + 1));
+    const out = normalizeNewsProductIds(many);
+    expect(out).toHaveLength(MAX_NEWS_PRODUCTS);
+    expect(out).toEqual(many.slice(0, MAX_NEWS_PRODUCTS));
+  });
+
+  it('не массив и null-элементы безопасны', () => {
+    expect(normalizeNewsProductIds('nope')).toEqual([]);
+    expect(normalizeNewsProductIds([null, undefined, '7'])).toEqual(['7']);
+  });
+});
+
+describe('attachProducts (перелинковка с каталогом)', () => {
+  const products = [
+    { id: '1', slug: 'samsung', name: 'Samsung S23', price: 79990, image: '/i/1.webp', inStock: true },
+    { id: '2', slug: 'macbook', name: 'MacBook Pro 16', price: 249990, image: '/i/2.webp', inStock: false },
+  ];
+
+  it('порядок productIds сохраняется, поля — мини-карточка NewsProductCard', () => {
+    const [item] = attachProducts(
+      [{ ...newsSeed[0], id: '1', productIds: ['2', '1'] }],
+      products,
+    );
+    expect(item.products.map((p) => p.id)).toEqual(['2', '1']);
+    expect(item.products[0]).toEqual({
+      id: '2',
+      slug: 'macbook',
+      name: 'MacBook Pro 16',
+      price: 249990,
+      image: '/i/2.webp',
+      inStock: false,
+    });
+  });
+
+  it('несуществующие/удалённые id пропускаются, пустой список → []', () => {
+    const [a] = attachProducts([{ ...newsSeed[0], id: '1', productIds: ['99', '1'] }], products);
+    expect(a.products.map((p) => p.id)).toEqual(['1']);
+
+    // newsSeed[0] несёт сидовые productIds — для кейса «без списка» сбрасываем
+    const [b] = attachProducts([{ ...newsSeed[0], id: '1', productIds: undefined }], products);
+    expect(b.products).toEqual([]);
+  });
+
+  it('не мутирует новость и каталог', () => {
+    const item = { ...newsSeed[0], id: '1', productIds: ['1'] };
+    const itemCopy = { ...item };
+    const out = attachProducts([item], products);
+    expect(item).toEqual(itemCopy);
+    expect(out[0].products).toHaveLength(1);
   });
 });
 

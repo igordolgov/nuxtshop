@@ -15,8 +15,25 @@ export interface NewsItem {
   body: string[]
   /** Путь/URL изображения; '' — плитка без фото. */
   image: string
+  /**
+   * Товары из новости (перелинковка с каталогом): id из data:products.
+   * На витрину приходят уже джойненные товары (products). */
+  productIds?: string[]
   updatedAt?: string
 }
+
+/** Мини-карточка товара из новости (джойн на сервере, GET /api/news). */
+export interface NewsProductCard {
+  id: string
+  slug: string
+  name: string
+  price: number
+  image: string
+  inStock: boolean
+}
+
+/** Новость в ответе API — с товарами (перелинковка). */
+export type NewsWithProducts = NewsItem & { products: NewsProductCard[] }
 
 export const NEWS_CATEGORIES = ['Акции', 'Новинки', 'Компания', 'Обзоры'] as const
 

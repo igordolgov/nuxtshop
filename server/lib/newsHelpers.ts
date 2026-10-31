@@ -5,6 +5,7 @@
 // не ломает выдачу — страница новостей не должна 500-ить из-за лимитов).
 import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
+import type { Product } from './productHelpers';
 
 export const NEWS_KEY = 'data:news';
 
@@ -23,7 +24,26 @@ export interface NewsItem {
   body: string[];
   /** Путь ('/…'), data-URI или внешний URL; '' — плитка без фото. */
   image: string;
+  /**
+   * Товары из новости (перелинковка с каталогом): id из data:products,
+   * порядок = порядок показа. Необязательно; несуществующие id при
+   * показе просто пропускаются (товар мог быть удалён).
+   */
+  productIds?: string[];
   updatedAt: string;
+}
+
+/** Максимум товаров в одной новости — от переполненных payload и UI. */
+export const MAX_NEWS_PRODUCTS = 6;
+
+/** Мини-карточка товара для витрины новости (джойн на GET /api/news). */
+export interface NewsProductCard {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+  inStock: boolean;
 }
 
 // ─── Сид: те же 9 новостей, что были статикой на витрине ────────────────
@@ -43,6 +63,8 @@ export const newsSeed: NewsItem[] = [
       'Подборка акционных товаров собрана на главной странице каталога.',
     ],
     image: '/images/products/photo-1511707171634-5f897ff02aa9.webp',
+    // Смартфоны/ноутбуки/планшет — суть акции (id из data:products)
+    productIds: ['1', '2', '28'],
     updatedAt: '2026-10-28T09:00:00.000Z',
   },
   {
@@ -57,6 +79,8 @@ export const newsSeed: NewsItem[] = [
       'Отдельно отметим: комплект дешевле, чем консоль и второй геймпад по отдельности. Количество ограничено — успейте оформить заказ с доставкой на ближайший день.',
     ],
     image: '/images/products/photo-1606813907291-d86efa9b94db.webp',
+    // Консоли из новости: PS5 + Nintendo Switch
+    productIds: ['6', '27'],
     updatedAt: '2026-10-21T09:00:00.000Z',
   },
   {
@@ -84,6 +108,8 @@ export const newsSeed: NewsItem[] = [
       'Полные характеристики и цены — в карточке товара в каталоге.',
     ],
     image: '/images/products/photo-1505740420928-5e560c06d30e.webp',
+    // Герой обзора + альтернатива из той же категории
+    productIds: ['3', '25'],
     updatedAt: '2026-09-30T09:00:00.000Z',
   },
   {
@@ -97,6 +123,8 @@ export const newsSeed: NewsItem[] = [
       'Консультанты помогут выбрать конфигурацию под задачи и бюджет: напишите нам или приходите в шоурум.',
     ],
     image: '/images/products/photo-1541807084-5c52b6b3adef.webp',
+    // Ноутбук для учёбы + монитор и внешнее хранилище к нему
+    productIds: ['2', '19', '20'],
     updatedAt: '2026-09-18T09:00:00.000Z',
   },
   {
@@ -123,6 +151,8 @@ export const newsSeed: NewsItem[] = [
       'Напоминаем: на часы действует программа гарантии 2 года, а при получении поможем с первичной настройкой.',
     ],
     image: '/images/products/photo-1544117519-31a4b719223d.webp',
+    // Часы из новости + альтернативы в тех же категориях
+    productIds: ['5', '26', '16'],
     updatedAt: '2026-08-22T09:00:00.000Z',
   },
   {
@@ -136,6 +166,8 @@ export const newsSeed: NewsItem[] = [
       'Камеру можно потрогать и протестировать в шоуруме — приносите свою карту памяти.',
     ],
     image: '/images/products/photo-1502920917128-1aa500764cbd.webp',
+    // Камера из обзора
+    productIds: ['4'],
     updatedAt: '2026-08-10T09:00:00.000Z',
   },
   {
@@ -184,6 +216,22 @@ const MAX_PARAGRAPHS = 20;
 const MAX_PARAGRAPH_LEN = 2000;
 
 export class NewsValidationError extends Error {}
+
+/**
+ * Список id товаров из новости: строки, тримминг, без пустых и дублей,
+ * не больше MAX_NEWS_PRODUCTS. Мягкая нормализация (без ошибок):
+ * несуществующие id безвредны — при показе просто не джойнятся.
+ */
+export function normalizeNewsProductIds(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  const out: string[] = [];
+  for (const raw of input) {
+    const id = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
+    if (id && !out.includes(id)) out.push(id);
+    if (out.length >= MAX_NEWS_PRODUCTS) break;
+  }
+  return out;
+}
 
 /**
  * Тело новости: строка (переносы строк = абзацы) или массив строк.
@@ -249,6 +297,7 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): Omit<NewsItem, '
     excerpt,
     body,
     image,
+    productIds: normalizeNewsProductIds(raw?.productIds),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -265,4 +314,34 @@ export function sortNewsDesc(items: NewsItem[]): NewsItem[] {
 /** Следующий свободный числовой id (как у товаров). */
 export function nextNewsId(items: NewsItem[]): string {
   return items.length > 0 ? String(Math.max(...items.map((n) => Number(n.id) || 0)) + 1) : '1';
+}
+
+/** Новость с уже джойненными товарами (для витрины). */
+export type NewsWithProducts = NewsItem & { products: NewsProductCard[] };
+
+/**
+ * Перелинковка: к каждой новости — её товары из каталога (порядок
+ * productIds сохраняется, несуществующие/удалённые id пропускаются).
+ * Чистая функция — покрыта тестами; на GET /api/news джойнит readProducts.
+ */
+export function attachProducts(
+  items: NewsItem[],
+  products: Product[],
+): NewsWithProducts[] {
+  const byId = new Map(products.map((p) => [String(p.id), p]));
+  return items.map((item) => ({
+    ...item,
+    products: (item.productIds ?? []).flatMap((id) => {
+      const p = byId.get(String(id));
+      if (!p) return [];
+      return [{
+        id: String(p.id),
+        slug: p.slug,
+        name: p.name,
+        price: p.price,
+        image: p.image,
+        inStock: Boolean(p.inStock),
+      }];
+    }),
+  }));
 }

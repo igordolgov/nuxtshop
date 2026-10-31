@@ -137,6 +137,34 @@
               :key="i"
               class="text-base-content/80"
             ) {{ para }}
+
+            //- Товары из новости (перелинковка с каталогом): джойн на
+            //- сервере, карточка ведёт на страницу товара
+            .news-products(v-if="activeNews.products?.length")
+              h4.news-products-title Товары из новости
+              .news-products-grid
+                NuxtLink.news-product(
+                  v-for="p in activeNews.products"
+                  :key="p.id"
+                  :to="`/product/${p.id}`"
+                )
+                  .np-media
+                    img(
+                      :src="productImgSmall(p.image)"
+                      width="400" height="300"
+                      :alt="p.name"
+                      loading="lazy"
+                      @error="onProductImgError($event, p.image)"
+                    )
+                  .np-body
+                    .np-name {{ p.name }}
+                    .np-meta
+                      span.np-price {{ formatPrice(p.price) }} ₽
+                      span.np-stock(v-if="!p.inStock") Нет в наличии
+                  span.np-link Перейти
+                    svg(width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
+                      path(d="M5 12h14m-6-6l6 6-6 6")
+
           .modal-action
             button.btn.rounded-xl(type="button" @click="closeNews") Закрыть
 
@@ -144,11 +172,12 @@
 </template>
 
 <script setup lang="ts">
-import type { NewsItem } from '~/utils/news'
+import type { NewsWithProducts } from '~/utils/news'
 
 const { isMobile } = useMobileDetection()
 const route = useRoute()
 const router = useRouter()
+const { formatPrice, getSafeImage } = useProductUtils()
 
 // ─── Данные: сервер (KV) вместо статичного массива ───────────────────────
 // SSR: useAsyncData выполняется на сервере (внутренний вызов роута),
@@ -158,14 +187,14 @@ const {
   pending,
   error,
   refresh,
-} = await useAsyncData('news-list', () => $fetch<{ success: boolean; news: NewsItem[] }>('/api/news'))
+} = await useAsyncData('news-list', () => $fetch<{ success: boolean; news: NewsWithProducts[] }>('/api/news'))
 
-const items = computed<NewsItem[]>(() => newsData.value?.news ?? [])
+const items = computed<NewsWithProducts[]>(() => newsData.value?.news ?? [])
 
 const categories = ['Все', 'Акции', 'Новинки', 'Компания', 'Обзоры']
 const activeCategory = ref('Все')
 
-const filteredNews = computed<NewsItem[]>(() =>
+const filteredNews = computed<NewsWithProducts[]>(() =>
   activeCategory.value === 'Все'
     ? items.value
     : items.value.filter((n) => n.category === activeCategory.value)
@@ -178,8 +207,18 @@ const restNews = computed(() => filteredNews.value.slice(1))
 // используется и блоком «Последние новости» на главной)
 const placeholderIcon = newsPlaceholderIcon
 
-const activeNews = ref<NewsItem | null>(null)
-const openNews = (item: NewsItem) => {
+// Мини-карточка товара: small-вариант фото, при 404 — полноразмерный
+// (у части товаров small-версии нет). Фолбэк через @error
+const productImg = (image: string) => getSafeImage(image)
+const productImgSmall = (image: string) =>
+  getSafeImage(image.replace('/products/', '/products/small/'))
+const onProductImgError = (e: Event, image: string) => {
+  const el = e.target as HTMLImageElement
+  if (el && el.src !== productImg(image)) el.src = productImg(image)
+}
+
+const activeNews = ref<NewsWithProducts | null>(null)
+const openNews = (item: NewsWithProducts) => {
   activeNews.value = item
 }
 const closeNews = () => {
@@ -369,6 +408,110 @@ useSeoMeta({
   color: var(--color-primary);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+/* ─── Товары из новости (модалка) ─────────────────────────── */
+.news-products {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-base-300);
+}
+
+.news-products-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 0.75rem;
+}
+
+.news-products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .news-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.news-product {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) {
+  .news-product:hover {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.np-media {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-base-200);
+}
+
+.np-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.np-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem 0.75rem;
+}
+
+.np-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.np-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.np-price {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.np-stock {
+  font-size: 0.6875rem;
+  color: var(--color-error);
+}
+
+.np-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* ─── CTA-плашка ──────────────────────────────────────────── */

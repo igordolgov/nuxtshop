@@ -1,7 +1,8 @@
 <!-- ~/components/admin/AdminNews.vue — управление новостями (KV data:news).
      CRUD через /api/news (только админ): список, добавление, редактирование,
      удаление (confirm). Форма: заголовок, рубрика, дата, краткое описание,
-     изображение (путь/URL, preview), полный текст — абзацы с новой строки. -->
+     изображение (путь/URL, preview), полный текст — абзацы с новой строки,
+     товары из новости — пикер из каталога (перелинковка, до 6). -->
 <template lang="pug">
 .admin-news
   //- Тулбар
@@ -56,6 +57,8 @@
           .min-w-0.flex-1
             h3.font-medium.text-sm(class="line-clamp-1") {{ item.title }}
             p.text-xs(class="mt-0.5 text-base-content/50 line-clamp-1") {{ item.excerpt || 'Без краткого описания' }}
+            span.text-xs(class="mt-0.5 inline-block text-base-content/50")
+              | Товаров в новости: {{ item.products?.length ?? 0 }}
         .flex.gap-2.justify-end.flex-wrap
           a.btn.btn-ghost.btn-xs.rounded-lg(href="/news" target="_blank" rel="noopener") На сайте
           button.btn.btn-outline.btn-xs.rounded-lg(type="button" @click="openEdit(item)") Изменить
@@ -115,6 +118,25 @@
             placeholder="Первый абзац&#10;&#10;Второй абзац"
           )
 
+        //- Перелинковка: товары из новости (до 6, порядок = порядок показа)
+        .mt-3
+          span.form-label Товары из новости (до {{ MAX_PRODUCTS }})
+          .flex.gap-2
+            select.select.select-bordered.rounded-xl.w-full(v-model="pickedProductId")
+              option(value="" disabled) Выберите товар из каталога…
+              option(v-for="p in availableProducts" :key="p.id" :value="p.id") {{ p.name }} · {{ formatPrice(p.price) }} ₽
+            button.btn.btn-outline.btn-sm.rounded-xl.flex-shrink-0(
+              type="button"
+              :disabled="!pickedProductId"
+              @click="addProduct"
+            ) Добавить
+          .chosen-list.mt-2(v-if="form.productIds.length")
+            .chosen-chip(v-for="id in form.productIds" :key="id")
+              span.chosen-name {{ productById(id)?.name || `id ${id}` }}
+              button.chosen-remove(type="button" :aria-label="`Убрать товар id ${id}`" @click="removeProduct(id)") ✕
+          p.text-xs(class="mt-1 text-base-content/50")
+            | Выбрано: {{ form.productIds.length }} из {{ MAX_PRODUCTS }}. Несуществующие id при показе просто пропускаются.
+
         p.form-error(v-if="formError" role="alert") {{ formError }}
 
         .modal-action
@@ -128,10 +150,26 @@
 import { NEWS_CATEGORIES, formatNewsDate, newsTone } from '~/utils/news'
 
 const { $notify } = useNuxtApp()
+const { formatPrice } = useProductUtils()
+
+// Лимит товаров в новости — зеркало MAX_NEWS_PRODUCTS (server/lib/newsHelpers)
+const MAX_PRODUCTS = 6
 
 const items = ref([])
 const isLoading = ref(false)
 const loadError = ref(false)
+
+//- Каталог для пикера «Товары из новости»: публичный GET /api/products
+//- (без limit — голый массив). Не блокирует список новостей — грузится сам
+const catalog = ref([])
+const loadCatalog = async () => {
+  try {
+    const list = await $fetch('/api/products')
+    catalog.value = Array.isArray(list) ? list : []
+  } catch {
+    catalog.value = []
+  }
+}
 
 const sorted = computed(() =>
   [...items.value].sort((a, b) => {
@@ -178,7 +216,34 @@ const form = reactive({
   excerpt: '',
   image: '',
   body: '',
+  productIds: [],
 })
+
+//- ─── Пикер товаров из новости ────────────────────────────────────────────
+const pickedProductId = ref('')
+
+const productById = (id) => catalog.value.find((p) => String(p.id) === String(id))
+
+//- В селекте — только ещё не выбранные товары
+const availableProducts = computed(() =>
+  catalog.value.filter((p) => !form.productIds.includes(String(p.id))),
+)
+
+const addProduct = () => {
+  const id = String(pickedProductId.value || '')
+  if (!id) return
+  if (form.productIds.includes(id)) return
+  if (form.productIds.length >= MAX_PRODUCTS) {
+    $notify.error(`Не больше ${MAX_PRODUCTS} товаров на новость`)
+    return
+  }
+  form.productIds.push(id)
+  pickedProductId.value = ''
+}
+
+const removeProduct = (id) => {
+  form.productIds = form.productIds.filter((x) => x !== id)
+}
 
 const openCreate = () => {
   isNew.value = true
@@ -190,7 +255,9 @@ const openCreate = () => {
     excerpt: '',
     image: '',
     body: '',
+    productIds: [],
   })
+  pickedProductId.value = ''
   formError.value = ''
   showForm.value = true
 }
@@ -205,7 +272,9 @@ const openEdit = (item) => {
     excerpt: item.excerpt || '',
     image: item.image || '',
     body: (item.body || []).join('\n'),
+    productIds: (item.productIds ?? item.products?.map((p) => p.id) ?? []).map(String),
   })
+  pickedProductId.value = ''
   formError.value = ''
   showForm.value = true
 }
@@ -226,6 +295,7 @@ const save = async () => {
       excerpt: form.excerpt,
       image: form.image,
       body: form.body,
+      productIds: form.productIds,
     }
     const resp = isNew.value
       ? await $fetch('/api/news', { method: 'POST', body: payload })
@@ -253,7 +323,10 @@ const remove = async (item) => {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadCatalog()
+})
 </script>
 
 <style scoped>
@@ -269,5 +342,53 @@ onMounted(load)
   margin-top: 0.875rem;
   font-size: 0.875rem;
   color: var(--color-error);
+}
+
+/* ─── Выбранные товары новости (чипы) ─────────────────────── */
+.chosen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.chosen-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.625rem;
+  background: var(--color-base-200);
+  font-size: 0.8125rem;
+}
+
+.chosen-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chosen-remove {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--color-base-content);
+  opacity: 0.55;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.chosen-remove:hover {
+  background: color-mix(in oklab, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+  opacity: 1;
 }
 </style>
