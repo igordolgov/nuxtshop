@@ -20,7 +20,7 @@
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/mdi": "^1.2.3",
     "@nuxt/icon": "^2.6.2",
-    "@nuxt/image": "^2.2.0",
+    "@nuxt/image": "^2.2.1",
     "@pinia/nuxt": "^1.0.3",
     "@tailwindcss/vite": "^4.3.3",
     "@vite-pwa/nuxt": "^1.1.1",
@@ -38,7 +38,7 @@
     "@markuplint/vue-spec": "^5.4.0",
     "@types/node": "^26.6.6",
     "cross-env": "^10.1.0",
-    "knip": "^6.43.0",
+    "knip": "^6.44.1",
     "markuplint": "^5.4.0",
     "nuxt": "4.6.3",
     "oxfmt": "^0.75.0",
@@ -48,7 +48,7 @@
     "vite-plugin-remove-console": "^2.2.0",
     "vitest": "^5.0.5",
     "vue": "^3.5.44",
-    "wrangler": "^4.155.0"
+    "wrangler": "^4.156.0"
   },
   "packageManager": "pnpm@12.6.0"
 }

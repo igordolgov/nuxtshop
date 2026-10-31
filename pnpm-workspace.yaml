@@ -44,10 +44,10 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0 || 1.88.0'
   - oxfmt@0.70.0 || 0.71.0 || 0.73.0
   - oxlint@1.85.0 || 1.86.0 || 1.88.0
-  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0 || 4.155.0
-  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta || 5.20261023.2-beta
+  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0 || 4.155.0 || 4.156.0
+  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta || 5.20261023.2-beta || 5.20261023.3-beta
   - daisyui@5.7.47 || 5.7.50
-  - knip@6.40.0 || 6.41.0 || 6.42.0
+  - knip@6.40.0 || 6.41.0 || 6.42.0 || 6.44.0 || 6.44.1
   - '@markuplint/astro-parser@5.1.0 || 5.2.0 || 5.4.0'
   - '@markuplint/cli-utils@5.1.0 || 5.2.0'
   - '@markuplint/config-presets@5.1.0 || 5.2.0 || 5.4.0'
@@ -91,6 +91,8 @@ minimumReleaseAgeExclude:
   - '@markuplint/jsx-parser@5.4.0'
   - '@markuplint/markdown-parser@5.4.0'
   - '@markuplint/mdx-parser@5.4.0'
+  - '@nuxt/image@2.2.1'
+  - ipx@4.1.0
 peerDependencyRules:
   allowedVersions:
     typescript: "6"
