@@ -142,6 +142,11 @@
                 path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z")
               span.text-xs Заказы
 
+            button.btn.btn-outline.btn-xs(@click="navigateToPath('/admin/news')")
+              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
+                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2v9a2 2 0 01-2 2zM7 8h6M7 12h6M7 16h3")
+              span.text-xs Новости
+
 
     //- Две колонки: пользователи и статистика
     .grid.grid-cols-1.lg_grid-cols-2.gap-3(class="sm:ml-16")

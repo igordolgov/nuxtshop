@@ -1,0 +1,155 @@
+// Тесты server/lib/newsHelpers.ts — сид/самоисцеление KV, валидация
+// sanitizeNewsItem (сообщения ошибок), normalizeNewsBody, сортировка, id.
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ─── Мок KV (тот же паттерн, что в product-helpers.test.ts) ────────────
+const kvStore = new Map<string, unknown>();
+
+vi.mock('../../server/lib/storage', () => ({
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => {
+    const stored = kvStore.get(key);
+    return stored === undefined ? null : (structuredClone(stored) as unknown);
+  }),
+  kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
+    kvStore.set(key, structuredClone(value));
+  }),
+  kvDelete: vi.fn(async (_event: unknown, key: string) => {
+    kvStore.delete(key);
+  }),
+}));
+
+import {
+  NEWS_CATEGORIES,
+  NewsValidationError,
+  newsSeed,
+  nextNewsId,
+  normalizeNewsBody,
+  readNews,
+  sanitizeNewsItem,
+  sortNewsDesc,
+  writeNews,
+} from '../../server/lib/newsHelpers';
+
+const EVENT = {} as never;
+const KEY = 'data:news';
+
+const validPayload = {
+  title: 'Тестовая новость про доставку',
+  category: 'Компания',
+  date: '2026-11-01',
+  excerpt: 'Краткое описание',
+  body: 'Первый абзац\n\nВторой абзац',
+  image: '/images/products/photo-1511707171634-5f897ff02aa9.webp',
+};
+
+beforeEach(() => {
+  kvStore.clear();
+});
+
+describe('readNews / writeNews', () => {
+  it('пустое KV → отдаёт сид и самоисцеляется записью в KV', async () => {
+    const news = await readNews(EVENT);
+    expect(news).toHaveLength(newsSeed.length);
+    expect(kvStore.get(KEY)).toEqual(news);
+    // запись сида — best-effort, сид в KV совпадает с выданным
+    expect((kvStore.get(KEY) as unknown[])[0]).toHaveProperty('title');
+  });
+
+  it('хранящиеся данные приоритетнее сида', async () => {
+    const custom = [{ ...newsSeed[0], id: '1', title: 'Кастомная новость' }];
+    await writeNews(EVENT, custom);
+    const news = await readNews(EVENT);
+    expect(news).toHaveLength(1);
+    expect(news[0].title).toBe('Кастомная новость');
+  });
+
+  it('writeNews отвергает не-массив', async () => {
+    await expect(writeNews(EVENT, 'мусор' as never)).rejects.toThrow('array');
+  });
+});
+
+describe('normalizeNewsBody', () => {
+  it('строка → абзацы по переносам, пустые отбрасываются', () => {
+    expect(normalizeNewsBody('А\n\n  \nБ\n')).toEqual(['А', 'Б']);
+  });
+
+  it('массив строк тоже принимается', () => {
+    expect(normalizeNewsBody(['  А ', '', 'Б'])).toEqual(['А', 'Б']);
+  });
+
+  it('пустое тело — ошибка', () => {
+    expect(() => normalizeNewsBody('   ')).toThrow(NewsValidationError);
+    expect(() => normalizeNewsBody([])).toThrow(NewsValidationError);
+  });
+
+  it('абзац длиннее 2000 символов — ошибка', () => {
+    expect(() => normalizeNewsBody('x'.repeat(2001))).toThrow(/2000/);
+  });
+
+  it('не больше 20 абзацев', () => {
+    const many = Array.from({ length: 25 }, (_, i) => `Абзац ${i}`);
+    expect(normalizeNewsBody(many.join('\n'))).toHaveLength(20);
+  });
+});
+
+describe('sanitizeNewsItem', () => {
+  it('валидная полезная нагрузка проходит и нормализует тело', () => {
+    const clean = sanitizeNewsItem(validPayload);
+    expect(clean.title).toBe('Тестовая новость про доставку');
+    expect(clean.body).toEqual(['Первый абзац', 'Второй абзац']);
+    expect(clean.updatedAt).toBeTruthy();
+  });
+
+  it('короткий заголовок — ошибка', () => {
+    expect(() => sanitizeNewsItem({ ...validPayload, title: 'Хай' })).toThrow(/Заголовок/);
+  });
+
+  it('недопустимая рубрика — ошибка с перечнем', () => {
+    expect(() => sanitizeNewsItem({ ...validPayload, category: 'Слухи' })).toThrow(
+      new RegExp(NEWS_CATEGORIES.join(', '))
+    );
+  });
+
+  it('битая дата — ошибка формата', () => {
+    expect(() => sanitizeNewsItem({ ...validPayload, date: '31.11.2026' })).toThrow(/ГГГГ-ММ-ДД/);
+    expect(() => sanitizeNewsItem({ ...validPayload, date: '2026-13-99' })).toThrow(/ГГГГ-ММ-ДД/);
+  });
+
+  it('пустое изображение допустимо, мусорное — нет', () => {
+    expect(sanitizeNewsItem({ ...validPayload, image: '' }).image).toBe('');
+    expect(() => sanitizeNewsItem({ ...validPayload, image: 'javascript:alert(1)' })).toThrow(
+      /Изображение/
+    );
+    expect(sanitizeNewsItem({ ...validPayload, image: 'https://cdn.example.ru/x.webp' }).image).toBe(
+      'https://cdn.example.ru/x.webp'
+    );
+  });
+
+  it('excerpt длиннее 220 символов — ошибка', () => {
+    expect(() => sanitizeNewsItem({ ...validPayload, excerpt: 'э'.repeat(221) })).toThrow(/220/);
+  });
+});
+
+describe('sortNewsDesc / nextNewsId', () => {
+  const items = [
+    { id: '1', date: '2026-10-01' },
+    { id: '2', date: '2026-10-28' },
+    { id: '3', date: '2026-10-01' },
+  ];
+
+  it('свежие сверху, при равных датах больший id первым', () => {
+    expect(sortNewsDesc(items).map((n) => n.id)).toEqual(['2', '3', '1']);
+  });
+
+  it('не мутирует вход', () => {
+    const copy = [...items];
+    sortNewsDesc(items);
+    expect(items).toEqual(copy);
+  });
+
+  it('nextNewsId: max+1, на пустом — «1»', () => {
+    expect(nextNewsId(items)).toBe('4');
+    expect(nextNewsId([])).toBe('1');
+    expect(nextNewsId([{ id: '41', date: '2026-01-01' }])).toBe('42');
+  });
+});
