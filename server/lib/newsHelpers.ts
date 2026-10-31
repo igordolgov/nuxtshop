@@ -319,29 +319,87 @@ export function nextNewsId(items: NewsItem[]): string {
 /** Новость с уже джойненными товарами (для витрины). */
 export type NewsWithProducts = NewsItem & { products: NewsProductCard[] };
 
+// ─── Автоподбор товаров по рубрике (пустой productIds → правило рубрики) ─
+//
+// Новости без ручного выбора не должны оставаться без перелинковки:
+// витрина подбирает товары сама, по рубрике новости. Правила
+// детерминированные (без Date.now/random — SSR-выдача и тесты стабильны)
+// и опираются на реальные данные каталога. Ручной выбор в админке всегда
+// приоритетнее — автоподбор только заполняет пробел.
+
+const numericId = (p: Product): number => Number(p.id) || 0;
+
 /**
- * Перелинковка: к каждой новости — её товары из каталога (порядок
- * productIds сохраняется, несуществующие/удалённые id пропускаются).
- * Чистая функция — покрыта тестами; на GET /api/news джойнит readProducts.
+ * Автоподбор товаров новости по её рубрике: возвращает id (до
+ * MAX_NEWS_PRODUCTS) в порядке показа. Чистая функция — вход не мутируется
+ * (фильтр копирует, сортируется копия), покрыта тестами.
+ *
+ * - Акции    → в наличии, от самого доступного по цене (выгодные предложения);
+ * - Новинки  → свежие добавления каталога (больше числовой id — позже добавлен);
+ * - Обзоры   → самые подробные карточки (больше фото в галерее);
+ * - Компания → хиты склада (больше запас — активнее продвигаем);
+ * - неизвестная рубрика → [] (секция на витрине просто не рендерится).
+ */
+export function autopickProductIds(category: string, products: Product[]): string[] {
+  const pool = products.filter((p) => p && typeof p === 'object');
+  let picked: Product[] = [];
+  switch (category) {
+    case 'Акции':
+      picked = pool
+        .filter((p) => p.inStock)
+        .sort((a, b) => a.price - b.price || numericId(a) - numericId(b));
+      break;
+    case 'Новинки':
+      picked = pool.sort((a, b) => numericId(b) - numericId(a));
+      break;
+    case 'Обзоры':
+      picked = pool.sort(
+        (a, b) => (b.gallery?.length ?? 0) - (a.gallery?.length ?? 0) || numericId(b) - numericId(a),
+      );
+      break;
+    case 'Компания':
+      picked = pool.sort(
+        (a, b) => (b.stockQuantity ?? 0) - (a.stockQuantity ?? 0) || numericId(a) - numericId(b),
+      );
+      break;
+    default:
+      picked = [];
+  }
+  return picked.slice(0, MAX_NEWS_PRODUCTS).map((p) => String(p.id));
+}
+
+/**
+ * Перелинковка: к каждой новости — её товары из каталога. Порядок ручного
+ * productIds сохраняется, несуществующие/удалённые id пропускаются; пустой
+ * список → автоподбор по рубрике новости (autopickProductIds), секция на
+ * витрине не пропадает. Чистая функция — покрыта тестами; на GET /api/news
+ * джойнит readProducts.
  */
 export function attachProducts(
   items: NewsItem[],
   products: Product[],
 ): NewsWithProducts[] {
   const byId = new Map(products.map((p) => [String(p.id), p]));
-  return items.map((item) => ({
-    ...item,
-    products: (item.productIds ?? []).flatMap((id) => {
-      const p = byId.get(String(id));
-      if (!p) return [];
-      return [{
-        id: String(p.id),
-        slug: p.slug,
-        name: p.name,
-        price: p.price,
-        image: p.image,
-        inStock: Boolean(p.inStock),
-      }];
-    }),
-  }));
+  return items.map((item) => {
+    // Ручной выбор приоритетен; пусто → автоподбор по рубрике.
+    // В ответ отдаём только карточки: сохранённые productIds не подменяем.
+    const ids = item.productIds?.length
+      ? item.productIds
+      : autopickProductIds(item.category, products);
+    return {
+      ...item,
+      products: ids.flatMap((id) => {
+        const p = byId.get(String(id));
+        if (!p) return [];
+        return [{
+          id: String(p.id),
+          slug: p.slug,
+          name: p.name,
+          price: p.price,
+          image: p.image,
+          inStock: Boolean(p.inStock),
+        }];
+      }),
+    };
+  });
 }

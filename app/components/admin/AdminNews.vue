@@ -136,6 +136,8 @@
               button.chosen-remove(type="button" :aria-label="`Убрать товар id ${id}`" @click="removeProduct(id)") ✕
           p.text-xs(class="mt-1 text-base-content/50")
             | Выбрано: {{ form.productIds.length }} из {{ MAX_PRODUCTS }}. Несуществующие id при показе просто пропускаются.
+          p.text-xs(class="text-base-content/50")
+            | Если ничего не выбрать, на витрине товары подберутся автоматически по рубрике новости.
 
         p.form-error(v-if="formError" role="alert") {{ formError }}
 
@@ -272,7 +274,11 @@ const openEdit = (item) => {
     excerpt: item.excerpt || '',
     image: item.image || '',
     body: (item.body || []).join('\n'),
-    productIds: (item.productIds ?? item.products?.map((p) => p.id) ?? []).map(String),
+    // Только реально сохранённый ручной выбор: item.products содержит
+    // в том числе автоподобранные товары (фолбэк на GET /api/news),
+    // подставлять их в форму нельзя — сохранение зафиксировало бы их
+    // как ручные, и автоподбор по рубрике перестал бы обновляться.
+    productIds: (item.productIds ?? []).map(String),
   })
   pickedProductId.value = ''
   formError.value = ''

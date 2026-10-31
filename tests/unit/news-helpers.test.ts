@@ -1,5 +1,6 @@
 // Тесты server/lib/newsHelpers.ts — сид/самоисцеление KV, валидация
-// sanitizeNewsItem (сообщения ошибок), normalizeNewsBody, сортировка, id.
+// sanitizeNewsItem (сообщения ошибок), normalizeNewsBody, сортировка, id,
+// автоподбор товаров по рубрике (autopickProductIds) и фолбэк в джойне.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Мок KV (тот же паттерн, что в product-helpers.test.ts) ────────────
@@ -23,6 +24,7 @@ import {
   NEWS_CATEGORIES,
   NewsValidationError,
   attachProducts,
+  autopickProductIds,
   newsSeed,
   nextNewsId,
   normalizeNewsBody,
@@ -164,6 +166,68 @@ describe('normalizeNewsProductIds', () => {
   });
 });
 
+describe('autopickProductIds — автоподбор по рубрике', () => {
+  const pool = [
+    { id: '1', price: 79990, inStock: true, stockQuantity: 15, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '2', price: 249990, inStock: false, stockQuantity: 8, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '3', price: 29990, inStock: true, stockQuantity: 25, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '4', price: 189990, inStock: false, stockQuantity: 0, gallery: ['a', 'b', 'c'] },
+    { id: '5', price: 45990, inStock: true, stockQuantity: 12, gallery: ['a', 'b'] },
+    { id: '6', price: 69990, inStock: true, stockQuantity: 5, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '7', price: 4990, inStock: true, stockQuantity: 30, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '8', price: 12990, inStock: true, stockQuantity: 18, gallery: ['a', 'b', 'c', 'd'] },
+    { id: '9', price: 1990, inStock: true, stockQuantity: 45, gallery: ['a', 'b', 'c', 'd'] },
+  ];
+
+  it('Акции → в наличии, от самого доступного', () => {
+    expect(autopickProductIds('Акции', pool)).toEqual(['9', '7', '8', '3', '5', '6']);
+  });
+
+  it('Новинки → свежие добавления каталога (id desc)', () => {
+    expect(autopickProductIds('Новинки', pool)).toEqual(['9', '8', '7', '6', '5', '4']);
+  });
+
+  it('Обзоры → подробные карточки (галерея desc), при равенстве id desc', () => {
+    expect(autopickProductIds('Обзоры', pool)).toEqual(['9', '8', '7', '6', '3', '2']);
+  });
+
+  it('Компания → хиты склада (запас desc), при равенстве id asc', () => {
+    expect(autopickProductIds('Компания', pool)).toEqual(['9', '7', '3', '8', '1', '5']);
+  });
+
+  it('тай-брейки: равный запас → меньший id (Компания), равная галерея → больший id (Обзоры)', () => {
+    const tie = [
+      { id: '10', price: 100, inStock: true, stockQuantity: 5, gallery: ['a'] },
+      { id: '11', price: 100, inStock: true, stockQuantity: 5, gallery: ['a'] },
+    ];
+    expect(autopickProductIds('Компания', tie)).toEqual(['10', '11']);
+    expect(autopickProductIds('Обзоры', tie)).toEqual(['11', '10']);
+  });
+
+  it('неизвестная рубрика → пусто, пустой каталог → пусто', () => {
+    expect(autopickProductIds('Слухи', pool)).toEqual([]);
+    expect(autopickProductIds('Акции', [])).toEqual([]);
+  });
+
+  it('лимит MAX_NEWS_PRODUCTS', () => {
+    const many = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i + 1),
+      price: 100,
+      inStock: true,
+      stockQuantity: 1,
+      gallery: [],
+    }));
+    expect(autopickProductIds('Новинки', many)).toHaveLength(MAX_NEWS_PRODUCTS);
+  });
+
+  it('не мутирует каталог', () => {
+    const copy = structuredClone(pool);
+    autopickProductIds('Обзоры', pool);
+    autopickProductIds('Компания', pool);
+    expect(pool).toEqual(copy);
+  });
+});
+
 describe('attachProducts (перелинковка с каталогом)', () => {
   const products = [
     { id: '1', slug: 'samsung', name: 'Samsung S23', price: 79990, image: '/i/1.webp', inStock: true },
@@ -186,13 +250,23 @@ describe('attachProducts (перелинковка с каталогом)', () =
     });
   });
 
-  it('несуществующие/удалённые id пропускаются, пустой список → []', () => {
+  it('несуществующие/удалённые id пропускаются', () => {
     const [a] = attachProducts([{ ...newsSeed[0], id: '1', productIds: ['99', '1'] }], products);
     expect(a.products.map((p) => p.id)).toEqual(['1']);
+  });
 
-    // newsSeed[0] несёт сидовые productIds — для кейса «без списка» сбрасываем
-    const [b] = attachProducts([{ ...newsSeed[0], id: '1', productIds: undefined }], products);
-    expect(b.products).toEqual([]);
+  it('пустой productIds → автоподбор по рубрике новости', () => {
+    // newsSeed[0] — «Акции»: Samsung в наличии, MacBook нет; правило
+    // «в наличии от доступного» оставляет единственного кандидата Samsung
+    const [b] = attachProducts([{ ...newsSeed[0], id: '1', productIds: [] }], products);
+    expect(b.products.map((p) => p.id)).toEqual(['1']);
+    // сохранённые productIds в ответе не подменяются
+    expect(b.productIds).toEqual([]);
+  });
+
+  it('ручной выбор приоритетнее автоподбора', () => {
+    const [c] = attachProducts([{ ...newsSeed[0], id: '1', productIds: ['2'] }], products);
+    expect(c.products.map((p) => p.id)).toEqual(['2']);
   });
 
   it('не мутирует новость и каталог', () => {
