@@ -1,225 +1,104 @@
-<!-- pages/admin/index.vue -->
+<!-- pages/admin/index.vue — дашборд администратора.
+     Данные — только с сервера: сводка /api/admin/stats + последние
+     заказы /api/orders (limit 5). Демо-метрики и рандом убраны —
+     воркеры Cloudflare их не отдают. Разметка 2024+: KPI-карточки,
+     плитки быстрых действий, панели заказов/пользователей,
+     индикатор склада ( раньше — сломанные классы lg_grid-cols-4,
+     из-за которых сетка не расходилась на десктопе). -->
 <template lang="pug">
 .admin-dashboard.mobile-nav-safe
   Header
-  .container.mx-auto.px-4
-    //- Заголовок и управление
-    .card.bg-base-100.shadow-sm.mb-4(class="sm:ml-10")
-      .card-body.py-4
-        .flex.flex-col.sm_flex-row.justify-between.items-start.sm_items-center.gap-3
-          .flex.items-center.gap-3
-            .avatar
-              .w-10.h-10.rounded-full.bg-primary.flex.items-center.justify-center.text-white
-                span.text-sm.font-bold A
-            div
-              h1.text-lg.font-bold.text-base-content Панель администратора
-              p.text-xs.text-base-content.opacity-70 {{ appState.user?.name || 'Администратор' }} • {{ currentTime }}
-          
-          .flex.flex-wrap.gap-2
-            .badge.badge-primary.badge-sm Админ
-            button.btn.btn-xs.btn-error(@click="handleLogout")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1")
-              span.text-xs Выйти
+  main.container.mx-auto.px-3.py-4(class="sm:px-4 lg:px-6")
+    //- Приветствие и управление
+    .flex.flex-col.gap-3(class="sm:flex-row sm:items-center sm:justify-between")
+      .flex.items-center.gap-3
+        .dash-avatar
+          icon(name="heroicons:shield-user" size="22")
+        div
+          h1.text-xl.font-bold.text-base-content Панель администратора
+          p.dash-sub {{ appState.user?.name || 'Администратор' }} · {{ todayLabel }}
+      .flex.gap-2
+        button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="refreshStats" aria-label="Обновить данные")
+          icon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
+          span.hidden(class="sm:inline") Обновить
+        button.btn.btn-sm.btn-outline.rounded-xl(
+          class="hover:bg-error hover:text-error-content hover:border-error"
+          @click="handleLogout"
+        )
+          icon(name="heroicons:arrow-right-on-rectangle" size="18")
+          span Выйти
 
-    //- Основная статистика - 4 карточки в ряд
-    .grid.grid-cols-2.lg_grid-cols-4.gap-3.mb-4(class="sm:ml-16")
-      //- Пользователи
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.items-center.gap-2
-            .w-8.h-8.rounded-full.bg-blue-100.flex.items-center.justify-center
-              svg.w-4.h-4.text-blue-600(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z")
-            div
-              p.text-lg.font-bold.text-base-content {{ realStats.totalUsers }}
-              p.text-xs.text-base-content.opacity-70 Пользователи
-          .badge.badge-xs.badge-outline.badge-success.mt-1(v-if="realStats.newUsers > 0") +{{ realStats.newUsers }}
+    //- KPI-карточки
+    .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
+      .stat-card(v-for="kpi in kpis" :key="kpi.label")
+        .stat-icon(:class="`stat-icon-${kpi.tone}`")
+          icon(:name="kpi.icon" size="20")
+        .stat-num {{ kpi.value }}
+        .stat-label {{ kpi.label }}
+        .stat-badge(v-if="kpi.badge" :class="`stat-badge-${kpi.tone}`") {{ kpi.badge }}
 
-      //- Товары
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.items-center.gap-2
-            .w-8.h-8.rounded-full.bg-green-100.flex.items-center.justify-center
-              svg.w-4.h-4.text-green-600(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
-            div
-              p.text-lg.font-bold.text-base-content {{ realStats.totalProducts }}
-              p.text-xs.text-base-content.opacity-70 Товары
-          .badge.badge-xs.badge-outline.mt-1 В каталоге
+    //- Быстрые действия
+    .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
+      NuxtLink.quick-tile(v-for="q in quickLinks" :key="q.to" :to="q.to" prefetch)
+        .quick-icon
+          icon(:name="q.icon" size="20")
+        .quick-text
+          .quick-title {{ q.title }}
+          .quick-sub {{ q.sub }}
+        icon.quick-arrow(name="heroicons:chevron-right" size="16")
 
-      //- Заказы
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.items-center.gap-2
-            .w-8.h-8.rounded-full.bg-purple-100.flex.items-center.justify-center
-              svg.w-4.h-4.text-purple-600(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z")
-            div
-              p.text-lg.font-bold.text-base-content {{ realStats.totalOrders }}
-              p.text-xs.text-base-content.opacity-70 Заказы
-          .badge.badge-xs.badge-outline.badge-warning.mt-1(v-if="realStats.pendingOrders > 0") {{ realStats.pendingOrders }} ожидает
+    //- Последние заказы и пользователи
+    .grid.grid-cols-1.gap-3.mt-4(class="lg:grid-cols-2")
+      .panel
+        .panel-head
+          h2.panel-title Последние заказы
+          NuxtLink.panel-link(to="/admin/orders" prefetch) Все заказы
+        .panel-empty(v-if="!realStats.recentOrders.length") Заказов пока нет
+        .panel-list(v-else)
+          .row-item(v-for="order in realStats.recentOrders" :key="order.id")
+            .row-main
+              .row-title Заказ {{ order.id }}
+              .row-sub {{ order.date }}
+            span.badge.badge-sm(:class="getOrderStatusClass(order.status)") {{ statusLabel(order.status) }}
 
-      //- Доход
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.items-center.gap-2
-            .w-8.h-8.rounded-full.bg-orange-100.flex.items-center.justify-center
-              svg.w-4.h-4.text-orange-600(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1")
-            div
-              p.text-lg.font-bold.text-base-content {{ formatPrice(realStats.revenue) }}
-              p.text-xs.text-base-content.opacity-70 Доход
-          .badge.badge-xs.badge-outline.badge-success.mt-1 За всё время
+      .panel
+        .panel-head
+          h2.panel-title Последние пользователи
+          NuxtLink.panel-link(to="/admin/users" prefetch) Все пользователи
+        .panel-empty(v-if="!realStats.recentUsers.length") Пользователей пока нет
+        .panel-list(v-else)
+          .row-item(v-for="user in realStats.recentUsers" :key="user.id")
+            .row-main
+              .flex.items-center.gap-2.min-w-0
+                .user-avatar {{ getUserInitials(user.name) }}
+                .min-w-0
+                  .row-title.truncate {{ user.name }}
+                  .row-sub.truncate {{ user.email }}
+            span.badge.badge-sm(:class="getRoleBadgeClass(user.role)") {{ getUserRoleText(user.role) }}
 
-    //- Три колонки: пользователи, заказы, действия
-    .grid.grid-cols-1.lg_grid-cols-3.gap-3.mb-4(class="sm:ml-16")
-      //- Активность пользователей
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.justify-between.items-center.mb-2
-            h2.card-title.text-md.font-semibold Активность
-            .text-xs.text-base-content.opacity-70 Сегодня
-            
-          .space-y-2
-            .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs
-              span Новые регистрации
-              .badge.badge-sm.badge-success +{{ realStats.todayUsers }}
-            
-            .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs
-              span Новые за неделю
-              .badge.badge-sm.badge-info +{{ realStats.newUsers }}
-            
-            .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs
-              span Ожидают обработки
-              .badge.badge-sm.badge-primary {{ realStats.pendingOrders }}
+    //- Склад и система
+    .grid.grid-cols-1.gap-3.mt-4(class="lg:grid-cols-2")
+      .panel
+        .panel-head
+          h2.panel-title Наличие на складе
+        .stock-bar(role="img" :aria-label="`В наличии ${realStats.inStock} из ${realStats.totalProducts}`")
+          .stock-fill(:style="{ width: stockPercent + '%' }")
+        .stock-legend
+          span ✓ В наличии: {{ realStats.inStock }}
+          span(class="text-error") ✕ Нет в наличии: {{ realStats.outOfStock }}
 
-      //- Последние заказы
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.justify-between.items-center.mb-2
-            h2.card-title.text-md.font-semibold Последние заказы
-            NuxtLink.btn.btn-xs.btn-outline(to="/admin/orders" prefetch) 
-              span.text-xs Все
-              svg.w-3.h-3.ml-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7")
-          
-          .space-y-2(v-if="realStats.recentOrders.length > 0")
-            .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs(
-              v-for="order in realStats.recentOrders" 
-              :key="order.id"
-            )
-              .flex.items-center.gap-2
-                .w-6.h-6.rounded-full.bg-primary.flex.items-center.justify-center.text-white.text-xs
-                  span №
-                div
-                  .font-medium Заказ {{ order.id }}
-                  .text-xs.opacity-70 {{ order.date }}
-              .badge.badge-sm(
-                :class="getOrderStatusClass(order.status)"
-              ) {{ statusLabel(order.status) }}
-          
-          .text-center.py-2(v-else)
-            .text-sm.text-base-content.opacity-60 Нет заказов
-
-      //- Быстрый доступ
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          h2.card-title.text-md.font-semibold.mb-2 Быстрый доступ
-          .grid.grid-cols-2.gap-2
-            button.btn.btn-primary.btn-xs(@click="navigateToPath('/admin/users')")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z")
-              span.text-xs Пользователи
-            
-            button.btn.btn-outline.btn-xs(@click="navigateToPath('/admin/products')")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
-              span.text-xs Товары
-            
-            button.btn.btn-outline.btn-xs(@click="navigateToPath('/admin/orders')")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z")
-              span.text-xs Заказы
-
-            button.btn.btn-outline.btn-xs(@click="navigateToPath('/admin/news')")
-              svg.w-3.h-3.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2v9a2 2 0 01-2 2zM7 8h6M7 12h6M7 16h3")
-              span.text-xs Новости
-
-
-    //- Две колонки: пользователи и статистика
-    .grid.grid-cols-1.lg_grid-cols-2.gap-3(class="sm:ml-16")
-      //- Последние пользователи
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.justify-between.items-center.mb-2
-            h2.card-title.text-md.font-semibold Последние пользователи
-            NuxtLink.btn.btn-xs.btn-outline(to="/admin/users" prefetch) 
-              span.text-xs Все
-              svg.w-3.h-3.ml-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7")
-          
-          .space-y-2(v-if="realStats.recentUsers.length > 0")
-            .flex.items-center.justify-between.p-2.bg-base-200.rounded.text-xs(
-              v-for="user in realStats.recentUsers" 
-              :key="user.id"
-            )
-              .flex.items-center.gap-2
-                .avatar
-                  .w-6.h-6.rounded-full.bg-primary.flex.items-center.justify-center.text-white.text-xs.font-bold
-                    span {{ getUserInitials(user.name) }}
-                div
-                  .font-medium {{ user.name }}
-                  .text-xs.opacity-70 {{ user.email }}
-              .badge.badge-sm(
-                :class="getRoleBadgeClass(user.role)"
-              ) {{ getUserRoleText(user.role) }}
-          
-          .text-center.py-2(v-else)
-            .text-sm.text-base-content.opacity-60 Нет пользователей
-
-      //- Статистика системы
-      .card.compact.bg-base-100.shadow-xs.border
-        .card-body.p-3
-          .flex.justify-between.items-center.mb-2
-            h2.card-title.text-md.font-semibold Статистика системы
-            .flex.gap-1
-              button.btn.btn-xs.btn-ghost(@click="refreshStats" :disabled="loading")
-                svg.w-3.h-3(:class="{ 'animate-spin': loading }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")
-          
-          .space-y-2
-            .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Товары в наличии
-              .badge.badge-sm.badge-success {{ realStats.inStock }}
-            
-            .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Нет в наличии
-              .badge.badge-sm(:class="realStats.outOfStock > 0 ? 'badge-error' : 'badge-neutral'") {{ realStats.outOfStock }}
-            
-            .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Кэш каталога: попадания
-              .badge.badge-sm.badge-success {{ realStats.cacheHits }}
-            
-            .flex.justify-between.items-center.p-2.bg-base-200.rounded.text-xs
-              span Кэш: промахи / записей
-              .badge.badge-sm.badge-info {{ realStats.cacheMisses }} / {{ realStats.cacheSize }}
-
-    //- Отладочная информация (скрыта по умолчанию)
-    .card.bg-warning.bg-opacity-10.border.border-warning.border-opacity-20.mt-3(v-if="debugInfo && showDebug")
-      .card-body.p-2
-        .flex.items-center.justify-between.mb-1
-          .flex.items-center.gap-1
-            svg.w-3.h-3.text-warning(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
-              path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z")
-            span.text-xs.font-medium Отладка
-          .flex.gap-1
-            button.btn.btn-xs(@click="showDebug = false") ×
-            button.btn.btn-xs.btn-warning(@click="testApiConnection") Тест API
-        pre.text-xs {{ debugInfo }}
-      
-      .loading.loading-spinner.loading-xs.text-primary(v-if="loading")
+      .panel
+        .panel-head
+          h2.panel-title Система
+        .panel-list
+          .row-item
+            .row-main
+              .row-title Кэш каталога: попадания
+            span.badge.badge-sm.badge-success {{ realStats.cacheHits }}
+          .row-item
+            .row-main
+              .row-title Кэш: промахи / записей
+            span.badge.badge-sm.badge-info {{ realStats.cacheMisses }} / {{ realStats.cacheSize }}
 
   //- Мобильная навигация: только < 768px (как на витрине)
   MobileNavFooter(v-if="isMobile")
@@ -230,8 +109,280 @@
   min-height: calc(80dvh - 14px);
 }
 
-.card.compact .card-body {
+/* Приветствие */
+.dash-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.dash-sub {
+  font-size: 0.75rem;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+
+@media (min-width: 640px) {
+  .dash-sub {
+    font-size: 0.8125rem;
+  }
+}
+
+/* KPI-карточки */
+.stat-card {
+  position: relative;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 1rem;
+  padding: 0.875rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) {
+  .stat-card:hover {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.stat-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.stat-icon-info {
+  background: color-mix(in oklab, var(--color-info) 15%, transparent);
+  color: var(--color-info);
+}
+
+.stat-icon-primary {
+  background: color-mix(in oklab, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+}
+
+.stat-icon-warning {
+  background: color-mix(in oklab, var(--color-warning) 18%, transparent);
+  color: var(--color-warning);
+}
+
+.stat-icon-success {
+  background: color-mix(in oklab, var(--color-success) 15%, transparent);
+  color: var(--color-success);
+}
+
+.stat-num {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-base-content);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+
+.stat-badge {
+  display: inline-block;
+  margin-top: 0.375rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.stat-badge-info {
+  background: color-mix(in oklab, var(--color-info) 14%, transparent);
+  color: var(--color-info);
+}
+
+.stat-badge-primary {
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.stat-badge-warning {
+  background: color-mix(in oklab, var(--color-warning) 16%, transparent);
+  color: var(--color-warning);
+}
+
+.stat-badge-success {
+  background: color-mix(in oklab, var(--color-success) 14%, transparent);
+  color: var(--color-success);
+}
+
+/* Плитки быстрых действий */
+.quick-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   padding: 0.75rem;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.2s ease;
+}
+
+@media (hover: hover) {
+  .quick-tile:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.07);
+  }
+}
+
+.quick-icon {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  flex-shrink: 0;
+}
+
+.quick-text {
+  min-width: 0;
+}
+
+.quick-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.quick-sub {
+  font-size: 0.6875rem;
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-arrow {
+  margin-left: auto;
+  color: color-mix(in oklab, var(--color-base-content) 40%, transparent);
+  flex-shrink: 0;
+}
+
+/* Панели */
+.panel {
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 1rem;
+  padding: 0.875rem 1rem;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.panel-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.panel-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.panel-empty {
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+}
+
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  background: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+}
+
+.row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.row-title {
+  font-weight: 600;
+  color: var(--color-base-content);
+}
+
+.row-sub {
+  font-size: 0.6875rem;
+  color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+}
+
+.user-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Склад: индикатор заполненности */
+.stock-bar {
+  height: 0.625rem;
+  border-radius: 9999px;
+  background: var(--color-base-200);
+  overflow: hidden;
+}
+
+.stock-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--color-success);
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.stock-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
 }
 </style>
 
@@ -249,16 +400,13 @@ const { $notify } = useNuxtApp()
 const appState = useAppState()
 
 // Реальная статистика: сводка с /api/admin/stats + последние заказы
-// с /api/orders. Всё, что отображается, приходит с сервера — демо-данные
-// и рандом-«метрики» (сервер/память/uptime) убраны: воркеры Cloudflare
-// их не отдают.
+// с /api/orders. Всё, что отображается, приходит с сервера.
 const realStats = ref({
   totalUsers: 0,
   totalProducts: 0,
   totalOrders: 0,
   revenue: 0,
   newUsers: 0,
-  todayUsers: 0,
   pendingOrders: 0,
   inStock: 0,
   outOfStock: 0,
@@ -270,9 +418,53 @@ const realStats = ref({
 })
 
 const loading = ref(false)
-const debugInfo = ref('')
-const showDebug = ref(false)
-const currentTime = ref('')
+const todayLabel = ref('')
+
+// Заголовок KPI-карточек: значения из реальной статистики
+const kpis = computed(() => [
+  {
+    label: 'Пользователи',
+    value: realStats.value.totalUsers,
+    icon: 'heroicons:users',
+    tone: 'info',
+    badge: realStats.value.newUsers > 0 ? `+${realStats.value.newUsers} за неделю` : ''
+  },
+  {
+    label: 'Товары',
+    value: realStats.value.totalProducts,
+    icon: 'heroicons:cube',
+    tone: 'primary',
+    badge: `${realStats.value.inStock} в наличии`
+  },
+  {
+    label: 'Заказы',
+    value: realStats.value.totalOrders,
+    icon: 'heroicons:shopping-bag',
+    tone: 'warning',
+    badge: realStats.value.pendingOrders > 0 ? `${realStats.value.pendingOrders} ожидает` : ''
+  },
+  {
+    label: 'Доход',
+    value: formatPrice(realStats.value.revenue),
+    icon: 'heroicons:banknotes',
+    tone: 'success',
+    badge: 'За всё время'
+  }
+])
+
+// Плитки быстрых действий
+const quickLinks = [
+  { to: '/admin/products', title: 'Товары', sub: 'Каталог и склад', icon: 'heroicons:cube' },
+  { to: '/admin/orders', title: 'Заказы', sub: 'Подтверждение и статусы', icon: 'heroicons:shopping-bag' },
+  { to: '/admin/news', title: 'Новости', sub: 'Публикации и товары', icon: 'heroicons:newspaper' },
+  { to: '/admin/users', title: 'Пользователи', sub: 'Роли и доступы', icon: 'heroicons:users' }
+]
+
+// Заполненность склада: доля товаров в наличии
+const stockPercent = computed(() => {
+  const total = realStats.value.totalProducts
+  return total > 0 ? Math.round((realStats.value.inStock / total) * 100) : 0
+})
 
 // Загрузка реальной статистики: сводка + последние заказы одним параллельным
 // запросом. Сбой /api/orders не роняет карточку статистики (catch → null).
@@ -291,7 +483,6 @@ const loadStats = async () => {
     realStats.value.totalOrders = s.orders?.total ?? 0
     realStats.value.revenue = s.orders?.totalRevenue ?? 0
     realStats.value.newUsers = s.users?.newWeek ?? 0
-    realStats.value.todayUsers = s.users?.newToday ?? 0
     realStats.value.pendingOrders = s.orders?.pending ?? 0
     realStats.value.inStock = s.products?.inStock ?? 0
     realStats.value.outOfStock = s.products?.outOfStock ?? 0
@@ -304,12 +495,8 @@ const loadStats = async () => {
       status: o.status,
       date: relativeTime(o.createdAt),
     }))
-
-    debugInfo.value = 'Статистика обновлена: ' + new Date().toLocaleString()
-    
   } catch (err) {
     console.error('❌ Ошибка загрузки статистики:', err)
-    debugInfo.value = `Ошибка: ${err.message}`
     $notify.error('Ошибка загрузки статистики')
   } finally {
     loading.value = false
@@ -317,33 +504,17 @@ const loadStats = async () => {
   }
 }
 
-// Тест подключения к API
-const testApiConnection = async () => {
-  try {
-    debugInfo.value = 'Тестирование API...'
-    const { data, error } = await useFetch('/api/admin/stats')
-    
-    if (error.value) {
-      debugInfo.value = `Ошибка API: ${error.value.statusCode} - ${error.value.data?.message || error.value.statusMessage}`
-    } else {
-      debugInfo.value = `Ответ API: ${JSON.stringify(data.value, null, 2)}`
-    }
-  } catch (error) {
-    debugInfo.value = `Исключение: ${error.message}`
-  }
-}
-
 // Обновление статистики
 const refreshStats = async () => {
   await loadStats()
-  $notify.success('Статистика обновлена')
+  if (!loading.value) $notify.success('Статистика обновлена')
 }
 
 // Выход из системы
 const handleLogout = async () => {
   try {
     const result = await appState.logout()
-    
+
     if (result.success) {
       $notify.success('Вы успешно вышли из системы')
       await navigateTo('/')
@@ -425,22 +596,26 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
-const navigateToPath = async (path) => {
-  await navigateTo(path)
-}
-
+// «31 октября, 14:05» — только на клиенте (после загрузки данных),
+// чтобы сервер и браузер гарантированно не разошлись в тексте
 const updateCurrentTime = () => {
   const now = new Date()
-  currentTime.value = now.toLocaleTimeString('ru-RU', { 
-    hour: '2-digit', 
-    minute: '2-digit'
-  })
+  todayLabel.value =
+    now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
+    ', ' +
+    now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
+
+let clockTimer = null
 
 // Загружаем статистику при монтировании
 onMounted(async () => {
   await loadStats()
   // Обновляем время каждую минуту
-  setInterval(updateCurrentTime, 60000)
+  clockTimer = setInterval(updateCurrentTime, 60000)
+})
+
+onBeforeUnmount(() => {
+  if (clockTimer) clearInterval(clockTimer)
 })
 </script>

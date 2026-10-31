@@ -181,10 +181,18 @@ const processedProducts = computed(() => {
       return dir * (aVal || '').localeCompare(bVal || '', 'ru')
     }
     if (field === 'createdAt') {
-      aVal = new Date(aVal || 0).getTime()
-      bVal = new Date(bVal || 0).getTime()
+      // В сиде и старых записях createdAt отсутствует (есть только
+      // updatedAt) — без фолбэка все даты 0 и сортировка не работает
+      // ни в одну сторону
+      aVal = new Date(aVal || a.updatedAt || 0).getTime()
+      bVal = new Date(bVal || b.updatedAt || 0).getTime()
     }
-    return dir * ((Number(aVal) || 0) - (Number(bVal) || 0))
+    // Tiebreak по числовому id: стабильный порядок при равных значениях,
+    // иначе при нулевых датах направление сортировки «не видно»
+    return (
+      dir * ((Number(aVal) || 0) - (Number(bVal) || 0)) ||
+      (Number(a.id) || 0) - (Number(b.id) || 0)
+    )
   })
 })
 

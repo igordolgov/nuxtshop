@@ -54,7 +54,7 @@
         button.btn.w-full.btn-lg.rounded-xl.border-0(
           :disabled="!product.inStock || isInCart"
           @click="$emit('add-to-cart')"
-          :class="isInCart ? 'btn-success text-success-content' : 'btn-primary'"
+          :class="isInCart ? 'btn-success text-success-content' : (product.inStock ? 'btn-primary' : 'btn-oos')"
         )
           span.flex.items-center.justify-center.gap-2.w-full
             span
@@ -113,6 +113,15 @@ const formatDate = (dateString) => {
 <style scoped>
 .product-info {
   width: 100%;
+}
+
+/* «Товар закончился»: НЕПРОЗРАЧНАЯ нейтральная кнопка. daisyUI красит
+   .btn:disabled в opacity .5 — плашка почти сливалась с фоном. */
+.btn-oos:disabled {
+  opacity: 1;
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
 }
 
 details > summary::-webkit-details-marker {

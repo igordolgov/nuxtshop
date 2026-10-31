@@ -225,8 +225,9 @@ header.app-header.sticky.top-0.z-50.border-b(
 
     //- Правая группа: поиск (десктоп) · корзина (десктоп) · тема · профиль
     .flex.items-center.gap-1.shrink-0(class="lg:gap-2")
-      //- Поиск — только десктоп (на мобильных строка 2)
-      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80")
+      //- Поиск — только десктоп (на мобильных строка 2). На админ-страницах
+      //- скрыт: там свой поиск по каталогу, витринный только путает
+      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80" v-if="!isAdminRoute")
         SmartSearchInput(
           :products="allProducts"
           :isActive="true"
@@ -356,7 +357,7 @@ header.app-header.sticky.top-0.z-50.border-b(
         span Войти
 
   //- ═══ Строка 2 (только мобильные): поиск на всю ширину ═══
-  .px-3.pb-2(class="md:hidden")
+  .px-3.pb-2(class="md:hidden" v-if="!isAdminRoute")
     .flex.items-center.gap-2
       .flex-1.min-w-0
         SmartSearchInput(
@@ -435,6 +436,11 @@ header.app-header.sticky.top-0.z-50.border-b(
 <script setup>
 const route = useRoute()
 const { $notify } = useNuxtApp()
+
+//- Витринный поиск в шапке не показываем на /admin/*: на админ-страницах
+//- свой поиск (например, в списке товаров), глобальный только дублирует
+const isAdminRoute = computed(() => route.path?.startsWith('/admin'))
+
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()
 const { totalItems } = useCart()

@@ -77,7 +77,7 @@
       type="button"
       :disabled="!product.inStock || isInCart(product.id)"
       @click="addToCartHandler"
-      :class="isInCart(product.id) ? 'btn-success' : 'btn-primary'"
+      :class="isInCart(product.id) ? 'btn-success' : (product.inStock ? 'btn-primary' : 'btn-oos')"
     )
       .flex.items-center.justify-center.w-full
         span.mr-2 {{ isInCart(product.id) ? '✅' : '🛒' }}
@@ -293,5 +293,14 @@ watch(() => route.params.slug, () => {
 
 .fixed-bottom-cart-button .btn {
   height: 52px;
+}
+
+/* «Товар закончился»: НЕПРОЗРАЧНАЯ нейтральная кнопка. daisyUI красит
+   .btn:disabled в opacity .5 — плашка почти сливалась с фоном. */
+.btn-oos:disabled {
+  opacity: 1;
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
 }
 </style>

@@ -156,6 +156,49 @@ export async function editOrderCard(
   });
 }
 
+// ─── Публикации новостей ─────────────────────────────────────────────
+
+/**
+ * Пост о новой новости: рубрика, заголовок, краткое описание и диплинк
+ * /news?news=<id> — на витрине он сразу открывает модалку с полным
+ * текстом. Чистая функция — покрыта тестами.
+ */
+export function formatNewsCard(
+  news: { id: string; title: string; excerpt: string; category: string },
+  siteUrl: string,
+): string {
+  const lines: string[] = [];
+  lines.push(`📰 <b>Новая публикация</b> · ${escapeHtml(news.category)}`);
+  lines.push(`<b>${escapeHtml(news.title)}</b>`);
+  if (news.excerpt) {
+    lines.push('');
+    lines.push(escapeHtml(news.excerpt));
+  }
+  const url = `${siteUrl.replace(/\/+$/, '')}/news?news=${encodeURIComponent(news.id)}`;
+  lines.push('');
+  lines.push(`🔗 ${escapeHtml(url)}`);
+  return lines.join('\n');
+}
+
+/**
+ * Публикация новости в Telegram: пост во ВСЕ адресата
+ * (TELEGRAM_ADMIN_CHAT_ID). Best-effort: без секретов — тихий no-op,
+ * сетевые сбои логируются внутри callApi, наружу — boolean. Успех —
+ * если доставлен хотя бы в один чат.
+ */
+export async function sendNewsPost(
+  env: TelegramEnv | null | undefined,
+  news: Parameters<typeof formatNewsCard>[0],
+  siteUrl: string,
+): Promise<boolean> {
+  if (!isTelegramConfigured(env)) return false;
+  const text = formatNewsCard(news, siteUrl);
+  const results = await Promise.allSettled(
+    getAdminChatIds(env).map((chatId) => sendMessage(env, chatId, text)),
+  );
+  return results.some((r) => r.status === 'fulfilled' && r.value === true);
+}
+
 // ─── Форматирование ─────────────────────────────────────────────────
 
 /** Экранирование HTML: parse_mode='HTML' падает на «голых» < > & из данных */

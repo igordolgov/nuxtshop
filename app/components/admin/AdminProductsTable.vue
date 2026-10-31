@@ -19,8 +19,10 @@
   .flex-1.flex.flex-col.min-h-0(v-else)
     //- Прокручиваемая область с таблицей
     .table-wrapper.flex-1.overflow-auto
-      //- Десктопная таблица
-      .desktop-table(class="hidden sm:block")
+      //- Десктопная таблица.
+      //- pb-20: запас снизу, чтобы последние строки прокручивались выше
+      //- фиксированной кнопки «Наверх» (bottom 20px + 44px высота)
+      .desktop-table.pb-20(class="hidden sm:block")
         table.table.table-zebra.w-full
           thead.sticky.top-0.bg-base-200.z-10
             tr
@@ -101,8 +103,10 @@
                   )
                     icon(name="heroicons:trash" size="16")
 
-      //- Мобильный список карточек
-      .mobile-cards.flex.flex-col.p-0.pb-12(class="sm:hidden")
+      //- Мобильный список карточек.
+      //- pb-40: карточки прокручиваются выше кнопки «Наверх»
+      //- (bottom 92px + 44px) и мобильной навигации
+      .mobile-cards.flex.flex-col.p-0.pb-40(class="sm:hidden")
         .card.bg-base-200.shadow-sm(
           v-for="product in products"
           :key="product.id"
