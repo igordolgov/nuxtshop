@@ -147,6 +147,8 @@
 import type { NewsItem } from '~/utils/news'
 
 const { isMobile } = useMobileDetection()
+const route = useRoute()
+const router = useRouter()
 
 // ─── Данные: сервер (KV) вместо статичного массива ───────────────────────
 // SSR: useAsyncData выполняется на сервере (внутренний вызов роута),
@@ -172,13 +174,9 @@ const filteredNews = computed<NewsItem[]>(() =>
 const featuredNews = computed(() => filteredNews.value[0] || null)
 const restNews = computed(() => filteredNews.value.slice(1))
 
-// Иконка плитки без фото — по рубрике (код вместо ассетов)
-function placeholderIcon(category: string): string {
-  if (category === 'Акции') return 'M3 11l18-7-4 16-6-4-3 3v-5z'
-  if (category === 'Новинки') return 'M12 2l2.4 6.2L21 9.5l-5 4.4 1.5 6.6L12 17l-5.5 3.5L8 13.9l-5-4.4 6.6-1.3L12 2z'
-  if (category === 'Обзоры') return 'M3 17l6-6 4 4 8-8m0 0h-5m5 0v5'
-  return 'M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6'
-}
+// Иконка плитки без фото — по рубрике (общий хелпер app/utils/news.ts,
+// используется и блоком «Последние новости» на главной)
+const placeholderIcon = newsPlaceholderIcon
 
 const activeNews = ref<NewsItem | null>(null)
 const openNews = (item: NewsItem) => {
@@ -187,6 +185,18 @@ const openNews = (item: NewsItem) => {
 const closeNews = () => {
   activeNews.value = null
 }
+
+//- Диплинк с главной: карточка блока «Последние новости» ведёт на
+//- /news?news=<id> — открываем эту новость в модалке сразу после
+//- загрузки данных. Только на клиенте (после гидратации), затем
+//- убираем ?news из URL — перезагрузка не переоткрывает модалку
+onMounted(() => {
+  const id = route.query.news
+  if (!id) return
+  const found = items.value.find((n) => n.id === String(id))
+  if (found) openNews(found)
+  router.replace({ query: { ...route.query, news: undefined } })
+})
 
 useHead({ title: 'Новости и акции' })
 useSeoMeta({
@@ -312,6 +322,20 @@ useSeoMeta({
     color-mix(in oklab, var(--color-error) 18%, var(--color-base-100)),
     color-mix(in oklab, var(--color-error) 40%, var(--color-base-100)));
   color: var(--color-error);
+}
+
+.placeholder-new {
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--color-success) 18%, var(--color-base-100)),
+    color-mix(in oklab, var(--color-success) 40%, var(--color-base-100)));
+  color: var(--color-success);
+}
+
+.placeholder-review {
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--color-secondary) 18%, var(--color-base-100)),
+    color-mix(in oklab, var(--color-secondary) 40%, var(--color-base-100)));
+  color: var(--color-secondary);
 }
 
 /* ─── Featured-карточка: на md+ фото слева, текст справа ──── */
