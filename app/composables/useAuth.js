@@ -65,14 +65,14 @@ function createAuth() {
         credentials: 'include',
       })
 
-      if (!data.success) throw new Error(data.error || 'Ошибка входа')
+      if (!data.success) throw new Error(data.error || tr('auth.errLoginDefault', 'Ошибка входа'))
       updateAuthState(data.user)
       return data
     } catch (error) {
-      let msg = 'Ошибка при входе в систему'
+      let msg = tr('auth.errLoginGeneric', 'Ошибка при входе в систему')
       if (error.data?.message) msg = error.data.message
-      else if (error.status === 401) msg = 'Неверный email или пароль'
-      else if (error.status === 500) msg = 'Ошибка сервера. Попробуйте позже.'
+      else if (error.status === 401) msg = tr('auth.errLoginWrong', 'Неверный email или пароль')
+      else if (error.status === 500) msg = tr('auth.errServerError', 'Ошибка сервера. Попробуйте позже.')
       else if (error.message) msg = error.message
       throw new Error(msg)
     } finally {
@@ -89,11 +89,11 @@ function createAuth() {
         credentials: 'include',
       })
 
-      if (!data.success) throw new Error(data.error || 'Ошибка регистрации')
+      if (!data.success) throw new Error(data.error || tr('auth.errRegister', 'Ошибка регистрации'))
       updateAuthState(data.user)
       return data
     } catch (error) {
-      let msg = 'Ошибка при регистрации'
+      let msg = tr('auth.errRegister', 'Ошибка при регистрации')
       if (error.data?.message) msg = error.data.message
       else if (error.message) msg = error.message
       throw new Error(msg)
@@ -111,7 +111,7 @@ function createAuth() {
       // но при следующей навигации сессия будет перепроверена
       authChecked.value = false
       updateAuthState(null)
-      return { success: false, error: error?.message || 'Не удалось выйти' }
+      return { success: false, error: error?.message || tr('auth.errLogout', 'Не удалось выйти') }
     }
 
     updateAuthState(null)
@@ -135,7 +135,7 @@ function createAuth() {
         credentials: 'include',
       })
 
-      if (!data.success) throw new Error(data.error || 'Ошибка обновления профиля')
+      if (!data.success) throw new Error(data.error || tr('auth.errProfileUpdate', 'Ошибка обновления профиля'))
       updateAuthState(data.user)
       return data
     } finally {

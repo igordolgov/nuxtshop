@@ -59,13 +59,13 @@ export const useNotifyQueue = () => {
     }
   };
 
-  // Заголовки по умолчанию для разных типов уведомлений
+  // Заголовки по умолчанию — локализуются в момент показа (tr, см. composables/tr.js)
   const defaultTitles = {
-    success: 'Успешно',
-    error: 'Ошибка', 
-    info: 'Информация',
-    warning: 'Внимание',
-    confirm: 'Подтвердите'
+    get success() { return tr('notify.successTitle', 'Успешно') },
+    get error() { return tr('notify.errorTitle', 'Ошибка') },
+    get info() { return tr('notify.infoTitle', 'Информация') },
+    get warning() { return tr('notify.warningTitle', 'Внимание') },
+    get confirm() { return tr('notify.confirmTitle', 'Подтвердите') },
   };
 
   // ===================== КОНЕЦ НАСТРОЕК =====================

@@ -5,7 +5,7 @@
     .input-group
       input.input.input-bordered.input-sm(
         type="text", 
-        :placeholder="placeholder", 
+        :placeholder="resolvedPlaceholder", 
         :value="modelValue"
         @input="handleInput"
         :class="inputClass"
@@ -36,6 +36,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
+const { t } = useI18n()
+
 // Пропсы
 interface Props {
   modelValue: string
@@ -48,13 +52,18 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Поиск товаров...',
+  placeholder: '',
   delay: 300,
   disabled: false,
   showClearButton: true,
   debug: false,
   inputClass: 'w-64 pr-8'
 })
+
+// Пропс-дефолт не может звать $t — резолвим подпись в рантайме
+const resolvedPlaceholder = computed(
+  () => props.placeholder || t('catalog.searchProducts'),
+)
 
 // Эмиты
 const emit = defineEmits<{

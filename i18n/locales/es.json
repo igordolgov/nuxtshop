@@ -92,10 +92,19 @@
     "shownOf": "Mostrando {n} de {total} artículos",
     "viewedAll": "Ha visto todos los artículos ({n})",
     "loadMore": "Mostrar más",
-    "loadError": "Error al cargar"
+    "loadError": "Error al cargar",
+    "cachedData": "Mostrando datos en caché",
+    "noProducts": "No hay productos disponibles",
+    "tryChangeFilters": "Prueba a cambiar los filtros",
+    "nothingForQuery": "No se ha encontrado nada para «{query}»",
+    "searchProducts": "Buscar productos..."
   },
   "common": {
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "close": "Cerrar",
+    "scrollToTop": "Volver arriba",
+    "errorOccurred": "Ha ocurrido un error",
+    "error": "Error"
   },
   "offline": {
     "banner": "Sin conexión a internet",
@@ -103,7 +112,9 @@
     "title": "Sin conexión",
     "text": "Compruebe la conexión a internet. El carrito y los favoritos están guardados en el dispositivo y no se perderán.",
     "reload": "Actualizar",
-    "metaTitle": "Sin conexión — Tienda"
+    "metaTitle": "Sin conexión — Tienda",
+    "updateAvailable": "Hay una actualización disponible. Recarga la página.",
+    "synced": "¡Datos sincronizados!"
   },
   "install": {
     "title": "¿Instalar la aplicación?",
@@ -162,7 +173,9 @@
     "zoomAlt": "{name} — imagen ampliada",
     "goToImage": "Ir a la imagen {n}",
     "imageAlt": "{name} — imagen {n}",
-    "addWithPrice": "Añadir al carrito · {price}"
+    "addWithPrice": "Añadir al carrito · {price}",
+    "nameFallback": "Producto",
+    "zoomImage": "Ampliar imagen"
   },
   "productPage": {
     "notFound": "Producto no encontrado",
@@ -330,7 +343,8 @@
     "cashNote": "Al recibir",
     "qtyProblems": "Hay problemas con las cantidades",
     "checkoutBtn": "Realizar pedido",
-    "checkoutBtnPrice": "Realizar pedido · {price}"
+    "checkoutBtnPrice": "Realizar pedido · {price}",
+    "unnamedProduct": "Producto sin nombre"
   },
   "checkout": {
     "itemsInOrder": "Artículos del pedido",
@@ -401,7 +415,8 @@
     "errAddress": "Introduzca la dirección",
     "errCity": "Introduzca la ciudad",
     "errZip": "Código postal: 6 dígitos",
-    "plus": "+{price}"
+    "plus": "+{price}",
+    "errCreateNotConfirmed": "El servidor no ha confirmado el pedido"
   },
   "favorites": {
     "title": "Favoritos",
@@ -454,7 +469,10 @@
     "errPasswordsMismatch": "Las contraseñas no coinciden",
     "registerSuccess": "¡Registro completado!",
     "registerWelcome": "¡Bienvenido a nuestro sistema!",
-    "errRegister": "Error al registrarse"
+    "errRegister": "Error al registrarse",
+    "errLogout": "No se ha podido cerrar la sesión",
+    "logoutSuccess": "Has cerrado la sesión",
+    "errProfileUpdate": "Error al actualizar el perfil"
   },
   "emergency": {
     "title": "Cierre de sesión de emergencia",
@@ -545,7 +563,11 @@
     "addedNone": "No se pudo añadir: artículos agotados",
     "noFavorites": "Sin favoritos",
     "findProducts": "Buscar productos",
-    "subtotal": "Subtotal"
+    "subtotal": "Subtotal",
+    "productUnavailable": "Producto no disponible",
+    "logoutConfirm": "¿Cerrar la sesión?",
+    "profileUpdated": "Perfil actualizado",
+    "nameFallback": "Usuario"
   },
   "orders": {
     "status": {
@@ -557,6 +579,19 @@
     },
     "deliveryCourier": "A domicilio",
     "deliveryPost": "Por correo",
-    "deliveryPickup": "Recogida"
+    "deliveryPickup": "Recogida",
+    "errLoad": "No se han podido cargar los pedidos",
+    "methodCourier": "Mensajería",
+    "methodPickup": "Recogida",
+    "methodPost": "Correo",
+    "payCard": "Tarjeta",
+    "payCash": "Efectivo"
+  },
+  "notify": {
+    "successTitle": "Éxito",
+    "errorTitle": "Error",
+    "infoTitle": "Información",
+    "warningTitle": "Atención",
+    "confirmTitle": "Confirma"
   }
 }

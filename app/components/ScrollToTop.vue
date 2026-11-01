@@ -4,7 +4,7 @@ button.scroll-to-top-btn(
   v-show="isVisible",
   :class="{ 'is-visible': isVisible }",
   type="button",
-  aria-label="Прокрутить к началу",
+  :aria-label="$t('common.scrollToTop')",
   @click="scrollToTop"
 )
   svg(

@@ -92,10 +92,19 @@
     "shownOf": "Показано {n} из {total} товаров",
     "viewedAll": "Вы просмотрели все товары ({n})",
     "loadMore": "Показать ещё",
-    "loadError": "Ошибка загрузки"
+    "loadError": "Ошибка загрузки",
+    "cachedData": "Используются кэшированные данные",
+    "noProducts": "Товары отсутствуют",
+    "tryChangeFilters": "Попробуйте изменить параметры фильтрации",
+    "nothingForQuery": "По запросу «{query}» ничего не найдено",
+    "searchProducts": "Поиск товаров..."
   },
   "common": {
-    "loading": "Загрузка..."
+    "loading": "Загрузка...",
+    "close": "Закрыть",
+    "scrollToTop": "Прокрутить к началу",
+    "errorOccurred": "Произошла ошибка",
+    "error": "Ошибка"
   },
   "offline": {
     "banner": "Нет подключения к интернету",
@@ -103,7 +112,9 @@
     "title": "Нет подключения",
     "text": "Проверь интернет-соединение. Корзина и избранное сохранены на устройстве и никуда не денутся.",
     "reload": "Обновить",
-    "metaTitle": "Нет соединения — Магазин"
+    "metaTitle": "Нет соединения — Магазин",
+    "updateAvailable": "Доступно обновление. Обновите страницу.",
+    "synced": "Данные синхронизированы!"
   },
   "install": {
     "title": "Установить приложение?",
@@ -162,7 +173,9 @@
     "zoomAlt": "{name} — увеличенное изображение",
     "goToImage": "Перейти к изображению {n}",
     "imageAlt": "{name} — изображение {n}",
-    "addWithPrice": "Добавить в корзину · {price}"
+    "addWithPrice": "Добавить в корзину · {price}",
+    "nameFallback": "Товар",
+    "zoomImage": "Увеличить изображение"
   },
   "productPage": {
     "notFound": "Товар не найден",
@@ -330,7 +343,8 @@
     "cashNote": "При получении",
     "qtyProblems": "Есть проблемы с количеством",
     "checkoutBtn": "Оформить заказ",
-    "checkoutBtnPrice": "Оформить заказ · {price}"
+    "checkoutBtnPrice": "Оформить заказ · {price}",
+    "unnamedProduct": "Без названия"
   },
   "checkout": {
     "itemsInOrder": "Товары в заказе",
@@ -401,7 +415,8 @@
     "errAddress": "Введите адрес",
     "errCity": "Введите город",
     "errZip": "Индекс: 6 цифр",
-    "plus": "+{price}"
+    "plus": "+{price}",
+    "errCreateNotConfirmed": "Сервер не подтвердил создание заказа"
   },
   "favorites": {
     "title": "Избранное",
@@ -454,7 +469,10 @@
     "errPasswordsMismatch": "Пароли не совпадают",
     "registerSuccess": "Регистрация успешна!",
     "registerWelcome": "Добро пожаловать в нашу систему!",
-    "errRegister": "Ошибка при регистрации"
+    "errRegister": "Ошибка при регистрации",
+    "errLogout": "Не удалось выйти",
+    "logoutSuccess": "Вы вышли из системы",
+    "errProfileUpdate": "Ошибка обновления профиля"
   },
   "emergency": {
     "title": "Аварийный выход",
@@ -545,7 +563,11 @@
     "addedNone": "Не удалось добавить: товары закончились",
     "noFavorites": "Нет избранного",
     "findProducts": "Найти товары",
-    "subtotal": "Подытог"
+    "subtotal": "Подытог",
+    "productUnavailable": "Товар недоступен",
+    "logoutConfirm": "Выйти из системы?",
+    "profileUpdated": "Профиль обновлен",
+    "nameFallback": "Пользователь"
   },
   "orders": {
     "status": {
@@ -557,6 +579,19 @@
     },
     "deliveryCourier": "Курьером",
     "deliveryPost": "Почтой",
-    "deliveryPickup": "Самовывоз"
+    "deliveryPickup": "Самовывоз",
+    "errLoad": "Не удалось получить заказы",
+    "methodCourier": "Курьер",
+    "methodPickup": "Самовывоз",
+    "methodPost": "Почта",
+    "payCard": "Карта",
+    "payCash": "Наличные"
+  },
+  "notify": {
+    "successTitle": "Успешно",
+    "errorTitle": "Ошибка",
+    "infoTitle": "Информация",
+    "warningTitle": "Внимание",
+    "confirmTitle": "Подтвердите"
   }
 }

@@ -34,7 +34,7 @@
     .fullscreen-content
       button.close-button(
         @click="closeZoom"
-        aria-label="Закрыть"
+        :aria-label="$t('common.close')"
         type="button"
       ) ✕
       img.fullscreen-image(
@@ -48,8 +48,8 @@
   button.zoom-button(
     v-if="showZoomButton && !isZoomed"
     @click="toggleZoom"
-    :title="zoomButtonText"
-    aria-label="Увеличить изображение"
+    :title="zoomButtonText || $t('product.zoomImage')"
+    :aria-label="$t('product.zoomImage')"
     type="button"
   ) 🔍
 </template>
@@ -75,7 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
   zoomLevel: 2,
   magnifierSize: 150,
   showZoomButton: true,
-  zoomButtonText: 'Увеличить изображение',
+  zoomButtonText: '',
   maxWidth: '100%',
   maxHeight: '400',
 })

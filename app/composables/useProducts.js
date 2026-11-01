@@ -83,7 +83,7 @@ function createProducts() {
 
   // Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
   const errorMessage = (err) =>
-    err?.data?.message || err?.data?.statusMessage || err?.message || 'Неизвестная ошибка'
+    err?.data?.message || err?.data?.statusMessage || err?.message || tr('checkout.unknownError', 'Неизвестная ошибка')
 
   const updateProductStockStatus = (product) => ({
     ...product,
@@ -144,7 +144,7 @@ function createProducts() {
     } catch (err) {
       console.error('[useProducts] Ошибка загрузки товаров:', err)
       error.value = errorMessage(err)
-      showNotification('error', 'Ошибка загрузки товаров')
+      showNotification('error', tr('catalog.loadError', 'Ошибка загрузки товаров'))
 
       // Офлайн-фолбэк на чтение — легитимен для PWA
       if (import.meta.client) {
@@ -159,7 +159,7 @@ function createProducts() {
                 })
               )
             )
-            showNotification('info', 'Используются кэшированные данные')
+            showNotification('info', tr('catalog.cachedData', 'Используются кэшированные данные'))
           }
         } catch (localStorageError) {
           console.warn('[useProducts] localStorage read failed:', localStorageError.message)

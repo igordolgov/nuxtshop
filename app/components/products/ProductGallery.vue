@@ -70,7 +70,7 @@
             //- картинок делает handleImageError → fallbackImage.
             img(
               :src="getValidImageUrl(image)"
-              :alt="$t('product.imageAlt', { name: productName, n: index + 1 })"
+              :alt="$t('product.imageAlt', { name: productName || $t('product.nameFallback'), n: index + 1 })"
               class="z-10 relative product-main-image"
               :class="{ 'cursor-zoom-in': isDesktop }"
               @load="handleImageLoad(index)"
@@ -166,7 +166,7 @@
             ref="zoomImageRef"
             :class="{ 'zoom-anim': !isGestureActive }"
             :src="zoomImageUrl"
-            :alt="$t('product.zoomAlt', { name: productName })"
+            :alt="$t('product.zoomAlt', { name: productName || $t('product.nameFallback') })"
             :style="zoomStyle"
             draggable="false"
             decoding="async"
@@ -184,7 +184,7 @@ import { useResizeObserver } from '@vueuse/core'
 const props = defineProps({
   product: { type: Object, default: () => ({}) },
   gallery: { type: Array, default: () => [] },
-  productName: { type: String, default: 'Товар' }
+  productName: { type: String, default: '' }
 })
 
 // ============================================

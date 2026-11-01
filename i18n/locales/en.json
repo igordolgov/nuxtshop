@@ -92,10 +92,19 @@
     "shownOf": "Showing {n} of {total} items",
     "viewedAll": "You have viewed all items ({n})",
     "loadMore": "Show more",
-    "loadError": "Failed to load"
+    "loadError": "Failed to load",
+    "cachedData": "Showing cached data",
+    "noProducts": "No products available",
+    "tryChangeFilters": "Try changing the filters",
+    "nothingForQuery": "Nothing found for \"{query}\"",
+    "searchProducts": "Search products..."
   },
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "close": "Close",
+    "scrollToTop": "Back to top",
+    "errorOccurred": "Something went wrong",
+    "error": "Error"
   },
   "offline": {
     "banner": "No internet connection",
@@ -103,7 +112,9 @@
     "title": "You are offline",
     "text": "Check your internet connection. Your cart and favorites are saved on this device and won't go anywhere.",
     "reload": "Reload",
-    "metaTitle": "Offline — Store"
+    "metaTitle": "Offline — Store",
+    "updateAvailable": "Update available. Please refresh the page.",
+    "synced": "Data synced!"
   },
   "install": {
     "title": "Install the app?",
@@ -162,7 +173,9 @@
     "zoomAlt": "{name} — zoomed image",
     "goToImage": "Go to image {n}",
     "imageAlt": "{name} — image {n}",
-    "addWithPrice": "Add to cart · {price}"
+    "addWithPrice": "Add to cart · {price}",
+    "nameFallback": "Product",
+    "zoomImage": "Zoom image"
   },
   "productPage": {
     "notFound": "Product not found",
@@ -330,7 +343,8 @@
     "cashNote": "On delivery",
     "qtyProblems": "Quantity issues",
     "checkoutBtn": "Checkout",
-    "checkoutBtnPrice": "Checkout · {price}"
+    "checkoutBtnPrice": "Checkout · {price}",
+    "unnamedProduct": "Unnamed product"
   },
   "checkout": {
     "itemsInOrder": "Items in the order",
@@ -401,7 +415,8 @@
     "errAddress": "Enter the address",
     "errCity": "Enter the city",
     "errZip": "Postal code: 6 digits",
-    "plus": "+{price}"
+    "plus": "+{price}",
+    "errCreateNotConfirmed": "Server did not confirm the order"
   },
   "favorites": {
     "title": "Favorites",
@@ -454,7 +469,10 @@
     "errPasswordsMismatch": "Passwords do not match",
     "registerSuccess": "Registration successful!",
     "registerWelcome": "Welcome aboard!",
-    "errRegister": "Registration failed"
+    "errRegister": "Registration failed",
+    "errLogout": "Failed to log out",
+    "logoutSuccess": "You have logged out",
+    "errProfileUpdate": "Failed to update profile"
   },
   "emergency": {
     "title": "Emergency logout",
@@ -545,7 +563,11 @@
     "addedNone": "Could not add: items are out of stock",
     "noFavorites": "No favorites yet",
     "findProducts": "Find products",
-    "subtotal": "Subtotal"
+    "subtotal": "Subtotal",
+    "productUnavailable": "Product unavailable",
+    "logoutConfirm": "Log out?",
+    "profileUpdated": "Profile updated",
+    "nameFallback": "User"
   },
   "orders": {
     "status": {
@@ -557,6 +579,19 @@
     },
     "deliveryCourier": "By courier",
     "deliveryPost": "By post",
-    "deliveryPickup": "Pickup"
+    "deliveryPickup": "Pickup",
+    "errLoad": "Failed to load orders",
+    "methodCourier": "Courier",
+    "methodPickup": "Pickup",
+    "methodPost": "Post",
+    "payCard": "Card",
+    "payCash": "Cash"
+  },
+  "notify": {
+    "successTitle": "Success",
+    "errorTitle": "Error",
+    "infoTitle": "Info",
+    "warningTitle": "Attention",
+    "confirmTitle": "Please confirm"
   }
 }

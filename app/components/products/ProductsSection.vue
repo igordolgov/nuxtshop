@@ -111,6 +111,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
+const { t } = useI18n()
+
 // ==========================================
 // Props.
 // isHorizontal удалён: 4 колонки в landscape теперь чистый CSS
@@ -201,12 +203,12 @@ const gridClasses = computed(() => {
 
 const emptyMessage = computed(() => {
   if (props.searchQuery) {
-    return `По запросу "${props.searchQuery}" ничего не найдено`
+    return t('catalog.nothingForQuery', { query: props.searchQuery })
   }
   if (props.activeFiltersCount > 0) {
-    return 'Попробуйте изменить параметры фильтрации'
+    return t('catalog.tryChangeFilters')
   }
-  return 'Товары отсутствуют'
+  return t('catalog.noProducts')
 })
 
 // ==========================================
@@ -249,7 +251,7 @@ const loadMore = async () => {
     updateVisibleProducts()
   } catch (error) {
     console.error('[ProductsSection] Error loading more:', error)
-    loadError.value = 'Не удалось загрузить товары'
+    loadError.value = t('catalog.loadError')
   } finally {
     isLoadingMore.value = false
   }

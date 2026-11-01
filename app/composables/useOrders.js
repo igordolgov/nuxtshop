@@ -13,7 +13,7 @@ export const useOrders = () => {
   const createOrder = async (payload) => {
     const response = await $fetch('/api/orders', { method: 'POST', body: payload })
     if (!response.success || !response.order) {
-      throw new Error(response.message || 'Сервер не подтвердил создание заказа')
+      throw new Error(response.message || tr('checkout.errCreateNotConfirmed', 'Сервер не подтвердил создание заказа'))
     }
     return response.order
   }

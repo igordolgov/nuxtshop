@@ -366,14 +366,7 @@ const toggleOrderDetails = (orderId) => {
 }
 
 //- Статусы — единые с сервером (фантомные pending/processing вычищены)
-const STATUS_TEXT = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  shipped: 'В доставке',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
-}
-const getStatusText = (status) => STATUS_TEXT[status] ?? status
+const getStatusText = (status) => t(`orders.status.${status}`) !== `orders.status.${status}` ? t(`orders.status.${status}`) : status
 
 const STATUS_BADGE = {
   new: 'badge-primary',
@@ -385,27 +378,27 @@ const STATUS_BADGE = {
 const getStatusBadgeClass = (status) => STATUS_BADGE[status] ?? 'badge-neutral'
 
 const getDeliveryText = (method) =>
-  ({ courier: 'Курьер', pickup: 'Самовывоз', post: 'Почта' }[method] || method)
+  ({ courier: t('orders.methodCourier'), pickup: t('orders.methodPickup'), post: t('orders.methodPost') }[method] || method)
 const getPaymentText = (method) =>
-  ({ card: 'Карта', cash: 'Наличные' }[method] || method)
+  ({ card: t('orders.payCard'), cash: t('orders.payCash') }[method] || method)
 
 const goToProduct = (product) => {
   if (product.slug) return navigateTo(`/product/${product.slug}`)
   if (product.id) return navigateTo(`/product/${product.id}`)
-  $notify.error('Товар недоступен')
+  $notify.error(t('user.productUnavailable'))
 }
 
 const logout = async () => {
-  if (!confirm('Выйти из системы?')) return
+  if (!confirm(t('user.logoutConfirm'))) return
   try {
     const result = await appState.logout()
     if (result.success) {
-      $notify.success('Вы вышли из системы')
+      $notify.success(t('auth.logoutSuccess'))
       await navigateTo('/')
       setTimeout(() => location.reload(), 100)
     }
   } catch {
-    $notify.error('Ошибка при выходе')
+    $notify.error(t('auth.errLogout'))
   }
 }
 
@@ -433,13 +426,13 @@ const updateProfile = async () => {
         await appState.checkAuth()
       }
 
-      $notify.success('Профиль обновлен')
+      $notify.success(t('user.profileUpdated'))
     } else {
-      throw new Error(data?.message || 'Ошибка')
+      throw new Error(data?.message || t('common.error'))
     }
   } catch (error) {
     console.error('Ошибка:', error)
-    $notify.error(error.data?.message || error.message || 'Ошибка обновления')
+    $notify.error(error.data?.message || error.message || t('auth.errProfileUpdate'))
   } finally {
     updatingProfile.value = false
   }
@@ -447,7 +440,7 @@ const updateProfile = async () => {
 
 const addToCart = (product) => {
   addToCartCart(product)
-  $notify.success('Добавлено в корзину')
+  $notify.success(t('user.itemsAddedToCart'))
 }
 
 const removeFavorite = async (product) => {
@@ -455,7 +448,7 @@ const removeFavorite = async (product) => {
   localStorage.setItem('favoriteProducts', JSON.stringify(localFavoriteProducts.value))
   if (appState.removeFromFavorites) await appState.removeFromFavorites(product.id)
   window.dispatchEvent(new CustomEvent('favorites-updated'))
-  $notify.info('Удалено из избранного')
+  $notify.info(t('favorites.removed'))
 }
 
 onMounted(async () => {
@@ -480,7 +473,7 @@ const userInitials = computed(
       .join('')
       .toUpperCase() || 'U',
 )
-const userName = computed(() => currentUser.value?.name || 'Пользователь')
+const userName = computed(() => currentUser.value?.name || t('user.nameFallback'))
 const userEmail = computed(() => currentUser.value?.email || '')
 const userRole = computed(() => currentUser.value?.role || 'user')
 

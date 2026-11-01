@@ -36,7 +36,7 @@ function registerServiceWorker(nuxtApp) {
             newWorker.state === 'installed' && navigator.serviceWorker.controller
           if (isUpdate) {
             console.log('[PWA] New version available')
-            nuxtApp.$notify?.info?.('Доступно обновление. Обновите страницу.')
+            nuxtApp.$notify?.info?.(tr('offline.updateAvailable', 'Доступно обновление. Обновите страницу.'))
           }
         })
       })
@@ -60,7 +60,7 @@ function registerServiceWorker(nuxtApp) {
     switch (type) {
       case 'SYNC_COMPLETE':
         console.log('[PWA] Sync complete:', data)
-        nuxtApp.$notify?.success?.('Данные синхронизированы!')
+        nuxtApp.$notify?.success?.(tr('offline.synced', 'Данные синхронизированы!'))
         break
 
       case 'CACHE_UPDATED':

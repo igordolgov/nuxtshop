@@ -175,7 +175,7 @@ function createCart() {
 
       state.value.items.push({
         id: product.id,
-        name: product.name || 'Без названия',
+        name: product.name || tr('cart.unnamedProduct', 'Без названия'),
         description: product.description || '',
         price: product.price || 0,
         currentPrice: product.price || 0,
