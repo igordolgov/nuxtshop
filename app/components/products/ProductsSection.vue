@@ -410,9 +410,10 @@ defineExpose({
 }
 
 .product-card {
+  /* Без content-visibility: auto — обёртки карточек первого экрана
+     лежат на пути LCP (render delay 2 090 мс на PageSpeed, см.
+     ProductCardGrid.vue). */
   contain: layout style;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 280px;
   animation: fadeIn 0.3s ease-out;
 }
 

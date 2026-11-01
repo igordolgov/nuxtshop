@@ -211,9 +211,12 @@ const toggleFavorite = () => {
 <style scoped>
 /* CSS Containment для производительности */
 .product-card {
+  /* ⚠️ content-visibility: auto здесь НЕЛЬЗЯ: карточки первого экрана —
+     LCP-элементы. Chrome откладывает их отрисовку до первого
+     layout/intersection-прохода (PageSpeed: «element render delay»
+     2 090 мс при загрузке картинки за 250 мс). DOM мал (~700 узлов),
+     virtualization не нужна. contain: layout style оставлен. */
   contain: layout style;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 220px;
   transition: border-color var(--transition-base, 0.25s), box-shadow var(--transition-base, 0.25s), transform var(--transition-base, 0.25s);
 }
 

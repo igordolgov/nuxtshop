@@ -482,9 +482,10 @@ watch(showMobileFilters, updateBodyScroll)
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+  /* Без content-visibility: auto — контейнер каталога содержит
+     LCP-элементы первого экрана; Chrome откладывал их отрисовку
+     (PageSpeed: element render delay 2 090 мс, см. ProductCardGrid). */
   contain: layout style;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 500px;
 
   /* Нижний «воздух» под фиксированной навигацией: без него последний
      ряд карточек прятался под меню и был недоступен для тапа */
