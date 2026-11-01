@@ -136,7 +136,7 @@
               span 📦 Очистить кэш заказов
 
   //- МОБИЛЬНЫЙ ФУТЕР
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

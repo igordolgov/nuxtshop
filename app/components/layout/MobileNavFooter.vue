@@ -4,62 +4,66 @@
     (Fullscreen) удалена: нестандартна для магазинов, мертва на iOS.
     4 пункта: Главная, Корзина, Избранное, Профиль. -->
 <template lang="pug">
-ClientOnly
-  div
-    footer.mobile-nav-footer.border-t(class="border-base-300")
-      nav.nav-items(aria-label="Основная навигация")
-        button.nav-item(
-          type="button"
-          @click="openHome"
-          :class="{ 'is-active': activeHome }"
-          :aria-current="activeHome ? 'page' : undefined"
-        )
-          .nav-icon
-            svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
-              path(d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", stroke="currentColor", stroke-width="2")
-          span.nav-label Главная
+//- БЕЗ ClientOnly и v-if=isMobile: раньше футер появлялся только после
+//- гидратации + onNuxtReady — «нижнее меню отрисовывается через секунду».
+//- Теперь SSR рендерит его сразу, а на десктопе прячет чистый CSS
+//- (media ≥768px ниже). Персональные биты (бейджи, Профиль/Вход)
+//- под mounted-стражем — первый кадр гидратации совпадает с SSR.
+div
+  footer.mobile-nav-footer.border-t(class="border-base-300")
+    nav.nav-items(aria-label="Основная навигация")
+      button.nav-item(
+        type="button"
+        @click="openHome"
+        :class="{ 'is-active': activeHome }"
+        :aria-current="activeHome ? 'page' : undefined"
+      )
+        .nav-icon
+          svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
+            path(d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", stroke="currentColor", stroke-width="2")
+        span.nav-label Главная
 
-        button.nav-item(
-          type="button"
-          @click="openCart"
-          :class="{ 'is-active': activeCart }"
-          :aria-current="activeCart ? 'page' : undefined"
-        )
-          .nav-icon.relative
-            svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
-              path(d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z", stroke="currentColor", stroke-width="2")
-            .cart-badge(
-              v-if="cartItemsCount > 0"
-              :class="{ 'cart-badge-sm': cartItemsCount < 10, 'cart-badge-lg': cartItemsCount >= 10 }"
-            ) {{ cartItemsCount > 99 ? '99+' : cartItemsCount }}
-          span.nav-label Корзина
+      button.nav-item(
+        type="button"
+        @click="openCart"
+        :class="{ 'is-active': activeCart }"
+        :aria-current="activeCart ? 'page' : undefined"
+      )
+        .nav-icon.relative
+          svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
+            path(d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z", stroke="currentColor", stroke-width="2")
+          .cart-badge(
+            v-if="isMounted && cartItemsCount > 0"
+            :class="{ 'cart-badge-sm': cartItemsCount < 10, 'cart-badge-lg': cartItemsCount >= 10 }"
+          ) {{ cartItemsCount > 99 ? '99+' : cartItemsCount }}
+        span.nav-label Корзина
 
-        button.nav-item(
-          type="button"
-          @click="openFavorites"
-          :class="{ 'is-active': activeFavorites }"
-          :aria-current="activeFavorites ? 'page' : undefined"
-        )
-          .nav-icon.relative
-            svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
-              path(d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z", stroke="currentColor", stroke-width="2")
-            .favorites-badge(
-              v-if="displayFavoritesCount > 0"
-              :class="{ 'favorites-badge-sm': displayFavoritesCount < 10, 'favorites-badge-lg': displayFavoritesCount >= 10 }"
-            ) {{ displayFavoritesCount > 99 ? '99+' : displayFavoritesCount }}
-          span.nav-label Избранное
+      button.nav-item(
+        type="button"
+        @click="openFavorites"
+        :class="{ 'is-active': activeFavorites }"
+        :aria-current="activeFavorites ? 'page' : undefined"
+      )
+        .nav-icon.relative
+          svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
+            path(d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z", stroke="currentColor", stroke-width="2")
+          .favorites-badge(
+            v-if="isMounted && displayFavoritesCount > 0"
+            :class="{ 'favorites-badge-sm': displayFavoritesCount < 10, 'favorites-badge-lg': displayFavoritesCount >= 10 }"
+          ) {{ displayFavoritesCount > 99 ? '99+' : displayFavoritesCount }}
+        span.nav-label Избранное
 
-        button.nav-item(
-          type="button"
-          @click="openAuth"
-          :class="{ 'is-active': activeAuth }"
-          :aria-current="activeAuth ? 'page' : undefined"
-        )
-          .nav-icon.relative
-            svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
-              path(d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", stroke="currentColor", stroke-width="2")
-            .auth-badge(v-if="isAuthenticated")
-          span.nav-label {{ isAuthenticated ? 'Профиль' : 'Вход' }}
+      button.nav-item(
+        type="button"
+        @click="openAuth"
+        :class="{ 'is-active': activeAuth }"
+        :aria-current="activeAuth ? 'page' : undefined"
+      )
+        .nav-icon.relative
+          svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
+            path(d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", stroke="currentColor", stroke-width="2")
+          .auth-badge(v-if="isMounted && isAuthenticated")
+        span.nav-label {{ isMounted && isAuthenticated ? 'Профиль' : 'Вход' }}
 </template>
 
 <style scoped>
@@ -225,6 +229,16 @@ ClientOnly
   z-index: 1;
 }
 
+/* ─── Десктоп: футер в DOM (SSR единый), но невидим ──────────
+   Брейкпоинт совпадает с useMobileDetection (MOBILE_BREAKPOINT = 768,
+   = Tailwind md). CSS-скрытие не участвует в гидратации — без
+   hydration mismatch, в отличие от старого v-if="isMobile". */
+@media (min-width: 768px) {
+  .mobile-nav-footer {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
   .nav-items {
     padding: 0 6px;
@@ -249,6 +263,14 @@ const route = useRoute()
 const appState = useAppState()
 const { totalItems } = useCart()
 const { favoritesCount } = useFavorites()
+
+//- Страж гидратации: бейджи корзины/избранного и «Профиль/Вход» читают
+//- localStorage/сессию — SSR и первый клиентский кадр показывают
+//- «пустое» состояние, реальные значения дожимаются после монтирования
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
 
 const activeHome = computed(() => {
   const path = route.path

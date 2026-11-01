@@ -89,7 +89,7 @@
           NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) Контакты
           NuxtLink.btn.btn-outline.rounded-xl(to="/" prefetch) В каталог
 
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

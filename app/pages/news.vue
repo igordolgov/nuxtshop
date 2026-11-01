@@ -168,7 +168,7 @@
           .modal-action
             button.btn.rounded-xl(type="button" @click="closeNews") Закрыть
 
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup lang="ts">

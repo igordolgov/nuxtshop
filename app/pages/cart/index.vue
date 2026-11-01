@@ -336,7 +336,7 @@
       span.loading.loading-spinner(v-else)
 
   //- Нижняя навигация (сам компонент ведает ориентацией и переходами)
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <style scoped>

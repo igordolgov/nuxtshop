@@ -219,7 +219,7 @@
                 | Применить
 
   //- Мобильная навигация: только < 768px (как на витрине)
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

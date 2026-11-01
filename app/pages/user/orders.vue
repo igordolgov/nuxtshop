@@ -143,7 +143,7 @@
               v-else
             ) Повторить заказ
 
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

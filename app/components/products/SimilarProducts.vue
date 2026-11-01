@@ -17,8 +17,11 @@
                                 .card.bg-base-100.shadow-md.transition-all.duration-300.h-full.flex.flex-col.group(class="hover:shadow-lg")
                                         //- Кнопки действий
                                         .absolute.top-1.left-2.z-10
+                                                //- text-white, а не text-error-content: в business
+                                                //- error-content тёмный — сердече «чёрное на красном»
+                                                //- (паттерн ProductInfo/ProductCardGrid — белый)
                                                 button.btn.btn-circle.btn-xs(
-                                                        :class="item.isFavorite ? 'btn-error text-error-content' : 'btn-ghost bg-base-100/80'"
+                                                        :class="item.isFavorite ? 'btn-error text-white' : 'btn-ghost bg-base-100/80'"
                                                         @click.stop="$emit('toggle-favorite', item.id)"
                                                         :title="item.isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'"
                                                 )

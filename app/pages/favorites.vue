@@ -55,7 +55,7 @@
         .grid.grid-cols-2.gap-3(class="sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6")
           .skeleton.h-64.rounded-xl(v-for="i in 8" :key="i")
 
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

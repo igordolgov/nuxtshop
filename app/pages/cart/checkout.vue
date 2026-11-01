@@ -424,7 +424,7 @@
             | Вернуться на главную
 
   //- Мобильный футер
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

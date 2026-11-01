@@ -152,7 +152,11 @@ const containerRef = ref(null)
 const sentinelRef = ref(null)
 const observer = ref(null)
 
-const currentPage = ref(1)
+// Размер окна рендера. Стартует с maxRendered и РАСШИРЯЕТСЯ на pageSize
+// каждым loadMore — единая система с updateVisibleProducts (раньше окно
+// резалось startIndex+maxRendered, а loadMore считал currentPage*pageSize:
+// при 31 товаре и окне 30 hasMore гас, не показав последний — баг «30 из 31»)
+const windowSize = ref(props.maxRendered)
 const isLoadingMore = ref(false)
 const isLoadingInitial = ref(true)
 const hasMore = ref(true)
@@ -211,13 +215,13 @@ const emptyMessage = computed(() => {
 
 const updateVisibleProducts = () => {
   const total = displayedProducts.value.length
-  const maxStart = Math.max(0, total - props.maxRendered)
+  const maxStart = Math.max(0, total - windowSize.value)
 
   if (startIndex.value > maxStart) {
     startIndex.value = maxStart
   }
 
-  const endIndex = Math.min(startIndex.value + props.maxRendered, total)
+  const endIndex = Math.min(startIndex.value + windowSize.value, total)
   visibleProducts.value = displayedProducts.value.slice(startIndex.value, endIndex)
 }
 
@@ -232,13 +236,14 @@ const loadMore = async () => {
   try {
     await new Promise((resolve) => setTimeout(resolve, LOAD_MORE_DELAY_MS))
 
-    const total = displayedProducts.value.length
-    const nextEnd = (currentPage.value + 1) * props.pageSize
+    // Расширяем окно рендера на одну «страницу» и проверяем,
+    // покрыли ли мы весь список (в терминах той же windowSize,
+    // что использует updateVisibleProducts)
+    windowSize.value += props.pageSize
 
-    if (nextEnd >= total) {
+    const total = displayedProducts.value.length
+    if (startIndex.value + windowSize.value >= total) {
       hasMore.value = false
-    } else {
-      currentPage.value++
     }
 
     updateVisibleProducts()
@@ -303,7 +308,7 @@ const handleScroll = () => {
 }
 
 const reset = async () => {
-  currentPage.value = 1
+  windowSize.value = props.maxRendered
   startIndex.value = 0
   hasMore.value = true
   isLoadingMore.value = false

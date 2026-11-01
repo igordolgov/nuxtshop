@@ -134,7 +134,7 @@
           .collapse-content
             p.text-sm.leading-relaxed(class="text-base-content/70") {{ faq.a }}
 
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>

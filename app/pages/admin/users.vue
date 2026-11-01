@@ -182,7 +182,7 @@
 
   //- Мобильная навигация: только < 768px (как на витрине;
   //- pb-14 на корне был неудачной компенсацией — 56px < 60px навигации)
-  MobileNavFooter(v-if="isMobile")
+  MobileNavFooter
 </template>
 
 <script setup>
