@@ -110,6 +110,25 @@ html[data-theme='business'] {
   font-weight: 600;
 }
 
+/* ─── «Товар уже в корзине» (btn-success + :disabled) ─────────────
+   daisyUI глушит .btn:is(:disabled,…): обнуляет --btn-bg/--btn-border,
+   подменяет подложку на 10% ghost и топит текст до 20% base-content —
+   зелёная плашка «уже в корзине» становилась полупрозрачной и на
+   тёмной теме почти исчезала. Это ПОЛОЖИТЕЛЬНЫЙ статус, а не
+   блокировка: возвращаем плотный success-фон и парный текст
+   (business 7.8:1, corporate 4.5:1 — WCAG AA), сохраняя
+   pointer-events:none и нулевые тени стокового disabled. */
+.btn-success:is(:disabled, [disabled], [aria-disabled='true'], .btn-disabled) {
+  pointer-events: none;
+  color: var(--color-success-content);
+  --btn-bg: var(--color-success);
+  --btn-border: var(--color-success);
+  --btn-inset: 0 0 0 0 oklch(0% 0 0 / 0);
+  --btn-shadow: 0 0 0 0 oklch(0% 0 0 / 0);
+  background-color: var(--color-success);
+  background-image: none;
+}
+
 /* ─── Мобильные touch-настройки и доступность ────────────────── */
 
 @layer base {
