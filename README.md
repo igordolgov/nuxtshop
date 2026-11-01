@@ -6,7 +6,7 @@ NuxtShop
 
 Стек
 
-    Фреймворк: Nuxt 4.6.1 (закреплён в package.json без ^) + Vue 3.5
+    Фреймворк: Nuxt 4.6.3 + Vue 3.5
     Роутинг: файловый роутинг Nuxt (Vue Router 4)
     Стили: TailwindCSS 4 + daisyUI 5 (темы: corporate/business)
     Стейт: Pinia 4 (@pinia/nuxt), локальное состояние — useState
