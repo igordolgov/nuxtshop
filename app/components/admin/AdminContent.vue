@@ -377,4 +377,25 @@ onMounted(load)
   font-size: 0.875rem;
   color: var(--color-error);
 }
+
+/* ─── Мобильные (<640px): ряды полей — в столбик ────────────────
+   В строку 2–3 инпута на 390px не помещаются. Кнопку удаления
+   поднимаем в правый верхний угол блока (как крестик карточки). */
+@media (max-width: 639.98px) {
+  .list-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+  }
+
+  .list-row > label {
+    width: 100%;
+  }
+
+  .row-remove {
+    order: -1;
+    align-self: flex-end;
+    margin-top: 0;
+  }
+}
 </style>

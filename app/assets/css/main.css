@@ -121,6 +121,18 @@ html[data-theme='business'] {
   }
 }
 
+/* iOS-зум при фокусе: Safari авто-увеличивает страницу, если у поля
+  ввода font-size < 16px. daisyUI даёт .input/.select/.textarea 14px —
+  на мобильных поднимаем до 1rem через штатный токен --font-size
+  (формула daisyUI: max(var(--font-size), .875rem)). Десктоп не трогаем. */
+@media (max-width: 1023.98px) {
+  .input,
+  .select,
+  .textarea {
+    --font-size: 1rem;
+  }
+}
+
 /* Уважение к системной настройке «уменьшить движение» */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -121,11 +121,12 @@
         //- Перелинковка: товары из новости (до 6, порядок = порядок показа)
         .mt-3
           span.form-label Товары из новости (до {{ MAX_PRODUCTS }})
-          .flex.gap-2
+          //- На мобильных — столбиком: селект + кнопка в строку не помещаются
+          .flex.flex-col.gap-2(class="sm:flex-row")
             select.select.select-bordered.rounded-xl.w-full(v-model="pickedProductId")
               option(value="" disabled) Выберите товар из каталога…
               option(v-for="p in availableProducts" :key="p.id" :value="p.id") {{ p.name }} · {{ formatPrice(p.price) }} ₽
-            button.btn.btn-outline.btn-sm.rounded-xl.flex-shrink-0(
+            button.btn.btn-outline.btn-sm.rounded-xl(
               type="button"
               :disabled="!pickedProductId"
               @click="addProduct"

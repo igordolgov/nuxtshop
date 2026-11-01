@@ -124,6 +124,17 @@ header.app-header.sticky.top-0.z-50.border-b(
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z")
+                    span Дашборд
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
                     :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/products"
                     @click="onMenuItemClick"
@@ -132,6 +143,39 @@ header.app-header.sticky.top-0.z-50.border-b(
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
                     span Товары
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin/orders"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z")
+                    span Заказы
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin/news"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z")
+                    span Новости
+                li
+                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
+                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                    to="/admin/content"
+                    @click="onMenuItemClick"
+                    prefetch
+                  )
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10")
+                    span Контент
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
@@ -216,6 +260,24 @@ header.app-header.sticky.top-0.z-50.border-b(
                 :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) Товары
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                to="/admin/orders"
+                @click="closeAdminMenu"
+                :class="isExactActiveRoute('/admin/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+                prefetch
+              ) Заказы
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                to="/admin/news"
+                @click="closeAdminMenu"
+                :class="isExactActiveRoute('/admin/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+                prefetch
+              ) Новости
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                to="/admin/content"
+                @click="closeAdminMenu"
+                :class="isExactActiveRoute('/admin/content') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+                prefetch
+              ) Контент
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/users"
                 @click="closeAdminMenu"
