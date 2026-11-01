@@ -5,6 +5,8 @@ import {
   slugify,
   generateUniqueSlug,
   normalizeCategories,
+  extractLocalizedPatch,
+  applyLocalizedPatch,
 } from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
@@ -56,20 +58,25 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' })
     }
 
-    const updated = {
-      ...existing,
-      name: body.name?.trim() ?? existing.name,
-      description: body.description ?? existing.description,
-      price: body.price !== undefined ? parseFloat(body.price) : existing.price,
-      image: imageUrl,
-      gallery,
-      categories: categories ?? existing.categories,
-      inStock: stockQuantity > 0,
-      stockQuantity,
-      characteristics: body.characteristics ?? existing.characteristics,
-      slug,
-      updatedAt: new Date().toISOString(),
-    }
+    const updated = applyLocalizedPatch(
+      {
+        ...existing,
+        name: body.name?.trim() ?? existing.name,
+        description: body.description ?? existing.description,
+        price: body.price !== undefined ? parseFloat(body.price) : existing.price,
+        image: imageUrl,
+        gallery,
+        categories: categories ?? existing.categories,
+        inStock: stockQuantity > 0,
+        stockQuantity,
+        characteristics: body.characteristics ?? existing.characteristics,
+        slug,
+        updatedAt: new Date().toISOString(),
+      },
+      // Переводы (nameEn/…/categoriesEs): не пришли — не трогаем;
+      // ''/null — удалить (фолбэк на русский); строка — сохранить
+      extractLocalizedPatch(body),
+    )
 
     products[index] = updated
     await writeProducts(event, products)

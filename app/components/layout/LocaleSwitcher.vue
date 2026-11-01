@@ -1,7 +1,13 @@
 <!-- app/components/layout/LocaleSwitcher.vue — переключатель языка витрины.
-     Использует switchLocalePath() из @nuxtjs/i18n: сохраняет текущий маршрут,
-     подставляя локализованный префикс (/en, /es; ru — без префикса).
-     Язык определяется ТОЛЬКО URL — детерминированный SSR, без hydration mismatch. -->
+     switchLocalePath() из @nuxtjs/i18n сохраняет текущий маршрут, подставляя
+     локализованный префикс (/en, /es; ru — без префикса).
+     Язык определяется ТОЛЬКО URL — детерминированный SSR, без hydration mismatch.
+     ⚠️ Обычный <a>, а НЕ NuxtLink: полный page load. Причина: резолвер
+     маршрутов @nuxtjs/i18n (runtime/routing/navigation.js → resolveNavigation)
+     перехватывает клиентскую навигацию на корень «/» и возвращает её в
+     текущую локаль (URL-локаль обязана совпадать с композером) — иначе
+     уход на русский с /en и /es невозможен. Полная загрузка обходит
+     клиентский резолвер целиком, SSR отдаёт целевую локаль по URL. -->
 <template lang="pug">
 .relative(ref="rootRef" v-if="locales.length > 1")
   button.btn.btn-ghost.btn-circle(
@@ -24,9 +30,9 @@
     class="bg-base-100 shadow-lg border border-base-300 rounded-xl min-w-36 overflow-hidden"
   )
     li(v-for="l in locales" :key="l.code")
-      NuxtLink.flex.items-center.justify-between.px-4.text-sm.font-medium(
+      a.flex.items-center.justify-between.px-4.text-sm.font-medium(
         class="py-2.5"
-        :to="switchLocalePath(l.code)"
+        :href="switchLocalePath(l.code)"
         :class="l.code === locale ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-base-200 text-base-content'"
         @click="close"
       )

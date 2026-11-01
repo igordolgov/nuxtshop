@@ -13,7 +13,7 @@
             li
               NuxtLink.link.link-hover(to="/" prefetch) {{ $t('nav.home') }}
             li(aria-current="page")
-              span {{ product?.name || $t('productPage.notFound') }}
+              span {{ productView?.name || $t('productPage.notFound') }}
 
   //- Основной контент
   .flex-1.overflow-auto.flex.flex-col.pb-14(ref="scrollContainer" class="lg:pb-0")
@@ -42,15 +42,16 @@
           //- Галерея изображений
           .product-image.flex-1(class="lg:p-3")
             ProductGallery(
-              :product="product"
+              :product="productView"
               :gallery="productGallery"
-              :product-name="product.name"
+              :product-name="productView?.name"
             )
 
-          //- Информация о товаре
+          //- Информация о товаре (productView — локализованная копия:
+          //  имя/описание/категории в языке страницы, остаток/цена — общие)
           .product-info.flex-1(class="sm:pt-4")
             ProductInfo(
-              :product="product"
+              :product="productView"
               :is-favorite="isFavorite"
               :is-in-cart="isInCart(product.id)"
               @toggle-favorite="toggleFavorite"
@@ -138,6 +139,7 @@ definePageMeta({ key: (route) => route.params.slug })
 
 const route = useRoute()
 const { t } = useI18n()
+const { locale, loc } = useLocalizedProduct()
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
 const appState = useAppState()
@@ -148,12 +150,13 @@ const { addRecentlyViewed } = useRecentlyViewed()
 const productSlug = computed(() => route.params.slug)
 
 // SSR-загрузка карточки: данные и мета-теги попадают в исходный HTML —
-// это видят поисковики и превью в мессенджерах. Ключ — по slug, watch
-// перезагружает данные при смене slug (страховка к key в definePageMeta).
+// это видят поисковики и превью в мессенджерах. Ключ — по slug+локали,
+// watch перезагружает данные при смене slug ИЛИ языка (JSON-LD и
+// canonical запрашиваются с ?lang=). 
 const { data: responseData, status, error: fetchError, refresh } = await useAsyncData(
-  `product-page-${productSlug.value}`,
-  () => $fetch(`/api/product/${productSlug.value}`),
-  { watch: [productSlug] },
+  `product-page-${locale.value}-${productSlug.value}`,
+  () => $fetch(`/api/product/${productSlug.value}`, { query: { lang: locale.value } }),
+  { watch: [productSlug, locale] },
 )
 
 // Спиннер — только пока карточки нет вовсе. Фоновый рефетч остатка идёт
@@ -173,6 +176,10 @@ const product = computed(() => {
 const error = computed(() => (fetchError.value && !responseData.value ? t('productPage.notFound') : null))
 
 const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
+
+// Локализованная копия для отображения и SEO: имя/описание/категории —
+// в языке страницы (фолбэк — русский), все служебные поля — как есть
+const productView = computed(() => loc(product.value))
 
 // Одобренные отзывы товара + сводка (приходят вместе с карточкой, SSR)
 const reviews = computed(() => responseData.value?.reviews ?? [])
@@ -194,10 +201,13 @@ const syncStock = () => {
 
 // ─── SEO-мета (SSR) ─────────────────────────────────────────────────
 useSeoMeta({
-  title: () => (product.value ? t('productPage.buyTitle', { name: product.value.name }) : t('productPage.notFound')),
-  description: () => product.value?.description?.slice(0, 160) ?? '',
-  ogTitle: () => product.value?.name ?? '',
-  ogDescription: () => product.value?.description?.slice(0, 160) ?? '',
+  title: () =>
+    productView.value
+      ? t('productPage.buyTitle', { name: productView.value.name })
+      : t('productPage.notFound'),
+  description: () => productView.value?.description?.slice(0, 160) ?? '',
+  ogTitle: () => productView.value?.name ?? '',
+  ogDescription: () => productView.value?.description?.slice(0, 160) ?? '',
   ogType: 'product',
   ogImage: () => jsonLd.value?.image?.[0] ?? null,
   twitterCard: 'summary_large_image',

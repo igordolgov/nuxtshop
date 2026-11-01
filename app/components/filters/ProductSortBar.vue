@@ -65,6 +65,9 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-filters', 'remove-filter', 'reset-all', 'update:sort'])
 
+// Локализованные подписи категорийных чипов (значения фильтров — сырые)
+const { categoryLabel } = useCategoryLabels()
+
 const formatRub = (n) =>
   new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n ?? 0)
 
@@ -108,7 +111,9 @@ const activeChips = computed(() => {
   const f = props.filters ?? {}
 
   for (const cat of f.categories ?? []) {
-    chips.push({ key: `cat:${cat}`, label: cat })
+    // Подпись — локализованная (categoryLabel), ключ — сырое значение:
+    // снятие фильтра в index.vue сравнивает с f.categories (сырое)
+    chips.push({ key: `cat:${cat}`, label: categoryLabel(cat) })
   }
 
   const min = f.priceRange?.min

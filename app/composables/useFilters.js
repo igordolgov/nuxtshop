@@ -1,7 +1,17 @@
 // app/composables/useFilters.js
 import { ref, computed } from 'vue'
+import { localizedProduct } from '../utils/localizedProduct'
 
 export const useFilters = (products) => {
+  // Локаль витрины — из пути маршрута (см. useStoreLocale): доступна и в
+  // middleware (клиентский singleton создаётся там), и в setup; вне Nuxt
+  // (юнит-тесты на node) — 'ru'.
+  let route = null
+  try {
+    route = useRoute()
+  } catch {
+    route = null
+  }
   const getInitialSort = () => {
     if (import.meta.client) {
       try {
@@ -89,7 +99,13 @@ export const useFilters = (products) => {
     const productsValue = products.value
     if (!productsValue?.length) return []
 
-    let filtered = productsValue
+    // Локализованные КОПИИ товаров (ru — без копий, см. localizedProduct):
+    // фильтр поиска, сортировка по имени и выдача карточек работают на
+    // языке страницы. Категорийные фильтры матчят СЫРЫЕ значения
+    // (categoriesRaw) — сами значения фильтров локали не зависят.
+    const localeMatch = /^\/(en|es)(\/|$)/.exec(route?.path ?? '')
+    const locale = localeMatch ? localeMatch[1] : 'ru'
+    let filtered = productsValue.map((p) => localizedProduct(p, locale))
 
     const query = searchQuery.value?.trim().toLowerCase()
     if (query) {
@@ -97,14 +113,15 @@ export const useFilters = (products) => {
         (p) =>
           p.name?.toLowerCase().includes(query) ||
           p.description?.toLowerCase().includes(query) ||
-          p.categories?.some((cat) => cat?.toLowerCase().includes(query))
+          p.categories?.some((cat) => cat?.toLowerCase().includes(query)) ||
+          p.categoriesRaw?.some((cat) => cat?.toLowerCase().includes(query))
       )
     }
 
     const selectedCategories = filters.value.categories
     if (selectedCategories?.length > 0) {
       filtered = filtered.filter((p) =>
-        p.categories?.some((cat) => selectedCategories.includes(cat))
+        (p.categoriesRaw ?? p.categories)?.some((cat) => selectedCategories.includes(cat))
       )
     }
 

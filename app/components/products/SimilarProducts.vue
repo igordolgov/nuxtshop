@@ -11,7 +11,7 @@
                         class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
                 )
                         .similar-product-card(
-                                v-for="item in products"
+                                v-for="item in localizedProducts"
                                 :key="item.id"
                         )
                                 .card.bg-base-100.shadow-md.transition-all.duration-300.h-full.flex.flex-col.group(class="hover:shadow-lg")
@@ -96,6 +96,11 @@ const props = defineProps({
 })
 
 defineEmits(['toggle-favorite', 'add-to-cart'])
+
+// Локализованные копии товаров: имя/описание в языке страницы
+// (исходный пропс не мутируется)
+const { loc } = useLocalizedProduct()
+const localizedProducts = computed(() => (props.products ?? []).map(loc))
 
 const { getProductUrl } = useCart()
 

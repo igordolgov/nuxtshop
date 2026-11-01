@@ -14,6 +14,7 @@ import { useProducts } from './useProducts'
 import { useFilters } from './useFilters'
 import { useAuth } from './useAuth'
 import { useFavorites } from './useFavorites'
+import { localizedProduct } from '../utils/localizedProduct'
 import { computed, watch } from 'vue'
 
 let globalState = null
@@ -35,6 +36,15 @@ function createAppState() {
   const filters = useFilters(products.products)
   const auth = useAuth()
   const favorites = useFavorites()
+
+  // Локаль для поиска (searchInItems) — из пути маршрута (см. useStoreLocale):
+  // доступна в middleware, где создаётся клиентский singleton. Вне Nuxt (тесты) — 'ru'.
+  let searchRoute = null
+  try {
+    searchRoute = useRoute()
+  } catch {
+    searchRoute = null
+  }
 
   // ─── Избранное: делегация в useFavorites ─────────────────
   // Сохранён старый API (favorites.items / .products / .loadFavorites ...),
@@ -91,9 +101,15 @@ function createAppState() {
 
   function searchInItems(query, items) {
     const normalized = query.toLowerCase().trim()
-    const fields = ['name', 'description', 'category', 'brand']
+    // Поиск ведётся по локализованным КОПИЯМ: подсказки в шапке и подсветка
+    // находят товар и по переводу («smartphone» на /en), и по русскому
+    // оригиналу. ru-каталог проходит без копий (см. localizedProduct).
+    const localeMatch = /^\/(en|es)(\/|$)/.exec(searchRoute?.path ?? '')
+    const locale = localeMatch ? localeMatch[1] : 'ru'
+    const localizedItems = items.map((item) => localizedProduct(item, locale))
+    const fields = ['name', 'description', 'categories']
 
-    return items
+    return localizedItems
       .filter((item) =>
         fields.some((field) => {
           const value = getNestedValue(item, field)?.toString().toLowerCase()

@@ -28,7 +28,7 @@
             :value="category"
             v-model="localSelectedCategories"
           )
-          span.whitespace-nowrap {{ category }}
+          span.whitespace-nowrap {{ categoryLabel(category) }}
       
       //- Пустое состояние внутри того же контейнера
       .empty-state.py-6.w-full.text-center(v-else)
@@ -61,6 +61,10 @@ const sortedCategories = computed(() => {
     return a.localeCompare(b)
   })
 })
+
+// Подписи чипов — локализованные (значения фильтров остаются сырыми);
+// сортировка остаётся по сырым значениям — порядок стабилен между локалями
+const { categoryLabel } = useCategoryLabels()
 
 const availableCategories = computed(() => sortedCategories.value)
 

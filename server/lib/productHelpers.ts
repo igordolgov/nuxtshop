@@ -103,6 +103,18 @@ export interface Product {
   characteristics: Record<string, string>;
   createdAt: string;
   updatedAt: string;
+  // ── Необязательные переводы (этап i18n-2) ─────────────────────────
+  // Русский текст живёт в базовых полях; переводы — в полях с суффиксом.
+  // Нет перевода → витрина показывает русский (фолбэк в
+  // shared/utils/localizedProduct.ts). Пустая строка в KV недопустима:
+  // нормализация заменяет её на удаление поля (см. extractLocalizedPatch).
+  nameEn?: string;
+  nameEs?: string;
+  descriptionEn?: string;
+  descriptionEs?: string;
+  // Параллельные массивы к categories: элемент i переводит categories[i]
+  categoriesEn?: string[];
+  categoriesEs?: string[];
 }
 
 const TRANSLIT: Record<string, string> = {
@@ -255,6 +267,113 @@ export function normalizeCategories(
     seen.add(c);
     return true;
   });
+}
+
+// ── Локализованные поля товара (nameEn/…/categoriesEs) ───────────────
+//
+// PUT/POST принимают переводы тем же контрактом, что и базовые поля.
+// Семантика для PUT (частичное обновление):
+//   поле отсутствует в теле → не трогаем;
+//   null / '' / пробелы    → перевод УДАЛЯЕТСЯ из записи (фолбэк на ru);
+//   непустая строка        → trim + лимит длины, сохраняем.
+// Для POST «не трогаем» = поле просто не попадает в новую запись.
+
+const LOCALIZED_TEXT_FIELDS = [
+  'nameEn',
+  'nameEs',
+  'descriptionEn',
+  'descriptionEs',
+] as const;
+
+const LOCALIZED_TEXT_LIMITS: Record<(typeof LOCALIZED_TEXT_FIELDS)[number], number> = {
+  nameEn: 200,
+  nameEs: 200,
+  descriptionEn: 5000,
+  descriptionEs: 5000,
+};
+
+const LOCALIZED_CATEGORY_FIELDS = ['categoriesEn', 'categoriesEs'] as const;
+
+function normalizeLocalizedText(
+  body: Record<string, unknown> | null | undefined,
+  field: (typeof LOCALIZED_TEXT_FIELDS)[number],
+): string | null | undefined {
+  const raw = body?.[field];
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+  if (typeof raw !== 'string' && typeof raw !== 'number') return null;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, LOCALIZED_TEXT_LIMITS[field]);
+}
+
+/** Нормализация переводных категорий: те же форматы, что normalizeCategories
+ *  (массив строк / [{name}] / CSV-строка). Пустой результат = очистка
+ *  перевода (null), а не ошибка — в отличие от обязательных базовых
+ *  категорий. */
+function normalizeLocalizedCategories(
+  body: Record<string, unknown> | null | undefined,
+  field: (typeof LOCALIZED_CATEGORY_FIELDS)[number],
+): string[] | null | undefined {
+  const raw = body?.[field];
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+
+  let list: unknown[];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === 'string') {
+    list = raw.split(',');
+  } else {
+    return null;
+  }
+
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of list) {
+    const value =
+      typeof item === 'string'
+        ? item.trim()
+        : String((item as { name?: unknown })?.name ?? '').trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value.slice(0, 100));
+  }
+  return result.length > 0 ? result : null;
+}
+
+/**
+ * Патч локализованных полей из тела запроса. Ключи со значением null
+ * означают «удалить перевод из записи» — раскрывает applyLocalizedPatch.
+ * Поля, не пришедшие в теле, в патч не попадают (PUT их не трогает).
+ */
+export function extractLocalizedPatch(
+  body: Record<string, unknown> | null | undefined,
+): Record<string, string | string[] | null> {
+  const patch: Record<string, string | string[] | null> = {};
+  for (const field of LOCALIZED_TEXT_FIELDS) {
+    const value = normalizeLocalizedText(body, field);
+    if (value !== undefined) patch[field] = value;
+  }
+  for (const field of LOCALIZED_CATEGORY_FIELDS) {
+    const value = normalizeLocalizedCategories(body, field);
+    if (value !== undefined) patch[field] = value;
+  }
+  return patch;
+}
+
+/** Применяет патч к записи товара: null удаляет поле, остальное — присваивает.
+ *  Возвращает НОВЫЙ объект (записи каталога не мутируются на месте). */
+export function applyLocalizedPatch<ProductType extends Record<string, unknown>>(
+  product: ProductType,
+  patch: Record<string, string | string[] | null>,
+): ProductType {
+  const result = { ...product };
+  for (const [field, value] of Object.entries(patch)) {
+    if (value === null) delete result[field];
+    else result[field] = value;
+  }
+  return result;
 }
 
 export async function getProductBySlug(event: H3Event, slugOrId: string): Promise<Product | null> {

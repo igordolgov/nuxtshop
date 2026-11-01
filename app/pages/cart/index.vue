@@ -83,7 +83,7 @@
                             //- width/height = 80px (w-20 h-20): резерв места до загрузки
                             NuxtImg.w-full.h-full.object-cover(
                               :src="item.image || '/images/placeholder.jpg'"
-                              :alt="item.name"
+                              :alt="displayName(item)"
                               width="80"
                               height="80"
                               loading="lazy"
@@ -97,7 +97,7 @@
                           h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
                             class="hover:text-primary"
                             @click="goToProduct(item)"
-                          ) {{ item.name }}
+                          ) {{ displayName(item) }}
                           span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ item.category }}
                           .flex.items-center.gap-1.mt-1
                             button.qty-btn(
@@ -153,7 +153,7 @@
                         .item-image.w-12.h-12.rounded-lg.bg-base-200.flex.items-center.justify-center.overflow-hidden
                           NuxtImg.w-full.h-full.object-cover(
                             :src="item.image || '/images/placeholder.jpg'"
-                            :alt="item.name"
+                            :alt="displayName(item)"
                             loading="lazy"
                             @error="handleImageError"
                           )
@@ -162,7 +162,7 @@
                           h3.item-name.font-medium.text-sm.transition-colors.cursor-pointer.truncate(
                             class="hover:text-primary"
                             @click="goToProduct(item)"
-                          ) {{ item.name }}
+                          ) {{ displayName(item) }}
                           span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
                           .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
                             | {{ $t('cart.qtyExceededFull') }}
@@ -629,6 +629,18 @@ const { t } = useI18n()
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const { $notify } = useNuxtApp()
+
+// Локализация названий в корзине: снапшот в localStorage хранит имя на
+// языке МОМЕНТА добавления; на витрине показываем актуальное имя товара
+// из каталога в ТЕКУЩЕЙ локали (фолбэк — снапшот)
+const appState = useAppState()
+const { loc } = useLocalizedProduct()
+const displayName = (item) => {
+  const fresh = appState.products.value?.find(
+    (p) => String(p.id) === String(item?.id),
+  )
+  return fresh ? loc(fresh).name : (item?.name ?? '')
+}
 
 //- Один вызов useCart. Header/MobileNavFooter автоимпортятся Nuxt
 const {

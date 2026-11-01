@@ -107,6 +107,7 @@ const MAX_VISIBLE = 8
 
 const appState = useAppState()
 const { products } = appState
+const { loc } = useLocalizedProduct()
 const { cartItems, getProductUrl, slugify } = useCart()
 const { readSlugs, clearRecentlyViewed } = useRecentlyViewed()
 
@@ -163,7 +164,10 @@ const items = computed(() => {
     }
     if (found.length >= MAX_VISIBLE) break
   }
-  return found
+  // Локализованные копии для отображения (имя/описание в языке страницы);
+  // сопоставление истории выше — по СЫРЫМ товарам: slugify(имя) исторической
+  // ссылки строился от русского названия, локализованное имя слаг не сохранит
+  return found.map(loc)
 })
 
 const clearHistory = () => {

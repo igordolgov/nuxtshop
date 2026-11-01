@@ -211,15 +211,17 @@ header.app-header.sticky.top-0.z-50.border-b(
                       path(stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 8 4 4 0 010-8zM6 20a7 7 0 0114 0")
                     span {{ $t('nav.users') }}
 
-          //- Раздел: Язык — переключение витрины ru/en/es (URL-стратегия)
+          //- Раздел: Язык — переключение витрины ru/en/es (URL-стратегия).
+          //- Обычный <a>: полный page load — клиентский резолвер @nuxtjs/i18n
+          //- возвращает навигацию на «/» в текущую локаль (см. LocaleSwitcher.vue)
           .px-3.pb-4
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | {{ $t('header.language') }}
             .flex.gap-2.px-2
-              NuxtLink.btn.btn-sm.flex-1.rounded-lg(
+              a.btn.btn-sm.flex-1.rounded-lg(
                 v-for="l in locales"
                 :key="l.code"
-                :to="switchLocalePath(l.code)"
+                :href="switchLocalePath(l.code)"
                 :class="l.code === locale ? 'btn-primary' : 'btn-outline'"
               )
                 | {{ l.name }}

@@ -14,33 +14,84 @@
 
     h3.text-base.font-bold.mb-2(class="sm:text-xl") Редактировать товар
     form(@submit.prevent="handleSubmit" v-if="form")
+      //- Языковые вкладки: RU — основной контент (обязательный), EN/ES —
+      //- необязательные переводы (пусто → витрина показывает русский)
+      .flex.gap-1.mb-2.flex-wrap.items-center
+        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
+        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
+        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
+        span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60") Необязательно — без перевода показывается русский
+
       //- Основная информация - 2 колонки на мобильных, 6 на десктопе
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-6")
-        //- Название товара
-        .form-control(class="sm:col-span-2")
-          label.label.py-1
-            span.label-text.text-xs Название *
-          input.input.input-bordered.input-sm.w-full(
-            type="text"
-            v-model="form.name"
-            required
-            placeholder="Название"
-            :disabled="isSubmitting"
-          )
+        //- Название и категории — поля активной языковой вкладки
+        template(v-if="langTab === 'ru'")
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Название *
+            input.input.input-bordered.input-sm.w-full(
+              type="text"
+              v-model="form.name"
+              required
+              placeholder="Название"
+              :disabled="isSubmitting"
+            )
 
-        //- Категории — обязательное поле, мультвыбор с подсказками
-        .form-control(class="sm:col-span-2")
-          label.label.py-1
-            span.label-text.text-xs Категории *
-          AdminCategoryPicker(
-            v-model="form.categories"
-            :allCategories="props.allCategories || []"
-            :disabled="isSubmitting"
-            :error="categoriesEmpty"
-            placeholder="Выбрать или ввести новую"
-          )
-          label.label.py-1(v-if="categoriesEmpty")
-            span.label-text-alt.text-error Укажите хотя бы одну категорию
+          //- Категории — обязательное поле, мультвыбор с подсказками
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Категории *
+            AdminCategoryPicker(
+              v-model="form.categories"
+              :allCategories="props.allCategories || []"
+              :disabled="isSubmitting"
+              :error="categoriesEmpty"
+              placeholder="Выбрать или ввести новую"
+            )
+            label.label.py-1(v-if="categoriesEmpty")
+              span.label-text-alt.text-error Укажите хотя бы одну категорию
+
+        template(v-else-if="langTab === 'en'")
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Name (English)
+            input.input.input-bordered.input-sm.w-full(
+              type="text"
+              v-model="form.nameEn"
+              placeholder="Product name in English"
+              :disabled="isSubmitting"
+            )
+
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Categories (English)
+            AdminCategoryPicker(
+              v-model="form.categoriesEn"
+              :allCategories="props.allCategories || []"
+              :disabled="isSubmitting"
+              placeholder="Category in English or empty"
+            )
+
+        template(v-else)
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Nombre (Español)
+            input.input.input-bordered.input-sm.w-full(
+              type="text"
+              v-model="form.nameEs"
+              placeholder="Nombre del producto en español"
+              :disabled="isSubmitting"
+            )
+
+          .form-control(class="sm:col-span-2")
+            label.label.py-1
+              span.label-text.text-xs Categorías (Español)
+            AdminCategoryPicker(
+              v-model="form.categoriesEs"
+              :allCategories="props.allCategories || []"
+              :disabled="isSubmitting"
+              placeholder="Categoría en español o vacío"
+            )
 
         //- Цена
         .form-control(class="sm:col-span-1")
@@ -68,12 +119,12 @@
             :disabled="isSubmitting"
           )
 
-      //- Описание товара + наличие (чекбокс раньше занимал колонку в гриде,
-      //-  тесня категории; сейчас живёт в шапке описания)
+      //- Описание товара (активная вкладка) + наличие (чекбокс общий для
+      //- всех языков и раньше занимал колонку в гриде, тесня категории)
       .form-control.mb-2
         .flex.items-center.justify-between
           label.label.py-1
-            span.label-text.text-xs Описание
+            span.label-text.text-xs Описание ({{ langLabel }})
           label.cursor-pointer.flex.items-center.gap-1.text-xs
             input.checkbox.checkbox-primary.checkbox-xs(
               type="checkbox"
@@ -82,8 +133,23 @@
             )
             | В наличии
         textarea.textarea.textarea-bordered.textarea-sm.w-full(
+          v-if="langTab === 'ru'"
           v-model="form.description"
           placeholder="Описание товара"
+          rows="2"
+          :disabled="isSubmitting"
+        )
+        textarea.textarea.textarea-bordered.textarea-sm.w-full(
+          v-else-if="langTab === 'en'"
+          v-model="form.descriptionEn"
+          placeholder="Description in English (optional)"
+          rows="2"
+          :disabled="isSubmitting"
+        )
+        textarea.textarea.textarea-bordered.textarea-sm.w-full(
+          v-else
+          v-model="form.descriptionEs"
+          placeholder="Descripción en español (opcional)"
           rows="2"
           :disabled="isSubmitting"
         )
@@ -224,6 +290,11 @@ const emit = defineEmits(['update:isOpen', 'productUpdated'])
 
 const MAX_GALLERY_IMAGES = 5
 
+// Активная языковая вкладка (RU — основной контент, EN/ES — переводы)
+const langTab = ref('ru')
+const LANG_LABELS = { ru: 'русский', en: 'English', es: 'Español' }
+const langLabel = computed(() => LANG_LABELS[langTab.value] || 'русский')
+
 const isSubmitting = ref(false)
 const uploadProgress = ref(0)
 const mainImageInput = ref(null)
@@ -352,6 +423,14 @@ const handleSubmit = async () => {
       gallery: form.value.gallery || [],
       inStock: Boolean(form.value.inStock),
       stockQuantity: Number(form.value.stockQuantity) || 0,
+      // Переводы уходят ВСЕГДА: пустая строка = «очистить перевод»
+      // (сервер удаляет поле → витрина фолбэкается на русский)
+      nameEn: form.value.nameEn?.trim() || '',
+      nameEs: form.value.nameEs?.trim() || '',
+      descriptionEn: form.value.descriptionEn?.trim() || '',
+      descriptionEs: form.value.descriptionEs?.trim() || '',
+      categoriesEn: [...(form.value.categoriesEn || [])],
+      categoriesEs: [...(form.value.categoriesEs || [])],
     }
 
     if (updatedProduct.name.length === 0) throw new Error('Название обязательно')
@@ -405,6 +484,13 @@ const initializeForm = () => {
       gallery: Array.isArray(props.product.gallery) ? [...props.product.gallery] : [],
       inStock: props.product.inStock !== undefined ? props.product.inStock : true,
       stockQuantity: props.product.stockQuantity || 0,
+      // Переводы (пусто в KV → пусто в форме)
+      nameEn: props.product.nameEn || '',
+      nameEs: props.product.nameEs || '',
+      descriptionEn: props.product.descriptionEn || '',
+      descriptionEs: props.product.descriptionEs || '',
+      categoriesEn: Array.isArray(props.product.categoriesEn) ? [...props.product.categoriesEn] : [],
+      categoriesEs: Array.isArray(props.product.categoriesEs) ? [...props.product.categoriesEs] : [],
     }
   }
 }
@@ -419,6 +505,7 @@ watch(() => props.isOpen, (newVal) => {
     formError.value = ''
     uploadProgress.value = 0
     isSubmitting.value = false
+    langTab.value = 'ru'
     if (mainImageInput.value) mainImageInput.value.value = ''
     if (galleryInput.value) galleryInput.value.value = ''
   } else {

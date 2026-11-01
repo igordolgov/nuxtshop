@@ -13,6 +13,8 @@ import {
   slugify,
   generateUniqueSlug,
   normalizeCategories,
+  applyLocalizedPatch,
+  extractLocalizedPatch,
 } from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
@@ -52,21 +54,26 @@ export default defineEventHandler(async (event) => {
     const stockQuantity = parseInt(body.stockQuantity) || 0
 
     const now = new Date().toISOString()
-    const newProduct = {
-      id: String(newId),
-      slug,
-      name: body.name.trim(),
-      description: body.description || '',
-      price: parseFloat(body.price),
-      image: imageUrl,
-      categories,
-      gallery,
-      inStock: stockQuantity > 0,
-      stockQuantity,
-      characteristics: body.characteristics || {},
-      createdAt: now,
-      updatedAt: now,
-    }
+    const newProduct = applyLocalizedPatch(
+      {
+        id: String(newId),
+        slug,
+        name: body.name.trim(),
+        description: body.description || '',
+        price: parseFloat(body.price),
+        image: imageUrl,
+        categories,
+        gallery,
+        inStock: stockQuantity > 0,
+        stockQuantity,
+        characteristics: body.characteristics || {},
+        createdAt: now,
+        updatedAt: now,
+      },
+      // Переводы (nameEn/…/categoriesEs) необязательны: пустые/нулевые
+      // значения в новую запись не попадают — фолбэк на русский
+      extractLocalizedPatch(body),
+    )
 
     products.push(newProduct)
     await writeProducts(event, products)

@@ -164,7 +164,13 @@ export function buildProductJsonLd(
   siteUrl: string,
   currency = 'RUB',
   rating?: { count: number; average: number } | null,
+  // localePrefix: канонический URL offers.url строится с префиксом локали
+  // (/en/product/…), чтобы canonical совпадал с языком SSR-HTML; ru — без
+  // префикса (strategy prefix_except_default)
+  opts?: { localePrefix?: string },
 ): Record<string, unknown> {
+  const prefix =
+    opts?.localePrefix && opts.localePrefix !== 'ru' ? `/${opts.localePrefix}` : '';
   const images = [product.image, ...(product.gallery ?? [])]
     .map((src) => absoluteImageUrl(src, siteUrl))
     .filter((url): url is string => Boolean(url))
@@ -182,7 +188,7 @@ export function buildProductJsonLd(
     ...(product.categories?.length ? { category: product.categories[0] } : {}),
     offers: {
       '@type': 'Offer',
-      url: `${siteUrl}/product/${product.slug}`,
+      url: `${siteUrl}${prefix}/product/${product.slug}`,
       priceCurrency: currency,
       price: String(product.price),
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',

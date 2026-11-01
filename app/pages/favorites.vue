@@ -66,7 +66,13 @@ const { $notify } = useNuxtApp()
 
 // Единственный источник правды по избранному
 const favorites = useFavorites()
-const favoriteProducts = favorites.favoriteProducts
+// Локализованные копии для карточек (в localStorage могут лежать как
+// снапшоты, так и свежие товары — loc переводит те и другие по полям
+// nameEn/…, фолбэк — русский)
+const { loc } = useLocalizedProduct()
+const favoriteProducts = computed(() =>
+  (favorites.favoriteProducts.value ?? []).map(loc),
+)
 
 // Формы «товар» — vue-i18n plural (favorites.count)
 

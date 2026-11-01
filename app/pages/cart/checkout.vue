@@ -36,12 +36,12 @@
                     .w-10.h-10.rounded
                       NuxtImg(
                         :src="getSafeImage(item?.image)"
-                        :alt="item?.name"
+                        :alt="displayName(item)"
                         class="object-cover"
                         fetchpriority="high"
                       )
                   .flex-1.min-w-0
-                    .font-medium.text-sm.truncate(class="lg:text-md") {{ item?.name }}
+                    .font-medium.text-sm.truncate(class="lg:text-md") {{ displayName(item) }}
                     .flex.items-center.justify-between.mt-1
                       span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                       .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
@@ -357,12 +357,12 @@
                   .w-10.h-10.rounded
                     NuxtImg(
                       :src="getSafeImage(item?.image)"
-                      :alt="item?.name"
+                      :alt="displayName(item)"
                       class="object-cover"
                       fetchpriority="high"
                     )
                 .flex-1.min-w-0
-                  .font-medium.text-xs.truncate {{ item?.name }}
+                  .font-medium.text-xs.truncate {{ displayName(item) }}
                   .flex.items-center.justify-between.mt-1
                     span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                     .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
@@ -449,6 +449,18 @@ const {
   clearCart,
 } = useCart()
 const { getSafeImage, formatPrice } = useProductUtils()
+
+// Локализация названий в оформлении заказа: показываем актуальное имя
+// из каталога в текущей локали (снапшот корзины хранит имя на языке
+// момента добавления; фолбэк — снапшот)
+const appState = useAppState()
+const { loc } = useLocalizedProduct()
+const displayName = (item) => {
+  const fresh = appState.products.value?.find(
+    (p) => String(p.id) === String(item?.id),
+  )
+  return fresh ? loc(fresh).name : (item?.name ?? '')
+}
 const { createOrder } = useOrders()
 
 //- Шаги оформления
