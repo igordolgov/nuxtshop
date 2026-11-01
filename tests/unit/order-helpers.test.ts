@@ -26,6 +26,7 @@ import {
   type CreateOrderInput,
 } from '../../server/lib/orderHelpers';
 import type { Product } from '../../server/lib/productHelpers';
+import type { PromoCode } from '../../server/lib/promoHelpers';
 import { cacheClear } from '../../server/lib/cache';
 
 const event = {} as never;
@@ -64,10 +65,26 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
   };
 }
 
+/** Фикстура промокода в KV: SALE10 = 10% */
+const promo: PromoCode = {
+  id: '1',
+  code: 'SALE10',
+  type: 'percent',
+  value: 10,
+  active: true,
+  expiresAt: null,
+  usageLimit: null,
+  usedCount: 0,
+  description: '',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
+
 beforeEach(() => {
   kvStore.clear();
   cacheClear(); // readProducts кэшируется module-scope — между тестами сбрасываем
   kvStore.set('data:products', structuredClone([product]));
+  kvStore.set('data:promocodes', structuredClone([promo]));
 });
 
 describe('createOrder — деньги считает сервер', () => {
@@ -80,16 +97,44 @@ describe('createOrder — деньги считает сервер', () => {
     expect(order.items[0]!.price).toBe(1000); // цена из KV, не из ввода
   });
 
-  it('промокод SALE10 даёт скидку 10%, регистронезависимо', async () => {
+  it('промокод из KV даёт скидку 10%, регистронезависимо', async () => {
     const order = await createOrder(event, makeInput({ promoCode: 'sale10' }));
     expect(order.promoCode).toBe('SALE10');
     expect(order.discount).toBe(100); // 10% от 1000
     expect(order.total).toBe(1200); // 1000 - 100 + 300
+    // счётчик применений увеличен после заказа
+    const promos = (await kvStore.get('data:promocodes')) as PromoCode[];
+    expect(promos[0]!.usedCount).toBe(1);
   });
 
-  it('неизвестный промокод игнорируется (скидка 0)', async () => {
+  it('фиксированный промокод не превышает сумму корзины', async () => {
+    kvStore.set('data:promocodes', [
+      structuredClone(promo),
+      { ...promo, id: '2', code: 'MINUS500', type: 'fixed', value: 500 },
+    ]);
+    const order = await createOrder(event, makeInput({ promoCode: 'minus500' }));
+    expect(order.discount).toBe(500); // 1000 - 500
+    expect(order.total).toBe(800);
+  });
+
+  it('истёкший / неактивный / исчерпанный промокод — скидка 0, код не фиксируется', async () => {
+    const cases: PromoCode[] = [
+      { ...promo, expiresAt: '2000-01-01T00:00:00.000Z' },
+      { ...promo, active: false },
+      { ...promo, usageLimit: 2, usedCount: 2 },
+    ];
+    for (const bad of cases) {
+      kvStore.set('data:promocodes', [structuredClone(bad)]);
+      const order = await createOrder(event, makeInput({ promoCode: 'sale10' }));
+      expect(order.discount).toBe(0);
+      expect(order.promoCode).toBeNull();
+    }
+  });
+
+  it('неизвестный промокод игнорируется (скидка 0, код не фиксируется)', async () => {
     const order = await createOrder(event, makeInput({ promoCode: 'HACK200' }));
     expect(order.discount).toBe(0);
+    expect(order.promoCode).toBeNull();
   });
 
   it('бесплатная доставка курьером строго больше 2000', async () => {

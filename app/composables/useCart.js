@@ -2,6 +2,10 @@
 // ============================================
 // Composable: useCart — корзина (singleton на клиенте).
 // Снапшоты товаров в localStorage; все суммы — computed.
+// Промокод: валидируется на сервере (POST /api/promocodes/validate),
+// в localStorage хранится { code, type, value }; скидка пересчитывается
+// на клиенте по тем же правилам, что и на сервере (promoHelpers),
+// окончательный расчёт всё равно делает сервер при заказе.
 // ============================================
 
 import { ref, computed } from 'vue'
@@ -50,6 +54,7 @@ function createCart() {
 
   const state = ref({
     items: [],
+    // Применённый промокод: { code, type: 'percent'|'fixed', value } или ''
     promo: '',
     processing: false,
     error: '',
@@ -71,7 +76,18 @@ function createCart() {
     }, 0),
   )
 
-  const discount = computed(() => (appliedPromo.value ? subtotal.value * 0.1 : 0))
+  // Правила расчёта зеркалят server/lib/promoHelpers.calcDiscount:
+  // percent — с округлением до рубля, fixed — не больше суммы корзины.
+  // Итог при заказе пересчитает сервер — расхождение не страшно,
+  // но и этого хватает, чтобы UI и заказ почти всегда совпадали.
+  const discount = computed(() => {
+    const promo = state.value.promo
+    if (!promo || !promo.code) return 0
+    const base = subtotal.value
+    if (base <= 0) return 0
+    const raw = promo.type === 'percent' ? (base * promo.value) / 100 : promo.value
+    return Math.max(0, Math.min(Math.round(raw), Math.round(base)))
+  })
 
   // ⚙️ НАСТРОЙКА: бесплатная доставка от 2000 ₽, иначе 300 ₽
   const deliveryPrice = computed(() => (subtotal.value > 2000 ? 0 : 300))
@@ -114,7 +130,11 @@ function createCart() {
 
       const parsed = JSON.parse(savedCart)
       state.value.items = Array.isArray(parsed.items) ? parsed.items : []
-      state.value.promo = parsed.promo || ''
+      // Миграция: раньше промокод хранился строкой (жёсткий SALE10);
+      // теперь объект с типом скидки — старую строку сбрасываем.
+      const savedPromo = parsed.promo
+      state.value.promo =
+        savedPromo && typeof savedPromo === 'object' && savedPromo.code ? savedPromo : ''
       console.log('📥 Корзина загружена:', state.value.items.length, 'товаров')
     } catch (error) {
       console.error('Error loading cart:', error)
@@ -211,16 +231,64 @@ function createCart() {
   }
 
   const applyPromoCode = async (code) => {
-    // ⚙️ НАСТРОЙКА: промокоды (SALE10 = скидка 10%, см. discount)
-    if (code.toUpperCase() === 'SALE10') {
-      state.value.promo = code
-      state.value.error = ''
+    const trimmed = String(code || '').trim()
+    if (!trimmed) throw new Error('Введите промокод')
+
+    // Валидация на сервере: список промокодов живёт в KV (админка
+    // /admin/promocodes). Клиентские суммы не участвуют в заказе.
+    const resp = await $fetch('/api/promocodes/validate', {
+      method: 'POST',
+      body: { code: trimmed, subtotal: subtotal.value },
+    }).catch((error) => {
+      throw new Error(error?.data?.message || 'Не удалось проверить промокод')
+    })
+
+    if (!resp?.valid) {
+      state.value.error = resp?.message || 'Неверный промокод'
+      throw new Error(state.value.error)
+    }
+
+    state.value.promo = {
+      code: resp.promo.code,
+      type: resp.promo.type,
+      value: resp.promo.value,
+    }
+    state.value.error = ''
+    saveCartToStorage()
+    emitUpdated()
+    return true
+  }
+
+  /**
+   * Перепроверка сохранённого промокода (срок/лимиты могли истечь
+   * между сессиями). Невалидный удаляется из корзины. Ошибка сети
+   * не наказывается: считаем промокод действующим, сервер перепроверит
+   * при заказе.
+   */
+  const revalidatePromo = async () => {
+    const promo = state.value.promo
+    if (!promo?.code) return true
+    try {
+      const resp = await $fetch('/api/promocodes/validate', {
+        method: 'POST',
+        body: { code: promo.code, subtotal: subtotal.value },
+      })
+      if (resp?.valid) {
+        state.value.promo = {
+          code: resp.promo.code,
+          type: resp.promo.type,
+          value: resp.promo.value,
+        }
+        saveCartToStorage()
+        return true
+      }
+      state.value.promo = ''
       saveCartToStorage()
       emitUpdated()
+      return false
+    } catch {
       return true
     }
-    state.value.error = 'Неверный промокод'
-    throw new Error('Неверный промокод')
   }
 
   const removePromoCode = async () => {
@@ -279,6 +347,7 @@ function createCart() {
     updateItemQuantity,
     removeFromCart,
     applyPromoCode,
+    revalidatePromo,
     removePromoCode,
     fetchCart,
     proceedToCheckout,

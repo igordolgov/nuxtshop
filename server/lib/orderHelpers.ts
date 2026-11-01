@@ -10,6 +10,14 @@ import type { H3Event } from 'h3';
 import { createError } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import { readProducts, writeProducts, type Product } from './productHelpers';
+import {
+  readPromoCodes,
+  writePromoCodes,
+  findPromoByCode,
+  promoIssue,
+  calcDiscount,
+  type PromoCode,
+} from './promoHelpers';
 
 const ORDERS_KEY = 'data:orders';
 
@@ -38,8 +46,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 // ─── Правила ценообразования.
 // СЕРВЕР — единственный источник правды: клиентские суммы игнорируются,
 // цены/названия/наличие берутся из KV товаров.
-// ⚙️ НАСТРОЙКА: промокоды (доля скидки). SALE10 зеркалит useCart.js
-const PROMO_CODES: Record<string, number> = { SALE10: 0.1 };
+// Промокоды живут в KV data:promocodes (админка /admin/promocodes);
+// скидка валидируется и считается сервером, клиентский subtotal — только превью.
 // ⚙️ НАСТРОЙКА: стоимость доставки. Курьер — бесплатно от порога,
 // почта — всегда платно, самовывоз — всегда 0 (согласовано с формой checkout)
 const FREE_DELIVERY_FROM = 2000;
@@ -244,11 +252,18 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     });
   }
 
-  // 4. Деньги — считает только сервер (клиентские суммы игнорируются)
+  // 4. Деньги — считает только сервер (клиентские суммы игнорируются).
+  // Промокод: валидируется по KV (active/срок/лимит); невалидный или
+  // неизвестный код НЕ блокирует заказ — просто скидка 0.
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const promoCode = input.promoCode?.trim().toUpperCase() || null;
-  const discount =
-    promoCode && PROMO_CODES[promoCode] ? subtotal * PROMO_CODES[promoCode] : 0;
+  const promoInput = input.promoCode?.trim().toUpperCase() || null;
+  let appliedPromo: PromoCode | null = null;
+  if (promoInput) {
+    const promo = findPromoByCode(await readPromoCodes(event), promoInput);
+    if (promo && !promoIssue(promo)) appliedPromo = promo;
+  }
+  const promoCode = appliedPromo?.code ?? null;
+  const discount = appliedPromo ? calcDiscount(appliedPromo, subtotal) : 0;
   const deliveryPrice =
     deliveryMethod === 'pickup'
       ? 0
@@ -294,6 +309,24 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   const orders = await readOrders(event);
   orders.unshift(order);
   await writeOrders(event, orders);
+
+  // Счётчик применений пишем ПОСЛЕ заказа (как склад при подтверждении):
+  // упавшая запись промокода не отменит уже созданный заказ — usedCount
+  // отстанет на 1 (админ увидит и поправит), покупатель ничего не теряет.
+  if (appliedPromo) {
+    try {
+      const promos = await readPromoCodes(event);
+      const promo = promos.find((p) => p.id === appliedPromo.id);
+      if (promo) {
+        promo.usedCount = (promo.usedCount ?? 0) + 1;
+        promo.updatedAt = new Date().toISOString();
+        await writePromoCodes(event, promos);
+      }
+    } catch (error) {
+      console.error('[promo] не удалось увеличить usedCount:', error);
+    }
+  }
+
   return order;
 }
 

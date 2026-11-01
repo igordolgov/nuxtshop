@@ -405,7 +405,7 @@
             ) Применить
           .alert.alert-success.mt-2(v-if="appliedPromo")
             .flex.items-center.justify-between
-              span(class="text-[0.65rem] lg:text-xs") Промокод "{{ appliedPromo }}" применен
+              span(class="text-[0.65rem] lg:text-xs") Промокод "{{ appliedPromo?.code }}" применен
               button.btn.btn-ghost.btn-xs(type="button" @click="removePromo") ✕
 
     //- Модальное окно успешного заказа
@@ -444,6 +444,7 @@ const {
   appliedPromo,
   applyPromoCode,
   removePromoCode,
+  revalidatePromo,
   clearCart,
 } = useCart()
 const { getSafeImage, formatPrice } = useProductUtils()
@@ -620,7 +621,7 @@ const placeOrder = async () => {
       items: cartItems.value.map((item) => ({ id: item.id, quantity: item.quantity })),
       deliveryMethod: orderForm.value.deliveryMethod,
       paymentMethod: orderForm.value.paymentMethod,
-      promoCode: appliedPromo.value || null,
+      promoCode: appliedPromo.value?.code || null,
       customer: {
         name: `${orderForm.value.firstName} ${orderForm.value.lastName}`.trim(),
         email: orderForm.value.email,
@@ -661,8 +662,20 @@ const placeOrder = async () => {
   }
 }
 
-//- Автозаполнение контактов из профиля авторизованного пользователя
+//- Автозаполнение контактов из профиля авторизованного пользователя.
+//- Заодно ревалидация сохранённого промокода: срок/лимит могли истечь
+//- между сессиями — невалидный удаляется, чтобы не путать покупателя
+//- показанной скидкой, которой при заказе не будет.
 onMounted(async () => {
+  try {
+    const promoOk = await revalidatePromo()
+    if (!promoOk) {
+      $notify.error('Сохранённый промокод больше не действует и был удалён из корзины')
+    }
+  } catch (error) {
+    console.error('[checkout] revalidatePromo:', error)
+  }
+
   try {
     const { isAuthenticated, user } = useAppState()
     if (isAuthenticated?.value && user?.value) {
