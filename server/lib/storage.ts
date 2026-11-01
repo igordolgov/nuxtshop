@@ -10,6 +10,11 @@ interface KVStore {
   get<T>(key: string, type: 'json'): Promise<T | null>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
+  list(opts: { prefix: string; cursor?: string }): Promise<{
+    keys: { name: string }[];
+    list_complete: boolean;
+    cursor?: string;
+  }>;
 }
 
 const mem = new Map<string, unknown>();
@@ -34,4 +39,23 @@ export async function kvDelete(event: H3Event, key: string) {
   const kv = getKV(event);
   if (kv) await kv.delete(key);
   else mem.delete(key);
+}
+
+/**
+ * Все ключи с префиксом (постранично — KV листит по 1000 за раз).
+ * Fallback в dev — фильтр по in-memory Map.
+ */
+export async function kvListKeys(event: H3Event, prefix: string): Promise<string[]> {
+  const kv = getKV(event);
+  if (kv) {
+    const out: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await kv.list({ prefix, cursor });
+      out.push(...page.keys.map((k) => k.name));
+      cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
+    return out;
+  }
+  return [...mem.keys()].filter((k) => k.startsWith(prefix));
 }

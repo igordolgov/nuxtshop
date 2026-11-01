@@ -685,18 +685,26 @@ const onGlobalKeydown = (event) => {
   if (event.key === 'Escape') closeAllMenus()
 }
 
+//- Тема, изменённая вне шапки (страница /settings), синхронизирует переключатель
+const onThemeChanged = (event) => {
+  const theme = event?.detail
+  if (theme === 'corporate' || theme === 'business') currentTheme.value = theme
+}
+
 onMounted(() => {
   if (!import.meta.client) return
   const applied = document.documentElement.getAttribute('data-theme')
   currentTheme.value = applied === 'business' ? 'business' : 'corporate'
   document.addEventListener('click', closeMenusOnClickOutside)
   document.addEventListener('keydown', onGlobalKeydown)
+  window.addEventListener('theme-changed', onThemeChanged)
 })
 
 onUnmounted(() => {
   if (!import.meta.client) return
   document.removeEventListener('click', closeMenusOnClickOutside)
   document.removeEventListener('keydown', onGlobalKeydown)
+  window.removeEventListener('theme-changed', onThemeChanged)
 })
 
 watch(() => route.path, () => closeAllMenus())

@@ -3,7 +3,9 @@ import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON, kvDelete } from '../lib/storage';
 import { readUsers, type User } from '../lib/userHelpers';
 
-const SESSION_COOKIE = 'user_session';
+// Экспортируется для эндпоинтов, которым нужен токен текущей сессии
+// (например, «выйти со всех других устройств» не гасит текущую).
+export const SESSION_COOKIE = 'user_session';
 const SESSION_TTL = 60 * 60 * 24 * 7; // 7 дней
 
 function randomToken() {
