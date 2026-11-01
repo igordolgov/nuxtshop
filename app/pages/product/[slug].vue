@@ -67,6 +67,15 @@
       @add-to-cart="addSimilarToCart"
     )
 
+    //- Недавно смотрели: localStorage клиента, SSR не рендерит;
+    //- текущий товар исключается, обработчики — как у похожих
+    RecentlyViewed(
+      v-if="product"
+      :exclude-id="product.id"
+      @toggle-favorite="toggleSimilarFavorite"
+      @add-to-cart="addSimilarToCart"
+    )
+
     //- Отзывы (approved — приходят с /api/product/[slug]; новые уходят
     //-  на модерацию в /admin/reviews)
     ProductReviews(
@@ -113,6 +122,7 @@ const { isMobile } = useMobileDetection()
 const appState = useAppState()
 const { products } = appState
 const { addToCart, cartItems } = useCart()
+const { addRecentlyViewed } = useRecentlyViewed()
 
 const productSlug = computed(() => route.params.slug)
 
@@ -263,8 +273,14 @@ const resetScroll = () => {
   if (scrollContainer.value) scrollContainer.value.scrollTop = 0
 }
 
+// ─── История просмотров: slug из URL — наверх списка localStorage ───
+const trackView = () => {
+  if (route.params.slug) addRecentlyViewed(String(route.params.slug))
+}
+
 onMounted(() => {
   resetScroll()
+  trackView()
   syncStock()
   // Возврат на вкладку (подтвердили заказ в Telegram, вернулись в магазин) —
   // дотягиваем свежий остаток
@@ -277,6 +293,7 @@ onBeforeUnmount(() => {
 
 watch(() => route.params.slug, () => {
   resetScroll()
+  trackView()
 })
 </script>
 

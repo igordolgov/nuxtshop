@@ -13,20 +13,38 @@
         h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Заказы
         p.text-sm(class="mt-0.5 text-base-content/60")
           | {{ isLoading ? 'Загрузка…' : ('В системе: ' + orders.length) }}
-      button.btn.btn-ghost.btn-sm.rounded-xl(
-        type="button"
-        :disabled="isLoading"
-        aria-label="Обновить"
-        @click="loadOrders"
-      )
-        svg.w-4.h-4(
-          :class="{ 'animate-spin': isLoading }"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      //- Правая группа: CSV-экспорт + обновление
+      .flex.items-center.gap-1
+        button.btn.btn-ghost.btn-sm.rounded-xl(
+          type="button"
+          :disabled="isLoading || isExporting"
+          aria-label="Скачать заказы в CSV"
+          title="Скачать заказы в CSV (Excel)"
+          @click="exportCsv"
         )
-          path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")
+          svg.w-4.h-4(
+            :class="{ 'animate-spin': isExporting }"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3")
+          span(class="hidden sm:inline") CSV
+        button.btn.btn-ghost.btn-sm.rounded-xl(
+          type="button"
+          :disabled="isLoading"
+          aria-label="Обновить"
+          @click="loadOrders"
+        )
+          svg.w-4.h-4(
+            :class="{ 'animate-spin': isLoading }"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")
 
     //- Фильтр по статусам: Все + 5 статусов, на каждой кнопке — счётчик
     .flex.flex-wrap.gap-2.mb-4
@@ -250,6 +268,32 @@ const deliveryLabel = (m) =>
   m === 'courier' ? 'Курьером' : m === 'post' ? 'Почтой' : 'Самовывоз'
 
 const paymentLabel = (m) => (m === 'card' ? 'Картой' : 'Наличными')
+
+//- ─── CSV-экспорт: blob-скачивание с обработкой ошибок ──────────────
+// Не <a href> — blob позволяет поймать 401/500 и показать тост,
+// а не молча отдать JSON-ошибку в файле.
+const isExporting = ref(false)
+const exportCsv = async () => {
+  if (isExporting.value) return
+  isExporting.value = true
+  try {
+    const blob = await $fetch('/api/orders/export', { responseType: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    $notify.success('CSV-файл заказов скачан')
+  } catch (err) {
+    console.error('[admin-orders] Ошибка экспорта:', err?.data?.message || err?.message)
+    $notify.error('Не удалось скачать CSV')
+  } finally {
+    isExporting.value = false
+  }
+}
 
 const loadOrders = async () => {
   isLoading.value = true

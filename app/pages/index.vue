@@ -92,6 +92,13 @@
               @refreshProducts="refreshProducts"
               @clearSearch="clearSearch"
             )
+            //- Блок «Недавно смотрели»: localStorage клиента — SSR не
+            //- рендерит (персональные данные), появляется после гидратации,
+            //- LCP главной не сдвигает. Сам скрывается без истории.
+            RecentlyViewed(
+              @toggle-favorite="toggleFavorite"
+              @add-to-cart="addToCart"
+            )
             //- Блок «Последние новости»: данные из KV через /api/news,
             //- сам скрывает себя при пустой выдаче/ошибке API.
             //- Стоит ПОСЛЕ списка товаров — карточки каталога остаются
