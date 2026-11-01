@@ -17,11 +17,11 @@
     //- Всегда один контейнер с gap-1
     .flex.flex-wrap.gap-1.p-0
       template(v-if="availableCategories.length > 0")
-        label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.py-1.rounded-full.border.text-xs(
+        label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.py-1.rounded-full.border.text-xs.font-medium(
           v-for="category in sortedCategories"
           :key="category"
-          :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/40'",
-          class="hover:bg-primary/50 hover:text-primary-content"
+          :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/60'",
+          class="hover:bg-primary/20 hover:text-primary"
         )
           input.hidden(
             type="checkbox"

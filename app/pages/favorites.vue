@@ -21,7 +21,7 @@
           p.text-sm {{ favoriteProducts.length }} {{ pluralize(favoriteProducts.length) }}
           button.btn.btn-ghost.btn-sm.rounded-xl.text-error(
             @click="clearAllFavorites"
-            class="text-base-content/50"
+            class="hover:text-error text-base-content/65"
           ) Очистить всё
 
     //- Сетка / пустое состояние / скелетон — только клиент
@@ -42,12 +42,12 @@
       //- Пустое состояние
       .text-center.py-20.flex.flex-col.items-center(v-else)
         .size-18.rounded-full.flex.items-center.justify-center.mb-5(
-          class="bg-base-200 text-base-content/50"
+          class="bg-base-200 text-base-content/65"
         )
           svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5")
             path(d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
         h2.text-lg.font-semibold.text-base-content Список избранного пуст
-        p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/50") Сохраняйте понравившиеся товары, чтобы быстро вернуться к ним позже
+        p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/65") Сохраняйте понравившиеся товары, чтобы быстро вернуться к ним позже
         NuxtLink.btn.btn-primary.rounded-xl(to="/") Перейти в каталог
 
       //- Скелетоны на время гидрации

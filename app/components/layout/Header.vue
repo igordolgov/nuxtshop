@@ -28,7 +28,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           class="w-11 h-11 min-h-0"
           @click="toggleMobileMenu"
         )
-          svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70")
+          svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85")
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
 
         //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
@@ -38,21 +38,21 @@ header.app-header.sticky.top-0.z-50.border-b(
         )
           //- Шапка меню: кто вошёл / приглашение войти
           .px-5.pt-5.pb-4.border-b.border-base-300(class="bg-base-200/50")
-            .text-xs.font-medium.uppercase.tracking-wider(class="text-base-content/70")
+            .text-xs.font-semibold.uppercase.tracking-wider(class="text-base-content/80")
               | Меню
             .text-sm.font-semibold.text-base-content.mt-1(v-if="isAuthenticated")
               | {{ userName }}
-            .text-sm.mt-1(v-else class="text-base-content/70")
+            .text-sm.mt-1(v-else class="text-base-content/85")
               | Гость — войдите для заказов
 
           //- Раздел: Магазин
           .px-3.py-3
-            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
+            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | Магазин
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   to="/"
                   @click="onMenuItemClick"
@@ -63,7 +63,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span Главная
               li
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
-                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/favorites') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   to="/favorites"
                   @click="onMenuItemClick"
@@ -78,12 +78,12 @@ header.app-header.sticky.top-0.z-50.border-b(
 
           //- Раздел: Информация
           .px-3.pb-3
-            .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
+            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | Информация
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   to="/news"
                   @click="onMenuItemClick"
@@ -94,7 +94,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span Новости
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/about') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   to="/about"
                   @click="onMenuItemClick"
@@ -105,7 +105,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span О нас
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/contacts') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   to="/contacts"
                   @click="onMenuItemClick"
@@ -118,12 +118,12 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Раздел: Админка
           template(v-if="isAdmin")
             .px-3.pb-4
-              .px-2.pb-2(class="font-semibold text-[0.7rem] text-base-content/70 uppercase tracking-wider")
+              .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
                 | Админка
               ul.space-y-1
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin"
                     @click="onMenuItemClick"
@@ -134,7 +134,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Дашборд
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/products"
                     @click="onMenuItemClick"
@@ -145,7 +145,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Товары
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/orders"
                     @click="onMenuItemClick"
@@ -156,7 +156,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Заказы
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/news"
                     @click="onMenuItemClick"
@@ -167,7 +167,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Новости
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/content"
                     @click="onMenuItemClick"
@@ -178,7 +178,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Контент
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/reviews"
                     @click="onMenuItemClick"
@@ -189,7 +189,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Отзывы
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/promocodes"
                     @click="onMenuItemClick"
@@ -201,7 +201,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span Промокоды
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-medium text-sm transition-all"
+                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     to="/admin/users"
                     @click="onMenuItemClick"
@@ -221,43 +221,43 @@ header.app-header.sticky.top-0.z-50.border-b(
     nav.hidden(class="lg:block")
       ul.flex.items-center.gap-1
         li
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
-            :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
+            :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/"
             prefetch
           ) Главная
         li
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
-            :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
+            :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/news"
             prefetch
           ) Новости
         li
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
-            :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
+            :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/about"
             prefetch
           ) О нас
         li
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.transition-colors(
-            :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
+            :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/contacts"
             prefetch
           ) Контакты
         li.relative
-          NuxtLink.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-2.transition-colors(
-            :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-2.transition-colors(
+            :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/favorites"
           )
             span Избранное
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
               | {{ favoritesCount }}
         li.relative(v-if="isAdmin" ref="adminMenuRef")
-          button.px-3.py-2.rounded-xl.font-medium.text-sm.flex.items-center.gap-1.transition-colors(
+          button.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-1.transition-colors(
             type="button"
             :aria-expanded="isAdminMenuOpen"
             aria-haspopup="menu"
-            :class="isAdminRouteActive || isAdminMenuOpen ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/80'"
+            :class="isAdminRouteActive || isAdminMenuOpen ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             @click="toggleAdminMenu"
           )
             span Админка
@@ -347,7 +347,7 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- Корзина — десктоп (на мобильных нижнее меню)
       .indicator.hidden(class="lg:block")
         NuxtLink.btn.btn-ghost.btn-circle(to="/cart" aria-label="Корзина" class="w-11 h-11 min-h-0")
-          svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/70" stroke-width="1.75")
+          svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85" stroke-width="1.75")
             path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
         span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1(
           v-if="cartItemsCount > 0"
@@ -364,13 +364,13 @@ header.app-header.sticky.top-0.z-50.border-b(
         svg.w-5.h-5(
           v-if="currentTheme === 'corporate'"
           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor" stroke-width="1.75" class="text-base-content/70"
+          stroke="currentColor" stroke-width="1.75" class="text-base-content/85"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z")
         svg.w-5.h-5(
           v-else
           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor" stroke-width="1.75" class="text-base-content/70"
+          stroke="currentColor" stroke-width="1.75" class="text-base-content/85"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646A9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z")
 
@@ -387,10 +387,10 @@ header.app-header.sticky.top-0.z-50.border-b(
           .avatar
             .rounded-full.bg-primary.flex.items-center.justify-center.text-primary-content.font-semibold.size-7.text-xs
               span {{ userInitials }}
-          span.font-medium.text-sm(class="hidden sm:block") {{ userName }}
+          span.font-semibold.text-sm(class="hidden sm:block") {{ userName }}
           svg.w-4.h-4.transition-transform(
             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor" class="text-base-content/50"
+            stroke="currentColor" class="text-base-content/75"
             :class="isUserMenuOpen ? 'rotate-180' : ''"
           )
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 9l-7 7-7-7")
@@ -401,27 +401,27 @@ header.app-header.sticky.top-0.z-50.border-b(
         )
           .flex.flex-col.p-2
             .px-3.py-2.border-b.border-base-300.mb-1
-              .text-xs.text-base-content.opacity-60.truncate {{ userEmail }}
+              .text-xs.text-base-content.opacity-75.truncate {{ userEmail }}
               .badge.badge-sm.mt-1.rounded-full(
                 :class="userRole === 'admin' ? 'badge-primary' : userRole === 'manager' ? 'badge-secondary' : 'badge-accent'"
               )
                 | {{ userRole === 'admin' ? 'Администратор' : userRole === 'manager' ? 'Менеджер' : 'Пользователь' }}
 
-            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user')"
               :class="isExactActiveRoute('/user') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
               span Личный кабинет
 
-            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user/orders')"
               :class="isExactActiveRoute('/user/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
               span Мои заказы
 
-            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               v-if="isAdmin"
               type="button"
               @click="navigateToPath('/admin/users')"
@@ -429,7 +429,7 @@ header.app-header.sticky.top-0.z-50.border-b(
             )
               span Управление пользователями
 
-            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/settings')"
               :class="isExactActiveRoute('/settings') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
@@ -438,7 +438,7 @@ header.app-header.sticky.top-0.z-50.border-b(
 
             .divider.my-1
 
-            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.text-sm.text-error.transition-colors(
+            button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.text-error.transition-colors(
               type="button"
               class="hover:bg-error/10"
               @click="handleLogout"

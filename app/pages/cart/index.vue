@@ -26,7 +26,7 @@
             path(d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
         h2.text-2xl.font-semibold.text-base-content.mb-2
           | Корзина пуста
-        p.text-sm.mb-8(class="text-base-content/50")
+        p.text-sm.mb-8(class="text-base-content/65")
           | Начните покупки, чтобы добавить товары в&nbsp;корзину
         button.btn.btn-primary.rounded-xl(type="button" @click="goCatalog")
           span Перейти в каталог
@@ -48,11 +48,11 @@
               h1.text-xl.font-semibold.text-base-content(class="lg:text-2xl")
                 | Корзина
               .flex.items-center.gap-3
-                span.text-sm(v-if="totalItems > 0" class="text-base-content/50")
+                span.text-sm(v-if="totalItems > 0" class="text-base-content/65")
                   | {{ totalItems }} {{ pluralizeItems(totalItems) }}
                 button.btn.btn-ghost.btn-xs.rounded-lg(
                   v-if="cartItems && cartItems.length > 0"
-                  class="hover:text-error text-base-content/50"
+                  class="hover:text-error text-base-content/65"
                   type="button"
                   @click="clearCart"
                 )
@@ -92,13 +92,13 @@
                             )
                           .price-info.mt-2
                             .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
-                            .text-xs(class="text-base-content/50") {{ formatPrice(item.currentPrice) }}/шт.
+                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}/шт.
                         .flex-grow.min-w-0
                           h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
                             class="hover:text-primary"
                             @click="goToProduct(item)"
                           ) {{ item.name }}
-                          span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/50") {{ item.category }}
+                          span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ item.category }}
                           .flex.items-center.gap-1.mt-1
                             button.qty-btn(
                               type="button"
@@ -125,7 +125,7 @@
                             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
                       .text-xs.mt-2(
                         v-if="getMaxQuantity(item) < 999"
-                        :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/60'"
+                        :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/75'"
                       )
                         | Доступно: {{ getMaxQuantity(item) }} шт.
                         span.text-warning.ml-1(v-if="item.quantity > getMaxQuantity(item)") · превышено
@@ -135,7 +135,7 @@
                 class="lg:block lg:pr-1 lg:max-h-[calc(100dvh-140px)] lg:overflow-y-auto"
               )
                 .cart-list-header.grid.grid-cols-12.gap-4.px-4.py-2.rounded-xl.font-medium.text-xs.uppercase.tracking-wide(
-                  class="bg-base-200 lg:mb-2 text-base-content/50"
+                  class="bg-base-200 lg:mb-2 text-base-content/65"
                 )
                   .col-span-5 Товар
                   .col-span-2.text-center Кол-во
@@ -163,12 +163,12 @@
                             class="hover:text-primary"
                             @click="goToProduct(item)"
                           ) {{ item.name }}
-                          span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/50") {{ item.category }}
+                          span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
                           .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
                             | Превышено количество
                           .text-xs.mt-1(
                             v-if="getMaxQuantity(item) < 999"
-                            class="text-base-content/40"
+                            class="text-base-content/60"
                             :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : ''"
                           ) Доступно: {{ getMaxQuantity(item) }} шт.
                     .col-span-2
@@ -190,7 +190,7 @@
                             @click="updateQuantity(item.id, item.quantity + 1)"
                           ) +
                     .col-span-2.text-right
-                      .text-sm(class="text-base-content/50") {{ formatPrice(item.currentPrice) }}/шт.
+                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}/шт.
                     .col-span-2.text-right
                       .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
                     .col-span-1.text-center
@@ -213,15 +213,15 @@
 
                   .space-y-2
                     .flex.justify-between.text-sm
-                      span(class="text-base-content/50") Товары ({{ totalItems }})
+                      span(class="text-base-content/65") Товары ({{ totalItems }})
                       span.font-medium {{ formatPrice(subtotal) }}
 
                     .flex.justify-between.text-sm
-                      span(class="text-base-content/50") Доставка
+                      span(class="text-base-content/65") Доставка
                       span.font-medium {{ deliveryPrice === 0 ? 'Бесплатно' : formatPrice(deliveryPrice) }}
 
                     .flex.justify-between.text-sm(v-if="discount > 0")
-                      span(class="text-base-content/50") Скидка
+                      span(class="text-base-content/65") Скидка
                       span.font-medium.text-error -{{ formatPrice(discount) }}
 
                     .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
@@ -263,7 +263,7 @@
                         )
                         .flex-grow
                           .font-medium.text-sm Курьером
-                          .text-xs(class="text-base-content/50") 1–3 дня · {{ deliveryPrice === 0 ? 'бесплатно' : formatPrice(deliveryPrice) }}
+                          .text-xs(class="text-base-content/65") 1–3 дня · {{ deliveryPrice === 0 ? 'бесплатно' : formatPrice(deliveryPrice) }}
 
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedDelivery === 'pickup' }"
@@ -276,7 +276,7 @@
                         )
                         .flex-grow
                           .font-medium.text-sm Самовывоз
-                          .text-xs(class="text-base-content/50") Сегодня · бесплатно
+                          .text-xs(class="text-base-content/65") Сегодня · бесплатно
 
                   .form-control
                     label.label.p-0.mb-2
@@ -293,7 +293,7 @@
                         )
                         .flex-grow
                           .font-medium.text-sm Банковская карта
-                          .text-xs(class="text-base-content/50") Онлайн-оплата
+                          .text-xs(class="text-base-content/65") Онлайн-оплата
 
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedPayment === 'cash' }"
@@ -306,7 +306,7 @@
                         )
                         .flex-grow
                           .font-medium.text-sm Наличными
-                          .text-xs(class="text-base-content/50") При получении
+                          .text-xs(class="text-base-content/65") При получении
 
                 .card-actions.px-4.py-3.mt-auto.border-t.border-base-300(v-if="!isMobile")
                   button.btn.btn-primary.btn-lg.w-full.rounded-xl(

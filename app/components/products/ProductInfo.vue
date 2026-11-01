@@ -24,17 +24,17 @@
         span.px-2.py-1.rounded-full.text-xs.border.border-base-300(
           v-for="category in product.categories"
           :key="category"
-          class="text-base-content/60"
+          class="text-base-content/80"
         ) {{ category }}
 
       //- Описание
-      p.text-sm.leading-relaxed(class="text-base-content/70") {{ product.description }}
+      p.text-sm.leading-relaxed(class="text-base-content/85") {{ product.description }}
 
       //- Цена и наличие
       .flex.items-end.justify-between.gap-4.py-1
         .price-section
           .text-3xl.font-bold.text-base-content {{ formatPrice(product.price) }}
-          .text-xs.mt-1(class="text-base-content/50") Включая НДС
+          .text-xs.mt-1(class="text-base-content/70") Включая НДС
 
         .stock-section.text-right
           .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.text-xs.font-medium(
@@ -46,7 +46,7 @@
 
           .text-xs.mt-1(
             v-if="product.inStock && product.stockQuantity"
-            class="text-base-content/50"
+            class="text-base-content/70"
           ) Осталось: {{ product.stockQuantity }} шт.
 
       //- Десктопная кнопка
@@ -69,24 +69,24 @@
           summary.cursor-pointer.list-none.px-4.py-3.text-sm.font-medium.flex.items-center.justify-between
             span Характеристики
             svg.w-4.h-4.transition-transform(
-              class="text-base-content/60 group-open:rotate-180"
+              class="text-base-content/75 group-open:rotate-180"
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
             )
               path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
           .px-4.pb-4.pt-0.space-y-0.text-sm.border-t.border-base-300
             .flex.justify-between.py-2
-              span(class="text-base-content/50") Категории
+              span(class="text-base-content/70") Категории
               span.font-medium.text-right {{ product.categories?.join(', ') }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/50") Код товара
+              span(class="text-base-content/70") Код товара
               span.font-medium {{ product.id }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/50") Статус
+              span(class="text-base-content/70") Статус
               span.font-medium(
                 :class="product.inStock ? 'text-success' : 'text-error'"
               ) {{ product.inStock ? 'Доступен' : 'Недоступен' }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/50") Дата добавления
+              span(class="text-base-content/70") Дата добавления
               span.font-medium {{ formatDate(product.createdAt) }}
 </template>
 

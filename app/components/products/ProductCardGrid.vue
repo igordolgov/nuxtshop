@@ -48,14 +48,14 @@
 
       .card-body.relative.p-3.gap-y-1
         //- Название товара
-        h2.card-title.min-h-9.text-sm.font-medium.text-base-content.line-clamp-2.leading-snug(
+        h2.card-title.min-h-9.text-sm.font-semibold.text-base-content.line-clamp-2.leading-snug(
           class="lg:min-h-10 lg:text-base"
         )
           span(v-html="highlightedName")
 
         //- Описание товара
         p.line-clamp-2.leading-snug.text-xs(
-          class="lg:text-sm text-base-content/60"
+          class="lg:text-sm text-base-content/75"
         )
           span(v-html="highlightedDescription")
 

@@ -15,7 +15,7 @@ section.recently-viewed(
     .flex.items-center.justify-between.mb-2(class="lg:mb-3")
       h2#recently-viewed-title.text-xl.font-semibold.text-base-content(class="lg:text-2xl") Недавно смотрели
       button.clear-link.btn.btn-ghost.btn-xs.rounded-lg(
-        class="text-base-content/60"
+        class="text-base-content/75"
         type="button"
         @click="clearHistory"
       ) Очистить

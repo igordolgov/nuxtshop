@@ -23,7 +23,7 @@
       class="hidden sm:block text-base-content/50"
     )
       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4V9")
-    select.select.select-sm.select-ghost.rounded-full.font-medium(
+    select.select.select-sm.select-ghost.rounded-full.font-semibold(
       :value="sortValue"
       aria-label="Сортировка"
       @change="onSortChange"
@@ -45,7 +45,7 @@
       @click="$emit('remove-filter', chip.key)"
     )
       span {{ chip.label }}
-      span(class="text-base-content/50") ✕
+      span(class="text-base-content/70") ✕
 
     button.chip-item.badge.gap-1.cursor-pointer(
       type="button"

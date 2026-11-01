@@ -132,7 +132,8 @@ ClientOnly
 
 .nav-label {
   font-size: 11px;
-  font-weight: 500;
+  /* 600: 11px/500 на тёмной теме визуально «дымится» */
+  font-weight: 600;
   line-height: 1.2;
   text-align: center;
   word-break: break-word;
