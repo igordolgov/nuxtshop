@@ -38,7 +38,7 @@
         .stat-badge(v-if="kpi.badge" :class="`stat-badge-${kpi.tone}`") {{ kpi.badge }}
 
     //- Быстрые действия
-    .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
+    .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-5")
       NuxtLink.quick-tile(v-for="q in quickLinks" :key="q.to" :to="q.to" prefetch)
         .quick-icon
           icon(:name="q.icon" size="20")
@@ -457,6 +457,7 @@ const quickLinks = [
   { to: '/admin/products', title: 'Товары', sub: 'Каталог и склад', icon: 'heroicons:cube' },
   { to: '/admin/orders', title: 'Заказы', sub: 'Подтверждение и статусы', icon: 'heroicons:shopping-bag' },
   { to: '/admin/news', title: 'Новости', sub: 'Публикации и товары', icon: 'heroicons:newspaper' },
+  { to: '/admin/content', title: 'Контент', sub: 'Контакты, магазины, FAQ', icon: 'heroicons:pencil-square' },
   { to: '/admin/users', title: 'Пользователи', sub: 'Роли и доступы', icon: 'heroicons:users' }
 ]
 

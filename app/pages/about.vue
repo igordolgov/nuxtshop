@@ -95,12 +95,20 @@
 <script setup>
 const { isMobile } = useMobileDetection()
 
-const stats = [
-  { value: '8 лет', label: 'на рынке техники' },
-  { value: '12 000+', label: 'довольных клиентов' },
-  { value: '30+', label: 'брендов в каталоге' },
-  { value: '4', label: 'пункта выдачи' },
-]
+/* ─── Редактируемый контент (админка → «Контент»): цифры и история.
+       Остальные блоки — витрина доверия, остаются статическими.
+       Сбой /api/content не роняет страницу — фолбэк на дефолты. ── */
+import { DEFAULT_SITE_CONTENT } from '#shared/siteContent'
+
+const { data: contentResp } = await useAsyncData(
+  'site-content',
+  () => $fetch('/api/content').catch(() => null),
+  { default: () => null },
+)
+
+const content = computed(() => contentResp.value?.content ?? DEFAULT_SITE_CONTENT)
+const stats = computed(() => content.value.about.stats)
+const history = computed(() => content.value.about.history)
 
 /* Иконки — inline SVG (stroke наследует currentColor контейнера) */
 const iconWrap = (paths) =>
@@ -144,13 +152,6 @@ const steps = [
   { title: 'Оформляете', text: 'Две минуты на заказ: доставка курьером или в пункт выдачи, оплата онлайн или при получении.' },
   { title: 'Получаете', text: 'Проверяете технику при получении — курьер или сотрудник пункта выдачи ждёт и помогает.' },
   { title: 'Пользуетесь', text: 'Гарантия 2 года и поддержка без выходных. Что-то случилось — решаем за наш счёт.' },
-]
-
-const history = [
-  { year: '2018', text: 'Открыли первый магазин техники с принципом «покажи и расскажи честно».' },
-  { year: '2020', text: 'Запустили интернет-магазин с доставкой по стране — покупки стали доступнее.' },
-  { year: '2023', text: 'Четыре пункта выдачи и собственная курьерская служба: доставка от одного дня.' },
-  { year: '2026', text: 'Программа гарантии 2 года на всю технику и 12 000+ довольных клиентов.' },
 ]
 
 const showcase = [

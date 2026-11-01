@@ -27,8 +27,8 @@
       .contact-card
         .contact-icon(v-html="icons.phone")
         h3.contact-title Телефон
-        a.contact-value(:href="`tel:${contacts.phoneHref}`") {{ contacts.phone }}
-        p.contact-note Ежедневно 9:00–20:00
+        a.contact-value(:href="`tel:${phoneHref}`") {{ contacts.phone }}
+        p.contact-note Ежедневно {{ contacts.hoursWeek }}
         button.copy-btn(type="button" @click="copy('phone')") {{ copied === 'phone' ? 'Скопировано ✓' : 'Копировать' }}
 
       .contact-card
@@ -71,11 +71,12 @@
           .text-sm.mt-1(class="text-base-content/50") {{ store.hours }}
           a.text-sm.text-primary.font-medium.mt-2.inline-block(:href="`tel:${store.phoneHref}`") {{ store.phone }}
 
-      //- Карта (OpenStreetMap, без API-ключа; ленивый iframe)
+      //- Карта (OpenStreetMap, без API-ключа; ленивый iframe).
+      //- Ссылка — редактируемая (админка → Контент), по умолчанию — Москва.
       .map-wrap.mt-4(class="lg:mt-6")
         iframe.map-frame(
-          src="https://www.openstreetmap.org/export/embed.html?bbox=37.5850%2C55.7500%2C37.6350%2C55.7720&layer=mapnik&marker=55.7616%2C37.6088"
-          title="Карта: флагманский магазин в Москве"
+          :src="mapSrc"
+          title="Карта: флагманский магазин"
           loading="lazy"
         )
 
@@ -139,47 +140,28 @@
 <script setup>
 const { isMobile } = useMobileDetection()
 
-/* ─── Контактные данные (демо-значения — заменить на реальные) ── */
-const contacts = {
-  phone: '8 (800) 555-35-35',
-  phoneHref: '+78005553535',
-  email: 'support@nuxtshop.ru',
-  hoursWeek: '9:00–20:00',
-  hoursWeekend: '10:00–18:00',
-}
+/* ─── Контент из KV через /api/content (админка → «Контент») ──
+   Дефолты — shared/siteContent (те же значения, что раньше были
+   захардкожены здесь). Сбой /api/content не роняет страницу: ── */
+import { DEFAULT_SITE_CONTENT, normalizePhoneHref } from '#shared/siteContent'
 
-const messengers = [
-  { name: 'Telegram', handle: '@nuxtshop' },
-  { name: 'VK', handle: 'vk.com/nuxtshop' },
-  { name: 'WhatsApp', handle: '+7 800 555-35-35' },
-]
+const { data: contentResp } = await useAsyncData(
+  'site-content',
+  () => $fetch('/api/content').catch(() => null),
+  { default: () => null },
+)
 
-const stores = [
-  {
-    city: 'Москва',
-    badge: 'Флагман',
-    address: 'ул. Тверская, 12',
-    hours: 'Ежедневно 10:00–21:00',
-    phone: '8 (495) 555-35-35',
-    phoneHref: '+74955553535',
-  },
-  {
-    city: 'Санкт-Петербург',
-    badge: 'Шоурум и пункт выдачи',
-    address: 'Невский проспект, 45',
-    hours: 'Ежедневно 10:00–21:00',
-    phone: '8 (812) 555-35-35',
-    phoneHref: '+78125553535',
-  },
-  {
-    city: 'Казань',
-    badge: 'Пункт выдачи',
-    address: 'ул. Баумана, 58',
-    hours: 'Ежедневно 10:00–20:00',
-    phone: '8 (843) 555-35-35',
-    phoneHref: '+78435553535',
-  },
-]
+const content = computed(() => contentResp.value?.content ?? DEFAULT_SITE_CONTENT)
+const contacts = computed(() => content.value.contacts)
+const messengers = computed(() => contacts.value.messengers)
+const faq = computed(() => contacts.value.faq)
+const mapSrc = computed(() => contacts.value.mapSrc || DEFAULT_SITE_CONTENT.contacts.mapSrc)
+const phoneHref = computed(() => normalizePhoneHref(contacts.value.phone))
+
+/* Магазины: href tel:-ссылки выводится из редактируемого телефона */
+const stores = computed(() =>
+  contacts.value.stores.map((s) => ({ ...s, phoneHref: normalizePhoneHref(s.phone) })),
+)
 
 /* ─── Копирование в буфер (с фолбэком для http/старых браузеров) ── */
 const copied = ref(null)
@@ -187,9 +169,9 @@ let copyTimer = null
 
 const copy = async (key) => {
   const value =
-    key === 'phone' ? contacts.phone
-    : key === 'email' ? contacts.email
-    : (messengers.find((m) => m.name === key)?.handle ?? '')
+    key === 'phone' ? contacts.value.phone
+    : key === 'email' ? contacts.value.email
+    : (messengers.value.find((m) => m.name === key)?.handle ?? '')
 
   try {
     await navigator.clipboard.writeText(value)
@@ -232,32 +214,8 @@ const submitForm = () => {
   const body = encodeURIComponent(
     `Имя: ${form.name}\nEmail: ${form.email}\n\n${form.message}`
   )
-  window.location.href = `mailto:${contacts.email}?subject=${subject}&body=${body}`
+  window.location.href = `mailto:${contacts.value.email}?subject=${subject}&body=${body}`
 }
-
-/* ─── FAQ ─────────────────────────────────────────────────── */
-const faq = [
-  {
-    q: 'Как быстро вы доставляете?',
-    a: 'Заказы, оформленные до 18:00, отправляем в тот же день. По городу курьер приезжает на следующий день, в пункты выдачи заказ поступает за 1–2 дня. Точный срок и стоимость показываются при оформлении.',
-  },
-  {
-    q: 'Как вернуть товар?',
-    a: 'В течение 14 дней после получения — при сохранении товарного вида и комплектации. Оформить возврат можно в любом нашем пункте выдачи или через форму на этой странице: привезём деньги обратно тем же способом, которым платили.',
-  },
-  {
-    q: 'Какая гарантия на технику?',
-    a: 'Стандартная гарантия производителя плюс ещё один год от магазина — итого 2 года на всю технику в каталоге. Обращайтесь в любой пункт выдачи: мы сами свяжемся с сервисным центром и проконтролируем ремонт.',
-  },
-  {
-    q: 'Как можно оплатить заказ?',
-    a: 'Картой онлайн (защищённый платёж) или наличными/картой при получении. Для юридических лиц выставляем счёт — напишите в форме выше, выбрав тему «Сотрудничество».',
-  },
-  {
-    q: 'Можно ли посмотреть товар перед покупкой?',
-    a: 'Да, во всех наших магазинах-шоурумах. Адреса и часы работы — в разделе «Наши магазины» на этой странице. В Москве техника к протестированию доступна в полном объёме.',
-  },
-]
 
 /* ─── Иконки карточек (inline SVG, без ассетов) ───────────── */
 const iconWrap = (paths) =>
@@ -273,8 +231,9 @@ const icons = {
 useHead({ title: 'Контакты' })
 useSeoMeta({
   title: 'Контакты',
-  description:
-    'Свяжитесь с нами: телефон 8 (800) 555-35-35, почта, мессенджеры, адреса магазинов в Москве, Санкт-Петербурге и Казани, форма обратной связи и частые вопросы.',
+  // Реактивно: описание подхватывает телефон/адреса из редактируемого контента
+  description: () =>
+    `Свяжитесь с нами: телефон ${contacts.value.phone}, почта, мессенджеры, адреса магазинов${stores.value.length ? ` (${stores.value.map((s) => s.city).join(', ')})` : ''}, форма обратной связи и частые вопросы.`,
 })
 </script>
 
