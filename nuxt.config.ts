@@ -104,6 +104,19 @@ export default defineNuxtConfig({
       // обновлением: robots — сутки, sitemap — час
       '/robots.txt': { swr: 86400 },
       '/sitemap.xml': { swr: 3600 },
+      // Локализованные префиксы /en и /es повторяют правила исходных
+      // маршрутов: routeRules матчятся по литеральному префиксу пути,
+      // '/product/**' НЕ покрывает '/en/product/**' — нужны дубли.
+      '/en': { swr: 60 },
+      '/es': { swr: 60 },
+      '/en/news': { swr: 60 },
+      '/es/news': { swr: 60 },
+      '/en/about': { swr: 60 },
+      '/es/about': { swr: 60 },
+      '/en/contacts': { swr: 60 },
+      '/es/contacts': { swr: 60 },
+      '/en/product/**': { swr: 60 },
+      '/es/product/**': { swr: 60 },
     },
   },
 
@@ -112,8 +125,31 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
+    '@nuxtjs/i18n',
     '@baptistecrouzet/nuxt-oxlint',
   ],
+
+  // Локализация витрины: ru (по умолчанию, без префикса), en (/en), es (/es).
+  // Стратегия prefix_except_default: язык ВСЕГДА виден в URL (кроме ru) —
+  // детерминированный SSR без hydration mismatch (в отличие от cookie-детекта).
+  // detectBrowserLanguage отключён сознательно: авто-редирект по языку браузера
+  // ломал бы swr-кэш главной и SEO (один URL — один язык).
+  // Админка (/admin/**) НЕ локализуется — она для персонала магазина.
+  i18n: {
+    defaultLocale: 'ru',
+    strategy: 'prefix_except_default',
+    // baseUrl для абсолютных hreflang/alternate-ссылок (SEO)
+    baseUrl: 'https://nuxt-shop.igordolgov1972.workers.dev',
+    locales: [
+      { code: 'ru', language: 'ru-RU', name: 'Русский', file: 'ru.json' },
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
+      { code: 'es', language: 'es-ES', name: 'Español', file: 'es.json' },
+    ],
+    langDir: 'locales',
+    // Отключаем авто-редирект по языку браузера: SSR всегда рендерит
+    // язык из URL. Переключение — только руками через переключатель.
+    detectBrowserLanguage: false,
+  },
 
   oxlint: {
     checker: {
@@ -219,7 +255,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Интернет-магазин',
-      htmlAttrs: { lang: 'ru' },
+      // lang на <html> выставляет @nuxtjs/i18n (useLocaleHead в app.vue)
+      // по текущей локали маршрута — статический 'ru' убран.
       meta: [
         { name: 'description', content: 'Лучший интернет-магазин' },
         { name: 'keywords', content: 'товары, покупки, магазин' },

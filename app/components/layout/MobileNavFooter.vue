@@ -11,7 +11,7 @@
 //- под mounted-стражем — первый кадр гидратации совпадает с SSR.
 div
   footer.mobile-nav-footer.border-t(class="border-base-300")
-    nav.nav-items(aria-label="Основная навигация")
+    nav.nav-items(:aria-label="$t('nav.mainNav')")
       button.nav-item(
         type="button"
         @click="openHome"
@@ -21,7 +21,7 @@ div
         .nav-icon
           svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
             path(d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", stroke="currentColor", stroke-width="2")
-        span.nav-label Главная
+        span.nav-label {{ $t('nav.home') }}
 
       button.nav-item(
         type="button"
@@ -36,7 +36,7 @@ div
             v-if="isMounted && cartItemsCount > 0"
             :class="{ 'cart-badge-sm': cartItemsCount < 10, 'cart-badge-lg': cartItemsCount >= 10 }"
           ) {{ cartItemsCount > 99 ? '99+' : cartItemsCount }}
-        span.nav-label Корзина
+        span.nav-label {{ $t('nav.cart') }}
 
       button.nav-item(
         type="button"
@@ -51,7 +51,7 @@ div
             v-if="isMounted && displayFavoritesCount > 0"
             :class="{ 'favorites-badge-sm': displayFavoritesCount < 10, 'favorites-badge-lg': displayFavoritesCount >= 10 }"
           ) {{ displayFavoritesCount > 99 ? '99+' : displayFavoritesCount }}
-        span.nav-label Избранное
+        span.nav-label {{ $t('nav.favorites') }}
 
       button.nav-item(
         type="button"
@@ -63,7 +63,7 @@ div
           svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
             path(d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", stroke="currentColor", stroke-width="2")
           .auth-badge(v-if="isMounted && isAuthenticated")
-        span.nav-label {{ isMounted && isAuthenticated ? 'Профиль' : 'Вход' }}
+        span.nav-label {{ isMounted && isAuthenticated ? $t('nav.profile') : $t('nav.login') }}
 </template>
 
 <style scoped>

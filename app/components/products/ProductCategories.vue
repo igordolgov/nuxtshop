@@ -2,16 +2,16 @@
 <template lang="pug">
 .product-categories.pb-2(class="lg:mr-3")
   .section-header.flex.items-center.justify-between.mb-1.bg-base-100.sticky.-top-2.h-8.z-10
-    h4.section-title.text-sm.pb-0.min-h-6.text-base-content Категории:
+    h4.section-title.text-sm.pb-0.min-h-6.text-base-content {{ $t('catalog.categories') }}
     .flex.items-center.gap-2
       button.btn.btn-xs.btn-primary(
         @click="selectAllCategories"
         v-if="localSelectedCategories.length > 0"
-      ) Выбраны: {{ localSelectedCategories.length }}
+      ) {{ $t('catalog.selected', { n: localSelectedCategories.length }) }}
       button.btn.btn-xs.btn-secondary(
         @click="clearCategories" 
         v-if="localSelectedCategories.length > 0"
-      ) Показать все
+      ) {{ $t('catalog.showAll') }}
 
   .categories-container.max-h-100.overflow-y-auto
     //- Всегда один контейнер с gap-1
@@ -33,7 +33,7 @@
       //- Пустое состояние внутри того же контейнера
       .empty-state.py-6.w-full.text-center(v-else)
         .text-4xl.mb-2.opacity-60 📂
-        .text-sm.opacity-70.text-base-content Категории не найдены
+        .text-sm.opacity-70.text-base-content {{ $t('catalog.categoriesEmpty') }}
 </template>
 
 <script setup>

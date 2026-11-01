@@ -11,17 +11,17 @@
 
   main.flex-1.flex.flex-col.max-w-7xl.w-full.mx-auto.px-3.py-4(class="lg:px-6 lg:py-8")
     //- Хлебные крошки
-    nav.breadcrumbs.text-sm.mb-3(aria-label="Хлебные крошки")
+    nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) Главная
-        li Новости и акции
+          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+        li {{ $t('news.title') }}
 
     //- Заголовок
     .mb-5(class="lg:mb-8")
-      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Новости и акции
+      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") {{ $t('news.title') }}
       p.text-sm.mt-1(class="text-base-content/50 lg:text-base")
-        | Скидки, новинки каталога и события магазина — всё самое свежее.
+        | {{ $t('news.subtitle') }}
 
     //- Скелетон первой загрузки
     template(v-if="pending && !items.length")
@@ -32,12 +32,12 @@
 
     //- Ошибка загрузки
     .text-center.py-16.flex.flex-col.items-center(v-else-if="error")
-      p.text-base-content/50.mb-4 Не удалось загрузить новости
-      button.btn.btn-primary.rounded-xl(type="button" @click="refresh()") Повторить
+      p.text-base-content/50.mb-4 {{ $t('news.loadError') }}
+      button.btn.btn-primary.rounded-xl(type="button" @click="refresh()") {{ $t('news.retry') }}
 
     template(v-else)
       //- Фильтр по категориям
-      .flex.gap-2.overflow-x-auto.pb-1.mb-5(class="lg:mb-6 lg:flex-wrap" role="tablist" aria-label="Фильтр новостей")
+      .flex.gap-2.overflow-x-auto.pb-1.mb-5(class="lg:mb-6 lg:flex-wrap" role="tablist" :aria-label="$t('news.filterAria')")
         button.chip(
           v-for="cat in categories"
           :key="cat"
@@ -46,7 +46,7 @@
           :aria-selected="activeCategory === cat"
           :class="{ 'chip-active': activeCategory === cat }"
           @click="activeCategory = cat"
-        ) {{ cat }}
+        ) {{ catLabel(cat) }}
 
       //- Featured — первая новость подборки
       article.news-card.news-featured.mb-4(
@@ -69,11 +69,11 @@
               path(:d="placeholderIcon(featuredNews.category)")
         .featured-body
           .flex.items-center.gap-2.flex-wrap.mb-2
-            span.badge-chip(:class="`chip-${newsTone(featuredNews.category)}`") {{ featuredNews.category }}
-            span.text-xs(class="text-base-content/50") {{ formatNewsDate(featuredNews.date) }}
+            span.badge-chip(:class="`chip-${newsTone(featuredNews.category)}`") {{ catLabel(featuredNews.category) }}
+            span.text-xs(class="text-base-content/50") {{ formatNewsDate(featuredNews.date, locale) }}
           h2.text-lg.font-semibold.text-base-content(class="lg:text-2xl") {{ featuredNews.title }}
           p.text-sm.mt-2(class="text-base-content/60 lg:text-base") {{ featuredNews.excerpt }}
-          span.read-more Читать
+          span.read-more {{ $t('news.read') }}
             svg(width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
               path(d="M5 12h14m-6-6l6 6-6 6")
 
@@ -97,25 +97,25 @@
                 path(:d="placeholderIcon(item.category)")
           .card-body
             .flex.items-center.gap-2.flex-wrap.mb-2
-              span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ item.category }}
-              span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date) }}
+              span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ catLabel(item.category) }}
+              span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date, locale) }}
             h3.font-semibold.text-base-content(class="line-clamp-2") {{ item.title }}
             p.text-sm.mt-1(class="text-base-content/50 line-clamp-2") {{ item.excerpt }}
-            span.read-more Читать
+            span.read-more {{ $t('news.read') }}
               svg(width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
                 path(d="M5 12h14m-6-6l6 6-6 6")
 
       //- Пустое состояние фильтра
       .text-center.py-16(v-if="filteredNews.length === 0")
-        p(class="text-base-content/50") В этой рубрике пока пусто — загляните позже.
+        p(class="text-base-content/50") {{ $t('news.empty') }}
 
       //- CTA в контакты
       .cta-band.mt-8(class="lg:mt-12")
         .cta-inner
           div
-            h3.text-lg.font-semibold.text-base-content Следите за скидками
-            p.text-sm.mt-1(class="text-base-content/60") Вопросы об акции и доставке? Мы на связи каждый день.
-          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) Связаться с нами
+            h3.text-lg.font-semibold.text-base-content {{ $t('news.ctaTitle') }}
+            p.text-sm.mt-1(class="text-base-content/60") {{ $t('news.ctaText') }}
+          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) {{ $t('news.ctaButton') }}
 
     //- Модальное окно с полным текстом новости
     .modal(:class="{ 'modal-open': activeNews }" role="dialog" aria-modal="true" @click.self="closeNews")
@@ -128,8 +128,8 @@
           )
         .p-5(class="lg:p-8")
           .flex.items-center.gap-2.flex-wrap.mb-3(v-if="activeNews")
-            span.badge-chip(:class="`chip-${newsTone(activeNews.category)}`") {{ activeNews.category }}
-            span.text-sm(class="text-base-content/50") {{ formatNewsDate(activeNews.date) }}
+            span.badge-chip(:class="`chip-${newsTone(activeNews.category)}`") {{ catLabel(activeNews.category) }}
+            span.text-sm(class="text-base-content/50") {{ formatNewsDate(activeNews.date, locale) }}
           h3.text-xl.font-semibold.text-base-content.mb-4(class="lg:text-2xl") {{ activeNews?.title }}
           template(v-if="activeNews")
             p.text-base.leading-relaxed.mb-3(
@@ -141,7 +141,7 @@
             //- Товары из новости (перелинковка с каталогом): джойн на
             //- сервере, карточка ведёт на страницу товара
             .news-products(v-if="activeNews.products?.length")
-              h4.news-products-title Товары из новости
+              h4.news-products-title {{ $t('news.productsTitle') }}
               .news-products-grid
                 NuxtLink.news-product(
                   v-for="p in activeNews.products"
@@ -160,13 +160,13 @@
                     .np-name {{ p.name }}
                     .np-meta
                       span.np-price {{ formatPrice(p.price) }} ₽
-                      span.np-stock(v-if="!p.inStock") Нет в наличии
-                  span.np-link Перейти
+                      span.np-stock(v-if="!p.inStock") {{ $t('product.outOfStock') }}
+                  span.np-link {{ $t('news.go') }}
                     svg(width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
                       path(d="M5 12h14m-6-6l6 6-6 6")
 
           .modal-action
-            button.btn.rounded-xl(type="button" @click="closeNews") Закрыть
+            button.btn.rounded-xl(type="button" @click="closeNews") {{ $t('catalog.close') }}
 
   MobileNavFooter
 </template>
@@ -175,6 +175,7 @@
 import type { NewsWithProducts } from '~/utils/news'
 
 const { isMobile } = useMobileDetection()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { formatPrice, getSafeImage } = useProductUtils()
@@ -191,8 +192,15 @@ const {
 
 const items = computed<NewsWithProducts[]>(() => newsData.value?.news ?? [])
 
-const categories = ['Все', 'Акции', 'Новинки', 'Компания', 'Обзоры']
+// Канонические рубрики (значения в data:news русские — это данные,
+// фильтр сравнивает с ними). Отображение — через словарь news.categories.*
+const categories = ['Все', ...NEWS_CATEGORIES]
 const activeCategory = ref('Все')
+const CATEGORY_KEYS = { 'Все': 'all', 'Акции': 'promo', 'Новинки': 'new', 'Компания': 'company', 'Обзоры': 'reviews' }
+const catLabel = (cat) => {
+  const key = CATEGORY_KEYS[cat]
+  return key ? t(`news.categories.${key}`) : cat
+}
 
 const filteredNews = computed<NewsWithProducts[]>(() =>
   activeCategory.value === 'Все'
@@ -237,11 +245,10 @@ onMounted(() => {
   router.replace({ query: { ...route.query, news: undefined } })
 })
 
-useHead({ title: 'Новости и акции' })
+useHead(() => ({ title: t('news.title') }))
 useSeoMeta({
-  title: 'Новости и акции',
-  description:
-    'Скидки, новинки каталога и события магазина: акции на смартфоны и ноутбуки, обзоры техники, новые пункты выдачи.',
+  title: () => t('news.title'),
+  description: () => t('news.metaDescription'),
 })
 </script>
 

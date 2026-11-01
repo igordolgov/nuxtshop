@@ -9,8 +9,8 @@
     class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
     :class="isFavorite ? 'bg-error text-white' : 'bg-base-100/40 text-base-content'",
     @click="toggleFavorite",
-    :title="isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'",
-    :aria-label="isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'"
+    :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
+    :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
   )
     icon(:name="isFavorite ? 'heroicons:heart-solid' : 'heroicons:heart'",
       size="20"
@@ -65,7 +65,7 @@
         v-if="product.inStock",
         class="text-base lg:text-lg"
       ) {{ formatPrice(product.price) }} ₽
-      .text-error.text-xs(v-else) Нет в наличии
+      .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>
 
 <script setup>

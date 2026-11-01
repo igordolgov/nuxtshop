@@ -7,7 +7,7 @@
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.gap-2.flex-wrap.mb-2
       .flex.items-center.gap-2.flex-wrap
-        h2.text-xl.font-semibold(class="lg:text-2xl") Отзывы
+        h2.text-xl.font-semibold(class="lg:text-2xl") {{ $t('reviews.title') }}
         //- Сводка: средняя оценка и количество
         .flex.items-center.gap-1.text-sm(v-if="summary.count > 0")
           span.text-warning ★
@@ -17,7 +17,7 @@
       button.btn.btn-outline.btn-sm.rounded-xl(
         type="button"
         @click="toggleForm"
-      ) {{ showForm ? 'Отмена' : 'Написать отзыв' }}
+      ) {{ showForm ? $t('reviews.cancel') : $t('reviews.write') }}
 
     //- Форма отправки (скрытое поле website — honeypot для ботов)
     form.review-form.card.bg-base-100.shadow-sm.mb-4(
@@ -27,25 +27,25 @@
     )
       .card-body.p-4.gap-3
         div
-          span.review-label Ваша оценка
+          span.review-label {{ $t('reviews.yourRating') }}
           .flex.gap-1
-            button.star-btn(type="button" v-for="i in 5" :key="i" :aria-label="`Оценка ${i}`" @click="form.rating = i")
+            button.star-btn(type="button" v-for="i in 5" :key="i" :aria-label="$t('reviews.rateN', { n: i })" @click="form.rating = i")
               svg.w-7.h-7(:class="i <= form.rating ? 'fill-warning text-warning' : 'fill-none text-base-content/40'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5")
                 path(stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z")
         label.block
-          span.review-label Имя
+          span.review-label {{ $t('reviews.name') }}
           input.input.input-bordered.rounded-xl.w-full(
             type="text"
             v-model.trim="form.author"
-            placeholder="Как вас зовут?"
+            :placeholder="$t('reviews.namePlaceholder')"
             maxlength="40"
           )
         label.block
-          span.review-label Отзыв
+          span.review-label {{ $t('reviews.review') }}
           textarea.textarea.textarea-bordered.w-full.leading-relaxed(
             v-model.trim="form.text"
             rows="4"
-            placeholder="Что понравилось, что нет — от 10 до 600 символов"
+            :placeholder="$t('reviews.reviewPlaceholder')"
             maxlength="600"
           )
           span.text-xs(class="mt-1 inline-block text-base-content/50") {{ (form.text || '').length }}/600
@@ -55,7 +55,7 @@
         .flex.justify-end
           button.btn.btn-primary.btn-sm.rounded-xl(type="submit" :disabled="sending")
             span.loading.loading-spinner.loading-xs(v-if="sending")
-            | Отправить на модерацию
+            | {{ $t('reviews.submit') }}
 
     //- Список отзывов
     .space-y-3(v-if="reviews.length > 0")
@@ -71,13 +71,13 @@
 
     //- Пусто: приглашение
     .text-center.py-6(v-else)
-      p(class="text-base-content/50 text-sm mb-3") Пока нет отзывов — станьте первым!
+      p(class="text-base-content/50 text-sm mb-3") {{ $t('reviews.empty') }}
 
   //- Тост «появится после модерации» показывается через $notify
 </template>
 
 <script setup>
-import { formatNewsDate } from '~/utils/news'
+const { t, locale } = useI18n()
 
 const props = defineProps({
   productId: { type: [String, Number], required: true },
@@ -92,17 +92,10 @@ const { $notify } = useNuxtApp()
 
 const formatAverage = computed(() => String(props.summary.average ?? 0).replace('.', ','))
 
-// 1 отзыв / 2 отзыва / 5 отзывов
-const countLabel = computed(() => {
-  const n = props.summary.count ?? 0
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return `${n} отзыв`
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} отзыва`
-  return `${n} отзывов`
-})
+// Формы слова «отзыв» — vue-i18n plural (reviews.count, pluralRules ru)
+const countLabel = computed(() => t('reviews.count', props.summary.count ?? 0))
 
-const formatDate = (iso) => formatNewsDate(iso)
+const formatDate = (iso) => formatNewsDate(iso, locale.value)
 
 // ─── Форма ───────────────────────────────────────────────────────────────
 const showForm = ref(false)
@@ -118,11 +111,11 @@ const toggleForm = () => {
 const submit = async () => {
   formError.value = ''
   if (form.author.trim().length < 2) {
-    formError.value = 'Укажите имя (от 2 символов)'
+    formError.value = t('reviews.errName')
     return
   }
   if (form.text.trim().length < 10) {
-    formError.value = 'Расскажите чуть подробнее — от 10 символов'
+    formError.value = t('reviews.errShort')
     return
   }
   sending.value = true
@@ -137,14 +130,14 @@ const submit = async () => {
         website: form.website,
       },
     })
-    $notify.success(resp?.message || 'Спасибо! Отзыв появится после модерации')
+    $notify.success(resp?.message || t('reviews.moderationThanks'))
     showForm.value = false
     form.author = ''
     form.rating = 5
     form.text = ''
     form.website = ''
   } catch (error) {
-    const message = error?.data?.message || error?.message || 'Не удалось отправить отзыв'
+    const message = error?.data?.message || error?.message || t('reviews.sendError')
     formError.value = message
     $notify.error(message)
   } finally {

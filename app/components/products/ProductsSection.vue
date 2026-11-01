@@ -22,27 +22,27 @@
     .search-results.mb-4(v-if="searchQuery && displayedProducts.length > 0")
       .flex.items-center.justify-between.gap-2.flex-wrap
         .text-sm.text-base-content.opacity-70
-          | Найдено {{ displayedProducts.length }} товаров по запросу
+          | {{ $t('catalog.foundByQuery', { n: $t('catalog.itemsCount', displayedProducts.length) }) }}
           span.font-medium "{{ searchQuery }}"
         button.btn.btn-sm.btn-ghost.gap-1(
           type="button"
           @click="$emit('clearSearch')"
         )
           Icon(name="mdi:close" size="16")
-          | Очистить
+          | {{ $t('cart.clear') }}
 
     //- Пустое состояние
     .empty-state.py-16.text-center(
       v-if="!displayedProducts.length && !isLoading"
     )
       Icon.empty-icon(name="mdi:package-variant" size="64")
-      h3.text-xl.font-medium.mb-2 Товары не найдены
+      h3.text-xl.font-medium.mb-2 {{ $t('product.notFound') }}
       p.text-base-content.opacity-60.mb-4 {{ emptyMessage }}
       button.btn.btn-primary(
         type="button"
         v-if="activeFiltersCount > 0"
         @click="$emit('resetFilters')"
-      ) Сбросить фильтры
+      ) {{ $t('catalog.resetAll') }}
 
     //- Grid/List товаров с Infinite Scroll
     .products-wrapper(
@@ -52,7 +52,7 @@
       .products-counter.text-sm.text-base-content.opacity-60.mb-0.py-1(
         v-if="!searchQuery"
       )
-        | Показано {{ visibleProducts.length }} из {{ displayedProducts.length }} товаров
+        | {{ $t('catalog.shownOf', { n: visibleProducts.length, total: displayedProducts.length }) }}
 
       .products-grid(
         :class="gridClasses"
@@ -82,7 +82,7 @@
       .end-of-list.text-center.py-2.text-sm.opacity-60(
         v-if="!hasMore && displayedProducts.length > 0"
       )
-        | Вы просмотрели все товары ({{ displayedProducts.length }})
+        | {{ $t('catalog.viewedAll', { n: displayedProducts.length }) }}
 
     //- Кнопка «Показать ещё» (fallback без infinite scroll)
     .load-more-section.py-6.text-center(
@@ -92,7 +92,7 @@
         type="button"
         @click="loadMore"
       )
-        | Показать ещё
+        | {{ $t('catalog.loadMore') }}
         span.badge.badge-primary.badge-sm.ml-2 {{ remainingCount }}
 
   //- Ошибка загрузки
@@ -100,12 +100,12 @@
     v-if="loadError"
   )
     Icon(name="mdi:alert-circle" size="48" class="text-error")
-    h3.text-xl.font-medium.mb-2 Ошибка загрузки
+    h3.text-xl.font-medium.mb-2 {{ $t('catalog.loadError') }}
     p.text-base-content.opacity-60.mb-4 {{ loadError }}
     button.btn.btn-primary(
       type="button"
       @click="$emit('refreshProducts')"
-    ) Попробовать снова
+    ) {{ $t('news.retry') }}
 </template>
 
 <script setup>

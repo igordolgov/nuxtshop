@@ -25,11 +25,11 @@
           svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5")
             path(d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
         h2.text-2xl.font-semibold.text-base-content.mb-2
-          | Корзина пуста
+          | {{ $t('cart.empty') }}
         p.text-sm.mb-8(class="text-base-content/65")
-          | Начните покупки, чтобы добавить товары в&nbsp;корзину
+          | {{ $t('cart.emptyHint') }}
         button.btn.btn-primary.rounded-xl(type="button" @click="goCatalog")
-          span Перейти в каталог
+          span {{ $t('cart.goCatalog') }}
 
     //- КОРЗИНА С ТОВАРАМИ
     .main-content.bg-base-100.flex-1.flex.flex-col.max-w-full(v-else)
@@ -46,17 +46,17 @@
               class="lg:static flex justify-between items-center gap-2 bg-base-100/95 lg:bg-transparent shadow-sm lg:shadow-none backdrop-blur lg:backdrop-blur-none mb-3 lg:mb-4 px-3 lg:px-0 py-2 lg:py-0 border border-base-300 lg:border-0 rounded-xl"
             )
               h1.text-xl.font-semibold.text-base-content(class="lg:text-2xl")
-                | Корзина
+                | {{ $t('cart.title') }}
               .flex.items-center.gap-3
                 span.text-sm(v-if="totalItems > 0" class="text-base-content/65")
-                  | {{ totalItems }} {{ pluralizeItems(totalItems) }}
+                  | {{ $t('cart.itemsCount', totalItems) }}
                 button.btn.btn-ghost.btn-xs.rounded-lg(
                   v-if="cartItems && cartItems.length > 0"
                   class="hover:text-error text-base-content/65"
                   type="button"
                   @click="clearCart"
                 )
-                  span Очистить
+                  span {{ $t('cart.clear') }}
 
             .cart-content.max-w-full
               //- Предупреждение о недостаточном количестве
@@ -64,7 +64,7 @@
                 svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                   path(stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z")
                 span.text-sm
-                  | Некоторые товары недоступны в запрошенном количестве
+                  | {{ $t('cart.qtyWarning') }}
 
               //- МОБИЛЬНАЯ ВЕРСИЯ: горизонтальная лента карточек.
               //- overflow и snap — в scoped-CSS класса (единая точка правды);
@@ -92,7 +92,7 @@
                             )
                           .price-info.mt-2
                             .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
-                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}/шт.
+                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}{{ $t('cart.perUnit') }}
                         .flex-grow.min-w-0
                           h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
                             class="hover:text-primary"
@@ -102,7 +102,7 @@
                           .flex.items-center.gap-1.mt-1
                             button.qty-btn(
                               type="button"
-                              aria-label="Уменьшить количество"
+                              :aria-label="$t('cart.decrease')"
                               :disabled="item.quantity <= 1"
                               @click="updateQuantity(item.id, item.quantity - 1)"
                             ) –
@@ -111,14 +111,14 @@
                             ) {{ item.quantity }}
                             button.qty-btn(
                               type="button"
-                              aria-label="Увеличить количество"
+                              :aria-label="$t('cart.increase')"
                               :disabled="item.quantity >= getMaxQuantity(item)"
                               @click="updateQuantity(item.id, item.quantity + 1)"
                             ) +
                         button.remove-btn(
                           type="button"
-                          title="Удалить из корзины"
-                          aria-label="Удалить из корзины"
+                          :title="$t('cart.remove')"
+                          :aria-label="$t('cart.remove')"
                           @click="removeFromCart(item.id)"
                         )
                           svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
@@ -127,8 +127,8 @@
                         v-if="getMaxQuantity(item) < 999"
                         :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/75'"
                       )
-                        | Доступно: {{ getMaxQuantity(item) }} шт.
-                        span.text-warning.ml-1(v-if="item.quantity > getMaxQuantity(item)") · превышено
+                        | {{ $t('cart.available', { n: getMaxQuantity(item) }) }}
+                        span.text-warning.ml-1(v-if="item.quantity > getMaxQuantity(item)") {{ $t('cart.qtyExceeded') }}
 
               //- ДЕСКТОПНАЯ ВЕРСИЯ: таблица со внутренним скроллом
               .hidden(
@@ -137,10 +137,10 @@
                 .cart-list-header.grid.grid-cols-12.gap-4.px-4.py-2.rounded-xl.font-medium.text-xs.uppercase.tracking-wide(
                   class="bg-base-200 lg:mb-2 text-base-content/65"
                 )
-                  .col-span-5 Товар
-                  .col-span-2.text-center Кол-во
-                  .col-span-2.text-right Цена
-                  .col-span-2.text-right Итого
+                  .col-span-5 {{ $t('cart.product') }}
+                  .col-span-2.text-center {{ $t('cart.qty') }}
+                  .col-span-2.text-right {{ $t('cart.price') }}
+                  .col-span-2.text-right {{ $t('cart.total') }}
                   .col-span-1
                 .cart-items-list.space-y-2
                   .cart-item-row.grid.grid-cols-12.gap-4.px-4.py-3.bg-base-100.border.rounded-xl.items-center(
@@ -165,18 +165,18 @@
                           ) {{ item.name }}
                           span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
                           .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
-                            | Превышено количество
+                            | {{ $t('cart.qtyExceededFull') }}
                           .text-xs.mt-1(
                             v-if="getMaxQuantity(item) < 999"
                             class="text-base-content/60"
                             :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : ''"
-                          ) Доступно: {{ getMaxQuantity(item) }} шт.
+                          ) {{ $t('cart.available', { n: getMaxQuantity(item) }) }}
                     .col-span-2
                       .flex.justify-center
                         .flex.items-center.gap-1
                           button.qty-btn(
                             type="button"
-                            aria-label="Уменьшить количество"
+                            :aria-label="$t('cart.decrease')"
                             :disabled="item.quantity <= 1"
                             @click="updateQuantity(item.id, item.quantity - 1)"
                           ) –
@@ -185,19 +185,19 @@
                           ) {{ item.quantity }}
                           button.qty-btn(
                             type="button"
-                            aria-label="Увеличить количество"
+                            :aria-label="$t('cart.increase')"
                             :disabled="item.quantity >= getMaxQuantity(item)"
                             @click="updateQuantity(item.id, item.quantity + 1)"
                           ) +
                     .col-span-2.text-right
-                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}/шт.
+                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}{{ $t('cart.perUnit') }}
                     .col-span-2.text-right
                       .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
                     .col-span-1.text-center
                       button.remove-btn-inline(
                         type="button"
-                        title="Удалить из корзины"
-                        aria-label="Удалить из корзины"
+                        :title="$t('cart.remove')"
+                        :aria-label="$t('cart.remove')"
                         @click="removeFromCart(item.id)"
                       )
                         svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
@@ -209,30 +209,30 @@
               .card.bg-base-100.border.border-base-300.rounded-2xl.h-full.flex.flex-col
                 .card-body.px-4.py-4.flex.flex-col.flex-1.overflow-y-auto.gap-4
                   h2.text-lg.font-semibold.text-base-content(class="lg:text-xl")
-                    | Оформление заказа
+                    | {{ $t('cart.checkout') }}
 
                   .space-y-2
                     .flex.justify-between.text-sm
-                      span(class="text-base-content/65") Товары ({{ totalItems }})
+                      span(class="text-base-content/65") {{ $t('cart.items', { n: totalItems }) }}
                       span.font-medium {{ formatPrice(subtotal) }}
 
                     .flex.justify-between.text-sm
-                      span(class="text-base-content/65") Доставка
-                      span.font-medium {{ deliveryPrice === 0 ? 'Бесплатно' : formatPrice(deliveryPrice) }}
+                      span(class="text-base-content/65") {{ $t('cart.delivery') }}
+                      span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) }}
 
                     .flex.justify-between.text-sm(v-if="discount > 0")
-                      span(class="text-base-content/65") Скидка
+                      span(class="text-base-content/65") {{ $t('cart.discount') }}
                       span.font-medium.text-error -{{ formatPrice(discount) }}
 
                     .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
-                      span.text-base.font-semibold Итого
+                      span.text-base.font-semibold {{ $t('cart.total') }}
                       span.text-2xl.font-bold.text-base-content {{ formatPrice(total) }}
 
                   .form-control
                     .join.w-full
                       input.input.input-bordered.join-item.flex-grow.rounded-l-xl.text-base(
                         type="text"
-                        placeholder="Промокод"
+                        :placeholder="$t('cart.promoPlaceholder')"
                         autocomplete="off"
                         v-model="promoCode"
                         @keyup.enter="applyPromo"
@@ -243,12 +243,12 @@
                         class="px-4"
                         @click="applyPromo"
                       )
-                        span(v-if="!isProcessing") Применить
+                        span(v-if="!isProcessing") {{ $t('cart.apply') }}
                         span.loading.loading-spinner.loading-sm(v-else)
 
                   .form-control
                     label.label.p-0.mb-2
-                      span.label-text.font-medium.text-sm Способ доставки
+                      span.label-text.font-medium.text-sm {{ $t('cart.deliveryMethod') }}
                     //- Две колонки на всех экранах (и на телефоне):
                     //- по 2 плитки в блоке — одна колонка выглядела пусто
                     .grid.grid-cols-2.gap-2
@@ -262,8 +262,8 @@
                           v-model="selectedDelivery"
                         )
                         .flex-grow
-                          .font-medium.text-sm Курьером
-                          .text-xs(class="text-base-content/65") 1–3 дня · {{ deliveryPrice === 0 ? 'бесплатно' : formatPrice(deliveryPrice) }}
+                          .font-medium.text-sm {{ $t('cart.courier') }}
+                          .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: deliveryPrice === 0 ? $t('cart.free').toLowerCase() : formatPrice(deliveryPrice) }) }}
 
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedDelivery === 'pickup' }"
@@ -275,12 +275,12 @@
                           v-model="selectedDelivery"
                         )
                         .flex-grow
-                          .font-medium.text-sm Самовывоз
-                          .text-xs(class="text-base-content/65") Сегодня · бесплатно
+                          .font-medium.text-sm {{ $t('cart.pickup') }}
+                          .text-xs(class="text-base-content/65") {{ $t('cart.pickupEta') }}
 
                   .form-control
                     label.label.p-0.mb-2
-                      span.label-text.font-medium.text-sm Способ оплаты
+                      span.label-text.font-medium.text-sm {{ $t('cart.paymentMethod') }}
                     .grid.grid-cols-2.gap-2
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedPayment === 'card' }"
@@ -292,8 +292,8 @@
                           v-model="selectedPayment"
                         )
                         .flex-grow
-                          .font-medium.text-sm Банковская карта
-                          .text-xs(class="text-base-content/65") Онлайн-оплата
+                          .font-medium.text-sm {{ $t('cart.card') }}
+                          .text-xs(class="text-base-content/65") {{ $t('cart.cardNote') }}
 
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedPayment === 'cash' }"
@@ -305,8 +305,8 @@
                           v-model="selectedPayment"
                         )
                         .flex-grow
-                          .font-medium.text-sm Наличными
-                          .text-xs(class="text-base-content/65") При получении
+                          .font-medium.text-sm {{ $t('cart.cash') }}
+                          .text-xs(class="text-base-content/65") {{ $t('cart.cashNote') }}
 
                 .card-actions.px-4.py-3.mt-auto.border-t.border-base-300(v-if="!isMobile")
                   button.btn.btn-primary.btn-lg.w-full.rounded-xl(
@@ -316,7 +316,7 @@
                     @click="proceedToCheckout"
                   )
                     template(v-if="!isProcessing")
-                      span {{ hasOutOfStockItems ? 'Есть проблемы с количеством' : 'Оформить заказ' }}
+                      span {{ hasOutOfStockItems ? $t('cart.qtyProblems') : $t('cart.checkoutBtn') }}
                     span.loading.loading-spinner(v-else)
 
   //- ПЛАВАЮЩАЯ ПАНЕЛЬ ОФОРМЛЕНИЯ (мобильные).
@@ -331,8 +331,8 @@
     )
       template(v-if="!isProcessing")
         span.text-base
-          template(v-if="hasOutOfStockItems") Есть проблемы с количеством
-          template(v-else) Оформить заказ · {{ formatPrice(total) }}
+          template(v-if="hasOutOfStockItems") {{ $t('cart.qtyProblems') }}
+          template(v-else) {{ $t('cart.checkoutBtnPrice', { price: formatPrice(total) }) }}
       span.loading.loading-spinner(v-else)
 
   //- Нижняя навигация (сам компонент ведает ориентацией и переходами)
@@ -625,6 +625,7 @@
 </style>
 
 <script setup>
+const { t } = useI18n()
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const { $notify } = useNuxtApp()
@@ -681,14 +682,7 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
-const pluralizeItems = (count) => {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod100 >= 11 && mod100 <= 14) return 'товаров'
-  if (mod10 === 1) return 'товар'
-  if (mod10 >= 2 && mod10 <= 4) return 'товара'
-  return 'товаров'
-}
+// Формы «товар» — vue-i18n plural (cart.itemsCount)
 
 const handleImageError = (event) => {
   event.target.src = '/images/placeholder.jpg'
@@ -705,7 +699,7 @@ const updateQuantity = async (itemId, newQuantity) => {
   try {
     await updateItemQuantity(itemId, newQuantity)
   } catch (error) {
-    $notify.error(error.message || 'Ошибка при обновлении количества')
+    $notify.error(error.message || t('cart.qtyUpdateError'))
   }
 }
 
@@ -715,10 +709,10 @@ const applyPromo = async () => {
   try {
     isProcessing.value = true
     await applyPromoCode(promoCode.value)
-    $notify.success('Промокод применен')
+    $notify.success(t('cart.promoOk'))
     promoCode.value = ''
   } catch {
-    $notify.error('Неверный промокод')
+    $notify.error(t('cart.promoBad'))
   } finally {
     isProcessing.value = false
   }
@@ -730,7 +724,7 @@ const proceedToCheckout = async () => {
     await cartCheckout()
     await navigateTo('/cart/checkout')
   } catch {
-    $notify.error('Ошибка при оформлении заказа')
+    $notify.error(t('cart.orderError'))
   } finally {
     isProcessing.value = false
   }
@@ -754,5 +748,5 @@ onUnmounted(() => {
   window.removeEventListener('resize', onResize)
 })
 
-useHead({ title: 'Корзина' })
+useHead(() => ({ title: t('cart.title') }))
 </script>

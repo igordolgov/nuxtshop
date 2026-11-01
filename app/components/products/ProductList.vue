@@ -5,11 +5,12 @@
     LazyProductCard(v-for="product in safeDisplayedProducts", :key="product.id", :product="product", :viewmode="viewMode", :searchquery="safeSearchQuery", :highlightsearch="highlightSearch")
   .text-center.py-8(v-if="safeDisplayedProducts.length === 0")
     .text-4xl.mb-4 🔍
-    h3.text-lg.font-semibold.text-base-content.mb-2 Товары не найдены
-    p.mb-4(class="text-base-content/70") Попробуйте изменить параметры поиска или фильтрации
+    h3.text-lg.font-semibold.text-base-content.mb-2 {{ $t('product.notFound') }}
+    p.mb-4(class="text-base-content/70") {{ $t('product.notFoundHint') }}
 </template>
 
 <script setup>
+const { t } = useI18n()
 import ProductCard from './ProductCard.vue'
 
 const props = defineProps({
@@ -46,7 +47,7 @@ const toggleFavoriteHandler = (productId) => {
     appState.favorites.toggleFavorite(productId)
   } catch (error) {
     console.error('❌ ProductList: Ошибка переключения избранного:', error)
-    appState.addNotification('Ошибка при обновлении избранного', 'error')
+    appState.addNotification(t('product.favError'), 'error')
   }
 }
 
@@ -54,10 +55,10 @@ const addToCartHandler = (product) => {
   try {
     console.log('🛒 ProductList: Добавление в корзину:', product.name)
     appState.addToCart(product)
-    appState.addNotification(`Товар "${product.name}" добавлен в корзину`, 'success')
+    appState.addNotification(t('product.cartAdded', { name: product.name }), 'success')
   } catch (error) {
     console.error('❌ ProductList: Ошибка добавления в корзину:', error)
-    appState.addNotification('Ошибка при добавлении в корзину', 'error')
+    appState.addNotification(t('product.cartAddError'), 'error')
   }
 }
 </script>

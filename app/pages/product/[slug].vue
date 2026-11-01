@@ -7,13 +7,13 @@
   //- Хлебные крошки: sticky ПОД шапкой сайта (раньше top-0 — уезжали под неё)
   .breadcrumbs-bar.sticky.z-10.bg-base-100.border-b.border-base-200.shadow-sm
     .container.min-h-10.mx-auto.px-2(class="sm:hidden lg:p-4 lg:pb-0")
-      nav(aria-label="Хлебные крошки")
+      nav(:aria-label="$t('catalog.breadcrumbs')")
         .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
           ul.flex
             li
-              NuxtLink.link.link-hover(to="/" prefetch) Главная
+              NuxtLink.link.link-hover(to="/" prefetch) {{ $t('nav.home') }}
             li(aria-current="page")
-              span {{ product?.name || 'Товар не найден' }}
+              span {{ product?.name || $t('productPage.notFound') }}
 
   //- Основной контент
   .flex-1.overflow-auto.flex.flex-col.pb-14(ref="scrollContainer" class="lg:pb-0")
@@ -21,17 +21,17 @@
       //- Состояние загрузки
       .flex.flex-col.items-center.justify-center.min-h-96(v-if="isLoading")
         .loading.loading-spinner.loading-lg
-        span.mt-4.text-center Загрузка товара...
+        span.mt-4.text-center {{ $t('productPage.loading') }}
 
       //- Ошибка
       .flex.flex-col.items-center.justify-center.min-h-96(v-else-if="error || !product")
         .text-center
           .text-5xl.mb-4.text-error 😔
-          h1.text-xl.font-bold.mb-4 Товар не найден
-          p.mb-6.text-sm(class="text-base-content/70") {{ error || 'Запрошенный товар не существует' }}
+          h1.text-xl.font-bold.mb-4 {{ $t('productPage.notFound') }}
+          p.mb-6.text-sm(class="text-base-content/70") {{ error || $t('productPage.notExists') }}
           .flex.flex-col.gap-3
-            button.btn.btn-primary.btn-sm(type="button" @click="$router.back()") Вернуться назад
-            NuxtLink.btn.btn-secondary.btn-sm(to="/" prefetch) В каталог
+            button.btn.btn-primary.btn-sm(type="button" @click="$router.back()") {{ $t('productPage.back') }}
+            NuxtLink.btn.btn-secondary.btn-sm(to="/" prefetch) {{ $t('productPage.toCatalog') }}
 
       //- Контент товара.
       //- В landscape двухколоночная раскладка больше не используется:
@@ -120,9 +120,9 @@
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
         span
-          span(v-if="isInCart(product.id)") Товар уже в корзине
-          span(v-else-if="product.inStock") Добавить в корзину · {{ formatPrice(product.price) }}
-          span(v-else) Товар закончился
+          span(v-if="isInCart(product.id)") {{ $t('product.alreadyInCart') }}
+          span(v-else-if="product.inStock") {{ $t('product.addWithPrice', { price: formatPrice(product.price) }) }}
+          span(v-else) {{ $t('product.soldOut') }}
 
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
   //- ClientOnly задерживал его до гидратации
@@ -137,6 +137,7 @@
 definePageMeta({ key: (route) => route.params.slug })
 
 const route = useRoute()
+const { t } = useI18n()
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
 const appState = useAppState()
@@ -169,7 +170,7 @@ const product = computed(() => {
 // Ошибка валидна, только когда данных нет вовсе: упавший ФОНОВЫЙ рефетч
 // (мигание сети, оффлайн) не должен превращать открытую карточку
 // в «Товар не найден» — показываем последние успешные данные.
-const error = computed(() => (fetchError.value && !responseData.value ? 'Товар не найден' : null))
+const error = computed(() => (fetchError.value && !responseData.value ? t('productPage.notFound') : null))
 
 const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
 
@@ -193,7 +194,7 @@ const syncStock = () => {
 
 // ─── SEO-мета (SSR) ─────────────────────────────────────────────────
 useSeoMeta({
-  title: () => (product.value ? `${product.value.name} — купить` : 'Товар не найден'),
+  title: () => (product.value ? t('productPage.buyTitle', { name: product.value.name }) : t('productPage.notFound')),
   description: () => product.value?.description?.slice(0, 160) ?? '',
   ogTitle: () => product.value?.name ?? '',
   ogDescription: () => product.value?.description?.slice(0, 160) ?? '',
@@ -268,9 +269,9 @@ const addToCartHandler = async () => {
   if (!product.value || isInCart(product.value.id)) return
   try {
     await addToCart(product.value)
-    $notify.success('Товар добавлен в корзину!')
+    $notify.success(t('product.cartAdded'))
   } catch {
-    $notify.error('Не удалось добавить товар в корзину')
+    $notify.error(t('product.cartAddErrorLong'))
   }
 }
 
@@ -278,9 +279,9 @@ const addSimilarToCart = async (item) => {
   if (isInCart(item?.id)) return
   try {
     await addToCart(item)
-    $notify.success('Товар добавлен в корзину!')
+    $notify.success(t('product.cartAdded'))
   } catch {
-    $notify.error('Не удалось добавить товар в корзину')
+    $notify.error(t('product.cartAddErrorLong'))
   }
 }
 

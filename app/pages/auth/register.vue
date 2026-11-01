@@ -5,17 +5,17 @@
     .card.w-full.max-w-md.bg-base-100.shadow-xl
       .card-body
         .text-center.mb-8
-          h1.card-title.text-3xl.justify-center Регистрация
-          p.text-base-content.opacity-70.mt-2 Создайте новый аккаунт
+          h1.card-title.text-3xl.justify-center {{ $t('auth.registerTitle') }}
+          p.text-base-content.opacity-70.mt-2 {{ $t('auth.registerSubtitle') }}
 
         form(@submit.prevent="handleRegister")
           .form-control
             label.label
-              span.label-text Имя
+              span.label-text {{ $t('auth.name') }}
             input.input.input-bordered(
               type="text" 
               v-model="form.name"
-              placeholder="Ваше имя"
+              :placeholder="$t('auth.namePh')"
               required
               autocomplete="name"
             )
@@ -37,7 +37,7 @@
 
           .form-control.mt-4
             label.label
-              span.label-text Пароль
+              span.label-text {{ $t('auth.password') }}
             .relative
               input.input.input-bordered.w-full(
                 :type="showPassword ? 'text' : 'password'"
@@ -72,7 +72,7 @@
 
           .form-control.mt-4
             label.label
-              span.label-text Подтверждение пароля
+              span.label-text {{ $t('auth.confirmPassword') }}
             input.input.input-bordered(
               :type="showPassword ? 'text' : 'password'"
               v-model="form.confirmPassword"
@@ -89,13 +89,13 @@
               :disabled="loading"
               :class="{ 'loading': loading }"
             ) 
-              span(v-if="!loading") Зарегистрироваться
-              span(v-else) Регистрация...
+              span(v-if="!loading") {{ $t('auth.registerBtn') }}
+              span(v-else) {{ $t('auth.registering') }}
 
           .text-center.mt-4
             p.text-sm
-              | Уже есть аккаунт? 
-              a.link.link-primary(@click="$router.push('/auth/login')") Войдите
+              | {{ $t('auth.hasAccount') }} 
+              a.link.link-primary(@click="$router.push('/auth/login')") {{ $t('auth.loginLink2') }}
 
         .alert.alert-error.mt-6(v-if="registerError")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
@@ -104,6 +104,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const { register, isAuthenticated } = useAppState()
 const router = useRouter()
 const { $notify } = useNuxtApp()
@@ -134,25 +135,25 @@ const validateForm = () => {
   errors.value = {}
   
   if (!form.value.name.trim()) {
-    errors.value.name = 'Имя обязательно для заполнения'
+    errors.value.name = t('auth.errNameRequired')
   }
   
   if (!form.value.email) {
-    errors.value.email = 'Email обязателен для заполнения'
+    errors.value.email = t('auth.errEmailRequired')
   } else if (!/\S+@\S+\.\S+/.test(form.value.email)) {
-    errors.value.email = 'Некорректный формат email'
+    errors.value.email = t('auth.errEmailFormat')
   }
   
   if (!form.value.password) {
-    errors.value.password = 'Пароль обязателен для заполнения'
+    errors.value.password = t('auth.errPasswordRequired')
   } else if (form.value.password.length < 6) {
-    errors.value.password = 'Пароль должен содержать минимум 6 символов'
+    errors.value.password = t('auth.errPasswordShort6')
   }
   
   if (!form.value.confirmPassword) {
-    errors.value.confirmPassword = 'Подтверждение пароля обязательно'
+    errors.value.confirmPassword = t('auth.errConfirmRequired')
   } else if (form.value.password !== form.value.confirmPassword) {
-    errors.value.confirmPassword = 'Пароли не совпадают'
+    errors.value.confirmPassword = t('auth.errPasswordsMismatch')
   }
   
   return Object.keys(errors.value).length === 0
@@ -173,14 +174,14 @@ const handleRegister = async () => {
     })
 
     if (result.success) {
-      $notify.success('Добро пожаловать в нашу систему!', 'Регистрация успешна!')
+      $notify.success(t('auth.registerWelcome'), t('auth.registerSuccess'))
       router.push('/')
     } else {
       registerError.value = result.error
     }
   } catch (error) {
     console.error('❌ Ошибка регистрации:', error)
-    registerError.value = error.data?.message || 'Ошибка при регистрации'
+    registerError.value = error.data?.message || t('auth.errRegister')
   } finally {
     loading.value = false
   }

@@ -8,28 +8,25 @@
 
   main.flex-1.flex.flex-col.max-w-7xl.w-full.mx-auto.px-3.py-4(class="lg:px-6 lg:py-8")
     //- Хлебные крошки
-    nav.breadcrumbs.text-sm.mb-3(aria-label="Хлебные крошки")
+    nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) Главная
-        li О магазине
+          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+        li {{ $t('about.title') }}
 
     //- Заголовок
     .mb-5(class="lg:mb-8")
-      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") О магазине
+      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") {{ $t('about.title') }}
       p.text-sm.mt-1.max-w-2xl(class="text-base-content/50 lg:text-base")
-        | Техника, которой доверяют: интернет-магазин с оффлайн-шоурумами,
-        | гарантией 2 года и доставкой от одного дня.
+        | {{ $t('about.subtitle') }}
 
     //- HERO: приветствие + статистика
     section.hero-band.mb-8(class="lg:mb-12")
       .hero-inner
         h2.text-xl.font-semibold(class="lg:text-2xl")
-          | Продаём то, чем пользуемся сами
+          | {{ $t('about.trustTitle') }}
         p.mt-2(class="lg:text-lg")
-          | Мы продаём смартфоны, ноутбуки, аудио и фототехнику с 2018 года.
-          | Каждое устройство можно посмотреть и потрогать в шоуруме, а перед
-          | покупкой — получить честную консультацию без навязывания.
+          | {{ $t('about.trustText') }}
       .stats-grid
         .stat-card(v-for="stat in stats" :key="stat.label")
           .stat-value {{ stat.value }}
@@ -37,7 +34,7 @@
 
     //- Преимущества
     section.mb-8(class="lg:mb-12")
-      h2.section-title Почему покупают у нас
+      h2.section-title {{ $t('about.whyTitle') }}
       .advantages-grid
         .advantage-card(v-for="adv in advantages" :key="adv.title")
           .advantage-icon(v-html="adv.icon")
@@ -46,7 +43,7 @@
 
     //- Как мы работаем
     section.mb-8(class="lg:mb-12")
-      h2.section-title Как мы работаем
+      h2.section-title {{ $t('about.howTitle') }}
       .steps-grid
         .step-card(v-for="(step, i) in steps" :key="step.title")
           .step-number {{ i + 1 }}
@@ -56,7 +53,7 @@
 
     //- История
     section.mb-8(class="lg:mb-12")
-      h2.section-title Наша история
+      h2.section-title {{ $t('about.storyTitle') }}
       .timeline
         .timeline-item(v-for="event in history" :key="event.year")
           .timeline-marker(aria-hidden="true")
@@ -66,7 +63,7 @@
 
     //- Витрина категорий
     section.mb-8(class="lg:mb-12")
-      h2.section-title Что у нас есть
+      h2.section-title {{ $t('about.assortmentTitle') }}
       .categories-grid
         NuxtLink.category-tile(
           v-for="cat in showcase"
@@ -82,18 +79,19 @@
     section.cta-band
       .cta-inner
         div
-          h3.text-lg.font-semibold.text-base-content Остались вопросы?
+          h3.text-lg.font-semibold.text-base-content {{ $t('about.ctaTitle') }}
           p.text-sm.mt-1(class="text-base-content/60")
-            | Расскажем о доставке, гарантии и возврате — на связи каждый день.
+            | {{ $t('about.ctaText') }}
         .flex.gap-3.flex-wrap
-          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) Контакты
-          NuxtLink.btn.btn-outline.rounded-xl(to="/" prefetch) В каталог
+          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) {{ $t('nav.contacts') }}
+          NuxtLink.btn.btn-outline.rounded-xl(to="/" prefetch) {{ $t('productPage.toCatalog') }}
 
   MobileNavFooter
 </template>
 
 <script setup>
 const { isMobile } = useMobileDetection()
+const { t } = useI18n()
 
 /* ─── Редактируемый контент (админка → «Контент»): цифры и история.
        Остальные блоки — витрина доверия, остаются статическими.
@@ -116,58 +114,58 @@ const iconWrap = (paths) =>
 
 const advantages = [
   {
-    title: 'Гарантия 2 года',
-    text: 'Добавляем к стандартной гарантии производителя ещё один год — за наш счёт, без доплат за сервис.',
+    title: t('about.b1Title'),
+    text: t('about.b1Text'),
     icon: iconWrap('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>'),
   },
   {
-    title: 'Оффлайн-шоурумы',
-    text: 'Технику можно посмотреть, потрогать и сравнить вживую — как в обычном магазине.',
+    title: t('about.b2Title'),
+    text: t('about.b2Text'),
     icon: iconWrap('<path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"/>'),
   },
   {
-    title: 'Доставка от 1 дня',
-    text: 'Курьером до двери или в пункт выдачи. Заказы до 18:00 отправляем в день оформления.',
+    title: t('about.b3Title'),
+    text: t('about.b3Text'),
     icon: iconWrap('<path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 2.3c-.6.6-.2 1.7.7 1.7H17"/><circle cx="9" cy="19" r="2"/><circle cx="17" cy="19" r="2"/>'),
   },
   {
-    title: 'Возврат 14 дней',
-    text: 'Не подошло — вернём деньги без лишних вопросов. Товар должен сохранить товарный вид.',
+    title: t('about.b4Title'),
+    text: t('about.b4Text'),
     icon: iconWrap('<path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/>'),
   },
   {
-    title: 'Безопасная оплата',
-    text: 'Картой онлайн с защитой платежа или наличными при получении — как вам удобнее.',
+    title: t('about.b5Title'),
+    text: t('about.b5Text'),
     icon: iconWrap('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'),
   },
   {
-    title: 'Поддержка без выходных',
-    text: 'Чат, телефон и почта — отвечаем в течение 15 минут в рабочее время.',
+    title: t('about.b6Title'),
+    text: t('about.b6Text'),
     icon: iconWrap('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>'),
   },
 ]
 
 const steps = [
-  { title: 'Выбираете', text: 'Каталог с честными характеристиками и реальными фото. Сомневаетесь — подскажем в чате.' },
-  { title: 'Оформляете', text: 'Две минуты на заказ: доставка курьером или в пункт выдачи, оплата онлайн или при получении.' },
-  { title: 'Получаете', text: 'Проверяете технику при получении — курьер или сотрудник пункта выдачи ждёт и помогает.' },
-  { title: 'Пользуетесь', text: 'Гарантия 2 года и поддержка без выходных. Что-то случилось — решаем за наш счёт.' },
+  { title: t('about.s1Title'), text: t('about.s1Text') },
+  { title: t('about.s2Title'), text: t('about.s2Text') },
+  { title: t('about.s3Title'), text: t('about.s3Text') },
+  { title: t('about.s4Title'), text: t('about.s4Text') },
 ]
 
 const showcase = [
-  { name: 'Смартфоны', count: 'от 19 990 ₽', icon: iconWrap('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') },
-  { name: 'Ноутбуки', count: 'от 54 990 ₽', icon: iconWrap('<path d="M4 5h16v11H4z"/><path d="M2 19h20"/>') },
-  { name: 'Наушники', count: 'от 4 990 ₽', icon: iconWrap('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="2" y="14" width="5" height="7" rx="1.5"/><rect x="17" y="14" width="5" height="7" rx="1.5"/>') },
-  { name: 'Фототехника', count: 'от 39 990 ₽', icon: iconWrap('<path d="M3 8a2 2 0 012-2h2l2-2h6l2 2h2a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="4"/>') },
-  { name: 'Умные часы', count: 'от 14 990 ₽', icon: iconWrap('<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/>') },
-  { name: 'Консоли и игры', count: 'от 44 990 ₽', icon: iconWrap('<path d="M6 9h4m-2-2v4m7 0h.01M17 11h.01M7.5 17h9a4.5 4.5 0 000-9h-9a4.5 4.5 0 000 9z"/>') },
+  { name: t('about.catPhones'), count: t('about.from', { price: '19 990 ₽' }), icon: iconWrap('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') },
+  { name: t('about.catLaptops'), count: t('about.from', { price: '54 990 ₽' }), icon: iconWrap('<path d="M4 5h16v11H4z"/><path d="M2 19h20"/>') },
+  { name: t('about.catAudio'), count: t('about.from', { price: '4 990 ₽' }), icon: iconWrap('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="2" y="14" width="5" height="7" rx="1.5"/><rect x="17" y="14" width="5" height="7" rx="1.5"/>') },
+  { name: t('about.catPhoto'), count: t('about.from', { price: '39 990 ₽' }), icon: iconWrap('<path d="M3 8a2 2 0 012-2h2l2-2h6l2 2h2a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="4"/>') },
+  { name: t('about.catWatches'), count: t('about.from', { price: '14 990 ₽' }), icon: iconWrap('<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/>') },
+  { name: t('about.catConsoles'), count: t('about.from', { price: '44 990 ₽' }), icon: iconWrap('<path d="M6 9h4m-2-2v4m7 0h.01M17 11h.01M7.5 17h9a4.5 4.5 0 000-9h-9a4.5 4.5 0 000 9z"/>') },
 ]
 
-useHead({ title: 'О магазине' })
+useHead(() => ({ title: t('about.title') }))
 useSeoMeta({
-  title: 'О магазине',
+  title: () => t('about.title'),
   description:
-    'Интернет-магазин техники с 2018 года: оффлайн-шоурумы, гарантия 2 года, доставка от 1 дня, возврат 14 дней и поддержка без выходных.',
+    () => t('about.metaDescription'),
 })
 </script>
 

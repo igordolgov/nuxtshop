@@ -12,7 +12,7 @@
         :checked="localOnlyInStock"
         @change="updateOnlyInStock($event.target.checked)"
       )
-      span.text-base-200.whitespace-nowrap в наличии
+      span.text-base-200.whitespace-nowrap {{ $t('product.inStockLower') }}
 
     //- Чипс "Только избранное"
     label.btn.btn-primary.cursor-pointer.inline-flex.items-center(
@@ -24,11 +24,12 @@
         :checked="localOnlyFavorites"
         @change="updateOnlyFavorites($event.target.checked)"
       )
-      span.whitespace-nowrap избранное
+      span.whitespace-nowrap {{ $t('product.favoritesLower') }}
       span ({{ app.favoritesCount }})
 </template>
 
 <script setup>
+const { t } = useI18n()
 // Используем единый useAppState
 const app = useAppState()
 
@@ -68,13 +69,13 @@ const viewAllFavorites = () => {
   console.log('🔍 Показать все избранные товары')
   emit('update:onlyFavorites', true)
   emit('view-favorites')
-  app.addNotification(`Показаны ${app.favoritesCount} избранных товаров`, 'info')
+  app.addNotification(t('product.favoritesShown', app.favoritesCount), 'info')
 }
 
 // Очистить все избранные товары
 const clearAllFavorites = () => {
   if (app.favoritesCount === 0) {
-    app.addNotification('Нет избранных товаров для очистки', 'warning')
+    app.addNotification(t('product.noFavoritesToClear'), 'warning')
     return
   }
 

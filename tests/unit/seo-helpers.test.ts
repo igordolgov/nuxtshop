@@ -81,6 +81,14 @@ describe('buildRobotsTxt', () => {
   it('ссылается на sitemap по базовому URL', () => {
     expect(buildRobotsTxt('https://shop.ru')).toContain('Sitemap: https://shop.ru/sitemap.xml');
   });
+
+  it('закрывает служебные разделы локализованных префиксов (wildcard)', () => {
+    const robots = buildRobotsTxt('https://shop.ru');
+    expect(robots).toContain('Disallow: /*/admin');
+    expect(robots).toContain('Disallow: /*/user');
+    expect(robots).toContain('Disallow: /*/cart');
+    expect(robots).toContain('Disallow: /*/favorites');
+  });
 });
 
 describe('buildSitemapXml', () => {
@@ -113,6 +121,30 @@ describe('buildSitemapXml', () => {
   it('XML-экранирование: & в URL превращается в &amp;', () => {
     const xml = buildSitemapXml('https://shop.ru/utm?a=1&b=2', []);
     expect(xml).toContain('https://shop.ru/utm?a=1&amp;b=2');
+  });
+
+  it('hreflang-альтернаты: x-default → ru, префиксы /en и /es для товара', () => {
+    const xml = buildSitemapXml('https://shop.ru', [product]);
+    expect(xml).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+    expect(xml).toContain(
+      '<xhtml:link rel="alternate" hreflang="x-default" href="https://shop.ru/product/kruzhka"/>',
+    );
+    expect(xml).toContain(
+      '<xhtml:link rel="alternate" hreflang="ru" href="https://shop.ru/product/kruzhka"/>',
+    );
+    expect(xml).toContain(
+      '<xhtml:link rel="alternate" hreflang="en" href="https://shop.ru/en/product/kruzhka"/>',
+    );
+    expect(xml).toContain(
+      '<xhtml:link rel="alternate" hreflang="es" href="https://shop.ru/es/product/kruzhka"/>',
+    );
+  });
+
+  it('hreflang для корня: ru без пути, en/es с префиксом', () => {
+    const xml = buildSitemapXml('https://shop.ru', []);
+    expect(xml).toContain('hreflang="x-default" href="https://shop.ru"');
+    expect(xml).toContain('hreflang="en" href="https://shop.ru/en"');
+    expect(xml).toContain('hreflang="es" href="https://shop.ru/es"');
   });
 });
 

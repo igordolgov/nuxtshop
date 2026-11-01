@@ -14,15 +14,15 @@
     //- Заголовок
     .flex.items-center.justify-between.mb-4(class="lg:mb-6")
       div
-        h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Избранное
+        h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") {{ $t('favorites.title') }}
 
       ClientOnly
         .flex.items-center.gap-4(v-if="favoriteProducts.length > 0")
-          p.text-sm {{ favoriteProducts.length }} {{ pluralize(favoriteProducts.length) }}
+          p.text-sm {{ $t('favorites.count', favoriteProducts.length) }}
           button.btn.btn-ghost.btn-sm.rounded-xl.text-error(
             @click="clearAllFavorites"
             class="hover:text-error text-base-content/65"
-          ) Очистить всё
+          ) {{ $t('favorites.clearAll') }}
 
     //- Сетка / пустое состояние / скелетон — только клиент
     ClientOnly
@@ -46,9 +46,9 @@
         )
           svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5")
             path(d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
-        h2.text-lg.font-semibold.text-base-content Список избранного пуст
-        p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/65") Сохраняйте понравившиеся товары, чтобы быстро вернуться к ним позже
-        NuxtLink.btn.btn-primary.rounded-xl(to="/") Перейти в каталог
+        h2.text-lg.font-semibold.text-base-content {{ $t('favorites.empty') }}
+        p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/65") {{ $t('favorites.emptyHint') }}
+        NuxtLink.btn.btn-primary.rounded-xl(to="/") {{ $t('cart.goCatalog') }}
 
       //- Скелетоны на время гидрации
       template(#fallback)
@@ -59,6 +59,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const { isMobile } = useMobileDetection()
 const { addToCart, cartItems } = useCart()
 const { $notify } = useNuxtApp()
@@ -67,14 +68,7 @@ const { $notify } = useNuxtApp()
 const favorites = useFavorites()
 const favoriteProducts = favorites.favoriteProducts
 
-const pluralize = (count) => {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod100 >= 11 && mod100 <= 14) return 'товаров'
-  if (mod10 === 1) return 'товар'
-  if (mod10 >= 2 && mod10 <= 4) return 'товара'
-  return 'товаров'
-}
+// Формы «товар» — vue-i18n plural (favorites.count)
 
 const isInCart = (id) => {
   return cartItems.value?.some((item) => item.id === id?.toString()) || false
@@ -84,26 +78,26 @@ const addToCartHandler = async (product) => {
   if (isInCart(product.id)) return
   try {
     await addToCart(product)
-    $notify.success('Добавлено в корзину')
+    $notify.success(t('product.cartAddedShort'))
   } catch {
-    $notify.error('Ошибка')
+    $notify.error(t('favorites.error'))
   }
 }
 
 const removeFavorite = (product) => {
   // product — объект товара из события карточки
   const removed = favorites.removeFromFavorites(product?.id ?? product)
-  if (removed) $notify.info('Удалено из избранного')
+  if (removed) $notify.info(t('favorites.removed'))
 }
 
 const clearAllFavorites = () => {
   favorites.clearAllFavorites()
-  $notify.success('Избранное очищено')
+  $notify.success(t('favorites.cleared'))
 }
 
 onMounted(() => window.scrollTo(0, 0))
 
-useHead({ title: 'Избранное' })
+useHead(() => ({ title: t('favorites.title') }))
 </script>
 
 <style scoped>

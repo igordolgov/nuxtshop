@@ -7,7 +7,7 @@
     )
       .banner-content
         Icon(name="mdi:wifi-off" size="20")
-        span Нет подключения к интернету
+        span {{ $t('offline.banner') }}
 
   //- Баннер восстановления
   Transition(name="slide-down")
@@ -16,7 +16,7 @@
     )
       .banner-content
         Icon(name="mdi:wifi" size="20")
-        span Подключение восстановлено
+        span {{ $t('offline.restored') }}
 </template>
 
 <script setup>

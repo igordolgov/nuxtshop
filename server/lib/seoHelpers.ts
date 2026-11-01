@@ -58,16 +58,22 @@ export function escapeXml(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/** robots.txt: служебные разделы закрыты, остальное открыто + sitemap */
+/** robots.txt: служебные разделы закрыты, остальное открыто + sitemap.
+ *  Дубли со звёздочкой-шаблоном ("звезда-слэш-admin") закрывают локализованные
+ *  префиксы (/en/admin, /es/cart …): в robots.txt шаблон поддерживается. */
 export function buildRobotsTxt(siteUrl: string): string {
   return [
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin',
     'Disallow: /admin/',
+    'Disallow: /*/admin',
     'Disallow: /user',
     'Disallow: /cart',
     'Disallow: /favorites',
+    'Disallow: /*/user',
+    'Disallow: /*/cart',
+    'Disallow: /*/favorites',
     'Disallow: /api/',
     '',
     `Sitemap: ${siteUrl}/sitemap.xml`,
@@ -75,7 +81,34 @@ export function buildRobotsTxt(siteUrl: string): string {
   ].join('\n');
 }
 
-/** sitemap.xml: статические страницы + все товары с lastmod */
+// Локали витрины для hreflang-альтернатов в sitemap: код + URL-префикс.
+// Должно совпадать с i18n.locales в nuxt.config.ts (ru — без префикса).
+const SITEMAP_LOCALES: Array<{ code: string; prefix: string }> = [
+  { code: 'ru', prefix: '' },
+  { code: 'en', prefix: '/en' },
+  { code: 'es', prefix: '/es' },
+];
+
+/**
+ * Блок <xhtml:link rel="alternate"> для одного пути: по записи на каждую
+ * локаль + x-default (дефолтная локаль ru). Путь — канонический ru-путь:
+ * '/' → ru: site, en: site/en, es: site/es; '/product/x' → '/en/product/x' …
+ */
+export function sitemapAlternatesXml(siteUrl: string, path: string): string {
+  const tail = path === '/' ? '' : path;
+  const lines = [
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(`${siteUrl}${tail}`)}"/>`,
+  ];
+  for (const { code, prefix } of SITEMAP_LOCALES) {
+    lines.push(
+      `    <xhtml:link rel="alternate" hreflang="${code}" href="${escapeXml(`${siteUrl}${prefix}${tail}`)}"/>`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/** sitemap.xml: статические страницы + все товары с lastmod.
+ *  Для каждого URL — hreflang-альтернаты ru/en/es (x-default → ru). */
 export function buildSitemapXml(siteUrl: string, products: Product[]): string {
   const staticPages = [
     { loc: '/', changefreq: 'daily', priority: '1.0' },
@@ -86,14 +119,15 @@ export function buildSitemapXml(siteUrl: string, products: Product[]): string {
 
   const urls: string[] = staticPages.map(
     (p) =>
-      `  <url>\n    <loc>${escapeXml(`${siteUrl}${p.loc}`)}</loc>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`,
+      `  <url>\n    <loc>${escapeXml(`${siteUrl}${p.loc}`)}</loc>\n${sitemapAlternatesXml(siteUrl, p.loc)}\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`,
   );
 
   for (const product of products) {
     if (!product?.slug) continue;
     const lastmod = (product.updatedAt || product.createdAt || '').slice(0, 10);
+    const productPath = `/product/${product.slug}`;
     urls.push(
-      `  <url>\n    <loc>${escapeXml(`${siteUrl}/product/${product.slug}`)}</loc>\n${
+      `  <url>\n    <loc>${escapeXml(`${siteUrl}${productPath}`)}</loc>\n${sitemapAlternatesXml(siteUrl, productPath)}\n${
         lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ''
       }    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`,
     );
@@ -101,7 +135,7 @@ export function buildSitemapXml(siteUrl: string, products: Product[]): string {
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
     ...urls,
     '</urlset>',
     '',

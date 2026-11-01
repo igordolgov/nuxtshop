@@ -30,7 +30,7 @@
         @click.stop="prevImage"
         @touchstart.stop.prevent="prevImage"
         class="top-1/2 left-2 z-20 absolute -translate-y-1/2"
-        aria-label="Предыдущее изображение"
+        :aria-label="$t('product.prevImage')"
       )
         svg.w-6.h-6.text-white.opacity-80(
           xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +70,7 @@
             //- картинок делает handleImageError → fallbackImage.
             img(
               :src="getValidImageUrl(image)"
-              :alt="`${productName} - изображение ${index + 1}`"
+              :alt="$t('product.imageAlt', { name: productName, n: index + 1 })"
               class="z-10 relative product-main-image"
               :class="{ 'cursor-zoom-in': isDesktop }"
               @load="handleImageLoad(index)"
@@ -91,7 +91,7 @@
         @click.stop="nextImage"
         @touchstart.stop.prevent="nextImage"
         class="top-1/2 right-2 z-20 absolute -translate-y-1/2"
-        aria-label="Следующее изображение"
+        :aria-label="$t('product.nextImage')"
       )
         svg.w-6.h-6.text-white.opacity-80(
           xmlns="http://www.w3.org/2000/svg"
@@ -109,7 +109,7 @@
         @click.stop="openZoom(currentIndex)"
         @touchstart.stop="openZoom(currentIndex)"
         class="right-4 bottom-4 z-30 absolute flex justify-center items-center bg-black/30 hover:bg-black/50 rounded-full size-12 transition-all"
-        aria-label="Увеличить изображение"
+        :aria-label="$t('product.zoomIn')"
       )
         svg.w-6.h-6.text-white(
           xmlns="http://www.w3.org/2000/svg"
@@ -132,19 +132,19 @@
           :class="{ 'active': index === currentIndex }"
           class="rounded-full size-2 transition-all duration-300 cursor-pointer"
           :style="index === currentIndex ? 'transform: scale(1.3);' : 'background-color: rgba(255, 255, 255, 0.8);'"
-          :aria-label="`Перейти к изображению ${index + 1}`"
+          :aria-label="$t('product.goToImage', { n: index + 1 })"
         )
 
   Teleport(to="body")
     Transition(name="fade")
       .zoom-modal(v-if="isZoomOpen")
-        button.close-btn(type="button" @click="closeZoom" aria-label="Закрыть")
+        button.close-btn(type="button" @click="closeZoom" :aria-label="$t('catalog.close')")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
 
         .image-loader(v-if="zoomLoading")
           .loading.loading-spinner.loading-lg.text-white
-          span.text-white.mt-2.text-sm Загрузка...
+          span.text-white.mt-2.text-sm {{ $t('common.loading') }}
 
         //- Жестовый контейнер: единые Pointer Events для touch и мыши.
         //- touch-action:none обязателен — без него браузер перехватит
@@ -166,7 +166,7 @@
             ref="zoomImageRef"
             :class="{ 'zoom-anim': !isGestureActive }"
             :src="zoomImageUrl"
-            :alt="`${productName} - увеличенное изображение`"
+            :alt="$t('product.zoomAlt', { name: productName })"
             :style="zoomStyle"
             draggable="false"
             decoding="async"

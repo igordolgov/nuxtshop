@@ -15,9 +15,9 @@
             )
           
           .flex-1
-            h3.card-title.text-base Установить приложение?
+            h3.card-title.text-base {{ $t('install.title') }}
             p.text-sm.opacity-70.mt-1
-              | Работает оффлайн, быстрый доступ
+              | {{ $t('install.subtitle') }}
           
           button.btn.btn-ghost.btn-xs.btn-circle(
             @click="dismiss"
@@ -27,19 +27,19 @@
         .card-actions.justify-end.mt-3.gap-2
           button.btn.btn-ghost.btn-sm(
             @click="dismiss"
-          ) Позже
+          ) {{ $t('install.later') }}
           button.btn.btn-primary.btn-sm(
             @click="install"
           )
             Icon(name="mdi:download" size="16")
-            span.ml-1 Установить
+            span.ml-1 {{ $t('install.install') }}
 
   .mini-prompt(
     v-if="showMiniPrompt"
     @click="showFullPrompt"
   )
     Icon(name="mdi:download" size="20")
-    span Установить приложение
+    span {{ $t('install.cta') }}
 </template>
 
 <script setup>

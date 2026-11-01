@@ -8,7 +8,7 @@
   .mobile-filters-panel(
     role="dialog"
     aria-modal="true"
-    aria-label="Фильтры товаров"
+    :aria-label="$t('catalog.filtersAria')"
   )
     //- Шапка панели
     .filters-header.flex.items-center.justify-between(
@@ -18,13 +18,13 @@
         class="text-base-content/70"
         type="button"
         @click="handleReset"
-      ) Сбросить
+      ) {{ $t('catalog.reset') }}
 
-      h2.text-base.font-semibold.text-base-content Фильтры
+      h2.text-base.font-semibold.text-base-content {{ $t('catalog.filtersTitle') }}
 
       button.btn.btn-ghost.btn-sm.btn-circle(
         type="button"
-        aria-label="Закрыть"
+        :aria-label="$t('catalog.close')"
         @click="handleClose"
       )
         svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
@@ -50,14 +50,14 @@
         type="button"
         @click="handleApplyAndClose"
       )
-        span Показать {{ filteredCount }} {{ plural(filteredCount) }}
+        span {{ $t('catalog.showCount', filteredCount) }}
 
       //- Кнопка «Применить» из прежней шапки — для непустого результата
       button.btn.btn-ghost.btn-sm.w-full.mt-1(
         type="button"
         v-if="filteredCount === 0 && totalCount > 0"
         @click="handleClose"
-      ) Закрыть (показать все {{ totalCount }})
+      ) {{ $t('catalog.closeShowAll', { n: totalCount }) }}
 
     //- Ручка bottom-sheet (визуальный affordance)
     .sheet-handle
@@ -82,14 +82,8 @@ const emit = defineEmits([
   'scroll-to-top',
 ])
 
-const plural = (n) => {
-  const m10 = n % 10
-  const m100 = n % 100
-  if (m100 >= 11 && m100 <= 14) return 'товаров'
-  if (m10 === 1) return 'товар'
-  if (m10 >= 2 && m10 <= 4) return 'товара'
-  return 'товаров'
-}
+//- Русские формы слова «товар» теперь через vue-i18n plural
+//- (catalog.showCount + pluralRules ru в i18n/i18n.config.ts)
 
 const handleClose = () => {
   emit('close')

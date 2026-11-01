@@ -10,14 +10,14 @@
     //- Состояние загрузки
     .flex.justify-center.items-center.min-h-96(v-if="loading")
       .loading.loading-spinner.loading-lg.text-primary
-      span.ml-3 Загрузка...
+      span.ml-3 {{ $t('common.loading') }}
 
     //- Состояние неавторизованного пользователя
     .flex.justify-center.items-center.min-h-96(v-else-if="!isAuthenticated")
       .text-center
         .text-4xl.mb-4 🔒
-        h2.text-xl.font-bold.mb-3 Требуется авторизация
-        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") Войти
+        h2.text-xl.font-bold.mb-3 {{ $t('user.authRequired') }}
+        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") {{ $t('auth.login') }}
 
     //- Основной контент (нижний «воздух» даёт .mobile-nav-safe на корне)
     .space-y-4(v-else)
@@ -40,10 +40,10 @@
               .stats.stats-horizontal
                 .stat.p-2
                   .stat-value.text-lg {{ orders.length }}
-                  .stat-desc.text-xs Заказы
+                  .stat-desc.text-xs {{ $t('nav.orders') }}
                 .stat.p-2
                   .stat-value.text-lg {{ favoritesCount }}
-                  .stat-desc.text-xs Избранное
+                  .stat-desc.text-xs {{ $t('nav.favorites') }}
               button.btn.btn-outline.btn-error.btn-sm.ml-auto(type="button" @click="logout")
                 svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                   path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1")
@@ -55,11 +55,11 @@
           //- Редактирование профиля
           .card.bg-base-100.shadow-sm
             .card-body.p-4
-              h3.card-title.text-md.mb-4 📝 Редактирование профиля
+              h3.card-title.text-md.mb-4 📝 {{ $t('user.editProfile') }}
               form.grid.grid-cols-1.gap-3(@submit.prevent="updateProfile" class="md:grid-cols-2")
                 .form-control
                   label.label.py-1
-                    span.label-text.text-sm Имя
+                    span.label-text.text-sm {{ $t('auth.name') }}
                   input.input.input-bordered.input-sm(type="text" v-model="profileForm.name")
 
                 .form-control
@@ -69,87 +69,87 @@
 
                 .form-control
                   label.label.py-1
-                    span.label-text.text-sm Телефон
+                    span.label-text.text-sm {{ $t('user.phone') }}
                   input.input.input-bordered.input-sm(type="tel" v-model="profileForm.phone")
 
                 .form-control(class="md:col-span-2")
                   label.label.py-1.mr-2
-                    span.label-text.text-sm Адрес доставки
+                    span.label-text.text-sm {{ $t('user.deliveryAddress') }}
                   textarea.textarea.textarea-bordered.textarea-sm(v-model="profileForm.address" rows="2")
 
                 div(class="md:col-span-2")
                   button.btn.btn-primary.btn-sm(type="submit" :disabled="updatingProfile")
-                    span(v-if="updatingProfile") Сохранение...
-                    span(v-else) Сохранить изменения
+                    span(v-if="updatingProfile") {{ $t('settings.saving') }}
+                    span(v-else) {{ $t('user.saveChanges') }}
 
           //- Статистика
           .card.bg-base-100.shadow-sm
             .card-body.p-4
-              h3.card-title.text-md 📊 Детальная статистика
+              h3.card-title.text-md 📊 {{ $t('user.detailedStats') }}
               .grid.grid-cols-2.gap-2(class="md:grid-cols-4")
                 .stat.place-items-center.text-center.mr-4
                   .stat-figure.text-primary
                     svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4")
                   .stat-value.text-lg {{ orders.length }}
-                  .stat-title.text-xs Всего заказов
+                  .stat-title.text-xs {{ $t('user.totalOrders') }}
 
                 .stat.place-items-center.text-center
                   .stat-figure.text-info
                     svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z")
                   .stat-value.text-lg {{ activeOrdersCount }}
-                  .stat-title.text-xs Активных
+                  .stat-title.text-xs {{ $t('user.activeOrders') }}
 
                 .stat.place-items-center.text-center
                   .stat-figure.text-secondary
                     svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
                   .stat-value.text-lg {{ favoritesCount }}
-                  .stat-title.text-xs Избранное
+                  .stat-title.text-xs {{ $t('nav.favorites') }}
 
                 .stat.place-items-center.text-center
                   .stat-figure.text-success
                     svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z")
                   .stat-value.text-lg {{ completedOrdersCount }}
-                  .stat-title.text-xs Завершено
+                  .stat-title.text-xs {{ $t('user.completed') }}
 
         //- Правая колонка
         .space-y-4
           //- Быстрые действия
           .card.bg-base-100.shadow-sm
             .card-body.p-4
-              h3.card-title.text-md.mb-3 ⚡ Быстрые действия
+              h3.card-title.text-md.mb-3 ⚡ {{ $t('user.quickActions') }}
               .flex.flex-col.gap-2
                 button.btn.btn-primary.btn-sm.justify-start(type="button" @click="navigateTo('/user/orders')")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4")
-                  span Мои заказы
+                  span {{ $t('header.myOrders') }}
 
                 button.btn.btn-secondary.btn-sm.justify-start(type="button" @click="navigateTo('/cart')")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
-                  span Корзина покупок
+                  span {{ $t('nav.cart') }}
 
                 button.btn.btn-accent.btn-sm.justify-start(type="button" @click="navigateTo('/favorites')")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
-                  span Мои избранные
+                  span {{ $t('nav.favorites') }}
 
           //- Последние заказы (серверные статусы; источник — /api/my/orders)
           .card.bg-base-100.shadow-sm
             .card-body.p-4
               .flex.items-center.justify-between.mb-3
-                h3.card-title.text-md 📦 Последние заказы
+                h3.card-title.text-md 📦 {{ $t('user.recentOrders') }}
                 .flex.items-center.gap-2
                   .badge.badge-sm.badge-outline.rounded-sm {{ orders.length }}
-                  NuxtLink.btn.btn-ghost.btn-xs.rounded-lg(to="/user/orders") Все заказы →
+                  NuxtLink.btn.btn-ghost.btn-xs.rounded-lg(to="/user/orders") {{ $t('user.allOrders') }}
 
               .text-center.py-4(v-if="orders.length === 0")
                 .text-2xl 📭
-                p.text-xs Нет заказов
-                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") Сделать заказ
+                p.text-xs {{ $t('user.noOrders') }}
+                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") {{ $t('user.makeOrder') }}
 
               .flex.flex-col.gap-3(v-else)
                 .border.rounded-lg.overflow-hidden(
@@ -163,11 +163,11 @@
                     .flex.items-center.justify-between.gap-2
                       .flex.items-center.justify-between.gap-4
                         .badge.badge-sm.rounded-sm(:class="getStatusBadgeClass(order.status)") {{ getStatusText(order.status) }}
-                        .font-semibold Заказ №{{ order.id }}
+                        .font-semibold {{ $t('user.orderNo', { n: order.id }) }}
 
                     .flex.items-center.justify-between.mt-2
                       .text-xs(class="text-base-content/70") {{ formatDate(order.createdAt) }}
-                      .text-xs(class="text-base-content/70") {{ order.items?.length || 0 }} товар(ов)
+                      .text-xs(class="text-base-content/70") {{ $t('cart.itemsCount', order.items?.length || 0) }}
                       .flex.items-center.gap-2
                         .text-sm.font-bold.text-primary {{ formatPrice(order.total) }}
                         svg.w-4.h-4.transition-transform(
@@ -178,7 +178,7 @@
 
                   .border-t.p-3.bg-base-100(v-if="expandedOrders.includes(order.id)")
                     .mb-3
-                      .text-xs.font-semibold.mb-2.uppercase(class="text-base-content/60") Товары
+                      .text-xs.font-semibold.mb-2.uppercase(class="text-base-content/60") {{ $t('cart.product') }}
                       .flex.flex-col.gap-2
                         .flex.items-center.gap-3.p-2.bg-base-200.rounded(
                           v-for="item in order.items"
@@ -196,45 +196,45 @@
                           )
                           .flex-1.min-w-0
                             .font-medium.text-sm.truncate {{ item.name }}
-                            p.text-xs(class="text-base-content/70") {{ item.quantity }} шт. × {{ formatPrice(item.price) }}
+                            p.text-xs(class="text-base-content/70") {{ item.quantity }} {{ $t('user.pcs') }} × {{ formatPrice(item.price) }}
                           .text-sm.font-semibold {{ formatPrice(item.price * item.quantity) }}
 
                     .grid.grid-cols-1.gap-2.mb-3(class="sm:grid-cols-2")
                       .p-2.bg-base-200.rounded
-                        .text-xs.font-semibold.mb-1.uppercase(class="text-base-content/60") Доставка
+                        .text-xs.font-semibold.mb-1.uppercase(class="text-base-content/60") {{ $t('cart.delivery') }}
                         .text-sm {{ getDeliveryText(order.deliveryMethod) }}
                         p.text-xs.mt-1(v-if="order.customer?.city" class="text-base-content/70")
                           | {{ order.customer.city }}{{ order.customer.address ? ', ' + order.customer.address : '' }}
 
                       .p-2.bg-base-200.rounded
-                        .text-xs.font-semibold.mb-1.uppercase(class="text-base-content/60") Оплата
+                        .text-xs.font-semibold.mb-1.uppercase(class="text-base-content/60") {{ $t('checkout.paymentMethodTitle').replace(':', '') }}
                         .text-sm {{ getPaymentText(order.paymentMethod) }}
 
                     .border-t.pt-2
                       .flex.justify-between.text-xs.mb-1
-                        span(class="text-base-content/70") Подытог
+                        span(class="text-base-content/70") {{ $t('user.subtotal') }}
                         span {{ formatPrice(order.subtotal) }}
                       .flex.justify-between.text-xs.mb-1(v-if="order.discount > 0")
-                        span(class="text-base-content/70") Скидка
+                        span(class="text-base-content/70") {{ $t('cart.discount') }}
                         span.text-error -{{ formatPrice(order.discount) }}
                       .flex.justify-between.text-xs.mb-1
-                        span(class="text-base-content/70") Доставка
-                        span {{ order.deliveryPrice > 0 ? formatPrice(order.deliveryPrice) : 'Бесплатно' }}
+                        span(class="text-base-content/70") {{ $t('cart.delivery') }}
+                        span {{ order.deliveryPrice > 0 ? formatPrice(order.deliveryPrice) : $t('cart.free') }}
                       .flex.justify-between.text-sm.font-bold.pt-1.border-t.mt-1
-                        span Итого
+                        span {{ $t('cart.total') }}
                         span.text-primary {{ formatPrice(order.total) }}
 
           //- Избранное
           .card.bg-base-100.shadow-sm
             .card-body.p-4
               .flex.items-center.justify-between.mb-3
-                h3.card-title.text-md ❤️ Избранное
+                h3.card-title.text-md ❤️ {{ $t('nav.favorites') }}
                 .badge.badge-sm.badge-outline.rounded-sm {{ favoritesCount }}
 
               .text-center.py-4(v-if="favoritesCount === 0")
                 .text-2xl.mb-2 🤍
-                p.text-xs Нет избранного
-                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") Найти товары
+                p.text-xs {{ $t('user.noFavorites') }}
+                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") {{ $t('user.findProducts') }}
 
               .flex.flex-col.gap-2(v-else)
                 .flex.items-center.gap-3.p-2.border.rounded-lg.cursor-pointer.transition-colors(
@@ -261,14 +261,14 @@
                     button.btn.btn-ghost.btn-xs(
                       type="button"
                       @click.stop="addToCart(product)"
-                      title="В корзину"
+                      :title="$t('product.toCart')"
                     )
                       svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                         path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
                     button.btn.btn-ghost.btn-xs.text-error(
                       type="button"
                       @click.stop="removeFavorite(product)"
-                      title="Удалить"
+                      :title="$t('cart.remove')"
                     )
                       svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor")
                         path(d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")
@@ -278,6 +278,7 @@
 </template>
 
 <script setup>
+const { t, locale } = useI18n()
 definePageMeta({
   middleware: 'user-auth',
 })

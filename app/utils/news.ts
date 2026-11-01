@@ -66,13 +66,30 @@ const MONTHS_GEN = [
   'декабря',
 ] as const
 
-/** '2026-10-28' → «28 октября 2026» (без Intl — SSR-безопасно). */
-export function formatNewsDate(iso: string): string {
+// Месяцы и шаблон строки для локалей витрины (en/es). Формат по-прежнему
+// без Intl: чистая конкатенация одинакова на сервере и клиенте (нет
+// hydration-мисматчей). Фолбэк при неизвестной локали — русский.
+const MONTHS_BY_LOCALE: Record<string, { months: readonly string[]; template: (d: string, m: string, y: string) => string }> = {
+  ru: { months: MONTHS_GEN, template: (d, m, y) => `${d} ${m} ${y}` },
+  en: {
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    template: (d, m, y) => `${m} ${d}, ${y}`,
+  },
+  es: {
+    months: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    template: (d, m, y) => `${d} de ${m} de ${y}`,
+  },
+}
+
+/** '2026-10-28' → «28 октября 2026» / «October 28, 2026» / «28 de octubre de 2026».
+ *  Локаль — код i18n ('ru' | 'en' | 'es'); пусто/неизвестно → русский. */
+export function formatNewsDate(iso: string, locale = 'ru'): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '')
   if (!m) return iso ?? ''
   const [, y, mo, d] = m
-  const month = MONTHS_GEN[Number(mo) - 1] ?? mo
-  return `${Number(d)} ${month} ${y}`
+  const pack = MONTHS_BY_LOCALE[locale] ?? MONTHS_BY_LOCALE.ru
+  const month = pack.months[Number(mo) - 1] ?? mo
+  return pack.template(String(Number(d)), month, y)
 }
 
 /** Свежие сверху; при равных датах — больший числовой id. */

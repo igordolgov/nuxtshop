@@ -7,8 +7,8 @@
 .orientation-guard
   .guard-card
     Icon.guard-icon(name="mdi:phone-rotate-portrait" size="56")
-    p.guard-title Поверните телефон вертикально
-    p.guard-text Сайт работает только в портретном режиме
+    p.guard-title {{ $t('orientation.title') }}
+    p.guard-text {{ $t('orientation.text') }}
 </template>
 
 <style scoped>

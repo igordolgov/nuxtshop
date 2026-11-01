@@ -5,7 +5,7 @@
         class="lg:mt-0 lg:mb-3 px-2 pb-15 lg:pb-3"
 )
         .container.mx-auto.px-2(class="lg:px-4")
-                h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") Похожие товары:
+                h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") {{ $t('product.similar') }}
                 
                 .grid.grid-cols-2.gap-1(
                         class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
@@ -23,7 +23,7 @@
                                                 button.btn.btn-circle.btn-xs(
                                                         :class="item.isFavorite ? 'btn-error text-white' : 'btn-ghost bg-base-100/80'"
                                                         @click.stop="$emit('toggle-favorite', item.id)"
-                                                        :title="item.isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'"
+                                                        :title="item.isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
                                                 )
                                                         svg.w-4.h-4(
                                                                 :class="item.isFavorite ? 'fill-current' : 'fill-none stroke-current text-base-content/70'"
@@ -38,7 +38,7 @@
                                                         @click.stop="$emit('add-to-cart', item)"
                                                         :disabled="!item.inStock || isInCart(item.id)"
                                                         :class="isInCart(item.id) ? 'btn-success text-success-content' : 'btn-primary text-primary-content'"
-                                                        :title="isInCart(item.id) ? 'Уже в корзине' : 'Добавить в корзину'"
+                                                        :title="isInCart(item.id) ? $t('product.inCartAlready') : $t('product.addToCart')"
                                                 )
                                                         svg.w-6.h-6(
                                                                 xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +86,7 @@
                                                                 .text-md.font-bold.text-primary {{ formatPrice(item.price) }}
                                                                 .text-xs(
                                                                         :class="item.inStock ? 'text-success' : 'text-error'"
-                                                                ) {{ item.inStock ? 'В наличии' : 'Нет в наличии' }}
+                                                                ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
 </template>
 
 <script setup>

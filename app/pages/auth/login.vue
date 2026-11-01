@@ -5,8 +5,8 @@
     .card.w-full.max-w-md.bg-base-100.shadow-xl
       .card-body
         .text-center.mb-8
-          h1.card-title.text-3xl.justify-center Вход в систему
-          p.text-base-content.opacity-70.mt-2 Введите свои учетные данные
+          h1.card-title.text-3xl.justify-center {{ $t('auth.loginTitle') }}
+          p.text-base-content.opacity-70.mt-2 {{ $t('auth.loginSubtitle') }}
 
         form(@submit.prevent="handleLogin")
           .form-control
@@ -25,7 +25,7 @@
 
           .form-control.mt-4
             label.label
-              span.label-text Пароль
+              span.label-text {{ $t('auth.password') }}
             .relative
               input.input.input-bordered.w-full(
                 :type="showPassword ? 'text' : 'password'"
@@ -38,7 +38,7 @@
               button.absolute.right-1.top-1.btn.btn-ghost.btn-sm(
                 type="button"
                 @click="showPassword = !showPassword"
-                :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+                :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
               )
                 svg.w-4.h-4(
                   v-if="showPassword"
@@ -66,28 +66,28 @@
               :disabled="loading"
               :class="{ 'loading': loading }"
             )
-              span(v-if="!loading") Войти
-              span(v-else) Вход...
+              span(v-if="!loading") {{ $t('auth.login') }}
+              span(v-else) {{ $t('auth.loggingIn') }}
 
-          .divider.mt-6 ИЛИ
+          .divider.mt-6 {{ $t('auth.or') }}
 
           .text-center.mt-4
             p.text-sm
-              | Нет аккаунта?
-              a.link.link-primary(@click="$router.push('/auth/register')") Зарегистрируйтесь
+              | {{ $t('auth.noAccount') }}
+              a.link.link-primary(@click="$router.push('/auth/register')") {{ $t('auth.registerLink') }}
 
         ClientOnly
           .card.bg-base-200.mt-4(v-if="isDev")
             .card-body.p-4
-              .text-sm.font-bold.mb-2 Тестовые данные (только dev):
+              .text-sm.font-bold.mb-2 {{ $t('auth.testData') }}
               .space-y-1
                 .flex.justify-between
                   span Email:
                   code admin@shop.ru
                 .flex.justify-between
-                  span Пароль:
+                  span {{ $t('auth.passwordLabel') }}
                   code admin123
-              button.btn.btn-xs.btn-outline.mt-2(@click="fillTestData") Заполнить
+              button.btn.btn-xs.btn-outline.mt-2(@click="fillTestData") {{ $t('auth.fill') }}
 
         .alert.alert-error.mt-6(v-if="loginError")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
@@ -96,11 +96,12 @@
 
         .text-center.mt-6.pt-6.border-t
         p.text-xs.text-base-content.opacity-50
-          | Проблемы с доступом?
-          a.link.link-error(@click="$router.push('/emergency-logout')") Аварийный выход
+          | {{ $t('auth.problems') }}
+          a.link.link-error(@click="$router.push('/emergency-logout')") {{ $t('emergency.title') }}
 </template>
 
 <script setup>
+const { t } = useI18n()
 const appState = useAppState()
 const { login, isAuthenticated, checkAuth, user } = appState
 
@@ -144,18 +145,18 @@ const validateForm = () => {
   let isValid = true
 
   if (!form.value.email.trim()) {
-    errors.value.email = 'Email обязателен для заполнения'
+    errors.value.email = t('auth.errEmailRequired')
     isValid = false
   } else if (!/\S+@\S+\.\S+/.test(form.value.email)) {
-    errors.value.email = 'Некорректный формат email'
+    errors.value.email = t('auth.errEmailFormat')
     isValid = false
   }
 
   if (!form.value.password) {
-    errors.value.password = 'Пароль обязателен для заполнения'
+    errors.value.password = t('auth.errPasswordRequired')
     isValid = false
   } else if (form.value.password.length < 3) {
-    errors.value.password = 'Пароль должен содержать минимум 3 символа'
+    errors.value.password = t('auth.errPasswordShort')
     isValid = false
   }
 
@@ -178,23 +179,23 @@ const handleLogin = async () => {
       await checkAuth()
 
       if (user.value) {
-        $notify.success(`Рады видеть вас снова, ${user.value.name || 'Пользователь'}!`, 'Добро пожаловать!')
+        $notify.success(t('auth.welcomeBack', { name: user.value.name || t('header.defaultUserName') }), t('auth.welcomeTitle'))
         setTimeout(() => router.push('/'), 100)
       } else {
-        throw new Error('Состояние пользователя не обновлено')
+        throw new Error(t('auth.errState'))
       }
     } else {
-      loginError.value = result?.error || 'Ошибка входа. Проверьте правильность данных.'
+      loginError.value = result?.error || t('auth.errLoginDefault')
     }
   } catch (error) {
     if (error.data?.message || error.data?.statusMessage) {
       loginError.value = error.data.message || error.data.statusMessage
     } else if (error.status === 401) {
-      loginError.value = 'Неверный email или пароль'
+      loginError.value = t('auth.errLoginWrong')
     } else if (error.status === 500) {
-      loginError.value = 'Ошибка сервера. Попробуйте позже.'
+      loginError.value = t('auth.errServerError')
     } else {
-      loginError.value = error.message || 'Произошла ошибка при входе. Попробуйте позже.'
+      loginError.value = error.message || t('auth.errLoginGeneric')
     }
   } finally {
     loading.value = false

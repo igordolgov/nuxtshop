@@ -9,7 +9,7 @@
     class="top-1 left-1 z-10 absolute hover:scale-110 transition-all duration-300 btn btn-circle btn-xs",
     :class="isFavorite ? 'btn-error' : ''",
     @click="toggleFavorite",
-    title="Добавить в избранное"
+    :title="$t('product.favAdd')"
   )
     svg.w-4.h-4.transition-all.duration-300(
       :class="isFavorite ? 'fill-current scale-110' : 'fill-none stroke-secondary hover:scale-110'",
@@ -53,7 +53,7 @@
           .text-md.text-error.transition-all.duration-300(
             v-else
             class="group-hover:scale-105"
-          ) нет в наличии
+          ) {{ $t('product.outOfStockShort') }}
       .flex-1.min-w-0
         //- Название товара с подсветкой
         h2(

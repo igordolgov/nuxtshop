@@ -13,12 +13,12 @@ section.recently-viewed(
 )
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.mb-2(class="lg:mb-3")
-      h2#recently-viewed-title.text-xl.font-semibold.text-base-content(class="lg:text-2xl") Недавно смотрели
+      h2#recently-viewed-title.text-xl.font-semibold.text-base-content(class="lg:text-2xl") {{ $t('product.recentlyViewed') }}
       button.clear-link.btn.btn-ghost.btn-xs.rounded-lg(
         class="text-base-content/75"
         type="button"
         @click="clearHistory"
-      ) Очистить
+      ) {{ $t('product.clear') }}
 
     .grid.grid-cols-2.gap-1(
       class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
@@ -32,7 +32,7 @@ section.recently-viewed(
             button.btn.btn-circle.btn-xs(
               :class="isFav(item.id) ? 'btn-error text-white' : 'btn-ghost bg-base-100/80'"
               @click.stop="$emit('toggle-favorite', item.id)"
-              :title="isFav(item.id) ? 'Удалить из избранного' : 'Добавить в избранное'"
+              :title="isFav(item.id) ? $t('product.favRemove') : $t('product.favAdd')"
             )
               svg.w-4.h-4(
                 :class="isFav(item.id) ? 'fill-current' : 'fill-none stroke-current text-base-content/70'"
@@ -47,7 +47,7 @@ section.recently-viewed(
               @click.stop="$emit('add-to-cart', item)"
               :disabled="!item.inStock || isInCart(item.id)"
               :class="isInCart(item.id) ? 'btn-success text-success-content' : 'btn-primary text-primary-content'"
-              :title="isInCart(item.id) ? 'Уже в корзине' : 'Добавить в корзину'"
+              :title="isInCart(item.id) ? $t('product.inCartAlready') : $t('product.addToCart')"
             )
               svg.w-6.h-6(
                 xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +92,7 @@ section.recently-viewed(
                 .text-md.font-bold.text-primary {{ formatPrice(item.price) }}
                 .text-xs(
                   :class="item.inStock ? 'text-success' : 'text-error'"
-                ) {{ item.inStock ? 'В наличии' : 'Нет в наличии' }}
+                ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
 </template>
 
 <script setup>

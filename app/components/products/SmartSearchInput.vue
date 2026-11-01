@@ -29,7 +29,7 @@
       :value="localSearchQuery"
       @input="handleInput"
       type="text"
-      placeholder="Поиск"
+      :placeholder="$t('catalog.search')"
       @focus="handleFocus"
       @blur="handleBlur"
       @keydown="handleKeydown"
@@ -43,7 +43,7 @@
       button.btn.btn-ghost.btn-xs.p-0.w-6.h-6.min-h-0(
         @click="resetSearch"
         type="button"
-        aria-label="Очистить поиск"
+        :aria-label="$t('catalog.clearSearch')"
       )
         span.text-xl(class="text-base-content/60 hover:text-base-content") x
 
@@ -59,7 +59,7 @@
             v-if="isSearching && !hasInitialResults"
           )
             .loading.loading-spinner.loading-xs
-            span.text-sm.ml-2(class="text-base-content/70") Поиск...
+            span.text-sm.ml-2(class="text-base-content/70") {{ $t('catalog.searching') }}
           
           //- Результаты
           template(v-if="filteredSuggestions.length > 0 && queryHasMinLength")
@@ -92,14 +92,14 @@
             v-if="localSearchQuery && localSearchQuery.length === 1"
             class="text-base-content/50"
           )
-            span Введите ещё {{ 2 - localSearchQuery.length }} букву...
+            span {{ $t('catalog.enterMore', 2 - localSearchQuery.length) }}
           
           //- Ничего не найдено
           .suggestion-item.text-center.p-3(
             v-if="!isSearching && localSearchQuery && localSearchQuery.length >= 2 && filteredSuggestions.length === 0 && hasPerformedSearch"
             class="text-base-content/50"
           )
-            span Ничего не найдено для "{{ localSearchQuery }}"
+            span {{ $t('catalog.nothingFound', { q: localSearchQuery }) }}
 </template>
 
 <script setup>

@@ -24,7 +24,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           type="button"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
-          aria-label="Открыть меню"
+          :aria-label="$t('header.openMenu')"
           class="w-11 h-11 min-h-0"
           @click="toggleMobileMenu"
         )
@@ -39,16 +39,16 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Шапка меню: кто вошёл / приглашение войти
           .px-5.pt-5.pb-4.border-b.border-base-300(class="bg-base-200/50")
             .text-xs.font-semibold.uppercase.tracking-wider(class="text-base-content/80")
-              | Меню
+              | {{ $t('nav.menu') }}
             .text-sm.font-semibold.text-base-content.mt-1(v-if="isAuthenticated")
               | {{ userName }}
             .text-sm.mt-1(v-else class="text-base-content/85")
-              | Гость — войдите для заказов
+              | {{ $t('header.guestHint') }}
 
           //- Раздел: Магазин
           .px-3.py-3
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-              | Магазин
+              | {{ $t('nav.shop') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -60,7 +60,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 )
                   svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                     path(stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6")
-                  span Главная
+                  span {{ $t('nav.home') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -72,14 +72,14 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span.flex.items-center.gap-3
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
-                    span Избранное
+                    span {{ $t('nav.favorites') }}
                   span.badge.badge-sm.badge-primary.rounded-full(v-if="favoritesCount > 0")
                     | {{ favoritesCount }}
 
           //- Раздел: Информация
           .px-3.pb-3
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-              | Информация
+              | {{ $t('nav.info') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -91,7 +91,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 )
                   svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                     path(stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 0h2a2 2 0 012 2v10a2 2 0 01-2 2h-4l-2-3h-4l-2 3z")
-                  span Новости
+                  span {{ $t('nav.news') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -102,7 +102,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 )
                   svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                     path(stroke-linecap="round" stroke-linejoin="round" d="M13 16h8v-8l-8-5-8 5v8h8zm-8 0v4a2 2 0 002 2h4")
-                  span О нас
+                  span {{ $t('nav.about') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -113,13 +113,13 @@ header.app-header.sticky.top-0.z-50.border-b(
                 )
                   svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                     path(stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
-                  span Контакты
+                  span {{ $t('nav.contacts') }}
 
           //- Раздел: Админка
           template(v-if="isAdmin")
             .px-3.pb-4
               .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-                | Админка
+                | {{ $t('nav.admin') }}
               ul.space-y-1
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -131,7 +131,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z")
-                    span Дашборд
+                    span {{ $t('nav.dashboard') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -142,7 +142,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
-                    span Товары
+                    span {{ $t('nav.products') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -153,7 +153,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z")
-                    span Заказы
+                    span {{ $t('nav.orders') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -164,7 +164,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z")
-                    span Новости
+                    span {{ $t('nav.news') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -175,7 +175,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10")
-                    span Контент
+                    span {{ $t('nav.content') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -186,7 +186,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z")
-                    span Отзывы
+                    span {{ $t('nav.reviews') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -198,7 +198,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z")
-                    span Промокоды
+                    span {{ $t('nav.promocodes') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
@@ -209,13 +209,26 @@ header.app-header.sticky.top-0.z-50.border-b(
                   )
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 8 4 4 0 010-8zM6 20a7 7 0 0114 0")
-                    span Пользователи
+                    span {{ $t('nav.users') }}
+
+          //- Раздел: Язык — переключение витрины ru/en/es (URL-стратегия)
+          .px-3.pb-4
+            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
+              | {{ $t('header.language') }}
+            .flex.gap-2.px-2
+              NuxtLink.btn.btn-sm.flex-1.rounded-lg(
+                v-for="l in locales"
+                :key="l.code"
+                :to="switchLocalePath(l.code)"
+                :class="l.code === locale ? 'btn-primary' : 'btn-outline'"
+              )
+                | {{ l.name }}
 
       //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
       NuxtLink.flex.items-center.gap-2.shrink-0(to="/" prefetch)
         .bg-primary.rounded-xl.flex.items-center.justify-center.size-8
-          span.text-primary-content.font-bold.text-sm М
-        span.font-semibold.text-base-content.tracking-tight Магазин
+          span.text-primary-content.font-bold.text-sm {{ $t('nav.brandInitial') }}
+        span.font-semibold.text-base-content.tracking-tight {{ $t('nav.brand') }}
 
     //- Десктоп-меню (центр строки 1)
     nav.hidden(class="lg:block")
@@ -225,31 +238,31 @@ header.app-header.sticky.top-0.z-50.border-b(
             :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/"
             prefetch
-          ) Главная
+          ) {{ $t('nav.home') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/news"
             prefetch
-          ) Новости
+          ) {{ $t('nav.news') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/about"
             prefetch
-          ) О нас
+          ) {{ $t('nav.about') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/contacts"
             prefetch
-          ) Контакты
+          ) {{ $t('nav.contacts') }}
         li.relative
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-2.transition-colors(
             :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             to="/favorites"
           )
-            span Избранное
+            span {{ $t('nav.favorites') }}
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
               | {{ favoritesCount }}
         li.relative(v-if="isAdmin" ref="adminMenuRef")
@@ -260,7 +273,7 @@ header.app-header.sticky.top-0.z-50.border-b(
             :class="isAdminRouteActive || isAdminMenuOpen ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             @click="toggleAdminMenu"
           )
-            span Админка
+            span {{ $t('nav.admin') }}
             svg.w-4.h-4.transition-transform(
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
               stroke="currentColor" :class="isAdminMenuOpen ? 'rotate-180' : ''"
@@ -276,49 +289,49 @@ header.app-header.sticky.top-0.z-50.border-b(
                 to="/admin"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
-              ) Дашборд
+              ) {{ $t('nav.dashboard') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/products"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Товары
+              ) {{ $t('nav.products') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/orders"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Заказы
+              ) {{ $t('nav.orders') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/news"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Новости
+              ) {{ $t('nav.news') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/content"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/content') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Контент
+              ) {{ $t('nav.content') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/reviews"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Отзывы
+              ) {{ $t('nav.reviews') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/promocodes"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Промокоды
+              ) {{ $t('nav.promocodes') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 to="/admin/users"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
-              ) Пользователи
+              ) {{ $t('nav.users') }}
 
     //- Правая группа: поиск (десктоп) · корзина (десктоп) · тема · профиль
     .flex.items-center.gap-1.shrink-0(class="lg:gap-2")
@@ -346,18 +359,22 @@ header.app-header.sticky.top-0.z-50.border-b(
 
       //- Корзина — десктоп (на мобильных нижнее меню)
       .indicator.hidden(class="lg:block")
-        NuxtLink.btn.btn-ghost.btn-circle(to="/cart" aria-label="Корзина" class="w-11 h-11 min-h-0")
+        NuxtLink.btn.btn-ghost.btn-circle(to="/cart" :aria-label="$t('nav.cart')" class="w-11 h-11 min-h-0")
           svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85" stroke-width="1.75")
             path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
         span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1(
           v-if="cartItemsCount > 0"
         ) {{ cartItemsCount }}
 
+      //- Переключатель языка — на десктопе (на мобильных — раздел «Язык» в бургер-меню)
+      .hidden(class="lg:block")
+        LocaleSwitcher
+
       //- Тема
       button.btn.btn-ghost.btn-circle(
         type="button"
-        :title="currentTheme === 'corporate' ? 'Включить тёмную тему' : 'Включить светлую тему'"
-        aria-label="Переключить тему"
+        :title="currentTheme === 'corporate' ? $t('header.enableDark') : $t('header.enableLight')"
+        :aria-label="$t('header.toggleThemeAria')"
         class="w-11 h-11 min-h-0"
         @click="toggleTheme"
       )
@@ -380,7 +397,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           type="button"
           :aria-expanded="isUserMenuOpen"
           aria-haspopup="menu"
-          aria-label="Меню пользователя"
+          :aria-label="$t('header.userMenu')"
           class="hover:bg-base-200 px-2 h-11"
           @click="toggleUserMenu"
         )
@@ -405,21 +422,21 @@ header.app-header.sticky.top-0.z-50.border-b(
               .badge.badge-sm.mt-1.rounded-full(
                 :class="userRole === 'admin' ? 'badge-primary' : userRole === 'manager' ? 'badge-secondary' : 'badge-accent'"
               )
-                | {{ userRole === 'admin' ? 'Администратор' : userRole === 'manager' ? 'Менеджер' : 'Пользователь' }}
+                | {{ userRole === 'admin' ? $t('header.roleAdmin') : userRole === 'manager' ? $t('header.roleManager') : $t('header.roleUser') }}
 
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user')"
               :class="isExactActiveRoute('/user') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              span Личный кабинет
+              span {{ $t('header.account') }}
 
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/user/orders')"
               :class="isExactActiveRoute('/user/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              span Мои заказы
+              span {{ $t('header.myOrders') }}
 
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               v-if="isAdmin"
@@ -427,14 +444,14 @@ header.app-header.sticky.top-0.z-50.border-b(
               @click="navigateToPath('/admin/users')"
               :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              span Управление пользователями
+              span {{ $t('header.manageUsers') }}
 
             button.flex.items-center.gap-3.px-3.py-3.rounded-xl.w-full.text-left.cursor-pointer.font-medium.text-sm.transition-colors(
               type="button"
               @click="navigateToPath('/settings')"
               :class="isExactActiveRoute('/settings') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
             )
-              span Настройки
+              span {{ $t('header.settings') }}
 
             .divider.my-1
 
@@ -443,7 +460,7 @@ header.app-header.sticky.top-0.z-50.border-b(
               class="hover:bg-error/10"
               @click="handleLogout"
             )
-              span Выйти
+              span {{ $t('header.logout') }}
 
       //- Кнопка входа (неавторизованные)
       NuxtLink.btn.btn-primary.mr-3.rounded-xl(
@@ -451,7 +468,7 @@ header.app-header.sticky.top-0.z-50.border-b(
         to="/auth/login"
         class="min-h-11"
       )
-        span Войти
+        span {{ $t('header.login') }}
 
   //- ═══ Строка 2 (только мобильные): поиск на всю ширину ═══
   .px-3.pb-2(class="md:hidden" v-if="!isAdminRoute")
@@ -533,6 +550,8 @@ header.app-header.sticky.top-0.z-50.border-b(
 <script setup>
 const route = useRoute()
 const { $notify } = useNuxtApp()
+const { t, locale, locales } = useI18n()
+const switchLocalePath = useSwitchLocalePath()
 
 //- Витринный поиск в шапке не показываем на /admin/*: на админ-страницах
 //- свой поиск (например, в списке товаров), глобальный только дублирует
@@ -624,7 +643,7 @@ const userInitials = computed(() => {
     .slice(0, 2)
 })
 
-const userName = computed(() => user.value?.name || 'Пользователь')
+const userName = computed(() => user.value?.name || t('header.defaultUserName'))
 const userEmail = computed(() => user.value?.email || '')
 const userRole = computed(() => user.value?.role || 'user')
 const isAdminRouteActive = computed(() => route.path.startsWith('/admin'))
@@ -668,7 +687,7 @@ const handleLogout = async () => {
   closeAllMenus()
   const result = await appState.logout()
   if (result.success) {
-    $notify.success('Вы успешно вышли из системы')
+    $notify.success(t('header.logoutSuccess'))
     await navigateTo('/')
   }
 }

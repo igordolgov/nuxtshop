@@ -41,7 +41,7 @@
             :checked="safeFilters.onlyInStock"
             @change="updateFilter('onlyInStock', $event.target.checked)"
           )
-          span.text-sm.text-base-content Только в наличии
+          span.text-sm.text-base-content {{ $t('catalog.inStockOnly') }}
 
         label.quick-filter.flex.items-center.gap-3.cursor-pointer.select-none(
           class="py-1"
@@ -51,7 +51,7 @@
             :checked="safeFilters.onlyFavorites"
             @change="updateFilter('onlyFavorites', $event.target.checked)"
           )
-          span.text-sm.text-base-content Только избранное
+          span.text-sm.text-base-content {{ $t('catalog.favoritesOnly') }}
 </template>
 
 <style scoped>

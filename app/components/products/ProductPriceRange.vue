@@ -6,12 +6,12 @@
 )
   .price-range-header.flex.items-center.justify-between.mb-0
     .flex.items-center.gap-2
-      h4.section-title.text-sm.py-1.text-base-content Цена:
+      h4.section-title.text-sm.py-1.text-base-content {{ $t('catalog.price') }}
       
       button.reset-btn.p-1.rounded-lg.transition-colors.cursor-pointer(
         @click.stop="resetPriceRange"
         v-if="isPriceFilterActive"
-        title="Сбросить фильтр"
+        :title="$t('catalog.resetFilter')"
         :disabled="isResetting"
         class="hover:bg-base-300"
       )
@@ -28,19 +28,19 @@
         @click="useSlider = true"
         :class="useSlider ? 'bg-primary border border-primary text-primary-content' : 'border border-base-content/40'",
         class="hover:border-primary"
-        title="Режим слайдера"
-      ) слайдер
+        :title="$t('catalog.sliderMode')"
+      ) {{ $t('catalog.slider') }}
       button.chip.px-2.py-1.rounded-lg.text-xs.cursor-pointer(
         @click="useSlider = false"
         :class="!useSlider ? 'bg-primary border border-primary text-primary-content' : 'border border-base-content/40'",
         class="hover:border-primary"
-        title="Режим ввода"
-      ) вручную
+        :title="$t('catalog.inputMode')"
+      ) {{ $t('catalog.manual') }}
 
   .price-inputs(v-if="!useSlider")
     .flex.gap-2.mt-1
       .input-group.flex-1.relative
-        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") от
+        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") {{ $t('catalog.from') }}
         input.input.input-bordered.input-sm.w-full.pl-4.rounded-lg(
           class="border-base-content/50 focus:border-primary",
           type="number"
@@ -51,11 +51,11 @@
           @input="handleInputMin"
           @blur="applyInputs"
           @keydown.enter.prevent="applyInputs"
-          placeholder="мин."
+          :placeholder="$t('catalog.min')"
           :class="{ 'border-primary!': inputMin !== minPrice }"
         )
       .input-group.flex-1.relative
-        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") до
+        label.absolute.left-3(class="top-1/2 text-xs text-base-content/70 -translate-y-1/2") {{ $t('catalog.to') }}
         input.input.input-bordered.input-sm.w-full.pl-4.rounded-lg(
           class="border-base-content/50 focus:border-primary",
           type="number"
@@ -66,12 +66,12 @@
           @input="handleInputMax"
           @blur="applyInputs"
           @keydown.enter.prevent="applyInputs"
-          placeholder="макс."
+          :placeholder="$t('catalog.max')"
           :class="{ 'border-primary!': inputMax !== maxPrice }"
         )
     
     .text-sm.text-center.mt-3(class="text-base-content/60")
-      | Диапазон:&nbsp;&nbsp;от {{ formatPrice(minPrice) }}&nbsp;&nbsp;до&nbsp;&nbsp;{{ formatPrice(maxPrice) }} ₽
+      | {{ $t('catalog.rangeLine', { min: formatPrice(minPrice), max: formatPrice(maxPrice) }) }}
 
   .price-slider.px-3(v-else)
     .slider-wrapper.relative.pt-4.pb-6.px-1(
@@ -105,10 +105,10 @@
     
     .slider-values.flex.justify-between.text-sm.mt-1.mb-1
       .min-value.text-base-content
-        span.mr-1(class="text-base-content/70") от:
+        span.mr-1(class="text-base-content/70") {{ $t('catalog.from') }}
         span {{ formatPrice(roundToHundredForDisplay(sliderMin)) }} ₽
       .max-value.text-base-content
-        span.mr-1(class="text-base-content/70") до:
+        span.mr-1(class="text-base-content/70") {{ $t('catalog.to') }}
         span {{ formatPrice(roundToHundredForDisplay(sliderMax)) }} ₽
 </template>
 

@@ -10,49 +10,49 @@
 
   main.flex-1.flex.flex-col.max-w-7xl.w-full.mx-auto.px-3.py-4(class="lg:px-6 lg:py-8")
     //- Хлебные крошки
-    nav.breadcrumbs.text-sm.mb-3(aria-label="Хлебные крошки")
+    nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) Главная
-        li Контакты
+          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+        li {{ $t('nav.contacts') }}
 
     //- Заголовок
     .mb-5(class="lg:mb-8")
-      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Контакты
+      h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") {{ $t('nav.contacts') }}
       p.text-sm.mt-1(class="text-base-content/50 lg:text-base")
-        | Телефон, почта, мессенджеры и оффлайн-точки — выбирайте, как удобно.
+        | {{ $t('contacts.subtitle') }}
 
     //- Карточки связи
     .grid.grid-cols-1.gap-4.mb-8(class="sm:grid-cols-2 lg:grid-cols-4 lg:gap-6 lg:mb-12")
       .contact-card
         .contact-icon(v-html="icons.phone")
-        h3.contact-title Телефон
+        h3.contact-title {{ $t('contacts.phone') }}
         a.contact-value(:href="`tel:${phoneHref}`") {{ contacts.phone }}
-        p.contact-note Ежедневно {{ contacts.hoursWeek }}
-        button.copy-btn(type="button" @click="copy('phone')") {{ copied === 'phone' ? 'Скопировано ✓' : 'Копировать' }}
+        p.contact-note {{ $t('contacts.daily', { hours: contacts.hoursWeek }) }}
+        button.copy-btn(type="button" @click="copy('phone')") {{ copied === 'phone' ? $t('contacts.copied') : $t('contacts.copy') }}
 
       .contact-card
         .contact-icon(v-html="icons.mail")
-        h3.contact-title Почта
+        h3.contact-title {{ $t('contacts.email') }}
         a.contact-value(:href="`mailto:${contacts.email}`") {{ contacts.email }}
-        p.contact-note Ответим в течение дня
-        button.copy-btn(type="button" @click="copy('email')") {{ copied === 'email' ? 'Скопировано ✓' : 'Копировать' }}
+        p.contact-note {{ $t('contacts.replyDay') }}
+        button.copy-btn(type="button" @click="copy('email')") {{ copied === 'email' ? $t('contacts.copied') : $t('contacts.copy') }}
 
       .contact-card
         .contact-icon(v-html="icons.clock")
-        h3.contact-title Режим работы
+        h3.contact-title {{ $t('contacts.hours') }}
         .contact-note.text-left.mt-2
           .flex.justify-between.gap-4
-            span Пн–Пт
+            span {{ $t('contacts.weekdays') }}
             span {{ contacts.hoursWeek }}
           .flex.justify-between.gap-4.mt-1
-            span Сб–Вс
+            span {{ $t('contacts.weekend') }}
             span {{ contacts.hoursWeekend }}
 
       .contact-card
         .contact-icon(v-html="icons.chat")
-        h3.contact-title Мессенджеры
-        p.contact-note.mb-2 Отвечаем в течение 15 минут
+        h3.contact-title {{ $t('contacts.messengers') }}
+        p.contact-note.mb-2 {{ $t('contacts.reply15') }}
         .flex.flex-col.gap-2
           button.messenger-btn(type="button" v-for="m in messengers" :key="m.name" @click="copy(m.name)")
             span {{ m.name }}
@@ -60,8 +60,8 @@
 
     //- Оффлайн-точки
     section.mb-8(class="lg:mb-12")
-      h2.section-title Наши магазины
-      p.section-sub Приходите посмотреть технику вживую или забрать заказ.
+      h2.section-title {{ $t('contacts.stores') }}
+      p.section-sub {{ $t('contacts.storesSub') }}
       .stores-grid
         .store-card(v-for="store in stores" :key="store.city")
           .flex.items-center.justify-between.gap-2.flex-wrap
@@ -76,23 +76,23 @@
       .map-wrap.mt-4(class="lg:mt-6")
         iframe.map-frame(
           :src="mapSrc"
-          title="Карта: флагманский магазин"
+          :title="$t('contacts.mapTitle')"
           loading="lazy"
         )
 
     //- Форма обратной связи
     section.mb-8(class="lg:mb-12")
-      h2.section-title Написать нам
-      p.section-sub Заполните форму — откроется ваш почтовый клиент с готовым письмом.
+      h2.section-title {{ $t('contacts.writeUs') }}
+      p.section-sub {{ $t('contacts.formSub') }}
       .form-wrap
         form(@submit.prevent="submitForm" novalidate)
           .form-grid
             label.form-field
-              span.form-label Имя
+              span.form-label {{ $t('auth.name') }}
               input.input.input-bordered.rounded-xl(
                 type="text"
                 v-model.trim="form.name"
-                placeholder="Как к вам обращаться"
+                :placeholder="$t('contacts.namePh')"
                 maxlength="60"
               )
             label.form-field
@@ -104,30 +104,30 @@
                 maxlength="80"
               )
           label.form-field.block.mt-3
-            span.form-label Тема
+            span.form-label {{ $t('contacts.topic') }}
             select.select.select-bordered.rounded-xl.w-full(v-model="form.topic")
-              option Вопрос по заказу
-              option Гарантия и сервис
-              option Возврат
-              option Сотрудничество
-              option Другое
+              option(value="Вопрос по заказу") {{ $t('contacts.topicOrder') }}
+              option(value="Гарантия и сервис") {{ $t('contacts.topicWarranty') }}
+              option(value="Возврат") {{ $t('contacts.topicReturn') }}
+              option(value="Сотрудничество") {{ $t('contacts.topicCoop') }}
+              option(value="Другое") {{ $t('contacts.topicOther') }}
           label.form-field.block.mt-3
-            span.form-label Сообщение
+            span.form-label {{ $t('reviews.review') }}
             textarea.textarea.textarea-bordered.rounded-xl.w-full(
               v-model.trim="form.message"
               rows="4"
-              placeholder="Опишите вопрос — чем подробнее, тем быстрее поможем"
+              :placeholder="$t('contacts.messagePh')"
               maxlength="2000"
             )
           .form-error(v-if="formError" role="alert") {{ formError }}
           .flex.items-center.gap-4.mt-4.flex-wrap
-            button.btn.btn-primary.rounded-xl(type="submit") Отправить
+            button.btn.btn-primary.rounded-xl(type="submit") {{ $t('contacts.send') }}
             p.text-xs(class="text-base-content/60")
-              | Нажимая «Отправить», вы соглашаетесь на обработку персональных данных.
+              | {{ $t('contacts.privacyNote') }}
 
     //- FAQ
     section(class="pb-2")
-      h2.section-title Частые вопросы
+      h2.section-title {{ $t('contacts.faq') }}
       .faq-list
         details.collapse.collapse-arrow.faq-item(v-for="faq in faq" :key="faq.q")
           summary.collapse-title.text-base.font-medium {{ faq.q }}
@@ -139,6 +139,7 @@
 
 <script setup>
 const { isMobile } = useMobileDetection()
+const { t } = useI18n()
 
 /* ─── Контент из KV через /api/content (админка → «Контент») ──
    Дефолты — shared/siteContent (те же значения, что раньше были
@@ -197,15 +198,15 @@ const formError = ref('')
 
 const submitForm = () => {
   if (!form.name || form.name.length < 2) {
-    formError.value = 'Укажите имя — минимум 2 символа.'
+    formError.value = t('contacts.errName')
     return
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    formError.value = 'Укажите корректный email для ответа.'
+    formError.value = t('contacts.errEmail')
     return
   }
   if (!form.message || form.message.length < 10) {
-    formError.value = 'Опишите вопрос подробнее — минимум 10 символов.'
+    formError.value = t('contacts.errMessage')
     return
   }
 
@@ -228,12 +229,16 @@ const icons = {
   chat: iconWrap('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>'),
 }
 
-useHead({ title: 'Контакты' })
+useHead(() => ({ title: t('nav.contacts') }))
 useSeoMeta({
-  title: 'Контакты',
+  title: () => t('nav.contacts'),
   // Реактивно: описание подхватывает телефон/адреса из редактируемого контента
   description: () =>
-    `Свяжитесь с нами: телефон ${contacts.value.phone}, почта, мессенджеры, адреса магазинов${stores.value.length ? ` (${stores.value.map((s) => s.city).join(', ')})` : ''}, форма обратной связи и частые вопросы.`,
+    () =>
+      t('contacts.metaDescription', {
+        phone: contacts.value.phone,
+        cities: stores.value.length ? ` (${stores.value.map((s) => s.city).join(', ')})` : '',
+      }),
 })
 </script>
 

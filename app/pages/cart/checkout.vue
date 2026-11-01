@@ -16,7 +16,7 @@
           )
             .step-content.flex.flex-col.items-center.px-2
               .step-number.mb-1(:class="{ 'bg-primary text-primary-content': currentStep >= index + 1, 'bg-base-300': currentStep < index + 1 }") {{ index + 1 }}
-              span.step-name.whitespace-normal.break-words.text-center(class="lg:font-medium text-[0.65rem] lg:text-sm") {{ step.name }}
+              span.step-name.whitespace-normal.break-words.text-center(class="lg:font-medium text-[0.65rem] lg:text-sm") {{ $t(step.nameKey) }}
             .step-connector(v-if="index < checkoutSteps.length - 1")
 
     //- Основная сетка
@@ -25,7 +25,7 @@
       .checkout-sticky-sidebar.hidden(class="lg:block lg:col-span-1")
         .card.bg-base-100.shadow-lg
           .card-body.p-3(class="lg:pt-0")
-            h2.card-title.text-md.mb-2(class="lg:text-2xl") Товары в заказе
+            h2.card-title.text-md.mb-2(class="lg:text-2xl") {{ $t('checkout.itemsInOrder') }}
             .max-h-80.overflow-y-auto(v-if="cartItems?.length")
               .space-y-2
                 .flex.items-center.gap-2.p-2.rounded-lg.bg-base-200(
@@ -45,22 +45,22 @@
                     .flex.items-center.justify-between.mt-1
                       span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                       .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
-            .text-xs.text-center.py-4(v-else class="text-base-content/70") Корзина пуста
+            .text-xs.text-center.py-4(v-else class="text-base-content/70") {{ $t('cart.empty') }}
 
             .mt-2.pt-2.border-t.border-base-300
               .space-y-1
                 .flex.justify-between.text-xs
-                  span Товары ({{ totalItems || 0 }})
+                  span {{ $t('cart.items', { n: totalItems || 0 }) }}
                   span.font-medium {{ formatPrice(subtotal || 0) }} ₽
                 .flex.justify-between.text-xs(v-if="discount > 0")
-                  span Скидка
+                  span {{ $t('cart.discount') }}
                   span.text-error.font-medium -{{ formatPrice(discount) }} ₽
                 .flex.justify-between.text-xs
-                  span Доставка
-                  span.font-medium {{ selectedDeliveryPrice === 0 ? 'Бесплатно' : formatPrice(selectedDeliveryPrice) + ' ₽' }}
+                  span {{ $t('cart.delivery') }}
+                  span.font-medium {{ selectedDeliveryPrice === 0 ? $t('cart.free') : formatPrice(selectedDeliveryPrice) + ' ₽' }}
                 .divider.my-1
                 .flex.justify-between.text-base.font-bold.text-primary
-                  span Итого
+                  span {{ $t('cart.total') }}
                   span {{ formatPrice(finalTotal) }} ₽
 
       //- Правая колонка — Форма оформления
@@ -77,11 +77,11 @@
                 .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
                   .form-control
                     label.label.block.text-base-content.font-bold.py-0
-                      span.label-text.text-xs(class="lg:text-sm") Имя *
+                      span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.name') }}
                     input.input.input-bordered.input-sm(
                       type="text"
                       v-model="orderForm.firstName"
-                      placeholder="Введите имя"
+                      :placeholder="$t('checkout.namePh')"
                       autocomplete="given-name"
                       :class="{ 'input-error': errors.firstName }"
                       class="lg:input-md"
@@ -91,11 +91,11 @@
 
                   .form-control
                     label.label.block.text-base-content.font-bold.py-0
-                      span.label-text.text-xs(class="lg:text-sm") Фамилия *
+                      span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.lastName') }}
                     input.input.input-bordered.input-sm(
                       type="text"
                       v-model="orderForm.lastName"
-                      placeholder="Введите фамилию"
+                      :placeholder="$t('checkout.lastNamePh')"
                       autocomplete="family-name"
                       :class="{ 'input-error': errors.lastName }"
                       class="lg:input-md"
@@ -120,7 +120,7 @@
 
                   .form-control(class="sm:col-span-2")
                     label.label.block.text-base-content.font-bold.py-0
-                      span.label-text.text-xs(class="lg:text-sm") Телефон *
+                      span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.phone') }}
                     input.input.input-bordered.input-sm.text-base(
                       type="tel"
                       v-model="orderForm.phone"
@@ -154,24 +154,24 @@
                           span.text-sm(v-else-if="method.id === 'pickup'") 📍
                           span.text-sm(v-else) 📮
                         .flex-1
-                          .font-bold.text-sm {{ method.name }}
-                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ method.description }}
+                          .font-bold.text-sm {{ $t(method.nameKey) }}
+                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ $t(method.descriptionKey) }}
                       .mt-1.text-right
-                        .text-sm.font-bold {{ method.price === 0 ? 'Бесплатно' : `+${formatPrice(method.price)}` }}
+                        .text-sm.font-bold {{ method.price === 0 ? $t('cart.free') : $t('checkout.plus', { price: formatPrice(method.price) }) }}
 
                 //- Адрес доставки (для курьера и почты)
                 .mt-4(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
-                  h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? 'Адрес для посылки' : 'Адрес доставки' }}
+                  h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPost') : $t('checkout.addressDelivery') }}
 
                   .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                     .form-control(class="lg:col-span-2")
                       label.label.py-0
-                        span.label-text.pr-2.text-xs(class="lg:text-sm") Адрес *
+                        span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.address') }}
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.address"
                         autocomplete="street-address"
-                        :placeholder="orderForm.deliveryMethod === 'post' ? 'Улица, дом, квартира, населенный пункт' : 'Улица, дом, квартира'"
+                        :placeholder="orderForm.deliveryMethod === 'post' ? $t('checkout.addressPostPh') : $t('checkout.addressPh')"
                         :class="{ 'input-error': errors.address }"
                         class="lg:input-md"
                       )
@@ -180,12 +180,12 @@
 
                     .form-control
                       label.label.py-0
-                        span.label-text.pr-2.text-xs(class="lg:text-sm") Город *
+                        span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.city') }}
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.city"
                         autocomplete="address-level2"
-                        placeholder="Город"
+                        :placeholder="$t('checkout.cityPh')"
                         :class="{ 'input-error': errors.city }"
                         class="lg:input-md"
                       )
@@ -194,13 +194,13 @@
 
                     .form-control
                       label.label.py-0
-                        span.label-text.pr-2.text-xs(:class="orderForm.deliveryMethod === 'post' ? 'lg:text-sm font-semibold' : 'lg:text-sm'") {{ orderForm.deliveryMethod === 'post' ? 'Индекс *' : 'Индекс' }}
+                        span.label-text.pr-2.text-xs(:class="orderForm.deliveryMethod === 'post' ? 'lg:text-sm font-semibold' : 'lg:text-sm'") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.zip') : $t('checkout.zipOptional') }}
                       input.input.input-bordered.input-sm(
                         type="text"
                         v-model="orderForm.postalCode"
                         autocomplete="postal-code"
                         inputmode="numeric"
-                        placeholder="Почтовый индекс"
+                        :placeholder="$t('checkout.zipPh')"
                         maxlength="6"
                         :class="{ 'input-error': errors.postalCode }"
                         class="lg:input-md"
@@ -228,8 +228,8 @@
                           span.text-sm(v-if="method.id === 'card'") 💳
                           span.text-sm(v-else) 💵
                         .flex-1
-                          .font-bold.text-sm {{ method.name }}
-                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ method.description }}
+                          .font-bold.text-sm {{ $t(method.nameKey) }}
+                          span.text-base-content(class="opacity-70 text-[0.65rem]") {{ $t(method.descriptionKey) }}
 
                 //- Данные карты.
                 //- ⚠️ ЗАГЛУШКА: поля визуальные, данные НЕ покидают браузер
@@ -238,14 +238,14 @@
                 .mt-4(v-if="orderForm.paymentMethod === 'card'")
                   .card.bg-base-200.border.border-base-300
                     .card-body.p-4
-                      h3.text-md.font-bold.mb-2(class="lg:text-lg") Данные банковской карты
+                      h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.cardData') }}
                       p.text-xs.mb-3(class="text-base-content/60")
-                        | Оплата при подтверждении заказа. Данные карты не сохраняются.
+                        | {{ $t('checkout.cardNote') }}
 
                       .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                         .form-control(class="lg:col-span-2")
                           label.label.py-0
-                            span.label-text.pr-2.text-xs(class="lg:text-sm") Номер карты
+                            span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.cardNumber') }}
                           input.input.input-bordered.input-sm(
                             type="text"
                             v-model="paymentData.cardNumber"
@@ -258,7 +258,7 @@
 
                         .form-control
                           label.label.py-0
-                            span.label-text.pr-2.text-xs(class="lg:text-sm") Срок действия
+                            span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.cardExpiry') }}
                           input.input.input-bordered.input-sm(
                             type="text"
                             v-model="paymentData.expiryDate"
@@ -286,27 +286,27 @@
               div(v-if="currentStep === 4")
                 .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
                   .card.bg-base-200.p-3
-                    h3.text-md.font-bold.mb-1(class="lg:text-lg") Контактная информация:
+                    h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.contactInfo') }}
                     .space-y-1
                       p.font-medium.text-sm {{ orderForm.firstName || '—' }} {{ orderForm.lastName || '—' }}
                       p.text-sm(class="text-base-content/70") {{ orderForm.email || '—' }}
                       p.text-sm(class="text-base-content/70") {{ orderForm.phone || '—' }}
 
                   .card.bg-base-200.p-3(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
-                    h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? 'Адрес для посылки:' : 'Адрес доставки:' }}
+                    h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPostColon') : $t('checkout.addressDeliveryColon') }}
                     .space-y-1
                       p.font-medium.text-sm {{ orderForm.city || '—' }}, {{ orderForm.address || '—' }}
-                      p.text-sm(class="text-base-content/70" v-if="orderForm.postalCode") Индекс: {{ orderForm.postalCode }}
+                      p.text-sm(class="text-base-content/70" v-if="orderForm.postalCode") {{ $t('checkout.zipLine', { code: orderForm.postalCode }) }}
                       p.text-sm(class="text-base-content/70") {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.name }}
 
                   .card.bg-base-200.p-3(v-else-if="orderForm.deliveryMethod === 'pickup'")
-                    h3.text-md.font-bold.mb-1(class="lg:text-lg") Способ получения:
+                    h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.deliveryMethodTitle') }}
                     .space-y-1
                       p.font-medium.text-sm {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.name }}
                       p.text-sm(class="text-base-content/70") {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.description }}
 
                   .card.bg-base-200.p-3(class="lg:col-span-2")
-                    h3.text-md.font-bold.mb-1(class="lg:text-lg") Способ оплаты:
+                    h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.paymentMethodTitle') }}
                     .flex.items-center.gap-2
                       .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-300
                         span.text-sm(v-if="orderForm.paymentMethod === 'card'") 💳
@@ -322,7 +322,7 @@
                 type="button"
                 @click="previousStep"
                 class="lg:min-w-28 lg:btn-md"
-              ) Назад
+              ) {{ $t('checkout.back') }}
               .flex-1(v-if="currentStep > 1")
               button.btn.btn-primary.btn-sm.rounded-lg(
                 v-if="currentStep < 4"
@@ -330,7 +330,7 @@
                 @click="nextStep"
                 :disabled="!isStepValid"
                 class="lg:min-w-40 lg:btn-md"
-              ) Продолжить
+              ) {{ $t('checkout.continue') }}
 
               button.btn.btn-success.btn-sm.rounded-lg(
                 v-if="currentStep === 4"
@@ -339,14 +339,14 @@
                 :disabled="isProcessing"
                 class="lg:min-w-56 lg:btn-md"
               )
-                span(v-if="!isProcessing" class="lg:text-base") Подтвердить заказ
+                span(v-if="!isProcessing" class="lg:text-base") {{ $t('checkout.confirmOrder') }}
                 span.loading.loading-spinner.loading-sm(v-else class="lg:loading-md")
 
     //- Карточка с товарами для мобильных
     .mt-2(class="lg:hidden")
       .card.bg-base-100.shadow-lg
         .card-body.p-3
-          h2.card-title.text-sm.mb-2 Товары в заказе:
+          h2.card-title.text-sm.mb-2 {{ $t('checkout.itemsInOrderShort') }}
           .max-h-48.overflow-y-auto(v-if="cartItems?.length")
             .space-y-2
               .flex.items-center.gap-2.p-2.rounded-lg.bg-base-200(
@@ -366,33 +366,33 @@
                   .flex.items-center.justify-between.mt-1
                     span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                     .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
-          .text-xs.text-center.py-4(v-else class="text-base-content/70") Корзина пуста
+          .text-xs.text-center.py-4(v-else class="text-base-content/70") {{ $t('cart.empty') }}
 
           .mt-2.pt-2.border-t.border-base-300
             .space-y-1
               .flex.justify-between.text-xs
-                span Товары ({{ totalItems || 0 }})
+                span {{ $t('cart.items', { n: totalItems || 0 }) }}
                 span.font-medium {{ formatPrice(subtotal || 0) }} ₽
               .flex.justify-between.text-xs(v-if="discount > 0")
-                span Скидка
+                span {{ $t('cart.discount') }}
                 span.text-error.font-medium -{{ formatPrice(discount) }} ₽
               .flex.justify-between.text-xs
-                span Доставка
-                span.font-medium {{ selectedDeliveryPrice === 0 ? 'Бесплатно' : formatPrice(selectedDeliveryPrice) + ' ₽' }}
+                span {{ $t('cart.delivery') }}
+                span.font-medium {{ selectedDeliveryPrice === 0 ? $t('cart.free') : formatPrice(selectedDeliveryPrice) + ' ₽' }}
               .divider.my-1
               .flex.justify-between.text-sm.font-bold.text-primary
-                span Итого
+                span {{ $t('cart.total') }}
                 span {{ formatPrice(finalTotal) }} ₽
 
     //- Промокод
     .mb-16(class="lg:mt-4")
       .card.bg-base-100.shadow-lg
         .card-body.p-3(class="lg:p-5")
-          h3.card-title.text-sm.mb-2(class="lg:mb-3 lg:text-base") Применить промокод:
+          h3.card-title.text-sm.mb-2(class="lg:mb-3 lg:text-base") {{ $t('checkout.promoTitle') }}
           .flex.gap-2
             input.input.input-bordered.flex-1.input-sm.text-base(
               type="text"
-              placeholder="Введите промокод"
+              :placeholder="$t('checkout.promoPh')"
               v-model="promoCode"
               autocomplete="off"
               class="lg:input-md"
@@ -402,26 +402,26 @@
               @click="applyPromo"
               :disabled="!promoCode"
               class="lg:btn-md"
-            ) Применить
+            ) {{ $t('cart.apply') }}
           .alert.alert-success.mt-2(v-if="appliedPromo")
             .flex.items-center.justify-between
-              span(class="text-[0.65rem] lg:text-xs") Промокод "{{ appliedPromo?.code }}" применен
+              span(class="text-[0.65rem] lg:text-xs") {{ $t('checkout.promoAppliedChip', { code: appliedPromo?.code }) }}
               button.btn.btn-ghost.btn-xs(type="button" @click="removePromo") ✕
 
     //- Модальное окно успешного заказа
     dialog.modal(:class="{ 'modal-open': showSuccessModal }")
       .modal-box.py-8.text-center.rounded-xl(class="lg:max-w-2xl")
-        h3.text-2xl.font-bold.text-success.mb-4(class="lg:text-4xl") Заказ успешно оформлен!
+        h3.text-2xl.font-bold.text-success.mb-4(class="lg:text-4xl") {{ $t('checkout.successTitle') }}
         .text-6xl.mb-4(class="lg:text-6xl") 🎉
-        p(class="lg:mb-2 lg:text-xl") Ваш заказ №{{ orderNumber }}
-        p.mb-2(class="lg:mb-4 lg:text-xl") принят в обработку.
+        p(class="lg:mb-2 lg:text-xl") {{ $t('checkout.successNumber', { n: orderNumber }) }}
+        p.mb-2(class="lg:mb-4 lg:text-xl") {{ $t('checkout.successAccepted') }}
         p.mb-4(class="lg:mb-8 lg:text-xl")
-          | Сумма заказа: {{ formatPrice(orderTotal) }} ₽.
+          | {{ $t('checkout.successTotal', { sum: formatPrice(orderTotal) }) }}
           br
-          | Для подтверждения мы свяжемся с вами по указанному телефону.
+          | {{ $t('checkout.successContact') }}
         .modal-action.justify-center
           NuxtLink.btn.btn-primary.rounded-xl(to="/" class="lg:btn-lg" prefetch)
-            | Вернуться на главную
+            | {{ $t('checkout.successBack') }}
 
   //- Мобильный футер
   MobileNavFooter
@@ -435,6 +435,7 @@ definePageMeta({
 
 // Header/MobileNavFooter/useCart/useProductUtils/useOrders — автоимпорт Nuxt
 const { isMobile } = useMobileDetection()
+const { t } = useI18n()
 const { $notify } = useNuxtApp()
 const {
   cartItems,
@@ -452,10 +453,10 @@ const { createOrder } = useOrders()
 
 //- Шаги оформления
 const checkoutSteps = [
-  { name: 'Контакты', title: 'Контактная информация' },
-  { name: 'Доставка', title: 'Способ доставки' },
-  { name: 'Оплата', title: 'Способ оплаты' },
-  { name: 'Подтверждение', title: 'Подтверждение заказа' },
+  { nameKey: 'checkout.stepContacts', titleKey: 'checkout.stepContactsTitle' },
+  { nameKey: 'checkout.stepDelivery', titleKey: 'checkout.stepDeliveryTitle' },
+  { nameKey: 'checkout.stepPayment', titleKey: 'checkout.stepPaymentTitle' },
+  { nameKey: 'checkout.stepConfirm', titleKey: 'checkout.stepConfirmTitle' },
 ]
 
 //- Состояние
@@ -491,20 +492,20 @@ const errors = ref({})
 
 //- Методы доставки (id/цены согласованы с server/lib/orderHelpers.ts)
 const deliveryMethods = [
-  { id: 'courier', name: 'Курьерская доставка', description: 'Доставка до двери', price: 300 },
-  { id: 'pickup', name: 'Самовывоз', description: 'Из пункта выдачи', price: 0 },
-  { id: 'post', name: 'Почта России', description: 'Доставка почтой', price: 200 },
+  { id: 'courier', nameKey: 'checkout.deliveryCourier', descriptionKey: 'checkout.deliveryCourierDesc', price: 300 },
+  { id: 'pickup', nameKey: 'checkout.deliveryPickup', descriptionKey: 'checkout.deliveryPickupDesc', price: 0 },
+  { id: 'post', nameKey: 'checkout.deliveryPost', descriptionKey: 'checkout.deliveryPostDesc', price: 200 },
 ]
 
 //- Методы оплаты (только поддерживаемые сервером; способ 'online' убран)
 const paymentMethods = [
-  { id: 'card', name: 'Банковская карта', description: 'Оплата при подтверждении заказа' },
-  { id: 'cash', name: 'Наличными', description: 'При получении заказа' },
+  { id: 'card', nameKey: 'checkout.payCard', descriptionKey: 'checkout.payCardDesc' },
+  { id: 'cash', nameKey: 'checkout.payCash', descriptionKey: 'checkout.payCashDesc' },
 ]
 
 //- Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
 const errorMessage = (err) =>
-  err?.data?.message || err?.data?.statusMessage || err?.message || 'Неизвестная ошибка'
+  err?.data?.message || err?.data?.statusMessage || err?.message || t('checkout.unknownError')
 
 //- Вычисляемые свойства
 const selectedDeliveryPrice = computed(() => {
@@ -567,22 +568,22 @@ const validateStep = (step) => {
 
   switch (step) {
     case 1:
-      if (!orderForm.value.firstName?.trim()) errors.value.firstName = 'Введите имя'
-      if (!orderForm.value.lastName?.trim()) errors.value.lastName = 'Введите фамилию'
-      if (!orderForm.value.email?.trim()) errors.value.email = 'Введите email'
-      else if (!/\S+@\S+\.\S+/.test(orderForm.value.email)) errors.value.email = 'Неверный формат email'
-      if (!orderForm.value.phone?.trim()) errors.value.phone = 'Введите телефон'
+      if (!orderForm.value.firstName?.trim()) errors.value.firstName = t('checkout.errFirstName')
+      if (!orderForm.value.lastName?.trim()) errors.value.lastName = t('checkout.errLastName')
+      if (!orderForm.value.email?.trim()) errors.value.email = t('checkout.errEmail')
+      else if (!/\S+@\S+\.\S+/.test(orderForm.value.email)) errors.value.email = t('checkout.errEmailFormat')
+      if (!orderForm.value.phone?.trim()) errors.value.phone = t('checkout.errPhone')
       break
     case 2:
       if (orderForm.value.deliveryMethod === 'courier') {
-        if (!orderForm.value.address?.trim()) errors.value.address = 'Введите адрес'
-        if (!orderForm.value.city?.trim()) errors.value.city = 'Введите город'
+        if (!orderForm.value.address?.trim()) errors.value.address = t('checkout.errAddress')
+        if (!orderForm.value.city?.trim()) errors.value.city = t('checkout.errCity')
       }
       if (orderForm.value.deliveryMethod === 'post') {
-        if (!orderForm.value.address?.trim()) errors.value.address = 'Введите адрес'
-        if (!orderForm.value.city?.trim()) errors.value.city = 'Введите город'
+        if (!orderForm.value.address?.trim()) errors.value.address = t('checkout.errAddress')
+        if (!orderForm.value.city?.trim()) errors.value.city = t('checkout.errCity')
         if (!/^\d{6}$/.test(orderForm.value.postalCode?.trim() || ''))
-          errors.value.postalCode = 'Индекс: 6 цифр'
+          errors.value.postalCode = t('checkout.errZip')
       }
       break
   }
@@ -596,16 +597,16 @@ const applyPromo = async () => {
 
   try {
     await applyPromoCode(promoCode.value)
-    $notify.success('Промокод применен!')
+    $notify.success(t('cart.promoOk'))
     promoCode.value = ''
   } catch {
-    $notify.error('Неверный промокод')
+    $notify.error(t('cart.promoBad'))
   }
 }
 
 const removePromo = async () => {
   await removePromoCode()
-  $notify.info('Промокод удален')
+  $notify.info(t('checkout.promoRemoved'))
 }
 
 //- ============================================
@@ -670,7 +671,7 @@ onMounted(async () => {
   try {
     const promoOk = await revalidatePromo()
     if (!promoOk) {
-      $notify.error('Сохранённый промокод больше не действует и был удалён из корзины')
+      $notify.error(t('checkout.promoInvalidRemoved'))
     }
   } catch (error) {
     console.error('[checkout] revalidatePromo:', error)

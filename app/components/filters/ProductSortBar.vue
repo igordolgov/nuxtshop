@@ -13,7 +13,7 @@
   )
     svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z")
-    span Фильтры
+    span {{ $t('catalog.filters') }}
     span.pill-count(v-if="activeFiltersCount > 0") {{ activeFiltersCount }}
 
   //- Сортировка — компактный select
@@ -25,13 +25,13 @@
       path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4V9")
     select.select.select-sm.select-ghost.rounded-full.font-semibold(
       :value="sortValue"
-      aria-label="Сортировка"
+      :aria-label="$t('catalog.sortAria')"
       @change="onSortChange"
     )
-      option(value="createdAt:desc") Сначала новые
-      option(value="price:asc") Дешевле
-      option(value="price:desc") Дороже
-      option(value="name:asc") По названию (А–Я)
+      option(value="createdAt:desc") {{ $t('catalog.sortNewest') }}
+      option(value="price:asc") {{ $t('catalog.sortPriceAsc') }}
+      option(value="price:desc") {{ $t('catalog.sortPriceDesc') }}
+      option(value="name:asc") {{ $t('catalog.sortName') }}
 
   //- Чипы активных фильтров (кроме сортировки)
   .chips.flex.items-center.gap-1.flex-wrap(
@@ -41,7 +41,7 @@
       v-for="chip in activeChips"
       :key="chip.key"
       type="button"
-      :title="`Снять фильтр: ${chip.label}`"
+      :title="$t('catalog.removeFilter', { label: chip.label })"
       @click="$emit('remove-filter', chip.key)"
     )
       span {{ chip.label }}
@@ -50,10 +50,11 @@
     button.chip-item.badge.gap-1.cursor-pointer(
       type="button"
       @click="$emit('reset-all')"
-    ) Сбросить всё
+    ) {{ $t('catalog.resetAll') }}
 </template>
 
 <script setup>
+const { t } = useI18n()
 //- Пилюля фильтров+сортировки. События родителю:
 //- toggle-filters, remove-filter, reset-all, update:sort
 const props = defineProps({
@@ -115,13 +116,13 @@ const activeChips = computed(() => {
   if (min !== null && min !== undefined && max !== null && max !== undefined) {
     chips.push({ key: 'price', label: `${formatRub(min)} – ${formatRub(max)} ₽` })
   } else if (min !== null && min !== undefined) {
-    chips.push({ key: 'price', label: `от ${formatRub(min)} ₽` })
+    chips.push({ key: 'price', label: `${t('catalog.from')} ${formatRub(min)} ₽` })
   } else if (max !== null && max !== undefined) {
-    chips.push({ key: 'price', label: `до ${formatRub(max)} ₽` })
+    chips.push({ key: 'price', label: `${t('catalog.to')} ${formatRub(max)} ₽` })
   }
 
-  if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: 'В наличии' })
-  if (f.onlyFavorites) chips.push({ key: 'onlyFavorites', label: 'Избранное' })
+  if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: t('product.inStock') })
+  if (f.onlyFavorites) chips.push({ key: 'onlyFavorites', label: t('nav.favorites') })
 
   return chips
 })

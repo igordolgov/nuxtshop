@@ -10,21 +10,21 @@
     //- Состояние загрузки
     .flex.justify-center.items-center.min-h-96(v-if="loading")
       .loading.loading-spinner.loading-lg.text-primary
-      span.ml-3 Загрузка...
+      span.ml-3 {{ $t('common.loading') }}
 
     //- Защитный блок (мидлвэр user-auth обычно редиректит на вход)
     .flex.justify-center.items-center.min-h-96(v-else-if="!currentUser")
       .text-center
         .text-4xl.mb-4 🔒
-        h2.text-xl.font-bold.mb-3 Требуется авторизация
-        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") Войти
+        h2.text-xl.font-bold.mb-3 {{ $t('user.authRequired') }}
+        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") {{ $t('auth.login') }}
 
     //- Основной контент (нижний «воздух» даёт .mobile-nav-safe на корне)
     .space-y-4(v-else)
       //- ─── Аккаунт ───
       .card.bg-base-100.shadow-sm
         .card-body.p-4
-          h3.card-title.text-md 👤 Аккаунт
+          h3.card-title.text-md 👤 {{ $t('settings.account') }}
           .flex.items-center.gap-4.mt-2
             .avatar
               .w-14.rounded-full.bg-primary.text-primary-content.flex.items-center.justify-center
@@ -36,16 +36,16 @@
                 .badge.badge-sm.rounded-sm(
                   :class="userRole === 'admin' ? 'badge-primary' : userRole === 'manager' ? 'badge-secondary' : 'badge-accent'"
                 ) {{ roleText }}
-                .text-xs(class="text-base-content/50") В магазине с {{ memberSince }}
+                .text-xs(class="text-base-content/50") {{ $t('settings.memberSince', { date: memberSince }) }}
           .text-xs.mt-3(class="text-base-content/50")
-            | Имя, телефон и адрес доставки редактируются в
-            NuxtLink.link.link-primary(to="/user") личном кабинете
+            | {{ $t('settings.editInProfile1') }}
+            NuxtLink.link.link-primary(to="/user") {{ $t('settings.editInProfile2') }}
 
       //- ─── Оформление ───
       .card.bg-base-100.shadow-sm
         .card-body.p-4
-          h3.card-title.text-md 🎨 Оформление
-          p.text-xs(class="text-base-content/50 mb-1") Тема применяется сразу и запоминается для этого браузера
+          h3.card-title.text-md 🎨 {{ $t('settings.appearance') }}
+          p.text-xs(class="text-base-content/50 mb-1") {{ $t('settings.themeNote') }}
           .grid.grid-cols-2.gap-3
             button.theme-option.card.cursor-pointer.border-2.transition-colors(
               type="button"
@@ -57,7 +57,7 @@
                   .theme-preview-bar
                   .theme-preview-dot.theme-preview-dot-primary
                   .theme-preview-dot.theme-preview-dot-base
-                .text-sm.font-medium Светлая
+                .text-sm.font-medium {{ $t('settings.light') }}
                 .text-xs(class="text-base-content/50") corporate
             button.theme-option.card.cursor-pointer.border-2.transition-colors(
               type="button"
@@ -69,17 +69,17 @@
                   .theme-preview-bar
                   .theme-preview-dot.theme-preview-dot-primary
                   .theme-preview-dot.theme-preview-dot-base
-                .text-sm.font-medium Тёмная
+                .text-sm.font-medium {{ $t('settings.dark') }}
                 .text-xs(class="text-base-content/50") business
 
       //- ─── Безопасность: смена пароля ───
       .card.bg-base-100.shadow-sm
         .card-body.p-4
-          h3.card-title.text-md 🔑 Смена пароля
+          h3.card-title.text-md 🔑 {{ $t('settings.changePassword') }}
           form.space-y-3.mt-2(@submit.prevent="submitPassword")
             .form-control
               label.label.py-1
-                span.label-text.text-sm Текущий пароль
+                span.label-text.text-sm {{ $t('settings.currentPassword') }}
               .relative
                 input.input.input-bordered.w-full(
                   :type="showPasswords ? 'text' : 'password'"
@@ -88,58 +88,58 @@
                 )
             .form-control
               label.label.py-1
-                span.label-text.text-sm Новый пароль
+                span.label-text.text-sm {{ $t('settings.newPassword') }}
                 label.label.cursor-pointer.py-0.gap-1
                   input.checkbox.checkbox-xs(type="checkbox" v-model="showPasswords")
-                  span.label-text.text-xs Показать
+                  span.label-text.text-xs {{ $t('auth.showPassword') }}
               input.input.input-bordered.w-full(
                 :type="showPasswords ? 'text' : 'password'"
                 v-model="pwForm.next"
                 autocomplete="new-password"
               )
               label.label.py-1
-                span.label-text-alt(class="text-base-content/50") Минимум 6 символов
+                span.label-text-alt(class="text-base-content/50") {{ $t('settings.min6') }}
             .form-control
               label.label.py-1
-                span.label-text.text-sm Повторите новый пароль
+                span.label-text.text-sm {{ $t('settings.repeatPassword') }}
               input.input.input-bordered.w-full(
                 :type="showPasswords ? 'text' : 'password'"
                 v-model="pwForm.repeat"
                 autocomplete="new-password"
               )
             button.btn.btn-primary.btn-sm(type="submit" :disabled="changingPassword")
-              span(v-if="changingPassword") Сохранение...
-              span(v-else) Изменить пароль
+              span(v-if="changingPassword") {{ $t('settings.saving') }}
+              span(v-else) {{ $t('settings.changePasswordBtn') }}
           .divider.my-2
           .flex.items-center.justify-between.gap-3.flex-wrap
             .text-xs.min-w-0(class="text-base-content/60")
-              | Завершить все сессии на других устройствах — текущее останется в системе
+              | {{ $t('settings.logoutAllNote') }}
             button.btn.btn-outline.btn-warning.btn-sm(
               type="button"
               :disabled="loggingOutOthers"
               @click="logoutOthers"
-            ) Выйти со всех устройств
+            ) {{ $t('settings.logoutAll') }}
 
       //- ─── Локальные данные (этот браузер) ───
       .card.bg-base-100.shadow-sm
         .card-body.p-4
-          h3.card-title.text-md 🧹 Локальные данные
+          h3.card-title.text-md 🧹 {{ $t('settings.localData') }}
           p.text-xs(class="text-base-content/50")
-            | Корзина, избранное и кэш заказов хранятся только в этом браузере.
-            | Очистка действует на текущем устройстве и не обратима.
+            | {{ $t('settings.localDataNote') }}
           .flex.flex-col.gap-2.mt-2
             button.btn.btn-outline.btn-sm.justify-start(type="button" @click="clearLocalData('cart')")
-              span 🛒 Очистить корзину
+              span 🛒 {{ $t('settings.clearCart') }}
             button.btn.btn-outline.btn-sm.justify-start(type="button" @click="clearLocalData('favorites')")
-              span ❤️ Очистить избранное
+              span ❤️ {{ $t('settings.clearFavorites') }}
             button.btn.btn-outline.btn-sm.justify-start(type="button" @click="clearLocalData('orders')")
-              span 📦 Очистить кэш заказов
+              span 📦 {{ $t('settings.clearOrdersCache') }}
 
   //- МОБИЛЬНЫЙ ФУТЕР
   MobileNavFooter
 </template>
 
 <script setup>
+const { t, locale } = useI18n()
 definePageMeta({
   middleware: 'user-auth',
 })
@@ -185,11 +185,11 @@ const userInitials = computed(
       .join('')
       .toUpperCase() || 'U',
 )
-const userName = computed(() => currentUser.value?.name || 'Пользователь')
+const userName = computed(() => currentUser.value?.name || t('header.defaultUserName'))
 const userEmail = computed(() => currentUser.value?.email || '')
 const userRole = computed(() => currentUser.value?.role || 'user')
 const roleText = computed(
-  () => ({ admin: 'Администратор', manager: 'Менеджер' })[userRole.value] || 'Пользователь',
+  () => ({ admin: t('header.roleAdmin'), manager: t('header.roleManager') })[userRole.value] || t('header.roleUser'),
 )
 const memberSince = computed(() =>
   currentUser.value?.createdAt ? new Date(currentUser.value.createdAt).toLocaleDateString('ru-RU') : '—',
@@ -220,19 +220,19 @@ const changingPassword = ref(false)
 
 const submitPassword = async () => {
   if (!pwForm.value.current || !pwForm.value.next || !pwForm.value.repeat) {
-    $notify.error('Заполните все поля')
+    $notify.error(t('settings.errFillAll'))
     return
   }
   if (pwForm.value.next.length < 6) {
-    $notify.error('Новый пароль — минимум 6 символов')
+    $notify.error(t('settings.errMin6'))
     return
   }
   if (pwForm.value.next === pwForm.value.current) {
-    $notify.error('Новый пароль совпадает с текущим')
+    $notify.error(t('settings.errSame'))
     return
   }
   if (pwForm.value.next !== pwForm.value.repeat) {
-    $notify.error('Пароли не совпадают')
+    $notify.error(t('auth.errPasswordsMismatch'))
     return
   }
   try {
@@ -244,17 +244,17 @@ const submitPassword = async () => {
     if (res?.success) {
       $notify.success(
         res.otherSessionsEnded > 0
-          ? `Пароль изменён. Завершено других сессий: ${res.otherSessionsEnded}`
-          : 'Пароль изменён',
+          ? t('settings.passwordChangedSessions', { n: res.otherSessionsEnded })
+          : t('settings.passwordChanged'),
       )
       pwForm.value = { current: '', next: '', repeat: '' }
       showPasswords.value = false
     } else {
-      throw new Error(res?.message || 'Ошибка')
+      throw new Error(res?.message || t('favorites.error'))
     }
   } catch (error) {
     console.error('[settings] Смена пароля:', error)
-    $notify.error(error.data?.message || error.message || 'Не удалось изменить пароль')
+    $notify.error(error.data?.message || error.message || t('settings.errPassword'))
   } finally {
     changingPassword.value = false
   }
@@ -264,14 +264,14 @@ const submitPassword = async () => {
 const loggingOutOthers = ref(false)
 
 const logoutOthers = async () => {
-  if (!confirm('Завершить все сессии на других устройствах?')) return
+  if (!confirm(t('settings.logoutAllConfirm'))) return
   try {
     loggingOutOthers.value = true
     const res = await $fetch('/api/auth/logout-others', { method: 'POST' })
-    if (res?.success) $notify.success(res.message || 'Готово')
+    if (res?.success) $notify.success(res.message || t('settings.done'))
   } catch (error) {
     console.error('[settings] Выход с устройств:', error)
-    $notify.error(error.data?.message || 'Не удалось завершить сессии')
+    $notify.error(error.data?.message || t('settings.errSessions'))
   } finally {
     loggingOutOthers.value = false
   }
@@ -281,31 +281,31 @@ const logoutOthers = async () => {
 const LOCAL_DATA = {
   cart: {
     keys: ['cart'],
-    label: 'корзину',
+    labelKey: 'settings.labelCart',
     event: 'cart-updated',
-    warn: 'Очистить корзину на этом устройстве?',
+    warnKey: 'settings.warnCart',
   },
   favorites: {
     keys: ['favoriteProducts', 'userFavorites'],
-    label: 'избранное',
+    labelKey: 'settings.labelFavorites',
     event: 'favorites-updated',
-    warn: 'Очистить избранное? Оно хранится только в этом браузере и будет удалено безвозвратно.',
+    warnKey: 'settings.warnFavorites',
   },
   orders: {
     keys: ['userOrders'],
-    label: 'кэш заказов',
+    labelKey: 'settings.labelOrders',
     event: null,
-    warn: 'Очистить локальный кэш заказов? Сами заказы останутся на сервере.',
+    warnKey: 'settings.warnOrders',
   },
 }
 
 const clearLocalData = (what) => {
   const conf = LOCAL_DATA[what]
   if (!conf || !import.meta.client) return
-  if (!confirm(conf.warn)) return
+  if (!confirm(t(conf.warnKey))) return
   conf.keys.forEach((k) => localStorage.removeItem(k))
   if (conf.event) window.dispatchEvent(new CustomEvent(conf.event))
-  $notify.success(`Очищено: ${conf.label}`)
+  $notify.success(t('settings.cleared', { what: t(conf.labelKey) }))
 }
 </script>
 

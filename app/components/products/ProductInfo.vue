@@ -9,7 +9,7 @@
           button.shrink-0.size-9.rounded-full.flex.items-center.justify-center.border.transition-colors(
             :class="isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/50 hover:text-error hover:border-error/40'"
             @click="$emit('toggle-favorite')"
-            :title="isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'"
+            :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
           )
             svg.w-4.h-4(
               :class="isFavorite ? 'fill-current' : 'fill-none stroke-current'"
@@ -34,20 +34,20 @@
       .flex.items-end.justify-between.gap-4.py-1
         .price-section
           .text-3xl.font-bold.text-base-content {{ formatPrice(product.price) }}
-          .text-xs.mt-1(class="text-base-content/70") Включая НДС
+          .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
         .stock-section.text-right
           .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.text-xs.font-medium(
             :class="product.inStock ? 'bg-success/10 text-success' : 'bg-error/10 text-error'"
           )
             span.size-2.rounded-full(:class="product.inStock ? 'bg-success' : 'bg-error'")
-            span(v-if="product.inStock") В наличии
-            span(v-else) Нет в наличии
+            span(v-if="product.inStock") {{ $t('product.inStock') }}
+            span(v-else) {{ $t('product.outOfStock') }}
 
           .text-xs.mt-1(
             v-if="product.inStock && product.stockQuantity"
             class="text-base-content/70"
-          ) Осталось: {{ product.stockQuantity }} шт.
+          ) {{ $t('product.left', product.stockQuantity) }}
 
       //- Десктопная кнопка
       .hidden(class="lg:block" :class="isInCart ? 'b' : ''")
@@ -58,16 +58,16 @@
         )
           span.flex.items-center.justify-center.gap-2.w-full
             span
-              span(v-if="isInCart") Товар уже в корзине
-              span(v-else-if="product.inStock") Добавить в корзину
-              span(v-else) Товар закончился
+              span(v-if="isInCart") {{ $t('product.alreadyInCart') }}
+              span(v-else-if="product.inStock") {{ $t('product.addToCart') }}
+              span(v-else) {{ $t('product.soldOut') }}
             span.font-normal.opacity-80(v-if="!isInCart && product.inStock") · {{ formatPrice(product.price) }}
 
       //- Характеристики
       .rounded-2xl.border.border-base-300.overflow-hidden
         details.group
           summary.cursor-pointer.list-none.px-4.py-3.text-sm.font-medium.flex.items-center.justify-between
-            span Характеристики
+            span {{ $t('product.characteristics') }}
             svg.w-4.h-4.transition-transform(
               class="text-base-content/75 group-open:rotate-180"
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
@@ -75,22 +75,23 @@
               path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
           .px-4.pb-4.pt-0.space-y-0.text-sm.border-t.border-base-300
             .flex.justify-between.py-2
-              span(class="text-base-content/70") Категории
+              span(class="text-base-content/70") {{ $t('catalog.categories') }}
               span.font-medium.text-right {{ product.categories?.join(', ') }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/70") Код товара
+              span(class="text-base-content/70") {{ $t('product.sku') }}
               span.font-medium {{ product.id }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/70") Статус
+              span(class="text-base-content/70") {{ $t('product.status') }}
               span.font-medium(
                 :class="product.inStock ? 'text-success' : 'text-error'"
-              ) {{ product.inStock ? 'Доступен' : 'Недоступен' }}
+              ) {{ product.inStock ? $t('product.statusAvailable') : $t('product.statusUnavailable') }}
             .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/70") Дата добавления
+              span(class="text-base-content/70") {{ $t('product.dateAdded') }}
               span.font-medium {{ formatDate(product.createdAt) }}
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
@@ -105,7 +106,7 @@ const formatPrice = (price) => {
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'Неизвестно'
+  if (!dateString) return t('product.unknown')
   return new Date(dateString).toLocaleDateString('ru-RU')
 }
 </script>

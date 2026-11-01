@@ -6,7 +6,7 @@
     .flex.items-center.justify-between
       .flex.items-center.gap-3
         //- Раньше h1 был пустым (текст отсутствовал) — минус SEO и a11y
-        h1.text-xl.font-bold.text-base-content Каталог
+        h1.text-xl.font-bold.text-base-content {{ $t('catalog.title') }}
         .badge.badge-lg.badge-outline
           | {{ displayedProductsCount }} / {{ totalProductsCount }}
 
@@ -25,7 +25,7 @@
               stroke="currentColor"
             )
               path(stroke-linecap="round", stroke-linejoin="round", stroke-width="2", d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z")
-            span.text-xs Фильтры
+            span.text-xs {{ $t('catalog.filters') }}
             .absolute.-top-2.-right-2.badge.badge-sm.badge-error(
               v-if="activeFiltersCount > 0"
             ) {{ activeFiltersCount }}
@@ -34,7 +34,7 @@
         button.btn.btn-sm.btn-ghost(
           @click="$emit('refreshProducts')",
           :disabled="isLoading"
-          aria-label="Обновить товары"
+          :aria-label="$t('catalog.refresh')"
           class="hidden lg:flex"
         )
           svg.w-4.h-4(
