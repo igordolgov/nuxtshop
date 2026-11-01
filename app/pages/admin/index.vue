@@ -458,6 +458,7 @@ const quickLinks = [
   { to: '/admin/orders', title: 'Заказы', sub: 'Подтверждение и статусы', icon: 'heroicons:shopping-bag' },
   { to: '/admin/news', title: 'Новости', sub: 'Публикации и товары', icon: 'heroicons:newspaper' },
   { to: '/admin/content', title: 'Контент', sub: 'Контакты, магазины, FAQ', icon: 'heroicons:pencil-square' },
+  { to: '/admin/reviews', title: 'Отзывы', sub: 'Модерация и оценка', icon: 'heroicons:star' },
   { to: '/admin/users', title: 'Пользователи', sub: 'Роли и доступы', icon: 'heroicons:users' }
 ]
 

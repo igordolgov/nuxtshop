@@ -1,8 +1,10 @@
 <!-- ~/components/admin/AdminNews.vue — управление новостями (KV data:news).
      CRUD через /api/news (только админ): список, добавление, редактирование,
-     удаление (confirm). Форма: заголовок, рубрика, дата, краткое описание,
-     изображение (путь/URL, preview), полный текст — абзацы с новой строки,
-     товары из новости — пикер из каталога (перелинковка, до 6). -->
+     удаление (confirm). Форма: заголовок, рубрика, дата, тумблер публикации
+     (черновик виден только в админке), краткое описание, изображение
+     (файл/камера с клиентским webp-ресайзом → KV img:news/…, или путь/URL,
+     preview), полный текст — абзацы с новой строки, товары из новости —
+     пикер из каталога (перелинковка, до 6). -->
 <template lang="pug">
 .admin-news
   //- Тулбар
@@ -45,6 +47,7 @@
       .card-body.p-4.gap-2
         .flex.items-center.gap-2.flex-wrap
           span.badge.badge-sm(:class="badgeClass(item.category)") {{ item.category }}
+          span.badge.badge-sm.badge-warning(v-if="item.published === false") Черновик
           span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date) }}
           span.text-xs(class="text-base-content/55") · id {{ item.id }}
         .flex.gap-3.items-start
@@ -88,6 +91,13 @@
             span.form-label Дата публикации
             input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.date")
 
+        //- Черновик/публикация: черновик виден только в админке;
+        //- публикация черновика отправляет пост в Telegram
+        label.block.mt-3.cursor-pointer
+          .flex.items-center.gap-3
+            input.toggle.toggle-primary(type="checkbox" v-model="form.published")
+            span.text-sm {{ form.published ? 'Опубликовано — видно на витрине' : 'Черновик — виден только в админке' }}
+
         label.block.mt-3
           span.form-label Краткое описание (до 220 символов)
           input.input.input-bordered.rounded-xl.w-full(
@@ -99,16 +109,27 @@
 
         label.block.mt-3
           span.form-label Изображение
-          input.input.input-bordered.rounded-xl.w-full(
-            type="text"
-            v-model.trim="form.image"
-            placeholder="/images/products/… или https://… (пусто — плитка с иконкой)"
-          )
+          //- На мобильных — столбиком: файл/камера + URL-поле в строку не помещаются
+          .flex.flex-col.gap-2(class="sm:flex-row")
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.image"
+              placeholder="/images/… или https://… — или загрузите файл справа"
+            )
+            label.btn.btn-outline.btn-sm.rounded-xl.shrink-0(
+              :class="resizing ? 'loading' : ''"
+              aria-label="Загрузить фото из файла или камеры"
+            )
+              | {{ resizing ? 'Обработка…' : '📁 Фото' }}
+              input.hidden(type="file" accept="image/jpeg,image/png,image/webp" @change="onFilePicked")
           img.mt-2.h-24.rounded-lg.object-cover(
             v-if="form.image"
             :src="form.image"
             alt="Превью изображения новости"
           )
+          button.btn.btn-ghost.btn-xs.mt-1(v-if="form.image" type="button" @click="form.image = ''") ✕ Убрать изображение
+          p.text-xs(class="mt-0.5 text-base-content/50")
+            | С телефона: «Фото» → снимок камеры или галерея — файл сам сожмётся и уедет в хранилище.
 
         label.block.mt-3
           span.form-label Полный текст — каждый абзац с новой строки
@@ -154,6 +175,7 @@ import { NEWS_CATEGORIES, formatNewsDate, newsTone } from '~/utils/news'
 
 const { $notify } = useNuxtApp()
 const { formatPrice } = useProductUtils()
+const { resizeToWebp } = useImageResize()
 
 // Лимит товаров в новости — зеркало MAX_NEWS_PRODUCTS (server/lib/newsHelpers)
 const MAX_PRODUCTS = 6
@@ -196,7 +218,9 @@ const load = async () => {
   isLoading.value = true
   loadError.value = false
   try {
-    const resp = await $fetch('/api/news')
+    // all=1: админский режим — список включает и черновики (публичный
+    // GET /api/news их фильтрует; для не-админа all=1 отдаёт 401)
+    const resp = await $fetch('/api/news', { query: { all: '1' } })
     items.value = Array.isArray(resp?.news) ? resp.news : []
   } catch {
     loadError.value = true
@@ -220,7 +244,31 @@ const form = reactive({
   image: '',
   body: '',
   productIds: [],
+  published: true,
 })
+
+//- ─── Загрузка фото (телефон: камера/галерея → клиентский webp-ресайз) ────
+const resizing = ref(false)
+
+const onFilePicked = async (event) => {
+  const file = event.target.files?.[0]
+  // Сброс input: повторный выбор того же файла тоже срабатывает
+  event.target.value = ''
+  if (!file) return
+  const validation = validateImageFile(file)
+  if (!validation.valid) {
+    $notify.error(validation.error)
+    return
+  }
+  resizing.value = true
+  try {
+    form.image = await resizeToWebp(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 })
+  } catch {
+    $notify.error('Не удалось обработать изображение')
+  } finally {
+    resizing.value = false
+  }
+}
 
 //- ─── Пикер товаров из новости ────────────────────────────────────────────
 const pickedProductId = ref('')
@@ -259,6 +307,7 @@ const openCreate = () => {
     image: '',
     body: '',
     productIds: [],
+    published: true,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -280,6 +329,7 @@ const openEdit = (item) => {
     // подставлять их в форму нельзя — сохранение зафиксировало бы их
     // как ручные, и автоподбор по рубрике перестал бы обновляться.
     productIds: (item.productIds ?? []).map(String),
+    published: item.published !== false,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -303,6 +353,7 @@ const save = async () => {
       image: form.image,
       body: form.body,
       productIds: form.productIds,
+      published: form.published,
     }
     const resp = isNew.value
       ? await $fetch('/api/news', { method: 'POST', body: payload })

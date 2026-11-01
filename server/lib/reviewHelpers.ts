@@ -1,0 +1,118 @@
+// server/lib/reviewHelpers.ts
+// Отзывы о товарах: KV-хранилище + валидация. Зеркало паттерна newsHelpers:
+// live-данные в KV `data:reviews`; пустое хранилище — просто пустой список
+// (сидеть на фейковых отзывах не хотим — отзывы только настоящие).
+//
+// Модерация: покупатель отправляет отзыв → approved:false → админ публикует
+// в /admin/reviews (или скрывает/удаляет). Публично отдаются только approved.
+import type { H3Event } from 'h3';
+import { kvGetJSON, kvPutJSON } from './storage';
+
+export const REVIEWS_KEY = 'data:reviews';
+
+export interface ReviewItem {
+  id: string;
+  /** id товара из data:products (строкой). */
+  productId: string;
+  /** Имя автора (2–40 символов). */
+  author: string;
+  /** Оценка 1..5 (целая). */
+  rating: number;
+  /** Текст отзыва (10–600 символов). */
+  text: string;
+  /** ISO-момент создания. */
+  createdAt: string;
+  /** Прошёл модерацию? Публично отдаются только approved. */
+  approved: boolean;
+}
+
+/** Сводка по товару для карточки и Schema.org aggregateRating. */
+export interface RatingSummary {
+  count: number;
+  /** Средняя оценка, 1 знак после запятой; 0 при пустом списке. */
+  average: number;
+}
+
+// ─── Чтение / запись ─────────────────────────────────────────────────────
+
+/** Читает отзывы из KV; пустое/битое хранилище → пустой список. */
+export async function readReviews(event: H3Event): Promise<ReviewItem[]> {
+  const stored = await kvGetJSON<ReviewItem[]>(event, REVIEWS_KEY);
+  if (!Array.isArray(stored)) return [];
+  return stored.filter((r) => r && typeof r === 'object' && r.id != null);
+}
+
+/** Единственная точка записи: массив ЦЕЛИКОМ в KV (валидация типа). */
+export async function writeReviews(event: H3Event, items: ReviewItem[]): Promise<void> {
+  if (!Array.isArray(items)) throw new Error('Reviews must be an array');
+  await kvPutJSON(event, REVIEWS_KEY, items);
+}
+
+/** Следующий свободный числовой id (как у новостей/товаров). */
+export function nextReviewId(items: ReviewItem[]): string {
+  return items.length > 0 ? String(Math.max(...items.map((r) => Number(r.id) || 0)) + 1) : '1';
+}
+
+// ─── Валидация / нормализация (чистые функции — покрыты тестами) ─────────
+
+const MAX_AUTHOR_LEN = 40;
+const MAX_TEXT_LEN = 600;
+
+export class ReviewValidationError extends Error {}
+
+/**
+ * Приводит полезную нагрузку публичной формы к полям отзыва. Кидает
+ * ReviewValidationError с сообщением на русском → endpoint отдаёт 400.
+ * approved/createdAt/id выставляет endpoint (не пользователь).
+ */
+export function normalizeReviewInput(raw: Record<string, unknown>): {
+  productId: string;
+  author: string;
+  rating: number;
+  text: string;
+} {
+  const productId = typeof raw?.productId === 'string' ? raw.productId.trim() : String(raw?.productId ?? '').trim();
+  if (!productId || productId.length > 64) {
+    throw new ReviewValidationError('Не указан товар для отзыва');
+  }
+
+  const author = typeof raw?.author === 'string' ? raw.author.trim() : '';
+  if (author.length < 2 || author.length > MAX_AUTHOR_LEN) {
+    throw new ReviewValidationError(`Имя — от 2 до ${MAX_AUTHOR_LEN} символов`);
+  }
+
+  const rating = Number(raw?.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new ReviewValidationError('Оценка — целое число от 1 до 5');
+  }
+
+  const text = typeof raw?.text === 'string' ? raw.text.trim() : '';
+  if (text.length < 10 || text.length > MAX_TEXT_LEN) {
+    throw new ReviewValidationError(`Текст отзыва — от 10 до ${MAX_TEXT_LEN} символов`);
+  }
+
+  return { productId, author, rating, text };
+}
+
+// ─── Витринные выборки (чистые функции — покрыты тестами) ────────────────
+
+/** Свежие сверху; при равных createdAt — больший id (стабильно). */
+export function sortReviewsDesc(items: ReviewItem[]): ReviewItem[] {
+  return [...items].sort((a, b) => {
+    const d = String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? ''));
+    if (d !== 0) return d;
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+}
+
+/** Одобренные отзывы товара, свежие сверху. */
+export function approvedReviews(items: ReviewItem[], productId: string): ReviewItem[] {
+  return sortReviewsDesc(items.filter((r) => r.approved && String(r.productId) === String(productId)));
+}
+
+/** Сводка по списку отзывов: количество и средняя оценка (1 знак). */
+export function ratingSummary(items: ReviewItem[]): RatingSummary {
+  if (items.length === 0) return { count: 0, average: 0 };
+  const sum = items.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+  return { count: items.length, average: Math.round((sum / items.length) * 10) / 10 };
+}

@@ -67,6 +67,15 @@
       @add-to-cart="addSimilarToCart"
     )
 
+    //- Отзывы (approved — приходят с /api/product/[slug]; новые уходят
+    //-  на модерацию в /admin/reviews)
+    ProductReviews(
+      v-if="product"
+      :product-id="String(product.id)"
+      :reviews="reviews"
+      :summary="ratingSummary"
+    )
+
   //- Мобильная кнопка «В корзину»: над нижней навигацией + safe-area
   //- (раньше — магические 57px)
   .fixed-bottom-cart-button(
@@ -133,6 +142,12 @@ const product = computed(() => {
 const error = computed(() => (fetchError.value && !responseData.value ? 'Товар не найден' : null))
 
 const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
+
+// Одобренные отзывы товара + сводка (приходят вместе с карточкой, SSR)
+const reviews = computed(() => responseData.value?.reviews ?? [])
+const ratingSummary = computed(
+  () => responseData.value?.ratingSummary ?? { count: 0, average: 0 },
+)
 
 // ─── Мгновенный остаток: свежие данные мимо SWR-кеша HTML ────────────
 // SSR-HTML маршрута /product/** отдаётся из SWR-кэша (swr: 60), а заказ

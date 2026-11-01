@@ -7,6 +7,8 @@ import {
   sanitizeNewsItem,
   writeNews,
 } from '../../lib/newsHelpers'
+import { processImage } from '../../lib/imageStorage'
+import { sendNewsPost } from '../../lib/telegram'
 import { requireAdmin } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -20,12 +22,35 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: 'Новость не найдена' })
     }
 
+    // Черновик → публикация: единственный момент, когда PUT шлёт пост в Telegram
+    // (правка уже опубликованной новости повторный пост не делает)
+    const wasDraft = item.published === false
+
     const body = await readBody(event)
     const clean = sanitizeNewsItem(body ?? {})
-    Object.assign(item, clean)
+    // Фото: data-URI из админки → KV img:news/…, пути/URL — насквозь
+    const image = await processImage(event, clean.image, 'main', 'news/news')
+    Object.assign(item, clean, { image })
     await writeNews(event, news)
 
-    return { success: true, news: item, message: 'Новость обновлена' }
+    let telegramPosted = false
+    if (wasDraft && item.published !== false) {
+      try {
+        const env = event.context.cloudflare?.env
+        telegramPosted = await sendNewsPost(env, item, getRequestURL(event).origin)
+      } catch (e) {
+        console.warn('news: telegram-постинг не удался', e)
+      }
+    }
+
+    const message = item.published === false
+      ? 'Черновик сохранён — на витрине не виден'
+      : telegramPosted
+        ? 'Новость опубликована и отправлена в Telegram'
+        : wasDraft
+          ? 'Новость опубликована'
+          : 'Новость обновлена'
+    return { success: true, news: item, telegramPosted, message }
   } catch (error) {
     if (error instanceof NewsValidationError) {
       throw createError({ statusCode: 400, message: error.message })

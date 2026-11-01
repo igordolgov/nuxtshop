@@ -29,6 +29,7 @@ import {
   nextNewsId,
   normalizeNewsBody,
   normalizeNewsProductIds,
+  publishedNews,
   readNews,
   sanitizeNewsItem,
   sortNewsDesc,
@@ -299,5 +300,32 @@ describe('sortNewsDesc / nextNewsId', () => {
     expect(nextNewsId(items)).toBe('4');
     expect(nextNewsId([])).toBe('1');
     expect(nextNewsId([{ id: '41', date: '2026-01-01' }])).toBe('42');
+  });
+});
+
+describe('черновики: published + publishedNews', () => {
+  it('без поля published sanitize ставит true (обратная совместимость)', () => {
+    expect(sanitizeNewsItem(validPayload).published).toBe(true);
+  });
+
+  it('published: false сохраняется как черновик; прочие значения — публикация', () => {
+    expect(sanitizeNewsItem({ ...validPayload, published: false }).published).toBe(false);
+    expect(sanitizeNewsItem({ ...validPayload, published: true }).published).toBe(true);
+    // строка «false»/мусор — НЕ явный boolean false → публикуем
+    expect(sanitizeNewsItem({ ...validPayload, published: 'false' as never }).published).toBe(true);
+  });
+
+  it('publishedNews: убирает только черновики, записи без поля остаются', () => {
+    const items = [
+      { id: '1', title: 'A', published: true },
+      { id: '2', title: 'B', published: false },
+      { id: '3', title: 'C' },
+    ] as never[];
+    expect(publishedNews(items).map((n) => (n as { id: string }).id)).toEqual(['1', '3']);
+  });
+
+  it('publishedNews: пустой/мусорный вход не падает', () => {
+    expect(publishedNews([])).toEqual([]);
+    expect(publishedNews([null, false] as never[]).length).toBe(0);
   });
 });

@@ -30,11 +30,13 @@ function extFromMime(mime) {
 
 /**
  * Кладёт картинку в хранилище (R2 или KV) под уникальный ключ.
- * @returns {{ key: string, where: string } | null} ключ products/… или null,
+ * @param {string} keyStem начало ключа без суффикса: «products/product»
+ *        (каталог, по умолчанию) или «news/news» (фото новостей из админки).
+ * @returns {{ key: string, where: string } | null} ключ вида stem-… или null,
  *          если ни одного хранилища нет
  */
-async function putImage(env, imageBuffer, mime) {
-  const key = `products/product-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extFromMime(mime)}`
+async function putImage(env, imageBuffer, mime, keyStem = 'products/product') {
+  const key = `${keyStem}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extFromMime(mime)}`
   const contentType = `image/${mime}`
 
   if (env.IMAGES_BUCKET) {
@@ -51,9 +53,11 @@ async function putImage(env, imageBuffer, mime) {
 
 /**
  * Сохраняет картинку: в R2/KV (если биндинг есть) или в data-URI (fallback).
- * @returns {string} URL для товара: "/api/images/products/…" или data-URI
+ * @param {string} keyStem префикс ключа хранилища: "products/product" или
+ *        "news/news" — ключи разложены по папкам, раздача общая /api/images/<key>.
+ * @returns {string} URL картинки: "/api/images/<stem>-…" или data-URI
  */
-export async function processImage(event, base64String, imageType = 'main') {
+export async function processImage(event, base64String, imageType = 'main', keyStem = 'products/product') {
   if (!base64String || !base64String.startsWith('data:image/')) {
     return base64String
   }
@@ -69,7 +73,7 @@ export async function processImage(event, base64String, imageType = 'main') {
     if (env && (env.IMAGES_BUCKET || env.KV)) {
       // Контент не перекодируем (optimizeImage на Workers — passthrough),
       // поэтому расширение соответствует фактическому формату upload-а.
-      const saved = await putImage(env, imageBuffer, mime)
+      const saved = await putImage(env, imageBuffer, mime, keyStem)
       if (saved) {
         console.log(`✅ ${imageType}: ${(imageBuffer.length / 1024).toFixed(1)} KB → ${saved.where} ${saved.key}`)
         return `/api/images/${saved.key}`

@@ -110,3 +110,17 @@ describe('processGallery', () => {
     expect(put).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('processImage — keyStem news/news (фото новостей из админки)', () => {
+  it('кладёт в KV под img:news/news-… и отдаёт /api/images/news/news-…', async () => {
+    const put = vi.fn(async () => undefined);
+    const event = {
+      context: { cloudflare: { env: { KV: { put } } } },
+    } as never;
+    const out = await processImage(event, PNG_DATA_URI, 'main', 'news/news');
+
+    expect(out).toMatch(/^\/api\/images\/news\/news-\d+-[a-f0-9]{8}\.png$/);
+    const [key] = put.mock.calls[0];
+    expect(key).toMatch(new RegExp(`^${IMAGE_KV_PREFIX}news/news-\\d+-[a-f0-9]{8}\\.png$`));
+  });
+});

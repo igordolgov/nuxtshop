@@ -30,6 +30,12 @@ export interface NewsItem {
    * показе просто пропускаются (товар мог быть удалён).
    */
   productIds?: string[];
+  /**
+   * Опубликовано? false — черновик: виден только в админке, на витрине
+   * фильтруется (publishedNews). undefined — опубликовано (обратная
+   * совместимость со старыми записями и сидом).
+   */
+  published?: boolean;
   updatedAt: string;
 }
 
@@ -301,8 +307,18 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): Omit<NewsItem, '
     body,
     image,
     productIds: normalizeNewsProductIds(raw?.productIds),
+    // Черновик: только явное false; отсутствие поля/любое другое — публикация
+    published: raw?.published === false ? false : true,
     updatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Витринный фильтр: черновики (published === false) не показываются.
+ * Старые записи и сид без поля — публикуются.
+ */
+export function publishedNews(items: NewsItem[]): NewsItem[] {
+  return items.filter((n) => n && n.published !== false);
 }
 
 /** Свежие сверху; при равных датах — больший id (стабильно). */

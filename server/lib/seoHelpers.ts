@@ -122,11 +122,14 @@ function absoluteImageUrl(src: string | undefined | null, siteUrl: string): stri
  * JSON-LD schema.org/Product для карточки товара.
  * Изображения — абсолютные URL, максимум 10 (ограничение Google на массив image).
  * availability: InStock/OutOfStock — с учётом и флага, и остатка на складе.
+ * rating — сводка одобренных отзывов: при наличии добавляет aggregateRating
+ * (звёзды rich-snippet в выдаче; без отзывов блок не ставится).
  */
 export function buildProductJsonLd(
   product: Product,
   siteUrl: string,
   currency = 'RUB',
+  rating?: { count: number; average: number } | null,
 ): Record<string, unknown> {
   const images = [product.image, ...(product.gallery ?? [])]
     .map((src) => absoluteImageUrl(src, siteUrl))
@@ -150,5 +153,16 @@ export function buildProductJsonLd(
       price: String(product.price),
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
+    ...(rating && rating.count > 0 && rating.average > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: String(rating.average),
+            reviewCount: rating.count,
+            bestRating: '5',
+            worstRating: '1',
+          },
+        }
+      : {}),
   };
 }

@@ -168,3 +168,25 @@ describe('escapeXml', () => {
     expect(escapeXml(`<a href="x">&'`)).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&apos;');
   });
 });
+
+describe('buildProductJsonLd — aggregateRating (отзывы)', () => {
+  it('с отзывами добавляет aggregateRating (строки, как требует schema.org)', () => {
+    const ld = buildProductJsonLd(product, 'https://shop.ru', 'RUB', { count: 3, average: 4.5 });
+    const ar = ld.aggregateRating as Record<string, unknown>;
+    expect(ar['@type']).toBe('AggregateRating');
+    expect(ar.ratingValue).toBe('4.5');
+    expect(ar.reviewCount).toBe(3);
+    expect(ar.bestRating).toBe('5');
+    expect(ar.worstRating).toBe('1');
+  });
+
+  it('без отзывов/с нулями — aggregateRating не ставится', () => {
+    expect(buildProductJsonLd(product, 'https://shop.ru').aggregateRating).toBeUndefined();
+    expect(
+      buildProductJsonLd(product, 'https://shop.ru', 'RUB', { count: 0, average: 0 }).aggregateRating,
+    ).toBeUndefined();
+    expect(
+      buildProductJsonLd(product, 'https://shop.ru', 'RUB', null).aggregateRating,
+    ).toBeUndefined();
+  });
+});
