@@ -20,21 +20,31 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- планшетах 768-1023px меню теперь доступно (раньше не было
       //- ни бургера, ни десктоп-меню — они включались с 1024px)
       .relative(class="lg:hidden" ref="mobileMenuRef")
-        button.btn.btn-ghost.btn-circle(
+        //- data-fly-compare — приёмник «синей точки» сравнения
+        //- (см. app/utils/compareFly.js)
+        button.btn.btn-ghost.btn-circle.relative(
           type="button"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
           :aria-label="$t('header.openMenu')"
           class="w-11 h-11 min-h-0"
+          data-fly-compare
           @click="toggleMobileMenu"
         )
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85")
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
+          //- Бейдж-счётчик сравнения: сюда прилетает точка, бейдж мягко пульсирует,
+          //- после прилёта мигает (is-blinking вешается на ~1.5 с)
+          span.burger-compare-badge(
+            v-if="compareCount > 0"
+            :class="{ 'is-blinking': burgerBlink }"
+            aria-hidden="true"
+          ) {{ compareCount }}
 
         //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
         //- Ограничение высоты и скролл — в scoped-стилях .mobile-menu:
         //- на невысоких экранах меню скроллится с подсказкой-градиентом внизу,
-        //- а не уходит за нижний край (у админа в меню 14 пунктов)
+        //- а не уходит за нижний край
         ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           v-show="isMobileMenuOpen"
           ref="menuPanel"
@@ -130,75 +140,6 @@ header.app-header.sticky.top-0.z-50.border-b(
                     path(stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
                   span {{ $t('nav.contacts') }}
 
-          //- Раздел: Админка
-          template(v-if="isAdmin")
-            .px-3.pb-3
-              ul.grid.grid-cols-2.gap-1
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.dashboard') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/products\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.products') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/orders\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.orders') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/news\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.news') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/content\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.content') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/reviews\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.reviews') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/promocodes\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.promocodes') }}
-                li
-                  NuxtLink.mobile-menu-item.flex.items-center(
-                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
-                    :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    :to="localePath(\'/admin/users\')"
-                    @click="onMenuItemClick"
-                    prefetch
-                  ) {{ $t('nav.users') }}
-
           //- Признак прокрутки: градиент + стрелка видны, только когда пункты
           //- не влезли в экран (страховка для крошечных/горизонтальных экранов);
           //- у дна списка исчезают. sticky bottom внутри скролл-панели,
@@ -259,9 +200,11 @@ header.app-header.sticky.top-0.z-50.border-b(
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
               | {{ favoritesCount }}
         li.relative
+          //- data-fly-compare: на десктопе бургер скрыт, точка летит сюда
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-2.transition-colors(
             :class="isActiveRoute('/compare') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
             :to="localePath('/compare')"
+            data-fly-compare
           )
             span {{ $t('nav.compare') }}
             span.badge.badge-xs.badge-primary.rounded-full(v-if="compareCount > 0")
@@ -524,6 +467,46 @@ header.app-header.sticky.top-0.z-50.border-b(
   border: 2px solid var(--color-base-100);
 }
 
+/* ─── Бейдж сравнения на бургер-кнопке («синяя точка») ──────────────
+   Жёстко привязан к кнопке (absolute), не перекрывает тапы.
+   Пока в сравнении есть товары — мягко «дышит» (badgePulse),
+   после прилёта летевшей точки — мигает (is-blinking на ~1.5 с). */
+.burger-compare-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-primary-content, #fff);
+  border: 2px solid var(--color-base-100);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  pointer-events: none;
+  animation: badgePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.22); }
+}
+
+.burger-compare-badge.is-blinking {
+  animation: badgeBlink 0.45s ease-in-out 3;
+}
+
+@keyframes badgeBlink {
+  0%, 100% { transform: scale(1.2); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.45; }
+}
+
 /* ─── Люксовое меню: плавное появление ─────────────────────────── */
 .mobile-menu {
   animation: menuIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
@@ -563,6 +546,8 @@ header.app-header.sticky.top-0.z-50.border-b(
 
 @media (prefers-reduced-motion: reduce) {
   .menu-scroll-hint { animation: none; }
+  .burger-compare-badge,
+  .burger-compare-badge.is-blinking { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -708,12 +693,90 @@ const updateMenuScroll = () => {
 watch(isMobileMenuOpen, async (open) => {
   if (!open) return
   await nextTick()
-  updateMenuScroll()
+  // Двойной rAF + отложенный повтор: шрифты и анимация меню меняют высоту
+  // контента после первого кадра — одиночного nextTick мало
+  // (фидбек «стрелки нет» на Tecno Pova 5 / Opera Android)
+  requestAnimationFrame(() => {
+    updateMenuScroll()
+    requestAnimationFrame(updateMenuScroll)
+  })
+  setTimeout(updateMenuScroll, 300)
 })
 
-//- Поворот телефона / изменение размера окна при открытом меню — пересчёт
-onMounted(() => window.addEventListener('resize', updateMenuScroll, { passive: true }))
-onBeforeUnmount(() => window.removeEventListener('resize', updateMenuScroll))
+//- Поворот телефона / изменение окна / смена высоты панели (max-height на dvh)
+//- — пересчёт; ResizeObserver ловит и само открытие (display:none → блок)
+let menuResizeObserver = null
+onMounted(() => {
+  window.addEventListener('resize', updateMenuScroll, { passive: true })
+  if (typeof ResizeObserver === 'function' && menuPanel.value) {
+    menuResizeObserver = new ResizeObserver(() => updateMenuScroll())
+    menuResizeObserver.observe(menuPanel.value)
+  }
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateMenuScroll)
+  menuResizeObserver?.disconnect()
+  menuResizeObserver = null
+})
+
+//- ============================================
+//- Полёт «синей точки» сравнения (см. app/utils/compareFly.js):
+//- карточки диспатчат COMPARE_FLY_EVENT, здесь точка летит по лёгкой дуге
+//- к видимому приёмнику [data-fly-compare], исчезает у цели, а бейдж
+//- на бургере мигает ~1.5 с. prefers-reduced-motion — без полёта.
+//- ============================================
+const burgerBlink = ref(false)
+let burgerBlinkTimer = null
+const blinkCompareBadge = () => {
+  burgerBlink.value = false
+  // перезапуск CSS-анимации: кадр без класса, затем кадр с классом
+  requestAnimationFrame(() => { burgerBlink.value = true })
+  clearTimeout(burgerBlinkTimer)
+  burgerBlinkTimer = setTimeout(() => { burgerBlink.value = false }, 1500)
+}
+
+const flyCompareDot = (origin, targetEl) => {
+  const target = elementCenter(targetEl)
+  if (!target) return
+  const dot = document.createElement('span')
+  dot.setAttribute('aria-hidden', 'true')
+  // стили инлайном: точка создаётся вне Vue, scoped-стили на неё не действуют
+  dot.style.cssText =
+    'position:fixed;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;' +
+    'border-radius:9999px;background:var(--color-primary,#007bc7);' +
+    'box-shadow:0 2px 12px rgba(0,0,0,.25);z-index:9999;pointer-events:none;' +
+    'will-change:transform,opacity;opacity:.95'
+  document.body.appendChild(dot)
+  if (typeof dot.animate !== 'function') {
+    dot.remove()
+    return
+  }
+  // лёгкая дуга: середина хорды выталкивается перпендикуляром
+  const midX = (origin.x + target.x) / 2 + (target.y - origin.y) * 0.15
+  const midY = (origin.y + target.y) / 2 - (target.x - origin.x) * 0.15
+  const animation = dot.animate(
+    [
+      { transform: `translate(${origin.x}px, ${origin.y}px) scale(1)`, opacity: 1 },
+      { transform: `translate(${midX}px, ${midY}px) scale(0.8)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${target.x}px, ${target.y}px) scale(0.35)`, opacity: 0.35 },
+    ],
+    { duration: 700, easing: 'cubic-bezier(0.32, 0.72, 0.35, 1)' },
+  )
+  const finish = () => { dot.remove(); blinkCompareBadge() }
+  animation.onfinish = finish
+  animation.oncancel = () => dot.remove()
+}
+
+const onCompareFly = (event) => {
+  blinkCompareBadge()
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const origin = getFlyOrigin(
+    event?.detail,
+    { width: window.innerWidth, height: window.innerHeight },
+  )
+  const targetEl = resolveFlyTarget(document.querySelectorAll('[data-fly-compare]'))
+  if (targetEl) flyCompareDot(origin, targetEl)
+}
 
 const toggleAdminMenu = () => {
   isAdminMenuOpen.value = !isAdminMenuOpen.value
@@ -772,6 +835,7 @@ onMounted(() => {
   document.addEventListener('click', closeMenusOnClickOutside)
   document.addEventListener('keydown', onGlobalKeydown)
   window.addEventListener('theme-changed', onThemeChanged)
+  window.addEventListener(COMPARE_FLY_EVENT, onCompareFly)
 })
 
 onUnmounted(() => {
@@ -779,6 +843,8 @@ onUnmounted(() => {
   document.removeEventListener('click', closeMenusOnClickOutside)
   document.removeEventListener('keydown', onGlobalKeydown)
   window.removeEventListener('theme-changed', onThemeChanged)
+  window.removeEventListener(COMPARE_FLY_EVENT, onCompareFly)
+  clearTimeout(burgerBlinkTimer)
 })
 
 watch(() => route.path, () => closeAllMenus())

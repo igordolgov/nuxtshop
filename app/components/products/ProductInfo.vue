@@ -157,9 +157,13 @@ const { $notify } = useNuxtApp()
 const { isCompared, toggleCompare } = useCompare()
 const isComparedNow = computed(() => isCompared(props.product.id))
 
-const onCompareClick = () => {
+const onCompareClick = (event) => {
   const status = toggleCompare(props.product)
-  if (status === 'added') $notify.success(t('compare.added'))
+  if (status === 'added') {
+    $notify.success(t('compare.added'))
+    // «Синяя точка» летит к бургеру/«Сравнению» в шапке (utils/compareFly.js)
+    emitCompareFly(event?.currentTarget)
+  }
   if (status === 'full') $notify.warning(t('compare.limit', { n: 4 }))
 }
 
