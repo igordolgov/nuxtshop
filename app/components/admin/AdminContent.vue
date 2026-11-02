@@ -33,8 +33,16 @@
     button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") Повторить
 
   form(v-else @submit.prevent="save" novalidate)
+    //- ─── Языковые вкладки: RU — весь контент, EN/ES — только переводы ──
+    .flex.gap-1.mb-4.flex-wrap.items-center
+      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
+      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
+      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
+      span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60")
+        | Необязательно — состав списка задается на вкладке «Русский», здесь только переводы: пустое поле → на витрине показывается русский
+
     //- ─── Контакты ──────────────────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       h3.card-title Связь
       .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
         label.block
@@ -57,7 +65,7 @@
           | С openstreetmap.org: «Экспорт» → «Поделиться картой» → скопировать src ифрейма. Пусто — карта по умолчанию.
 
     //- ─── Мессенджеры ───────────────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title Мессенджеры
         span.counter {{ form.contacts.messengers.length }} из {{ LIMITS.messengers }}
@@ -76,7 +84,7 @@
       ) + Добавить мессенджер
 
     //- ─── Магазины ──────────────────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title Магазины и пункты выдачи
         span.counter {{ form.contacts.stores.length }} из {{ LIMITS.stores }}
@@ -105,8 +113,29 @@
         @click="addStore"
       ) + Добавить магазин
 
+    //- Магазины: переводы EN/ES — те же записи, другие поля
+    section.editor-card(v-show="langTab !== 'ru'")
+      h3.card-title Магазины — переводы ({{ langLabel }})
+      .store-block(v-for="(s, i) in form.contacts.stores" :key="`store-tr-${i}`")
+        .list-row
+          label.block.flex-1.min-w-0
+            span.form-label Город ({{ langLabel }})
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[cityField]" :maxlength="LIMITS.city" :placeholder="s.city")
+          label.block.flex-1.min-w-0
+            span.form-label Бейдж ({{ langLabel }})
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[badgeField]" :maxlength="LIMITS.badge" :placeholder="s.badge")
+        .list-row.mt-2
+          label.block.flex-1.min-w-0
+            span.form-label Адрес ({{ langLabel }})
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[addressField]" :maxlength="LIMITS.address" :placeholder="s.address")
+          label.block.flex-1.min-w-0
+            span.form-label Часы ({{ langLabel }})
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[hoursField]" :maxlength="LIMITS.storeHours" :placeholder="s.hours")
+      p.text-xs(class="mt-2 text-base-content/50")
+        | Телефон не переводится. Пустое поле — на витрине показывается русский текст.
+
     //- ─── FAQ ───────────────────────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title Частые вопросы (страница «Контакты»)
         span.counter {{ form.contacts.faq.length }} из {{ LIMITS.faq }}
@@ -125,8 +154,20 @@
         @click="addFaq"
       ) + Добавить вопрос
 
+    //- FAQ: переводы EN/ES
+    section.editor-card(v-show="langTab !== 'ru'")
+      h3.card-title Частые вопросы — переводы ({{ langLabel }})
+      .faq-block(v-for="(f, i) in form.contacts.faq" :key="`faq-tr-${i}`")
+        .list-row
+          label.block.flex-1.min-w-0
+            span.form-label Вопрос {{ i + 1 }} ({{ langLabel }})
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model="f[qField]" :maxlength="LIMITS.faqQ" :placeholder="f.q")
+        label.block.mt-2
+          span.form-label Ответ ({{ langLabel }})
+          textarea.textarea.textarea-bordered.rounded-xl.w-full.leading-relaxed(v-model="f[aField]" rows="3" :maxlength="LIMITS.faqA" :placeholder="f.a")
+
     //- ─── О магазине: цифры ─────────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title «О магазине» — цифры
         span.counter {{ form.about.stats.length }} из {{ LIMITS.stats }}
@@ -144,8 +185,19 @@
         @click="addStat"
       ) + Добавить цифру
 
+    //- Цифры: переводы EN/ES
+    section.editor-card(v-show="langTab !== 'ru'")
+      h3.card-title «О магазине» — цифры, переводы ({{ langLabel }})
+      .list-row(v-for="(st, i) in form.about.stats" :key="`stat-tr-${i}`")
+        label.block.w-36.flex-shrink-0
+          span.form-label Значение ({{ langLabel }})
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model="st[valueField]" :maxlength="LIMITS.statValue" :placeholder="st.value")
+        label.block.flex-1.min-w-0
+          span.form-label Подпись ({{ langLabel }})
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model="st[labelField]" :maxlength="LIMITS.statLabel" :placeholder="st.label")
+
     //- ─── О магазине: история ───────────────────────────────────────────
-    section.editor-card
+    section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title «О магазине» — история
         span.counter {{ form.about.history.length }} из {{ LIMITS.history }}
@@ -162,6 +214,17 @@
         :disabled="form.about.history.length >= LIMITS.history"
         @click="addHistory"
       ) + Добавить событие
+
+    //- История: переводы EN/ES
+    section.editor-card(v-show="langTab !== 'ru'")
+      h3.card-title «О магазине» — история, переводы ({{ langLabel }})
+      .list-row(v-for="(h, i) in form.about.history" :key="`hist-tr-${i}`")
+        label.block.w-28.flex-shrink-0
+          span.form-label Год
+          input.input.input-bordered.rounded-xl.w-full(type="text" :value="h.year" disabled)
+        label.block.flex-1.min-w-0
+          span.form-label Событие ({{ langLabel }})
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model="h[textField]" :maxlength="LIMITS.historyText" :placeholder="h.text")
 
     //- ─── Низ формы ─────────────────────────────────────────────────────
     p.form-error(v-if="formError" role="alert") {{ formError }}
@@ -186,6 +249,20 @@ const loaded = ref(false)
 const loadError = ref(false)
 const saving = ref(false)
 const formError = ref('')
+
+// ─── Языковые вкладки: RU — весь контент, EN/ES — только переводы ────
+const langTab = ref('ru')
+const langLabel = computed(() => (langTab.value === 'en' ? 'English' : 'Español'))
+// Динамические поля активной языковой вкладки (ключи записей списков)
+const cityField = computed(() => (langTab.value === 'en' ? 'cityEn' : 'cityEs'))
+const badgeField = computed(() => (langTab.value === 'en' ? 'badgeEn' : 'badgeEs'))
+const addressField = computed(() => (langTab.value === 'en' ? 'addressEn' : 'addressEs'))
+const hoursField = computed(() => (langTab.value === 'en' ? 'hoursEn' : 'hoursEs'))
+const qField = computed(() => (langTab.value === 'en' ? 'qEn' : 'qEs'))
+const aField = computed(() => (langTab.value === 'en' ? 'aEn' : 'aEs'))
+const valueField = computed(() => (langTab.value === 'en' ? 'valueEn' : 'valueEs'))
+const labelField = computed(() => (langTab.value === 'en' ? 'labelEn' : 'labelEs'))
+const textField = computed(() => (langTab.value === 'en' ? 'textEn' : 'textEs'))
 
 const blankForm = () => ({
   contacts: {
@@ -228,10 +305,26 @@ const applyContent = (content) => {
   form.contacts.messengers = (c.messengers ?? []).map((m) => ({ name: m.name, handle: m.handle }))
   form.contacts.stores = (c.stores ?? []).map((s) => ({
     city: s.city, badge: s.badge, address: s.address, hours: s.hours, phone: s.phone,
+    // Переводы (i18n): пусто → витрина показывает русский
+    cityEn: s.cityEn ?? '', cityEs: s.cityEs ?? '',
+    badgeEn: s.badgeEn ?? '', badgeEs: s.badgeEs ?? '',
+    addressEn: s.addressEn ?? '', addressEs: s.addressEs ?? '',
+    hoursEn: s.hoursEn ?? '', hoursEs: s.hoursEs ?? '',
   }))
-  form.contacts.faq = (c.faq ?? []).map((f) => ({ q: f.q, a: f.a }))
-  form.about.stats = (a.stats ?? []).map((s) => ({ value: s.value, label: s.label }))
-  form.about.history = (a.history ?? []).map((h) => ({ year: h.year, text: h.text }))
+  form.contacts.faq = (c.faq ?? []).map((f) => ({
+    q: f.q, a: f.a,
+    qEn: f.qEn ?? '', aEn: f.aEn ?? '',
+    qEs: f.qEs ?? '', aEs: f.aEs ?? '',
+  }))
+  form.about.stats = (a.stats ?? []).map((s) => ({
+    value: s.value, label: s.label,
+    valueEn: s.valueEn ?? '', labelEn: s.labelEn ?? '',
+    valueEs: s.valueEs ?? '', labelEs: s.labelEs ?? '',
+  }))
+  form.about.history = (a.history ?? []).map((h) => ({
+    year: h.year, text: h.text,
+    textEn: h.textEn ?? '', textEs: h.textEs ?? '',
+  }))
   form.updatedAt = content?.updatedAt ?? ''
 }
 
@@ -259,19 +352,23 @@ const addMessenger = () => {
 }
 const addStore = () => {
   if (form.contacts.stores.length >= LIMITS.stores) return
-  form.contacts.stores.push({ city: '', badge: '', address: '', hours: '', phone: '' })
+  form.contacts.stores.push({
+    city: '', badge: '', address: '', hours: '', phone: '',
+    cityEn: '', cityEs: '', badgeEn: '', badgeEs: '',
+    addressEn: '', addressEs: '', hoursEn: '', hoursEs: '',
+  })
 }
 const addFaq = () => {
   if (form.contacts.faq.length >= LIMITS.faq) return
-  form.contacts.faq.push({ q: '', a: '' })
+  form.contacts.faq.push({ q: '', a: '', qEn: '', aEn: '', qEs: '', aEs: '' })
 }
 const addStat = () => {
   if (form.about.stats.length >= LIMITS.stats) return
-  form.about.stats.push({ value: '', label: '' })
+  form.about.stats.push({ value: '', label: '', valueEn: '', labelEn: '', valueEs: '', labelEs: '' })
 }
 const addHistory = () => {
   if (form.about.history.length >= LIMITS.history) return
-  form.about.history.push({ year: '', text: '' })
+  form.about.history.push({ year: '', text: '', textEn: '', textEs: '' })
 }
 
 const save = async () => {

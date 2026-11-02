@@ -73,14 +73,42 @@
       h3.font-semibold.text-lg.mb-4 {{ isNew ? 'Новая новость' : 'Редактирование новости' }}
 
       form(@submit.prevent="save" novalidate)
-        label.block.mb-3
-          span.form-label Заголовок
-          input.input.input-bordered.rounded-xl.w-full(
-            type="text"
-            v-model.trim="form.title"
-            placeholder="Что случилось? От 5 до 120 символов"
-            maxlength="120"
-          )
+        //- Языковые вкладки: RU — основной контент (обязательный), EN/ES —
+        //- необязательные переводы (пусто → витрина показывает русский)
+        .flex.gap-1.mb-3.flex-wrap.items-center
+          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
+          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
+          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
+          span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60")
+            | Необязательно — без перевода показывается русский
+
+        template(v-if="langTab === 'ru'")
+          label.block.mb-3
+            span.form-label Заголовок
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.title"
+              placeholder="Что случилось? От 5 до 120 символов"
+              maxlength="120"
+            )
+        template(v-else-if="langTab === 'en'")
+          label.block.mb-3
+            span.form-label Title (English)
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.titleEn"
+              placeholder="Headline in English — optional"
+              maxlength="120"
+            )
+        template(v-else)
+          label.block.mb-3
+            span.form-label Título (Español)
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.titleEs"
+              placeholder="Titular en español — opcional"
+              maxlength="120"
+            )
 
         .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
           label.block
@@ -98,14 +126,33 @@
             input.toggle.toggle-primary(type="checkbox" v-model="form.published")
             span.text-sm {{ form.published ? 'Опубликовано — видно на витрине' : 'Черновик — виден только в админке' }}
 
-        label.block.mt-3
-          span.form-label Краткое описание (до 220 символов)
-          input.input.input-bordered.rounded-xl.w-full(
-            type="text"
-            v-model.trim="form.excerpt"
-            placeholder="Одно предложение для карточки в ленте"
-            maxlength="220"
-          )
+        template(v-if="langTab === 'ru'")
+          label.block.mt-3
+            span.form-label Краткое описание (до 220 символов)
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.excerpt"
+              placeholder="Одно предложение для карточки в ленте"
+              maxlength="220"
+            )
+        template(v-else-if="langTab === 'en'")
+          label.block.mt-3
+            span.form-label Excerpt (English, up to 220 characters)
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.excerptEn"
+              placeholder="One sentence for the feed card — optional"
+              maxlength="220"
+            )
+        template(v-else)
+          label.block.mt-3
+            span.form-label Resumen (Español, hasta 220 caracteres)
+            input.input.input-bordered.rounded-xl.w-full(
+              type="text"
+              v-model.trim="form.excerptEs"
+              placeholder="Una frase para la tarjeta — opcional"
+              maxlength="220"
+            )
 
         label.block.mt-3
           span.form-label Изображение
@@ -131,13 +178,30 @@
           p.text-xs(class="mt-0.5 text-base-content/50")
             | С телефона: «Фото» → снимок камеры или галерея — файл сам сожмётся и уедет в хранилище.
 
-        label.block.mt-3
-          span.form-label Полный текст — каждый абзац с новой строки
-          textarea.textarea.textarea-bordered.w-full.leading-relaxed(
-            v-model="form.body"
-            rows="7"
-            placeholder="Первый абзац&#10;&#10;Второй абзац"
-          )
+        template(v-if="langTab === 'ru'")
+          label.block.mt-3
+            span.form-label Полный текст — каждый абзац с новой строки
+            textarea.textarea.textarea-bordered.w-full.leading-relaxed(
+              v-model="form.body"
+              rows="7"
+              placeholder="Первый абзац&#10;&#10;Второй абзац"
+            )
+        template(v-else-if="langTab === 'en'")
+          label.block.mt-3
+            span.form-label Full text (English) — one paragraph per line
+            textarea.textarea.textarea-bordered.w-full.leading-relaxed(
+              v-model="form.bodyEn"
+              rows="7"
+              placeholder="First paragraph&#10;&#10;Second paragraph"
+            )
+        template(v-else)
+          label.block.mt-3
+            span.form-label Texto completo (Español) — un párrafo por línea
+            textarea.textarea.textarea-bordered.w-full.leading-relaxed(
+              v-model="form.bodyEs"
+              rows="7"
+              placeholder="Primer párrafo&#10;&#10;Segundo párrafo"
+            )
 
         //- Перелинковка: товары из новости (до 6, порядок = порядок показа)
         .mt-3
@@ -235,6 +299,8 @@ const showForm = ref(false)
 const isNew = ref(true)
 const saving = ref(false)
 const formError = ref('')
+// Языковая вкладка: RU — основной контент, EN/ES — необязательные переводы
+const langTab = ref('ru')
 const form = reactive({
   id: null,
   title: '',
@@ -243,6 +309,13 @@ const form = reactive({
   excerpt: '',
   image: '',
   body: '',
+  // Переводы (i18n): пусто → витрина показывает русский (фолбэк)
+  titleEn: '',
+  excerptEn: '',
+  bodyEn: '',
+  titleEs: '',
+  excerptEs: '',
+  bodyEs: '',
   productIds: [],
   published: true,
 })
@@ -306,11 +379,18 @@ const openCreate = () => {
     excerpt: '',
     image: '',
     body: '',
+    titleEn: '',
+    excerptEn: '',
+    bodyEn: '',
+    titleEs: '',
+    excerptEs: '',
+    bodyEs: '',
     productIds: [],
     published: true,
   })
   pickedProductId.value = ''
   formError.value = ''
+  langTab.value = 'ru'
   showForm.value = true
 }
 
@@ -324,6 +404,13 @@ const openEdit = (item) => {
     excerpt: item.excerpt || '',
     image: item.image || '',
     body: (item.body || []).join('\n'),
+    // Переводы: пусто в KV → пустое поле (витрина покажет русский)
+    titleEn: item.titleEn || '',
+    excerptEn: item.excerptEn || '',
+    bodyEn: (item.bodyEn || []).join('\n'),
+    titleEs: item.titleEs || '',
+    excerptEs: item.excerptEs || '',
+    bodyEs: (item.bodyEs || []).join('\n'),
     // Только реально сохранённый ручной выбор: item.products содержит
     // в том числе автоподобранные товары (фолбэк на GET /api/news),
     // подставлять их в форму нельзя — сохранение зафиксировало бы их
@@ -333,6 +420,7 @@ const openEdit = (item) => {
   })
   pickedProductId.value = ''
   formError.value = ''
+  langTab.value = 'ru'
   showForm.value = true
 }
 
@@ -352,6 +440,13 @@ const save = async () => {
       excerpt: form.excerpt,
       image: form.image,
       body: form.body,
+      // Переводы: пустая строка → сервер удалит перевод (фолбэк на русский)
+      titleEn: form.titleEn,
+      excerptEn: form.excerptEn,
+      bodyEn: form.bodyEn,
+      titleEs: form.titleEs,
+      excerptEs: form.excerptEs,
+      bodyEs: form.bodyEs,
       productIds: form.productIds,
       published: form.published,
     }

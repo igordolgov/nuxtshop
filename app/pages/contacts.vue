@@ -143,8 +143,14 @@ const { t } = useI18n()
 
 /* ─── Контент из KV через /api/content (админка → «Контент») ──
    Дефолты — shared/siteContent (те же значения, что раньше были
-   захардкожены здесь). Сбой /api/content не роняет страницу: ── */
-import { DEFAULT_SITE_CONTENT, normalizePhoneHref } from '#shared/siteContent'
+   захардкожены здесь). Сбой /api/content не роняет страницу.
+   Локализация — по локали URL (переводы полей из админки,
+   нет перевода → русский; localizedSiteContent). ── */
+import {
+  DEFAULT_SITE_CONTENT,
+  localizedSiteContent,
+  normalizePhoneHref,
+} from '#shared/siteContent'
 
 const { data: contentResp } = await useAsyncData(
   'site-content',
@@ -152,7 +158,12 @@ const { data: contentResp } = await useAsyncData(
   { default: () => null },
 )
 
-const content = computed(() => contentResp.value?.content ?? DEFAULT_SITE_CONTENT)
+const locale = useStoreLocale()
+
+const content = computed(() => {
+  const stored = contentResp.value?.content ?? DEFAULT_SITE_CONTENT
+  return localizedSiteContent(stored, locale.value)
+})
 const contacts = computed(() => content.value.contacts)
 const messengers = computed(() => contacts.value.messengers)
 const faq = computed(() => contacts.value.faq)

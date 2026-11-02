@@ -4,6 +4,7 @@
 // кидает NewsValidationError с сообщением на русском → отдаём как 400.
 import {
   NewsValidationError,
+  applySanitizedNews,
   nextNewsId,
   readNews,
   sanitizeNewsItem,
@@ -25,7 +26,10 @@ export default defineEventHandler(async (event) => {
     const image = await processImage(event, clean.image, 'main', 'news/news')
 
     const news = await readNews(event)
-    const item = { id: nextNewsId(news), ...clean, image }
+    // applySanitizedNews применяет и базовые поля, и переводы (null → поле
+    // не ставится); фото переопределяем результатом processImage.
+    const item = applySanitizedNews({ id: nextNewsId(news) } as never, clean)
+    item.image = image
     news.push(item)
     await writeNews(event, news)
 

@@ -172,10 +172,15 @@
 </template>
 
 <script setup lang="ts">
+import { localizedNews, newsCategoryLabel, newsPlaceholderIcon } from '~/utils/news'
+import { localizedProduct } from '~/utils/localizedProduct'
 import type { NewsWithProducts } from '~/utils/news'
 
 const { isMobile } = useMobileDetection()
-const { t, locale } = useI18n()
+const { t } = useI18n()
+// Локаль витрины — из пути URL (детерминированная на сервере и клиенте;
+// тот же источник, что у локализации товаров — useLocalizedProduct).
+const locale = useStoreLocale()
 const route = useRoute()
 const router = useRouter()
 const { formatPrice, getSafeImage } = useProductUtils()
@@ -190,17 +195,23 @@ const {
   refresh,
 } = await useAsyncData('news-list', () => $fetch<{ success: boolean; news: NewsWithProducts[] }>('/api/news'))
 
-const items = computed<NewsWithProducts[]>(() => newsData.value?.news ?? [])
+const items = computed<NewsWithProducts[]>(() => {
+  // Локализация контента (title/excerpt/body) и названий товаров в
+  // мини-карточках — по локали URL; нет перевода → русский (фолбэк).
+  const loc = locale.value
+  return (newsData.value?.news ?? []).map((raw) => {
+    const item = localizedNews(raw, loc)
+    return item.products
+      ? { ...item, products: item.products.map((p) => localizedProduct(p, loc)) }
+      : item
+  })
+})
 
 // Канонические рубрики (значения в data:news русские — это данные,
 // фильтр сравнивает с ними). Отображение — через словарь news.categories.*
 const categories = ['Все', ...NEWS_CATEGORIES]
 const activeCategory = ref('Все')
-const CATEGORY_KEYS = { 'Все': 'all', 'Акции': 'promo', 'Новинки': 'new', 'Компания': 'company', 'Обзоры': 'reviews' }
-const catLabel = (cat) => {
-  const key = CATEGORY_KEYS[cat]
-  return key ? t(`news.categories.${key}`) : cat
-}
+const catLabel = (cat: string) => newsCategoryLabel(cat, t)
 
 const filteredNews = computed<NewsWithProducts[]>(() =>
   activeCategory.value === 'Все'

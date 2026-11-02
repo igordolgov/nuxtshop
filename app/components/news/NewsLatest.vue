@@ -37,7 +37,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
             path(:d="newsPlaceholderIcon(item.category)")
       .card-body
         .flex.items-center.gap-2.flex-wrap.mb-1
-          span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ item.category }}
+          span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ newsCategoryLabel(item.category, t) }}
           span.news-date {{ formatNewsDate(item.date, locale) }}
         h3.news-title {{ item.title }}
 
@@ -51,6 +51,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
 </template>
 
 <script setup lang="ts">
+import { localizedNews, newsCategoryLabel } from '~/utils/news'
 import type { NewsItem } from '~/utils/news'
 
 // SSR: сервер вызывает внутренний роут /api/news (сид при пустом KV)
@@ -59,7 +60,16 @@ const { data } = await useAsyncData('news-latest', () =>
   $fetch<{ success: boolean; news: NewsItem[] }>('/api/news'),
 )
 
-const items = computed<NewsItem[]>(() => (data.value?.news ?? []).slice(0, 3))
+const { t } = useI18n()
+// Локаль витрины из URL (раньше здесь была неопределённая переменная —
+// даты блока всегда рендерились по-русски даже на /en и /es)
+const locale = useStoreLocale()
+
+const items = computed<NewsItem[]>(() =>
+  (data.value?.news ?? [])
+    .slice(0, 3)
+    .map((n) => localizedNews(n, locale.value)),
+)
 </script>
 
 <style scoped>

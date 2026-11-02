@@ -3,6 +3,7 @@
 // sanitizeNewsItem — общая с POST (newsHelpers); id из маршрута.
 import {
   NewsValidationError,
+  applySanitizedNews,
   readNews,
   sanitizeNewsItem,
   writeNews,
@@ -30,7 +31,10 @@ export default defineEventHandler(async (event) => {
     const clean = sanitizeNewsItem(body ?? {})
     // Фото: data-URI из админки → KV img:news/…, пути/URL — насквозь
     const image = await processImage(event, clean.image, 'main', 'news/news')
-    Object.assign(item, clean, { image })
+    // applySanitizedNews мутирует item в массиве: базовые поля присваивает,
+    // переводы применяет с семантикой «null → удалить поле из записи».
+    applySanitizedNews(item, clean)
+    item.image = image
     await writeNews(event, news)
 
     let telegramPosted = false

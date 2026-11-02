@@ -95,8 +95,10 @@ const { t } = useI18n()
 
 /* ─── Редактируемый контент (админка → «Контент»): цифры и история.
        Остальные блоки — витрина доверия, остаются статическими.
-       Сбой /api/content не роняет страницу — фолбэк на дефолты. ── */
-import { DEFAULT_SITE_CONTENT } from '#shared/siteContent'
+       Сбой /api/content не роняет страницу — фолбэк на дефолты.
+       Локализация — по локали URL (переводы полей из админки,
+       нет перевода → русский; localizedSiteContent). ── */
+import { DEFAULT_SITE_CONTENT, localizedSiteContent } from '#shared/siteContent'
 
 const { data: contentResp } = await useAsyncData(
   'site-content',
@@ -104,7 +106,12 @@ const { data: contentResp } = await useAsyncData(
   { default: () => null },
 )
 
-const content = computed(() => contentResp.value?.content ?? DEFAULT_SITE_CONTENT)
+const locale = useStoreLocale()
+
+const content = computed(() => {
+  const stored = contentResp.value?.content ?? DEFAULT_SITE_CONTENT
+  return localizedSiteContent(stored, locale.value)
+})
 const stats = computed(() => content.value.about.stats)
 const history = computed(() => content.value.about.history)
 
