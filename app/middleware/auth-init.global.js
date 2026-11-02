@@ -1,42 +1,61 @@
 // middleware/auth-init.global.js
 // ============================================
-// Глобальный middleware: разовая инициализация приложения на клиенте
-// (каталог + сессия + сброс фильтров) — initializeApp из useAppState.
+// Разовая инициализация приложения (каталог, auth, фильтры).
 //
-// ⚠️ InitializeApp НЕ ждём до монтирования (await здесь был причиной
-// серьёзной баги): при первичной загрузке страницы await выполнялся ДО
-// гидратации — клиентский стейт успевал наполниться (товары, юзер), а
-// SSR-HTML рендерил исходное состояние (гость в шапке, пустой каталог).
-// Vue фиксировал hydration mismatch и повреждал DOM: таблица товаров
-// /admin/products вставала внутрь блока пустого состояния — по центру,
-// блеклая (opacity-30), некликабельная. Симптом проявлялся на любой
-// полной загрузке (F5, смена языка) и исчезал при SPA-навигации.
+// ВАЖНО про тайминг: route-middleware на первой загрузке выполняется ДО
+// гидратации страницы. Любой await здесь (loadProducts, checkAuth) — сеть,
+// а Suspense ждёт middleware: стейт успевает измениться ещё до того, как
+// страница начнёт гидратироваться. SSR же отрендерил страницу по СТАРОМУ
+// стейту (каталог пуст, пользователь гость) → клиентский рендер при
+// гидратации расходится с SSR-HTML → hydration mismatch. В production Vue
+// патчит DOM позиционно, не пересоздавая дерево: таблица /admin/products
+// оказывалась ВНУТРИ узлов пустого состояния (центрирование + opacity-30
+// предка), обёртки .table-wrapper/.desktop-table не создавались — «блеклая
+// неактивная таблица по центру» после F5 или смены языка (оба сценария =
+// полная загрузка страницы). Тот же механизм давал node mismatch в шапке.
 //
-// Теперь первый кадр всегда совпадает с SSR, а данные приезжают сразу
-// после гидратации обычной реактивной сменой состояния.
+// Лечение: в middleware не трогаем стейт вовсе. Инициализация стартует
+// строго ПОСЛЕ app:suspense:resolve (страница полностью гидратирована),
+// дальше стейт меняется штатным реактивным патчем. Побочный эффект: при
+// перезагрузке страница на долю секунды рендерится по SSR-стейту, затем
+// догружается — обычный hydration-safe паттерн.
 // ============================================
-export default defineNuxtRouteMiddleware(() => {
-  if (process.client) {
-    const nuxtApp = useNuxtApp()
-    const appState = useAppState()
 
-    // Инициализируем приложение только один раз
+// Защита от повторного планирования на SPA-навигациях: hookOnce после
+// резолва Suspense уже никогда не сработает, планируем ровно один раз.
+let scheduled = false
+
+export default defineNuxtRouteMiddleware(() => {
+  if (!process.client) return
+
+  const nuxtApp = useNuxtApp()
+  const runInit = async () => {
+    const appState = useAppState()
     if (appState._initialized) return
     appState._initialized = true
-
-    const run = () => {
-      appState.initializeApp().catch((error) => {
-        console.error('❌ Ошибка инициализации приложения:', error)
-      })
+    console.log('🔄 Инициализация приложения...')
+    try {
+      await appState.initializeApp()
+      console.log('✅ Приложение инициализировано')
+    } catch (error) {
+      console.error('❌ Ошибка инициализации приложения:', error)
     }
+  }
 
-    if (nuxtApp.isHydrating) {
-      // Первая загрузка: после гидратации (страница отрисована, DOM совпал)
-      nuxtApp.hooks.hookOnce('app:suspense:resolve', run)
-    } else {
-      // SPA-навигация: приложение уже смонтировано, просто запускаем
-      // (не await — загрузка данных не должна блокировать переход)
-      run()
+  if (nuxtApp.isHydrating) {
+    // Первая загрузка: ждём app:suspense:resolve — корневой Suspense
+    // резолвится, когда страница ПОЛНОСТЬЮ гидратирована. app:mounted
+    // недостаточно: он срабатывает раньше, чем RouteProvider (route-middleware
+    // страницы с await checkAuth) отдаёт контент, и быстрый ответ
+    // /api/products успевает изменить стейт до гидратации — mismatch
+    // возвращается. После suspense:resolve изменения стейт-а проходят
+    // штатным реактивным патчем.
+    if (!scheduled) {
+      scheduled = true
+      nuxtApp.hooks.hookOnce('app:suspense:resolve', runInit)
     }
+  } else {
+    // SPA-навигация после монтирования: выполняем сразу
+    runInit()
   }
 })

@@ -31,6 +31,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
       const data = await $fetch('/api/auth/user', { headers })
       const user = data?.user ?? null
       if (!user) return loginRedirect()
+      // Пользователь — в общий стейт (useAuth читает useState('auth-user')):
+      // шапка при SSR рендерит тот же auth-стейт, что и клиент после
+      // checkAuth ниже, — иначе hydration mismatch в меню шапки
+      useState('auth-user', () => null).value = user
       if (user.role !== 'admin') return navigateTo(localePath('/'), { replace: true })
     } catch {
       return loginRedirect()

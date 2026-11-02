@@ -17,7 +17,15 @@ export const useAuth = () => {
 }
 
 function createAuth() {
-  const user = ref(null)
+  // Пользователь — в useState, а не в локальном ref: значение на сервере
+  // попадает в payload запроса, и клиент гидратируется с ТЕМ ЖЕ пользователем.
+  // Раньше SSR всегда рендерил шапку для гостя (стейт пуст), а клиент после
+  // checkAuth в route-middleware — уже авторизованным → hydration mismatch
+  // в мобильном меню/пользовательском блоке («Hydration node mismatch»).
+  // На сервере useState даёт свежее значение на каждый запрос (без утечки
+  // сессий), на клиенте — общий стейт для всех вызовов useAuth.
+  // SSR-ветки admin-auth/user-auth кладут пользователя сюда до рендера.
+  const user = useState('auth-user', () => null)
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isManager = computed(() => user.value?.role === 'manager' || isAdmin.value)

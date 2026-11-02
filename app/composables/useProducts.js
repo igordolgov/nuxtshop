@@ -23,6 +23,12 @@ let isInitialized = false
 // модуля-синглтона, а не компонента, чей setup первым вызвал
 // useProducts (иначе вотч умирает при размонтировании той страницы)
 let favoriteFlagsScope = null
+// Дедупликация параллельных loadProducts: после app:suspense:resolve
+// инициализацию запускают auth-init.global.js и AdminProducts.onMounted
+// (плюс ленивые вызовы из шапки/страниц) — без общего промиса это 2–3
+// одинаковых запроса /api/products за первый рендер. force=true
+// («Обновить» руками) — мимо кэша.
+let productsInFlight = null
 
 export const useProducts = () => {
   if (import.meta.server) return createProducts()
@@ -127,52 +133,60 @@ function createProducts() {
 
   const loadProducts = async (force = false) => {
     if (products.value.length > 0 && !force) return products.value
+    // Уже грузится другим вызовом — возвращаем тот же промис
+    if (!force && productsInFlight) return productsInFlight
 
     loading.value = true
     error.value = null
 
-    try {
-      const response = await $fetch('/api/products')
-      const list = Array.isArray(response) ? response : response?.products || []
+    const request = (async () => {
+      try {
+        const response = await $fetch('/api/products')
+        const list = Array.isArray(response) ? response : response?.products || []
 
-      products.value = list.map((product) =>
-        updateProductStockStatus(
-          fixProductImages({
-            ...product,
-            isFavorite: favorites.isFavorite(product.id),
-          })
+        products.value = list.map((product) =>
+          updateProductStockStatus(
+            fixProductImages({
+              ...product,
+              isFavorite: favorites.isFavorite(product.id),
+            })
+          )
         )
-      )
-      persist()
-      return products.value
-    } catch (err) {
-      console.error('[useProducts] Ошибка загрузки товаров:', err)
-      error.value = errorMessage(err)
-      showNotification('error', tr('catalog.loadError', 'Ошибка загрузки товаров'))
+        persist()
+        return products.value
+      } catch (err) {
+        console.error('[useProducts] Ошибка загрузки товаров:', err)
+        error.value = errorMessage(err)
+        showNotification('error', tr('catalog.loadError', 'Ошибка загрузки товаров'))
 
-      // Офлайн-фолбэк на чтение — легитимен для PWA
-      if (import.meta.client) {
-        try {
-          const cached = localStorage.getItem('products')
-          if (cached) {
-            products.value = JSON.parse(cached).map((product) =>
-              updateProductStockStatus(
-                fixProductImages({
-                  ...product,
-                  isFavorite: favorites.isFavorite(product.id),
-                })
+        // Офлайн-фолбэк на чтение — легитимен для PWA
+        if (import.meta.client) {
+          try {
+            const cached = localStorage.getItem('products')
+            if (cached) {
+              products.value = JSON.parse(cached).map((product) =>
+                updateProductStockStatus(
+                  fixProductImages({
+                    ...product,
+                    isFavorite: favorites.isFavorite(product.id),
+                  })
+                )
               )
-            )
-            showNotification('info', tr('catalog.cachedData', 'Используются кэшированные данные'))
+              showNotification('info', tr('catalog.cachedData', 'Используются кэшированные данные'))
+            }
+          } catch (localStorageError) {
+            console.warn('[useProducts] localStorage read failed:', localStorageError.message)
           }
-        } catch (localStorageError) {
-          console.warn('[useProducts] localStorage read failed:', localStorageError.message)
         }
+        return []
+      } finally {
+        loading.value = false
+        productsInFlight = null
       }
-      return []
-    } finally {
-      loading.value = false
-    }
+    })()
+
+    if (!force) productsInFlight = request
+    return request
   }
 
   // ─── CRUD ─────────────────────────────────────────────────

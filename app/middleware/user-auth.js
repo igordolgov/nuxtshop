@@ -12,6 +12,9 @@ export default defineNuxtRouteMiddleware(async () => {
     try {
       const data = await $fetch('/api/auth/user', { headers })
       if (!data?.user) return navigateTo('/auth/login', { replace: true })
+      // Пользователь — в общий стейт (useAuth читает useState('auth-user')),
+      // чтобы SSR-шапка и клиентская гидратация рендерили одно и то же
+      useState('auth-user', () => null).value = data.user
     } catch {
       return navigateTo('/auth/login', { replace: true })
     }
