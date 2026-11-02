@@ -135,7 +135,7 @@
         textarea.textarea.textarea-bordered.textarea-sm.w-full(
           v-if="langTab === 'ru'"
           v-model="form.description"
-          placeholder="Описание товара"
+          :placeholder="$t('admin.productForm.descriptionPlaceholder')"
           rows="2"
           :disabled="isSubmitting"
         )

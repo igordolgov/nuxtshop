@@ -92,18 +92,18 @@
         .list-row
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.city') }}
-            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.city" :maxlength="LIMITS.city" placeholder="Москва")
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.city" :maxlength="LIMITS.city" :placeholder="$t('admin.content.cityExample')")
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.badge') }}
-            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.badge" :maxlength="LIMITS.badge" placeholder="Флагман")
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.badge" :maxlength="LIMITS.badge" :placeholder="$t('admin.content.badgeExample')")
           button.row-remove(type="button" :aria-label="$t('admin.content.removeStoreAria', { city: s.city || i + 1 })" @click="form.contacts.stores.splice(i, 1)") ✕
         .list-row.mt-2
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.address') }}
-            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.address" :maxlength="LIMITS.address" placeholder="ул. Тверская, 12")
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.address" :maxlength="LIMITS.address" :placeholder="$t('admin.content.addressExample')")
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.hours') }}
-            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.hours" :maxlength="LIMITS.storeHours" placeholder="Ежедневно 10:00–21:00")
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.hours" :maxlength="LIMITS.storeHours" :placeholder="$t('admin.content.hoursExample')")
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.phoneShort') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.phone" :maxlength="LIMITS.storePhone" placeholder="8 (495) …")
@@ -143,7 +143,7 @@
         .list-row
           label.block.flex-1.min-w-0
             span.form-label {{ $t('admin.content.question', { n: i + 1 }) }}
-            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="f.q" :maxlength="LIMITS.faqQ" placeholder="Как быстро вы доставляете?")
+            input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="f.q" :maxlength="LIMITS.faqQ" :placeholder="$t('admin.content.faqExample')")
           button.row-remove(type="button" :aria-label="$t('admin.content.removeQuestionAria', { n: i + 1 })" @click="form.contacts.faq.splice(i, 1)") ✕
         label.block.mt-2
           span.form-label {{ $t('admin.content.answer') }}
@@ -174,10 +174,10 @@
       .list-row(v-for="(st, i) in form.about.stats" :key="`stat-${i}`")
         label.block.w-36.flex-shrink-0
           span.form-label {{ $t('admin.content.statValue') }}
-          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.value" :maxlength="LIMITS.statValue" placeholder="8 лет")
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.value" :maxlength="LIMITS.statValue" :placeholder="$t('admin.content.statValueExample')")
         label.block.flex-1.min-w-0
           span.form-label {{ $t('admin.content.statLabel') }}
-          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.label" :maxlength="LIMITS.statLabel" placeholder="на рынке техники")
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.label" :maxlength="LIMITS.statLabel" :placeholder="$t('admin.content.statLabelExample')")
         button.row-remove(type="button" :aria-label="$t('admin.content.removeStatAria', { n: i + 1 })" @click="form.about.stats.splice(i, 1)") ✕
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
@@ -207,7 +207,7 @@
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="h.year" :maxlength="LIMITS.year" placeholder="2026")
         label.block.flex-1.min-w-0
           span.form-label {{ $t('admin.content.event') }}
-          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="h.text" :maxlength="LIMITS.historyText" placeholder="Открыли первый магазин…")
+          input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="h.text" :maxlength="LIMITS.historyText" :placeholder="$t('admin.content.historyExample')")
         button.row-remove(type="button" :aria-label="$t('admin.content.removeEventAria', { n: i + 1 })" @click="form.about.history.splice(i, 1)") ✕
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"

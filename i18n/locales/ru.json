@@ -711,7 +711,13 @@
       "emptyCategories": "Попробуйте сбросить фильтры категорий",
       "emptyFilters": "Попробуйте сбросить фильтры",
       "emptyDefault": "Добавьте первый товар или измените фильтры",
-      "sort": "Сортировка"
+      "sort": "Сортировка",
+      "hideFromCatalog": "Скрыть из каталога",
+      "showInCatalog": "Показать в каталоге",
+      "deleteTitle": "Удалить товар",
+      "regenerateTitle": "Перегенерировать из названия",
+      "categoriesExample": "Категория 1, Категория 2",
+      "changesDiscarded": "Изменения отменены"
     },
     "bulkBar": {
       "aria": "Групповые операции с выбранными товарами",
@@ -777,7 +783,8 @@
       "priceValidation": {
         "required": "Обязательно",
         "negative": "Не может быть отрицательной"
-      }
+      },
+      "descriptionPlaceholder": "Описание товара"
     },
     "categoryPicker": {
       "placeholder": "Начните вводить или вставьте через запятую",
@@ -870,7 +877,8 @@
       "deleteError": "Не удалось удалить новость",
       "saveError": "Не удалось сохранить новость",
       "imageProcessError": "Не удалось обработать изображение",
-      "pageTitle": "Новости — админка"
+      "pageTitle": "Новости — админка",
+      "bodyPlaceholder": "Первый абзац\n\nВторой абзац"
     },
     "promocodes": {
       "title": "Промокоды",
@@ -980,7 +988,11 @@
       "deleted": "Пользователь {name} удален",
       "deleteError": "Ошибка удаления",
       "deleteErrorToast": "Ошибка удаления пользователя",
-      "pageTitle": "Пользователи — админка"
+      "pageTitle": "Пользователи — админка",
+      "searchPlaceholder": "Поиск пользователей...",
+      "viewProfileTitle": "Просмотр профиля",
+      "viewProfileToast": "Просмотр профиля: {name}",
+      "profileToastTitle": "Профиль пользователя"
     },
     "content": {
       "title": "Контент сайта",
@@ -1035,7 +1047,15 @@
       "saveHint": "Изменения появляются на /contacts и /about сразу после сохранения (страницы читают /api/content).",
       "savedToast": "Контент сохранён",
       "saveError": "Не удалось сохранить контент",
-      "pageTitle": "Контент — админка"
+      "pageTitle": "Контент — админка",
+      "cityExample": "Москва",
+      "badgeExample": "Флагман",
+      "addressExample": "ул. Тверская, 12",
+      "hoursExample": "Ежедневно 10:00–21:00",
+      "faqExample": "Как быстро вы доставляете?",
+      "statValueExample": "8 лет",
+      "statLabelExample": "на рынке техники",
+      "historyExample": "Открыли первый магазин…"
     },
     "imageFile": {
       "unsupportedFormat": "Неподдерживаемый формат: {name}",

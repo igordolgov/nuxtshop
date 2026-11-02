@@ -184,7 +184,7 @@
             textarea.textarea.textarea-bordered.w-full.leading-relaxed(
               v-model="form.body"
               rows="7"
-              placeholder="Первый абзац&#10;&#10;Второй абзац"
+              :placeholder="$t('admin.news.bodyPlaceholder')"
             )
         template(v-else-if="langTab === 'en'")
           label.block.mt-3

@@ -711,7 +711,13 @@
       "emptyCategories": "Try resetting the category filters",
       "emptyFilters": "Try resetting the filters",
       "emptyDefault": "Add the first product or change the filters",
-      "sort": "Sort"
+      "sort": "Sort",
+      "hideFromCatalog": "Hide from catalog",
+      "showInCatalog": "Show in catalog",
+      "deleteTitle": "Delete product",
+      "regenerateTitle": "Regenerate from name",
+      "categoriesExample": "Category 1, Category 2",
+      "changesDiscarded": "Changes discarded"
     },
     "bulkBar": {
       "aria": "Bulk actions for the selected products",
@@ -777,7 +783,8 @@
       "priceValidation": {
         "required": "Required",
         "negative": "Cannot be negative"
-      }
+      },
+      "descriptionPlaceholder": "Product description"
     },
     "categoryPicker": {
       "placeholder": "Start typing or paste, comma-separated",
@@ -870,7 +877,8 @@
       "deleteError": "Failed to delete the post",
       "saveError": "Failed to save the post",
       "imageProcessError": "Failed to process the image",
-      "pageTitle": "News — Admin"
+      "pageTitle": "News — Admin",
+      "bodyPlaceholder": "First paragraph\n\nSecond paragraph"
     },
     "promocodes": {
       "title": "Promo codes",
@@ -980,7 +988,11 @@
       "deleted": "User {name} deleted",
       "deleteError": "Deletion error",
       "deleteErrorToast": "Failed to delete the user",
-      "pageTitle": "Users — Admin"
+      "pageTitle": "Users — Admin",
+      "searchPlaceholder": "Search users...",
+      "viewProfileTitle": "View profile",
+      "viewProfileToast": "Viewing profile: {name}",
+      "profileToastTitle": "User profile"
     },
     "content": {
       "title": "Site content",
@@ -1035,7 +1047,15 @@
       "saveHint": "Changes appear on /contacts and /about right after saving (the pages read /api/content).",
       "savedToast": "Content saved",
       "saveError": "Failed to save content",
-      "pageTitle": "Content — Admin"
+      "pageTitle": "Content — Admin",
+      "cityExample": "Moscow",
+      "badgeExample": "Flagship",
+      "addressExample": "12 Tverskaya St.",
+      "hoursExample": "Daily 10 AM–9 PM",
+      "faqExample": "How fast is your delivery?",
+      "statValueExample": "8 years",
+      "statLabelExample": "in the tech market",
+      "historyExample": "Opened our first store…"
     },
     "imageFile": {
       "unsupportedFormat": "Unsupported format: {name}",

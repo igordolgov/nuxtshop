@@ -711,7 +711,13 @@
       "emptyCategories": "Prueba a restablecer los filtros de categoría",
       "emptyFilters": "Prueba a restablecer los filtros",
       "emptyDefault": "Añade el primer producto o cambia los filtros",
-      "sort": "Ordenar"
+      "sort": "Ordenar",
+      "hideFromCatalog": "Ocultar del catálogo",
+      "showInCatalog": "Mostrar en el catálogo",
+      "deleteTitle": "Eliminar producto",
+      "regenerateTitle": "Regenerar a partir del nombre",
+      "categoriesExample": "Categoría 1, Categoría 2",
+      "changesDiscarded": "Cambios descartados"
     },
     "bulkBar": {
       "aria": "Acciones en lote para los productos seleccionados",
@@ -777,7 +783,8 @@
       "priceValidation": {
         "required": "Obligatorio",
         "negative": "No puede ser negativa"
-      }
+      },
+      "descriptionPlaceholder": "Descripción del producto"
     },
     "categoryPicker": {
       "placeholder": "Empieza a escribir o pega separado por comas",
@@ -870,7 +877,8 @@
       "deleteError": "No se pudo eliminar la noticia",
       "saveError": "No se pudo guardar la noticia",
       "imageProcessError": "No se pudo procesar la imagen",
-      "pageTitle": "Noticias — Administración"
+      "pageTitle": "Noticias — Administración",
+      "bodyPlaceholder": "Primer párrafo\n\nSegundo párrafo"
     },
     "promocodes": {
       "title": "Códigos promocionales",
@@ -980,7 +988,11 @@
       "deleted": "Usuario {name} eliminado",
       "deleteError": "Error al eliminar",
       "deleteErrorToast": "Error al eliminar usuario",
-      "pageTitle": "Usuarios — Administración"
+      "pageTitle": "Usuarios — Administración",
+      "searchPlaceholder": "Buscar usuarios...",
+      "viewProfileTitle": "Ver perfil",
+      "viewProfileToast": "Viendo el perfil: {name}",
+      "profileToastTitle": "Perfil del usuario"
     },
     "content": {
       "title": "Contenido del sitio",
@@ -1035,7 +1047,15 @@
       "saveHint": "Los cambios aparecen en /contacts y /about justo después de guardar (las páginas leen /api/content).",
       "savedToast": "Contenido guardado",
       "saveError": "No se pudo guardar el contenido",
-      "pageTitle": "Contenido — Administración"
+      "pageTitle": "Contenido — Administración",
+      "cityExample": "Moscú",
+      "badgeExample": "Principal",
+      "addressExample": "calle Tverskaya, 12",
+      "hoursExample": "Todos los días 10:00–21:00",
+      "faqExample": "¿Qué tan rápido entregan?",
+      "statValueExample": "8 años",
+      "statLabelExample": "en el mercado de tecnología",
+      "historyExample": "Abrimos nuestra primera tienda…"
     },
     "imageFile": {
       "unsupportedFormat": "Formato no compatible: {name}",

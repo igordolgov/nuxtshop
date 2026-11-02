@@ -44,7 +44,7 @@
             .join.w-full
               input.input.input-bordered.join-item.flex-grow(
                 type="text" 
-                placeholder="Поиск пользователей..."
+                :placeholder="$t('admin.users.searchPlaceholder')"
                 v-model="searchQuery"
               )
               select.select.select-bordered.join-item(v-model="filterRole")
@@ -104,7 +104,7 @@
                   .flex.gap-1
                     button.btn.btn-ghost.btn-sm(
                       @click="viewUserProfile(user)" 
-                      title="Просмотр профиля"
+                      :title="$t('admin.users.viewProfileTitle')"
                     )
                       svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                         path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z")
@@ -136,6 +136,7 @@ definePageMeta({
 })
 
 const { $notify } = useNuxtApp()
+const { t } = useI18n()
 const { user: currentUser } = useAuth()
 
 // Данные
@@ -154,7 +155,7 @@ const loadUsers = async () => {
     users.value = data.users
   } catch (error) {
     console.error('Ошибка загрузки пользователей:', error)
-    $notify.error('Ошибка загрузки пользователей')
+    $notify.error(t('admin.users.loadErrorText'))
   } finally {
     loading.value = false
   }
@@ -226,6 +227,6 @@ const updateUserRole = async (userId, newRole) => {
 }
 
 const viewUserProfile = (user) => {
-  $notify.info(`Просмотр профиля: ${user.name}`, 'Профиль пользователя')
+  $notify.info(t('admin.users.viewProfileToast', { name: user.name }), t('admin.users.profileToastTitle'))
 }
 </script>

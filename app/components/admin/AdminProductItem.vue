@@ -15,13 +15,13 @@
         button.btn.btn-ghost.btn-xs(
           @click="toggleStock"
           :class="localProduct.inStock ? 'text-success' : 'text-error'"
-          :title="localProduct.inStock ? 'Скрыть из каталога' : 'Показать в каталоге'"
+          :title="localProduct.inStock ? $t('admin.products.hideFromCatalog') : $t('admin.products.showInCatalog')"
         )
           icon(:name="localProduct.inStock ? 'heroicons:eye' : 'heroicons:eye-slash'" class="w-4 h-4")
         
         button.btn.btn-ghost.btn-xs.text-error(
           @click="confirmDelete"
-          title="Удалить товар"
+          :title="$t('admin.products.deleteTitle')"
         )
           icon(name="heroicons:trash" class="w-4 h-4")
 
@@ -35,7 +35,7 @@
             span.label-text.font-medium Название
           input.input.input-bordered.input-sm.w-full(
             v-model="localProduct.name"
-            placeholder="Название товара"
+            :placeholder="$t('admin.productForm.namePlaceholder')"
             :class="{ 'input-error': errors.name }"
             @blur="validateField('name')"
           )
@@ -48,7 +48,7 @@
             span.label-text.font-medium Slug (URL)
             button.btn.btn-ghost.btn-xs(
               @click="regenerateSlug"
-              title="Перегенерировать из названия"
+              :title="$t('admin.products.regenerateTitle')"
             )
               icon(name="heroicons:arrow-path" class="w-3 h-3")
           input.input.input-bordered.input-sm.w-full(
@@ -95,7 +95,7 @@
           textarea.textarea.textarea-bordered.textarea-sm.w-full(
             v-model="localProduct.description"
             rows="3"
-            placeholder="Описание товара"
+            :placeholder="$t('admin.productForm.descriptionPlaceholder')"
           )
 
         //- Категории
@@ -104,7 +104,7 @@
             span.label-text.font-medium Категории
           input.input.input-bordered.input-sm.w-full(
             v-model="categoryInput"
-            placeholder="Категория 1, Категория 2"
+            :placeholder="$t('admin.products.categoriesExample')"
             @blur="updateCategories"
           )
           .flex.flex-wrap.gap-1.mt-2
@@ -120,7 +120,7 @@
           .flex.gap-2
             input.input.input-bordered.input-sm.flex-1(
               v-model="localProduct.image"
-              placeholder="URL изображения"
+              :placeholder="$t('admin.productForm.imageUrlPlaceholder')"
             )
             .w-12.h-12.border.rounded.overflow-hidden.bg-base-300(
               v-if="localProduct.image"
@@ -165,6 +165,7 @@ const emit = defineEmits(['update', 'delete', 'toggle-stock'])
 // Composables
 const { updateProduct } = useProducts()
 const notify = useNotifyQueue()
+const { t } = useI18n()
 
 // State
 const isSaving = ref(false)
@@ -195,12 +196,12 @@ const validateField = (field) => {
   switch (field) {
     case 'name':
       errors.value.name = !localProduct.value.name?.trim() 
-        ? 'Название обязательно' 
+        ? t('admin.productForm.nameRequired') 
         : ''
       break
     case 'price':
       errors.value.price = localProduct.value.price < 0 
-        ? 'Цена не может быть отрицательной' 
+        ? t('admin.productForm.priceNegative') 
         : ''
       break
   }
@@ -244,7 +245,7 @@ const cancelChanges = () => {
   localProduct.value = JSON.parse(JSON.stringify(originalProduct.value))
   categoryInput.value = localProduct.value.categories?.join(', ') || ''
   errors.value = { name: '', price: '' }
-  notify.info('Изменения отменены')
+  notify.info(t('admin.products.changesDiscarded'))
 }
 
 // Сохранение изменений
