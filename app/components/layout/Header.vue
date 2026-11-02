@@ -125,7 +125,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin"
+                    :to="localePath(\'/admin\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -136,7 +136,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/products"
+                    :to="localePath(\'/admin/products\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -147,7 +147,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/orders"
+                    :to="localePath(\'/admin/orders\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -158,7 +158,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/news"
+                    :to="localePath(\'/admin/news\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -169,7 +169,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/content"
+                    :to="localePath(\'/admin/content\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -180,7 +180,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/reviews"
+                    :to="localePath(\'/admin/reviews\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -191,7 +191,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/promocodes"
+                    :to="localePath(\'/admin/promocodes\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -203,7 +203,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                     class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                    to="/admin/users"
+                    :to="localePath(\'/admin/users\')"
                     @click="onMenuItemClick"
                     prefetch
                   )
@@ -288,48 +288,48 @@ header.app-header.sticky.top-0.z-50.border-b(
           )
             .flex.flex-col.p-2.gap-1
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin"
+                :to="localePath(\'/admin\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
               ) {{ $t('nav.dashboard') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/products"
+                :to="localePath(\'/admin/products\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/products') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.products') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/orders"
+                :to="localePath(\'/admin/orders\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/orders') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.orders') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/news"
+                :to="localePath(\'/admin/news\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.news') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/content"
+                :to="localePath(\'/admin/content\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/content') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.content') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/reviews"
+                :to="localePath(\'/admin/reviews\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.reviews') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/promocodes"
+                :to="localePath(\'/admin/promocodes\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.promocodes') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
-                to="/admin/users"
+                :to="localePath(\'/admin/users\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
