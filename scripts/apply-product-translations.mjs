@@ -23,7 +23,7 @@
 // страниц обновляется в течение минуты), в ru-версии ничего не меняется.
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -35,15 +35,46 @@ const dry = args.has('--dry');
 const TEXT_FIELDS = ['nameEn', 'nameEs', 'descriptionEn', 'descriptionEs'];
 const CATEGORY_FIELDS = ['categoriesEn', 'categoriesEs'];
 
+// wrangler запускаем напрямую: node <путь к bin/wrangler.js>. Обёртка npx/.cmd
+// на Windows не работает из spawnSync без shell (Node ≥ 20.12 блокирует запуск
+// .cmd-файлов — защита CVE-2024-27980, ошибка EINVAL с пустым stderr).
+let wranglerBin;
+function resolveWranglerBin() {
+  const pkgPath = path.join(root, 'node_modules', 'wrangler', 'package.json');
+  let binRel = 'bin/wrangler.js';
+  try {
+    const bin = JSON.parse(readFileSync(pkgPath, 'utf8')).bin;
+    binRel = typeof bin === 'string' ? bin : (bin?.wrangler ?? binRel);
+  } catch {
+    // нет package.json — ниже existsSync покажет понятную ошибку
+  }
+  const binPath = path.join(root, 'node_modules', 'wrangler', binRel);
+  if (!existsSync(binPath)) {
+    throw new Error(
+      'wrangler не найден в node_modules. Выполните `pnpm install` в корне проекта и повторите.',
+    );
+  }
+  return binPath;
+}
+
 function runWrangler(wranglerArgs) {
-  const res = spawnSync('npx', ['wrangler', ...wranglerArgs], {
+  wranglerBin ??= resolveWranglerBin();
+  const res = spawnSync(process.execPath, [wranglerBin, ...wranglerArgs], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
   if (res.status !== 0) {
+    const out = [res.stderr, res.stdout].filter(Boolean).join('\n').trim();
+    const hint = /CLOUDFLARE_API_TOKEN|not authenticated|wrangler login|Failed to fetch|OAuth/i.test(out)
+      ? '\n\n   Похоже, wrangler не авторизован на этой машине. Варианты:\n' +
+        '   1) `npx wrangler login` — откроется браузер, войдите в аккаунт Cloudflare;\n' +
+        '   2) переменная окружения CLOUDFLARE_API_TOKEN с токеном, у которого\n' +
+        '      есть права на Workers KV (те же права, что нужны `pnpm deploy`).'
+      : '';
     throw new Error(
-      `wrangler ${wranglerArgs[0]} ${wranglerArgs[1]} упал:\n${(res.stderr || res.stdout || '').slice(-600)}`,
+      `wrangler ${wranglerArgs.slice(0, 3).join(' ')} упал` +
+        ` (код выхода ${res.status ?? res.error?.code ?? '?'}):\n${out.slice(-800)}${hint}`,
     );
   }
   return res.stdout;
