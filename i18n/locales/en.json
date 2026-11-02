@@ -29,7 +29,8 @@
     "profile": "Profile",
     "login": "Sign in",
     "mainNav": "Main navigation",
-    "compare": "Compare"
+    "compare": "Compare",
+    "compareFull": "Compare products"
   },
   "header": {
     "openMenu": "Open menu",

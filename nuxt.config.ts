@@ -84,27 +84,30 @@ export default defineNuxtConfig({
       // То же для '/news', '/about' и '/contacts': новости (data:news) и
       // контент страниц (data:content) редактируются из адинки, а KV на
       // этапе сборки недоступен — статика застыла бы на сиде/дефолтах.
-      // Живой рендер + кэш — routeRules swr 60 ниже.
+      // Живой рендер каждый запрос — кэш-заголовки см. в routeRules ниже.
       routes: ['/offline'],
     },
     routeRules: {
-      // Главная — SSR на рантайме + SWR-кэш: первый запрос рендерит HTML
-      // с актуальным каталогом, дальше отдаётся из кэша с фоновой
-      // ревалидацией раз в минуту.
-      '/': { swr: 60 },
-      // Витринные страницы с редактируемым контентом — тот же swr 60:
-      // правки из /admin/news и /admin/content видны на витрине в
-      // течение минуты, а не до следующего деплоя.
-      '/news': { swr: 60 },
-      '/about': { swr: 60 },
-      '/contacts': { swr: 60 },
-      // Карточка товара — swr 60 (было 3600). На карточке выводится
-      // «Осталось: N шт.» (ProductInfo.vue), а наличие меняется при каждом
-      // подтверждении/отмене заказа (Telegram-вебхук, админка). Часовой
-      // кэш означал, что покупатель до часа видит устаревший остаток —
-      // теперь окно устаревания не больше минуты, как и у главной.
-      // Кэшируется только SSR-HTML маршрута; /api/product/[slug] не кэшируется.
-      '/product/**': { swr: 60 },
+      // Публичные SSR-страницы: браузер всегда ревалидирует HTML по ETag.
+      // Раньше тут был swr: 60 (только CDN-директива s-maxage — для браузера
+      // её нет), и Opera/Android неделями держала старую копию после деплоя:
+      // пользователь не видел новых фич, пока не делал жёсткое обновление.
+      // Без swr рендер выполняется на каждый запрос (воркер + KV — быстро),
+      // зато HTML всегда свежий: правки из /admin/news и /admin/content
+      // видны мгновенно, бургер-меню обновляется сразу после деплоя.
+      // (routeRules.headers для swr-маршрутов Nitro перебивает — поэтому
+      // свр для HTML убраны совсем; не-HTML-заголовки довешивает
+      // server/plugins/html-cache-control.ts.)
+      '/': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/news': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/about': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/contacts': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      // Карточка товара. На карточке выводится «Осталось: N шт.»
+      // (ProductInfo.vue), а наличие меняется при каждом подтверждении/
+      // отмене заказа (Telegram-вебхук, админка) — HTML всегда ревалидируется,
+      // покупатель видит актуальный остаток сразу.
+      // /api/product/[slug] не кэшируется.
+      '/product/**': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
       // SEO-файлы генерируются сервером (server/routes); кэш с фоновым
       // обновлением: robots — сутки, sitemap — час
       '/robots.txt': { swr: 86400 },
@@ -112,16 +115,16 @@ export default defineNuxtConfig({
       // Локализованные префиксы /en и /es повторяют правила исходных
       // маршрутов: routeRules матчятся по литеральному префиксу пути,
       // '/product/**' НЕ покрывает '/en/product/**' — нужны дубли.
-      '/en': { swr: 60 },
-      '/es': { swr: 60 },
-      '/en/news': { swr: 60 },
-      '/es/news': { swr: 60 },
-      '/en/about': { swr: 60 },
-      '/es/about': { swr: 60 },
-      '/en/contacts': { swr: 60 },
-      '/es/contacts': { swr: 60 },
-      '/en/product/**': { swr: 60 },
-      '/es/product/**': { swr: 60 },
+      '/en': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/es': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/en/news': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/es/news': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/en/about': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/es/about': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/en/contacts': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/es/contacts': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/en/product/**': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      '/es/product/**': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
     },
   },
 

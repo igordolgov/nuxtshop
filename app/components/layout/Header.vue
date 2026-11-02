@@ -89,7 +89,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span.flex.items-center.gap-3
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4")
-                    span {{ $t('nav.compare') }}
+                    span {{ $t('nav.compareFull') }}
                   span.badge.badge-sm.badge-primary.rounded-full(v-if="compareCount > 0")
                     | {{ compareCount }}
 
@@ -133,100 +133,76 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Раздел: Админка
           template(v-if="isAdmin")
             .px-3.pb-3
-              ul.space-y-1
+              ul.grid.grid-cols-2.gap-1
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z")
-                    span {{ $t('nav.dashboard') }}
+                  ) {{ $t('nav.dashboard') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/products\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4")
-                    span {{ $t('nav.products') }}
+                  ) {{ $t('nav.products') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/orders\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z")
-                    span {{ $t('nav.orders') }}
+                  ) {{ $t('nav.orders') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/news\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z")
-                    span {{ $t('nav.news') }}
+                  ) {{ $t('nav.news') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/content\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10")
-                    span {{ $t('nav.content') }}
+                  ) {{ $t('nav.content') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/reviews\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z")
-                    span {{ $t('nav.reviews') }}
+                  ) {{ $t('nav.reviews') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/promocodes\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z")
-                    span {{ $t('nav.promocodes') }}
+                  ) {{ $t('nav.promocodes') }}
                 li
-                  NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                  NuxtLink.mobile-menu-item.flex.items-center(
+                    class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/users\')"
                     @click="onMenuItemClick"
                     prefetch
-                  )
-                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                      path(stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 8 4 4 0 010-8zM6 20a7 7 0 0114 0")
-                    span {{ $t('nav.users') }}
+                  ) {{ $t('nav.users') }}
 
           //- Признак прокрутки: градиент + стрелка видны, только когда пункты
-          //- не влезли в экран (у админа их 14); у дна списка исчезают.
-          //- sticky bottom внутри скролл-панели, pointer-events-none — не мешает тапам
+          //- не влезли в экран (страховка для крошечных/горизонтальных экранов);
+          //- у дна списка исчезают. sticky bottom внутри скролл-панели,
+          //- pointer-events-none — не мешает тапам
           li.sticky.bottom-0.pointer-events-none(
             v-show="menuScrollable && !menuAtBottom"
             aria-hidden="true"
