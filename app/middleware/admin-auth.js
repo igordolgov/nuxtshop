@@ -39,9 +39,32 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // ─── Клиент ───────────────────────────────────────────────
+  const nuxtApp = useNuxtApp()
   const { authChecked, isAuthenticated, isAdmin, checkAuth } = useAuth()
 
-  // На первом заходе клиентский стейт может быть ещё не загружен — ждём
+  // При гидратации (первая загрузка) сессию уже проверил сервер этим же
+  // запросом. await checkAuth() здесь заполнял useAuth ДО первого рендера:
+  // клиент рендерил шапку «админ», а SSR-HTML — «гость» → hydration
+  // mismatch повреждал DOM админки (см. auth-init.global.js). Даже
+  // неблокирующий checkAuth() здесь давал гонку: fetch запускался в фазе
+  // middleware, ответ успевал до монтирования, пока vue-router грузил
+  // chunk страницы. Проверку откладываем до конца гидратации: сессия,
+  // умершая между SSR и гидратацией (окно в доли секунды), получит
+  // редирект сразу после отрисовки страницы.
+  if (nuxtApp.isHydrating && !authChecked.value) {
+    nuxtApp.hooks.hookOnce('app:suspense:resolve', () => {
+      checkAuth()
+        .then((data) => {
+          const user = data?.user ?? null
+          if (!user) loginRedirect()
+          else if (user.role !== 'admin') navigateTo(localePath('/'), { replace: true })
+        })
+        .catch(() => {})
+    })
+    return
+  }
+
+  // SPA-навигации: клиентский стейт может быть ещё не загружен — ждём
   if (!authChecked.value) {
     await checkAuth()
   }

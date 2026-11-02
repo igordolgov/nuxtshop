@@ -15,10 +15,14 @@
 // на сервере видят пустой список, как и раньше.
 // ============================================
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch, effectScope } from 'vue'
 
 let productsState = null
 let isInitialized = false
+// Detached-scope для вотча флагов избранного: живёт на уровне
+// модуля-синглтона, а не компонента, чей setup первым вызвал
+// useProducts (иначе вотч умирает при размонтировании той страницы)
+let favoriteFlagsScope = null
 
 export const useProducts = () => {
   if (import.meta.server) return createProducts()
@@ -497,24 +501,36 @@ function createProducts() {
   if (import.meta.client && !isInitialized) {
     isInitialized = true
 
-    if (products.value.length > 0) {
-      // Гидратация из SSR-payload: каталог уже в состоянии, повторный
-      // запрос /api/products не нужен. Но на сервере localStorage
-      // недоступен и все isFavorite=false — проставляем реальные флаги
-      // из избранного этого устройства (load() в useFavorites отработал
-      // синхронно при создании инстанса выше). Мутируем на месте:
-      // замена массива оставила бы уже отрендеренные карточки со
-      // ссылками на устаревшие объекты.
-      products.value.forEach((product) => {
-        product.isFavorite = favorites.isFavorite(product.id)
-      })
-    } else {
-      // Чистый клиентский запуск (прямой заход на не-каталожную страницу,
-      // или SSR не смог отдать каталог): грузим как раньше.
-      loadProducts().catch((err) => {
-        console.warn('[useProducts] Загрузка не удалась:', err)
-      })
-    }
+    // ⚠️ Здесь БЫЛ синхронный вызов loadProducts() при пустом каталоге.
+    // Он запускал fetch ещё в фазе middleware (до монтирования): пока
+    // vue-router догружал chunk страницы (macrotask), ответ с localhost
+    // успевал заполнить catalog-products, гидратация рендерила таблицу
+    // вместо SSR-пустого состояния — hydration mismatch повреждал DOM
+    // (гонка, проявлялась через раз). Загрузку каталога выполняет
+    // initializeApp из auth-init.global.js — сразу ПОСЛЕ гидратации
+    // (и onMounted админ-страниц — для SPA-переходов).
+
+    // Флаги isFavorite на товарах синхронизируем РЕАКТИВНО от избранного.
+    // Раньше здесь был разовый forEach из синхронного localStorage-загруза
+    // useFavorites (load() при создании инстанса выше). Теперь useFavorites
+    // подгружает сохранённое ПОСЛЕ гидратации (см. комментарий там —
+    // синхронный загруз до первого кадра давал hydration mismatch), поэтому
+    // вотч переносит флаги в момент приезда избранного и при каждом
+    // изменении (добавление/удаление/синхронизация между вкладками).
+    // Мутируем на месте: замена массива оставила бы уже отрендеренные
+    // карточки со ссылками на устаревшие объекты.
+    favoriteFlagsScope = effectScope(true)
+    favoriteFlagsScope.run(() => {
+      watch(
+        favorites.favoriteIds,
+        () => {
+          products.value.forEach((product) => {
+            product.isFavorite = favorites.isFavorite(product.id)
+          })
+        },
+        { immediate: true },
+      )
+    })
   }
 
   // ─── Публичный API ────────────────────────────────────────

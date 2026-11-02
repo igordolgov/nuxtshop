@@ -1,20 +1,42 @@
 // middleware/auth-init.global.js
-export default defineNuxtRouteMiddleware(async () => {
-  // Только на клиенте
+// ============================================
+// Глобальный middleware: разовая инициализация приложения на клиенте
+// (каталог + сессия + сброс фильтров) — initializeApp из useAppState.
+//
+// ⚠️ InitializeApp НЕ ждём до монтирования (await здесь был причиной
+// серьёзной баги): при первичной загрузке страницы await выполнялся ДО
+// гидратации — клиентский стейт успевал наполниться (товары, юзер), а
+// SSR-HTML рендерил исходное состояние (гость в шапке, пустой каталог).
+// Vue фиксировал hydration mismatch и повреждал DOM: таблица товаров
+// /admin/products вставала внутрь блока пустого состояния — по центру,
+// блеклая (opacity-30), некликабельная. Симптом проявлялся на любой
+// полной загрузке (F5, смена языка) и исчезал при SPA-навигации.
+//
+// Теперь первый кадр всегда совпадает с SSR, а данные приезжают сразу
+// после гидратации обычной реактивной сменой состояния.
+// ============================================
+export default defineNuxtRouteMiddleware(() => {
   if (process.client) {
+    const nuxtApp = useNuxtApp()
     const appState = useAppState()
-    
+
     // Инициализируем приложение только один раз
-    if (!appState._initialized) {
-      console.log('🔄 Инициализация приложения...')
-      
-      try {
-        await appState.initializeApp()
-        appState._initialized = true
-        console.log('✅ Приложение инициализировано')
-      } catch (error) {
+    if (appState._initialized) return
+    appState._initialized = true
+
+    const run = () => {
+      appState.initializeApp().catch((error) => {
         console.error('❌ Ошибка инициализации приложения:', error)
-      }
+      })
+    }
+
+    if (nuxtApp.isHydrating) {
+      // Первая загрузка: после гидратации (страница отрисована, DOM совпал)
+      nuxtApp.hooks.hookOnce('app:suspense:resolve', run)
+    } else {
+      // SPA-навигация: приложение уже смонтировано, просто запускаем
+      // (не await — загрузка данных не должна блокировать переход)
+      run()
     }
   }
 })

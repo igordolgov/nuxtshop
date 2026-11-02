@@ -192,7 +192,23 @@ function createFavorites() {
 
   // ─── Инициализация (только клиент) ────────────────────────
   if (import.meta.client) {
-    load()
+    // ⚠️ Синхронный localStorage-загруз ДО гидратации расходился с SSR:
+    // сервер всегда рендерит «избранного нет» (бейдж в шапке, карточки),
+    // а клиент к первому кадру уже видел сохранённое — hydration mismatch.
+    // Первый кадр теперь «пусто» (= SSR), сохранённое подгружается сразу
+    // после гидратации; флаги isFavorite на товарах переносит watch
+    // в useProducts (см. комментарий там).
+    let nuxtApp = null
+    try {
+      nuxtApp = useNuxtApp()
+    } catch {
+      // вне Nuxt-контекста (тесты) — грузим синхронно, как раньше
+    }
+    if (nuxtApp?.isHydrating) {
+      nuxtApp.hooks.hookOnce('app:suspense:resolve', () => load())
+    } else {
+      load()
+    }
 
     // Кросс-табовая синхронизация: изменение в другой вкладке подхватывается здесь
     window.addEventListener('storage', (e) => {

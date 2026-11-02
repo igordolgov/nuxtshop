@@ -328,8 +328,25 @@ function createCart() {
     return localePath(`/product/${slug}`)
   }
 
-  // Инициализация — один раз при первом вызове на клиенте
-  if (import.meta.client) fetchCart()
+  // Инициализация — один раз при первом вызове на клиенте.
+  // ⚠️ localStorage-загруз НЕ синхронно до гидратации: сервер рендерит
+  // «корзина пуста» (бейдж в шапке/нижнем меню), клиент к первому кадру
+  // уже видел сохранённое — hydration mismatch (как у useFavorites).
+  // Первый кадр «пусто» (= SSR), сохранённое приезжает сразу после
+  // гидратации реактивной сменой состояния.
+  if (import.meta.client) {
+    let nuxtApp = null
+    try {
+      nuxtApp = useNuxtApp()
+    } catch {
+      // вне Nuxt-контекста (тесты) — грузим синхронно, как раньше
+    }
+    if (nuxtApp?.isHydrating) {
+      nuxtApp.hooks.hookOnce('app:suspense:resolve', () => fetchCart())
+    } else {
+      fetchCart()
+    }
+  }
 
   return {
     cartItems,
