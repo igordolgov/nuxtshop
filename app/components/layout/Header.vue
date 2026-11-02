@@ -32,12 +32,14 @@ header.app-header.sticky.top-0.z-50.border-b(
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
 
         //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
+        //- max-h + overscroll-contain: на невысоких экранах меню скроллится,
+        //- а не уходит за нижний край (14 пунктов у админа + язык)
         ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           v-show="isMobileMenuOpen"
-          class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 overflow-hidden"
+          class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 max-h-[calc(100dvh-5.25rem)] overflow-x-hidden overflow-y-auto overscroll-contain"
         )
           //- Шапка меню: кто вошёл / приглашение войти
-          .px-5.pt-5.pb-4.border-b.border-base-300(class="bg-base-200/50")
+          .px-4.pt-4.pb-3.border-b.border-base-300(class="bg-base-200/50")
             .text-xs.font-semibold.uppercase.tracking-wider(class="text-base-content/80")
               | {{ $t('nav.menu') }}
             .text-sm.font-semibold.text-base-content.mt-1(v-if="isAuthenticated")
@@ -46,13 +48,13 @@ header.app-header.sticky.top-0.z-50.border-b(
               | {{ $t('header.guestHint') }}
 
           //- Раздел: Магазин
-          .px-3.py-3
+          .px-3.pt-2.pb-2
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | {{ $t('nav.shop') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/')"
                   @click="onMenuItemClick"
@@ -63,7 +65,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span {{ $t('nav.home') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/favorites') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/favorites')"
                   @click="onMenuItemClick"
@@ -77,7 +79,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     | {{ favoritesCount }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/compare') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/compare')"
                   @click="onMenuItemClick"
@@ -91,13 +93,13 @@ header.app-header.sticky.top-0.z-50.border-b(
                     | {{ compareCount }}
 
           //- Раздел: Информация
-          .px-3.pb-3
+          .px-3.pb-2
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | {{ $t('nav.info') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/news')"
                   @click="onMenuItemClick"
@@ -108,7 +110,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span {{ $t('nav.news') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/about') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/about')"
                   @click="onMenuItemClick"
@@ -119,7 +121,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span {{ $t('nav.about') }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/contacts') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                   :to="localePath('/contacts')"
                   @click="onMenuItemClick"
@@ -131,13 +133,13 @@ header.app-header.sticky.top-0.z-50.border-b(
 
           //- Раздел: Админка
           template(v-if="isAdmin")
-            .px-3.pb-4
+            .px-3.pb-3
               .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
                 | {{ $t('nav.admin') }}
               ul.space-y-1
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin\')"
                     @click="onMenuItemClick"
@@ -148,7 +150,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.dashboard') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/products') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/products\')"
                     @click="onMenuItemClick"
@@ -159,7 +161,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.products') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/orders') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/orders\')"
                     @click="onMenuItemClick"
@@ -170,7 +172,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.orders') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/news\')"
                     @click="onMenuItemClick"
@@ -181,7 +183,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.news') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/content\')"
                     @click="onMenuItemClick"
@@ -192,7 +194,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.content') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/reviews') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/reviews\')"
                     @click="onMenuItemClick"
@@ -203,7 +205,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.reviews') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/promocodes\')"
                     @click="onMenuItemClick"
@@ -215,7 +217,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.promocodes') }}
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
-                    class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                    class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
                     :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
                     :to="localePath(\'/admin/users\')"
                     @click="onMenuItemClick"
@@ -228,7 +230,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Раздел: Язык — переключение витрины ru/en/es (URL-стратегия).
           //- Обычный <a>: полный page load — клиентский резолвер @nuxtjs/i18n
           //- возвращает навигацию на «/» в текущую локаль (см. LocaleSwitcher.vue)
-          .px-3.pb-4
+          .px-3.pb-3
             .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
               | {{ $t('header.language') }}
             .flex.gap-2.px-2
