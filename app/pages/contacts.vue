@@ -125,8 +125,9 @@
             p.text-xs(class="text-base-content/60")
               | {{ $t('contacts.privacyNote') }}
 
-    //- FAQ
-    section(class="pb-2")
+    //- FAQ (id — якорь; содержимое размечается FAQPage JSON-LD ниже:
+    //- размечается ровно то, что видно пользователю — правило Google)
+    section(class="pb-2", id="faq")
       h2.section-title {{ $t('contacts.faq') }}
       .faq-list
         details.collapse.collapse-arrow.faq-item(v-for="faq in faq" :key="faq.q")
@@ -250,6 +251,20 @@ useSeoMeta({
         phone: contacts.value.phone,
         cities: stores.value.length ? ` (${stores.value.map((s) => s.city).join(', ')})` : '',
       }),
+})
+
+// ─── FAQPage JSON-LD (schema.org): машиночитаемая копия блока вопросов ───
+// Источник — тот же faq, что рендерится выше: разметка и видимая страница
+// совпадают (требование Google). Язык — локаль страницы (контент
+// локализуется localizedSiteContent), записи без q/a пропускаются.
+const faqJsonLd = computed(() => buildFaqJsonLd(faq.value))
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: () => serializeJsonLd(faqJsonLd.value),
+    },
+  ],
 })
 </script>
 
