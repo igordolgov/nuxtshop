@@ -409,32 +409,29 @@ watch(
   () => closeLang(),
 )
 
-const activeHome = computed(() => {
-  const path = route.path
-  return path === '/' || path === '/index' || path === '/home'
-})
-const activeCart = computed(() => route.path?.startsWith('/cart') || false)
-const activeFavorites = computed(() => route.path?.startsWith('/favorites') || false)
-const activeAuth = computed(() => {
-  const path = route.path
-  return (
-    path?.startsWith('/auth') ||
-    path?.startsWith('/login') ||
-    path?.startsWith('/register') ||
-    path?.startsWith('/profile') ||
-    path?.startsWith('/user') ||
-    path?.startsWith('/account') ||
-    false
-  )
-})
+//- Активные пункты нижней навигации — общая логика с шапкой (useActiveRoute):
+//- сравнение с локализованным путём (route.path на /en и /es = '/en/favorites'),
+//- корень ('/') подсвечивается только по точному совпадению — иначе «Главная»
+//- горела бы на всех страницах локали, а на ru-логике наоборот молчала бы
+//- (детали — в useActiveRoute.js)
+const { isActiveRoute } = useActiveRoute()
+const localePath = useLocalePath()
+
+const activeHome = computed(() => isActiveRoute('/'))
+const activeCart = computed(() => isActiveRoute('/cart'))
+const activeFavorites = computed(() => isActiveRoute('/favorites'))
+// /auth покрывает /auth/login и /auth/register, /user — кабинет.
+// Алиасы /login, /register, /profile, /account страницами не являются —
+// route.path на них никогда не указывает.
+const activeAuth = computed(() => isActiveRoute('/auth') || isActiveRoute('/user'))
 
 const displayFavoritesCount = computed(() => favoritesCount.value || 0)
 const cartItemsCount = computed(() => totalItems.value || 0)
 const isAuthenticated = computed(() => appState.isAuthenticated.value)
 
 // Навигация нижнего меню сохраняет префикс локали (на /en и /es сырой путь
-// вернул бы посетителя на русский — см. useLocalePath)
-const localePath = useLocalePath()
+// вернул бы посетителя на русский — см. useLocalePath; localePath объявлен
+// выше, рядом с active*-вычислениями)
 const openHome = () => navigateTo(localePath('/'))
 const openCart = () => navigateTo(localePath('/cart'))
 const openFavorites = () => navigateTo(localePath('/favorites'))

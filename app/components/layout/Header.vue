@@ -555,9 +555,17 @@ const { $notify } = useNuxtApp()
 const { t, locale, locales } = useI18n()
 const switchLocalePath = useSwitchLocalePath()
 
+// Активные пункты меню — общая логика с нижней навигацией (useActiveRoute):
+// сравнение с локализованным путём, корень ('/') на /en и /es подсвечивается
+// только по точному совпадению (детали и причины — в useActiveRoute.js)
+const { isActiveRoute, isExactActiveRoute } = useActiveRoute()
+const localePath = useLocalePath()
+
 //- Витринный поиск в шапке не показываем на /admin/*: на админ-страницах
-//- свой поиск (например, в списке товаров), глобальный только дублирует
-const isAdminRoute = computed(() => route.path?.startsWith('/admin'))
+//- свой поиск (например, в списке товаров), глобальный только дублирует.
+//- Сравнение через isActiveRoute: сырой startsWith('/admin') на /en и /es
+//- не ловит '/en/admin/...' (префикс локали)
+const isAdminRoute = computed(() => isActiveRoute('/admin'))
 
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()
@@ -629,7 +637,7 @@ const userMenuRef = ref(null)
 
 const currentTheme = ref('corporate')
 
-const isHomePage = computed(() => route.path === '/')
+const isHomePage = computed(() => route.path === localePath('/'))
 const user = computed(() => appState.user?.value)
 const isAuthenticated = computed(() => appState.isAuthenticated?.value)
 const isAdmin = computed(() => appState.isAdmin?.value)
@@ -648,16 +656,9 @@ const userInitials = computed(() => {
 const userName = computed(() => user.value?.name || t('header.defaultUserName'))
 const userEmail = computed(() => user.value?.email || '')
 const userRole = computed(() => user.value?.role || 'user')
-const isAdminRouteActive = computed(() => route.path.startsWith('/admin'))
-
-// Активные пункты меню: route.path на /en и /es несёт префикс локали
-// ('/en/favorites') — сравниваем с локализованным путём (useLocalePath)
-const localePath = useLocalePath()
-const isActiveRoute = (path) => {
-  const localized = localePath(path)
-  return route.path === localized || route.path.startsWith(localized + '/')
-}
-const isExactActiveRoute = (path) => route.path === localePath(path)
+// Подсветка «Админ» в мобильном меню — тот же локализованный предикат,
+// что и у isAdminRoute (сырой startsWith('/admin') молчал на /en и /es)
+const isAdminRouteActive = computed(() => isActiveRoute('/admin'))
 
 const closeMobileMenu = () => { isMobileMenuOpen.value = false }
 const closeAdminMenu = () => { isAdminMenuOpen.value = false }
