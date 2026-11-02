@@ -66,12 +66,20 @@ const { $notify } = useNuxtApp()
 
 // Единственный источник правды по избранному
 const favorites = useFavorites()
-// Локализованные копии для карточек (в localStorage могут лежать как
-// снапшоты, так и свежие товары — loc переводит те и другие по полям
-// nameEn/…, фолбэк — русский)
+// Снапшоты в localStorage хранят имя на языке МОМЕНТА добавления
+// (переводные поля nameEn/nameEs в снапшот не пишутся), поэтому карточки
+// рендерим из живого каталога в ТЕКУЩЕЙ локали — тот же паттерн, что
+// displayName в корзине и чекауте. Фолбэк — сам снапшот: товар удалён
+// из каталога или каталог ещё не загружен (прямой заход на страницу).
+const appState = useAppState()
 const { loc } = useLocalizedProduct()
 const favoriteProducts = computed(() =>
-  (favorites.favoriteProducts.value ?? []).map(loc),
+  (favorites.favoriteProducts.value ?? []).map((snap) => {
+    const fresh = appState.products.value?.find(
+      (p) => String(p.id) === String(snap.id),
+    )
+    return loc(fresh ?? snap)
+  }),
 )
 
 // Формы «товар» — vue-i18n plural (favorites.count)
@@ -101,7 +109,13 @@ const clearAllFavorites = () => {
   $notify.success(t('favorites.cleared'))
 }
 
-onMounted(() => window.scrollTo(0, 0))
+onMounted(() => {
+  window.scrollTo(0, 0)
+  // Прямой заход на страницу избранного: каталога в стейте может не быть
+  // (его наполняет главная), подтягиваем — карточки локализуются живыми
+  // данными, а не русскими снапшотами из localStorage
+  if (!appState.products.value?.length) appState.loadProducts?.()
+})
 
 useHead(() => ({ title: t('favorites.title') }))
 </script>
