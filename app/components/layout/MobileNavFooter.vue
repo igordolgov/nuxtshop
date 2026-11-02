@@ -2,7 +2,12 @@
     Всегда снизу, включая landscape: боковой режим удалён — крупные
     магазины не прячут навигацию в боковую колонку. Кнопка «Развернуть»
     (Fullscreen) удалена: нестандартна для магазинов, мертва на iOS.
-    4 пункта: Главная, Корзина, Избранное, Профиль. -->
+    5 пунктов: Главная, Корзина, Избранное, Профиль, Язык.
+    Язык: popover ВВЕРХ с тремя локалями — те же обычные <a> на
+    switchLocalePath(), что в LocaleSwitcher и бургер-разделе шапки
+    (полный page load: клиентский резолвер @nuxtjs/i18n возвращает
+    навигацию на «/» в текущую локаль). Локали и ссылки SSR-детерминированы,
+    поповер закрыт в первом кадре — hydration mismatch нет. -->
 <template lang="pug">
 //- БЕЗ ClientOnly и v-if=isMobile: раньше футер появлялся только после
 //- гидратации + onNuxtReady — «нижнее меню отрисовывается через секунду».
@@ -64,6 +69,36 @@ div
             path(d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", stroke="currentColor", stroke-width="2")
           .auth-badge(v-if="isMounted && isAuthenticated")
         span.nav-label {{ isMounted && isAuthenticated ? $t('nav.profile') : $t('nav.login') }}
+
+      //- Язык — popover вверх; подсветка только пока открыт
+      button.nav-item(
+        type="button"
+        @click="toggleLang"
+        :aria-label="$t('header.language')"
+        :aria-expanded="isLangOpen"
+        aria-haspopup="menu"
+        :class="{ 'is-active': isLangOpen }"
+      )
+        .lang-wrap
+          .nav-icon
+            svg(width="24", height="24", viewBox="0 0 24 24", fill="none")
+              path(d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3 7.5 7.03 7.5 12s2.015 9 4.5 9zM3.6 9h16.8M3.6 15h16.8", stroke="currentColor", stroke-width="2")
+          .lang-popover(
+            v-show="isLangOpen"
+            role="menu"
+            :aria-label="$t('header.language')"
+          )
+            a.lang-option(
+              v-for="l in locales"
+              :key="l.code"
+              :href="switchLocalePath(l.code)"
+              role="menuitem"
+              :class="{ 'is-current': l.code === locale }"
+              @click="closeLang"
+            )
+              span {{ l.name }}
+              span.lang-check(v-if="l.code === locale") ✓
+        span.nav-label {{ $t('header.language') }}
 </template>
 
 <style scoped>
@@ -86,12 +121,81 @@ div
   backdrop-filter: blur(8px);
 }
 
-/* 4 пункта — одинаковая ширина на всех мобильных экранах */
+/* 5 пунктов — одинаковая ширина на всех мобильных экранах */
 .nav-items {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   padding: 0 16px;
+}
+
+/* ─── Язык: popover над кнопкой ───────────────────────────── */
+.lang-wrap {
+  position: relative;
+  display: flex;
+}
+
+.lang-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: -10px;
+  z-index: 50;
+  min-width: 150px;
+  padding: 4px;
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgb(0 0 0 / 0.18);
+  overflow: hidden;
+  transform-origin: bottom right;
+  animation: langUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes langUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-popover {
+    animation: none;
+  }
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-base-content);
+  text-decoration: none;
+}
+
+/* Sticky-hover на таче — только для устройств с курсором */
+@media (hover: hover) {
+  .lang-option:hover {
+    background: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+  }
+}
+
+.lang-option.is-current {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.lang-check {
+  font-size: 11px;
 }
 
 .nav-item {
@@ -271,6 +375,39 @@ const isMounted = ref(false)
 onMounted(() => {
   isMounted.value = true
 })
+
+// ── Переключатель языка (5-й пункт) ─────────────────────────────
+// Локали и ссылки SSR-безопасны (бургер-раздел шапки рендерится так же).
+// Закрытие: клик вне .lang-wrap, Escape, смена маршрута.
+const { locale, locales } = useI18n()
+const switchLocalePath = useSwitchLocalePath()
+
+const isLangOpen = ref(false)
+const toggleLang = () => {
+  isLangOpen.value = !isLangOpen.value
+}
+const closeLang = () => {
+  isLangOpen.value = false
+}
+
+const onDocClick = (event) => {
+  if (isLangOpen.value && !event.target.closest('.lang-wrap')) closeLang()
+}
+const onKeydown = (event) => {
+  if (event.key === 'Escape') closeLang()
+}
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  document.addEventListener('keydown', onKeydown)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
+  document.removeEventListener('keydown', onKeydown)
+})
+watch(
+  () => route.path,
+  () => closeLang(),
+)
 
 const activeHome = computed(() => {
   const path = route.path
