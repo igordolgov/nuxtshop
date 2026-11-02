@@ -33,9 +33,11 @@ header.app-header.sticky.top-0.z-50.border-b(
 
         //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
         //- max-h + overscroll-contain: на невысоких экранах меню скроллится,
-        //- а не уходит за нижний край (14 пунктов у админа + язык)
+        //- а не уходит за нижний край (у админа в меню 14 пунктов)
         ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           v-show="isMobileMenuOpen"
+          ref="menuPanel"
+          @scroll.passive="updateMenuScroll"
           class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 max-h-[calc(100dvh-5.25rem)] overflow-x-hidden overflow-y-auto overscroll-contain"
         )
           //- Шапка меню: кто вошёл / приглашение войти
@@ -227,20 +229,22 @@ header.app-header.sticky.top-0.z-50.border-b(
                       path(stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 8 4 4 0 010-8zM6 20a7 7 0 0114 0")
                     span {{ $t('nav.users') }}
 
-          //- Раздел: Язык — переключение витрины ru/en/es (URL-стратегия).
-          //- Обычный <a>: полный page load — клиентский резолвер @nuxtjs/i18n
-          //- возвращает навигацию на «/» в текущую локаль (см. LocaleSwitcher.vue)
-          .px-3.pb-3
-            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-              | {{ $t('header.language') }}
-            .flex.gap-2.px-2
-              a.btn.btn-sm.flex-1.rounded-lg(
-                v-for="l in locales"
-                :key="l.code"
-                :href="switchLocalePath(l.code)"
-                :class="l.code === locale ? 'btn-primary' : 'btn-outline'"
-              )
-                | {{ l.name }}
+          //- Признак прокрутки: градиент + стрелка видны, только когда пункты
+          //- не влезли в экран (у админа их 14); у дна списка исчезают.
+          //- sticky bottom внутри скролл-панели, pointer-events-none — не мешает тапам
+          li.sticky.bottom-0.pointer-events-none(
+            v-show="menuScrollable && !menuAtBottom"
+            aria-hidden="true"
+            class="h-8 -mt-3 bg-gradient-to-t from-base-100 to-transparent"
+          )
+            svg.menu-scroll-hint.absolute.w-4.h-4(
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              class="left-1/2 bottom-1 text-base-content/60"
+            )
+              path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
 
       //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
       NuxtLink.flex.items-center.gap-2.shrink-0(:to="localePath('/')" prefetch)
@@ -566,6 +570,21 @@ header.app-header.sticky.top-0.z-50.border-b(
   }
 }
 
+/* Стрелка-подсказка прокрутки бургер-меню: покачивается, пока список не долистан */
+.menu-scroll-hint {
+  transform: translateX(-50%);
+  animation: hintBounce 1.4s ease-in-out infinite;
+}
+
+@keyframes hintBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-scroll-hint { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mobile-menu {
     animation: none;
@@ -576,8 +595,7 @@ header.app-header.sticky.top-0.z-50.border-b(
 <script setup>
 const route = useRoute()
 const { $notify } = useNuxtApp()
-const { t, locale, locales } = useI18n()
-const switchLocalePath = useSwitchLocalePath()
+const { t } = useI18n()
 
 // Активные пункты меню — общая логика с нижней навигацией (useActiveRoute):
 // сравнение с локализованным путём, корень ('/') на /en и /es подсвечивается
@@ -694,6 +712,25 @@ const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
   if (isMobileMenuOpen.value) { closeAdminMenu(); closeUserMenu() }
 }
+
+//- Признак прокрутки бургер-меню: если пункты не влезли в экран,
+//- внизу панели виден градиент со стрелкой (исчезает у дна списка).
+//- Замер — после открытия (v-show => размеры есть только в DOM) и на скролле
+const menuPanel = ref(null)
+const menuScrollable = ref(false)
+const menuAtBottom = ref(true)
+const updateMenuScroll = () => {
+  const el = menuPanel.value
+  if (!el) return
+  menuScrollable.value = el.scrollHeight > el.clientHeight + 4
+  menuAtBottom.value = el.scrollHeight - el.scrollTop - el.clientHeight < 8
+}
+watch(isMobileMenuOpen, async (open) => {
+  if (!open) return
+  await nextTick()
+  updateMenuScroll()
+})
+
 const toggleAdminMenu = () => {
   isAdminMenuOpen.value = !isAdminMenuOpen.value
   if (isAdminMenuOpen.value) { closeUserMenu(); closeMobileMenu() }
