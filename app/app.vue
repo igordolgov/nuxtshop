@@ -25,7 +25,16 @@ const localeHead = useLocaleHead({ dir: true, lang: true, seo: true });
 useHead(() => ({
   htmlAttrs: { lang: localeHead.value.htmlAttrs.lang },
   link: [...(localeHead.value.link || [])],
-  meta: [...(localeHead.value.meta || [])],
+  meta: [
+    ...(localeHead.value.meta || []),
+    // Локализованные description/keywords для ВСЕХ страниц: без этого
+    // сработал бы статический fallback из nuxt.config (app.head.meta)
+    // и на /en, /es метатеги оставались бы русскими. Страницы со своим
+    // useSeoMeta({ description }) переопределяют этот fallback (Unhead
+    // дедуплицирует meta по name — последний регистр выигрывает).
+    { name: 'description', content: t('meta.description') },
+    { name: 'keywords', content: t('meta.keywords') },
+  ],
   title: t('app.title'),
 }));
 </script>

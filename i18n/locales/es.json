@@ -2,6 +2,10 @@
   "app": {
     "title": "Tienda online"
   },
+  "meta": {
+    "description": "Tienda online de tecnología desde 2018: showrooms físicos, garantía de 2 años, entrega desde 1 día, devolución 14 días y soporte sin días libres.",
+    "keywords": "tienda online, electrónica, smartphones, portátiles, entrega, garantía"
+  },
   "nav": {
     "brand": "Tienda",
     "brandInitial": "T",

@@ -2,6 +2,10 @@
   "app": {
     "title": "Online Store"
   },
+  "meta": {
+    "description": "Online tech store since 2018: offline showrooms, 2-year warranty, next-day delivery, 14-day returns and round-the-clock support.",
+    "keywords": "online store, electronics, smartphones, laptops, delivery, warranty"
+  },
   "nav": {
     "brand": "Store",
     "brandInitial": "S",
