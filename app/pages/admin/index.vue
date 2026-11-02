@@ -15,18 +15,18 @@
         .dash-avatar
           icon(name="heroicons:shield-user" size="22")
         div
-          h1.text-xl.font-bold.text-base-content Панель администратора
-          p.dash-sub {{ appState.user?.name || 'Администратор' }} · {{ todayLabel }}
+          h1.text-xl.font-bold.text-base-content {{ $t('admin.dashboard.title') }}
+          p.dash-sub {{ appState.user?.name || $t('admin.dashboard.admin') }} · {{ todayLabel }}
       .flex.gap-2
-        button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="refreshStats" aria-label="Обновить данные")
+        button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="refreshStats" :aria-label="$t('admin.dashboard.refreshAria')")
           icon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
-          span.hidden(class="sm:inline") Обновить
+          span.hidden(class="sm:inline") {{ $t('admin.dashboard.refresh') }}
         button.btn.btn-sm.btn-outline.rounded-xl(
           class="hover:bg-error hover:text-error-content hover:border-error"
           @click="handleLogout"
         )
           icon(name="heroicons:arrow-right-on-rectangle" size="18")
-          span Выйти
+          span {{ $t('admin.dashboard.logout') }}
 
     //- KPI-карточки
     .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
@@ -51,21 +51,21 @@
     .grid.grid-cols-1.gap-3.mt-4(class="lg:grid-cols-2")
       .panel
         .panel-head
-          h2.panel-title Последние заказы
-          NuxtLink.panel-link(to="/admin/orders" prefetch) Все заказы
-        .panel-empty(v-if="!realStats.recentOrders.length") Заказов пока нет
+          h2.panel-title {{ $t('admin.dashboard.recentOrders') }}
+          NuxtLink.panel-link(:to="localePath('/admin/orders')" prefetch) {{ $t('admin.dashboard.allOrders') }}
+        .panel-empty(v-if="!realStats.recentOrders.length") {{ $t('admin.dashboard.noOrdersYet') }}
         .panel-list(v-else)
           .row-item(v-for="order in realStats.recentOrders" :key="order.id")
             .row-main
-              .row-title Заказ {{ order.id }}
+              .row-title {{ $t('admin.dashboard.order', { id: order.id }) }}
               .row-sub {{ order.date }}
             span.badge.badge-sm(:class="getOrderStatusClass(order.status)") {{ statusLabel(order.status) }}
 
       .panel
         .panel-head
-          h2.panel-title Последние пользователи
-          NuxtLink.panel-link(to="/admin/users" prefetch) Все пользователи
-        .panel-empty(v-if="!realStats.recentUsers.length") Пользователей пока нет
+          h2.panel-title {{ $t('admin.dashboard.recentUsers') }}
+          NuxtLink.panel-link(:to="localePath('/admin/users')" prefetch) {{ $t('admin.dashboard.allUsers') }}
+        .panel-empty(v-if="!realStats.recentUsers.length") {{ $t('admin.dashboard.noUsersYet') }}
         .panel-list(v-else)
           .row-item(v-for="user in realStats.recentUsers" :key="user.id")
             .row-main
@@ -80,24 +80,24 @@
     .grid.grid-cols-1.gap-3.mt-4(class="lg:grid-cols-2")
       .panel
         .panel-head
-          h2.panel-title Наличие на складе
-        .stock-bar(role="img" :aria-label="`В наличии ${realStats.inStock} из ${realStats.totalProducts}`")
+          h2.panel-title {{ $t('admin.dashboard.stockTitle') }}
+        .stock-bar(role="img" :aria-label="$t('admin.dashboard.stockAria', { in: realStats.inStock, total: realStats.totalProducts })")
           .stock-fill(:style="{ width: stockPercent + '%' }")
         .stock-legend
-          span ✓ В наличии: {{ realStats.inStock }}
-          span(class="text-error") ✕ Нет в наличии: {{ realStats.outOfStock }}
+          span {{ $t('admin.dashboard.stockIn', { n: realStats.inStock }) }}
+          span(class="text-error") {{ $t('admin.dashboard.stockOut', { n: realStats.outOfStock }) }}
 
       .panel
         .panel-head
-          h2.panel-title Система
+          h2.panel-title {{ $t('admin.dashboard.systemTitle') }}
         .panel-list
           .row-item
             .row-main
-              .row-title Кэш каталога: попадания
+              .row-title {{ $t('admin.dashboard.cacheHits') }}
             span.badge.badge-sm.badge-success {{ realStats.cacheHits }}
           .row-item
             .row-main
-              .row-title Кэш: промахи / записей
+              .row-title {{ $t('admin.dashboard.cacheMisses') }}
             span.badge.badge-sm.badge-info {{ realStats.cacheMisses }} / {{ realStats.cacheSize }}
 
   //- Мобильная навигация: только < 768px (как на витрине)
@@ -397,6 +397,8 @@ import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 
 const { $notify } = useNuxtApp()
+const { t, locale } = useI18n()
+const localePath = useLocalePath()
 const appState = useAppState()
 
 // Реальная статистика: сводка с /api/admin/stats + последние заказы
@@ -423,44 +425,44 @@ const todayLabel = ref('')
 // Заголовок KPI-карточек: значения из реальной статистики
 const kpis = computed(() => [
   {
-    label: 'Пользователи',
+    label: t('admin.dashboard.kpiUsers'),
     value: realStats.value.totalUsers,
     icon: 'heroicons:users',
     tone: 'info',
-    badge: realStats.value.newUsers > 0 ? `+${realStats.value.newUsers} за неделю` : ''
+    badge: realStats.value.newUsers > 0 ? t('admin.dashboard.newUsersBadge', { n: realStats.value.newUsers }) : ''
   },
   {
-    label: 'Товары',
+    label: t('admin.dashboard.kpiProducts'),
     value: realStats.value.totalProducts,
     icon: 'heroicons:cube',
     tone: 'primary',
-    badge: `${realStats.value.inStock} в наличии`
+    badge: t('admin.dashboard.inStockBadge', { n: realStats.value.inStock })
   },
   {
-    label: 'Заказы',
+    label: t('admin.dashboard.kpiOrders'),
     value: realStats.value.totalOrders,
     icon: 'heroicons:shopping-bag',
     tone: 'warning',
-    badge: realStats.value.pendingOrders > 0 ? `${realStats.value.pendingOrders} ожидает` : ''
+    badge: realStats.value.pendingOrders > 0 ? t('admin.dashboard.pendingBadge', { n: realStats.value.pendingOrders }) : ''
   },
   {
-    label: 'Доход',
+    label: t('admin.dashboard.kpiRevenue'),
     value: formatPrice(realStats.value.revenue),
     icon: 'heroicons:banknotes',
     tone: 'success',
-    badge: 'За всё время'
+    badge: t('admin.dashboard.revenueBadge')
   }
 ])
 
-// Плитки быстрых действий
-const quickLinks = [
-  { to: '/admin/products', title: 'Товары', sub: 'Каталог и склад', icon: 'heroicons:cube' },
-  { to: '/admin/orders', title: 'Заказы', sub: 'Подтверждение и статусы', icon: 'heroicons:shopping-bag' },
-  { to: '/admin/news', title: 'Новости', sub: 'Публикации и товары', icon: 'heroicons:newspaper' },
-  { to: '/admin/content', title: 'Контент', sub: 'Контакты, магазины, FAQ', icon: 'heroicons:pencil-square' },
-  { to: '/admin/reviews', title: 'Отзывы', sub: 'Модерация и оценка', icon: 'heroicons:star' },
-  { to: '/admin/users', title: 'Пользователи', sub: 'Роли и доступы', icon: 'heroicons:users' }
-]
+// Плитки быстрых действий (to — через localePath, чтобы не сбрасывать язык)
+const quickLinks = computed(() => [
+  { to: localePath('/admin/products'), title: t('admin.dashboard.quickProductsTitle'), sub: t('admin.dashboard.quickProductsSub'), icon: 'heroicons:cube' },
+  { to: localePath('/admin/orders'), title: t('admin.dashboard.quickOrdersTitle'), sub: t('admin.dashboard.quickOrdersSub'), icon: 'heroicons:shopping-bag' },
+  { to: localePath('/admin/news'), title: t('admin.dashboard.quickNewsTitle'), sub: t('admin.dashboard.quickNewsSub'), icon: 'heroicons:newspaper' },
+  { to: localePath('/admin/content'), title: t('admin.dashboard.quickContentTitle'), sub: t('admin.dashboard.quickContentSub'), icon: 'heroicons:pencil-square' },
+  { to: localePath('/admin/reviews'), title: t('admin.dashboard.quickReviewsTitle'), sub: t('admin.dashboard.quickReviewsSub'), icon: 'heroicons:star' },
+  { to: localePath('/admin/users'), title: t('admin.dashboard.quickUsersTitle'), sub: t('admin.dashboard.quickUsersSub'), icon: 'heroicons:users' }
+])
 
 // Заполненность склада: доля товаров в наличии
 const stockPercent = computed(() => {
@@ -499,7 +501,7 @@ const loadStats = async () => {
     }))
   } catch (err) {
     console.error('❌ Ошибка загрузки статистики:', err)
-    $notify.error('Ошибка загрузки статистики')
+    $notify.error(t('admin.dashboard.statsError'))
   } finally {
     loading.value = false
     updateCurrentTime()
@@ -509,7 +511,7 @@ const loadStats = async () => {
 // Обновление статистики
 const refreshStats = async () => {
   await loadStats()
-  if (!loading.value) $notify.success('Статистика обновлена')
+  if (!loading.value) $notify.success(t('admin.dashboard.statsUpdated'))
 }
 
 // Выход из системы
@@ -518,14 +520,14 @@ const handleLogout = async () => {
     const result = await appState.logout()
 
     if (result.success) {
-      $notify.success('Вы успешно вышли из системы')
-      await navigateTo('/')
+      $notify.success(t('admin.dashboard.logoutSuccess'))
+      await navigateTo(localePath('/'))
     } else {
       throw new Error(result.error)
     }
   } catch (error) {
     console.error('❌ Ошибка выхода:', error)
-    $notify.error('Ошибка при выходе из системы')
+    $notify.error(t('admin.dashboard.logoutError'))
   }
 }
 
@@ -546,22 +548,22 @@ const getRoleBadgeClass = (role) => {
 
 const getUserRoleText = (role) => {
   const texts = {
-    admin: 'Админ',
-    manager: 'Менеджер',
-    user: 'Пользователь'
+    admin: t('admin.dashboard.roleAdmin'),
+    manager: t('admin.dashboard.roleManager'),
+    user: t('admin.dashboard.roleUser')
   }
   return texts[role] || role
 }
 
-// Статусы заказов: зеркалим ORDER_STATUS_LABELS сервера (ключи 'new'…)
-const STATUS_LABELS = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  shipped: 'В доставке',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
-}
-const statusLabel = (s) => STATUS_LABELS[s] ?? s
+// Статусы заказов: i18n (зеркалим ORDER_STATUS_LABELS сервера, ключи 'new'…)
+const STATUS_LABELS = computed(() => ({
+  new: t('admin.orders.statusNew'),
+  confirmed: t('admin.orders.statusConfirmed'),
+  shipped: t('admin.orders.statusShipped'),
+  delivered: t('admin.orders.statusDelivered'),
+  cancelled: t('admin.orders.statusCancelled'),
+}))
+const statusLabel = (s) => STATUS_LABELS.value[s] ?? s
 
 const getOrderStatusClass = (status) => {
   const classes = {
@@ -578,11 +580,11 @@ const getOrderStatusClass = (status) => {
 const relativeTime = (iso) => {
   if (!iso) return ''
   const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (diffMin < 1) return 'только что'
-  if (diffMin < 60) return `${diffMin} мин назад`
+  if (diffMin < 1) return t('admin.dashboard.justNow')
+  if (diffMin < 60) return t('admin.dashboard.minutesAgo', { n: diffMin })
   const h = Math.floor(diffMin / 60)
-  if (h < 24) return `${h} ч назад`
-  return new Date(iso).toLocaleString('ru-RU', {
+  if (h < 24) return t('admin.dashboard.hoursAgo', { n: h })
+  return new Date(iso).toLocaleString(dateLocale.value, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -603,10 +605,15 @@ const formatPrice = (price) => {
 const updateCurrentTime = () => {
   const now = new Date()
   todayLabel.value =
-    now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
+    now.toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'long' }) +
     ', ' +
-    now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    now.toLocaleTimeString(dateLocale.value, { hour: '2-digit', minute: '2-digit' })
 }
+
+// Локаль дат — синхронно с языком интерфейса
+const dateLocale = computed(() =>
+  locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU',
+)
 
 let clockTimer = null
 

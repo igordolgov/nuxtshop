@@ -7,15 +7,15 @@
   //- Тулбар
   .flex.items-center.justify-between.gap-2.flex-wrap.mb-4
     div
-      h2.text-xl.font-semibold.text-base-content Промокоды
+      h2.text-xl.font-semibold.text-base-content {{ $t('admin.promocodes.title') }}
       p.text-sm(class="mt-0.5 text-base-content/60")
-        | {{ isLoading ? 'Загрузка…' : `В системе: ${items.length} · активных: ${activeCount}` }}
+        | {{ isLoading ? $t('admin.common.loading') : $t('admin.promocodes.inSystem', { n: items.length, m: activeCount }) }}
 
     .flex.gap-2
       button.btn.btn-ghost.btn-sm.rounded-xl(
         type="button"
         :disabled="isLoading"
-        aria-label="Обновить"
+        :aria-label="$t('admin.common.refresh')"
         @click="load"
       )
         svg.w-4.h-4(:class="{ 'animate-spin': isLoading }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
@@ -23,7 +23,7 @@
       button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="openCreate")
         svg.w-4.h-4.mr-1(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4")
-        | Добавить промокод
+        | {{ $t('admin.promocodes.addPromo') }}
 
   //- Скелетон
   .space-y-3(v-if="isLoading && !items.length")
@@ -31,13 +31,13 @@
 
   //- Ошибка загрузки
   .text-center.py-12(v-else-if="loadError")
-    p(class="text-base-content/50 mb-4") Не удалось загрузить промокоды
-    button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") Повторить
+    p(class="text-base-content/50 mb-4") {{ $t('admin.promocodes.loadError') }}
+    button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") {{ $t('admin.common.retry') }}
 
   //- Пусто
   .text-center.py-12(v-else-if="!items.length")
     p(class="text-base-content/50")
-      | Промокодов пока нет. Добавьте первый — покупатели смогут применить его в корзине.
+      | {{ $t('admin.promocodes.empty') }}
 
   //- Список (свежие сверху)
   .space-y-3(v-else)
@@ -47,39 +47,39 @@
           span.font-bold.text-base.tracking-wide {{ p.code }}
           span.badge.badge-sm(:class="p.type === 'percent' ? 'badge-info' : 'badge-secondary'")
             | {{ p.type === 'percent' ? `${p.value}%` : `${p.value} ₽` }}
-          span.badge.badge-sm(v-if="p.active" class="badge-success") Включён
-          span.badge.badge-sm.badge-warning(v-else) Выключен
+          span.badge.badge-sm(v-if="p.active" class="badge-success") {{ $t('admin.promocodes.active') }}
+          span.badge.badge-sm.badge-warning(v-else) {{ $t('admin.promocodes.inactive') }}
           span.badge.badge-sm.badge-error(
             v-if="isExpired(p) || isLimitReached(p)"
-          ) {{ isExpired(p) ? 'Истёк' : 'Лимит исчерпан' }}
+          ) {{ isExpired(p) ? $t('admin.promocodes.expired') : $t('admin.promocodes.limitReached') }}
         .text-xs(class="text-base-content/60 flex flex-wrap gap-x-3 gap-y-0.5")
           span
-            | Использован: {{ p.usedCount || 0 }}{{ p.usageLimit ? ` из ${p.usageLimit}` : ' (без лимита)' }}
-          span(v-if="p.expiresAt") Действует до: {{ formatDate(p.expiresAt) }}
-          span(v-else) Бессрочно
+            | {{ $t('admin.promocodes.used', { n: p.usedCount || 0 }) }}{{ p.usageLimit ? ` ${$t('admin.promocodes.usedOutOf', { n: p.usageLimit })}` : ` ${$t('admin.promocodes.noLimit')}` }}
+          span(v-if="p.expiresAt") {{ $t('admin.promocodes.expiresAt', { date: formatDate(p.expiresAt) }) }}
+          span(v-else) {{ $t('admin.promocodes.noExpiry') }}
         p.text-xs(class="text-base-content/50" v-if="p.description") {{ p.description }}
         .flex.gap-2.justify-end.flex-wrap
-          button.btn.btn-outline.btn-xs.rounded-lg(type="button" :disabled="busyId === p.id" @click="openEdit(p)") Изменить
+          button.btn.btn-outline.btn-xs.rounded-lg(type="button" :disabled="busyId === p.id" @click="openEdit(p)") {{ $t('admin.common.edit') }}
           button.btn.btn-outline.btn-xs.rounded-lg(
             type="button"
             :disabled="busyId === p.id"
             @click="toggleActive(p)"
-          ) {{ p.active ? 'Выключить' : 'Включить' }}
+          ) {{ p.active ? $t('admin.promocodes.toggleOff') : $t('admin.promocodes.toggleOn') }}
           button.btn.btn-outline.btn-xs.rounded-lg(
             type="button"
             class="hover:bg-error hover:text-error-content hover:border-error"
             :disabled="busyId === p.id"
             @click="remove(p)"
-          ) Удалить
+          ) {{ $t('admin.common.delete') }}
 
   //- Форма: создание / редактирование
   .modal(:class="{ 'modal-open': showForm }" role="dialog" aria-modal="true" @click.self="closeForm")
     .modal-box.max-w-2xl
-      h3.font-semibold.text-lg.mb-4 {{ isNew ? 'Новый промокод' : 'Редактирование промокода' }}
+      h3.font-semibold.text-lg.mb-4 {{ isNew ? $t('admin.promocodes.formNew') : $t('admin.promocodes.formEdit') }}
 
       form(@submit.prevent="save" novalidate)
         label.block.mb-3
-          span.form-label Код (покупатель введёт его в корзине)
+          span.form-label {{ $t('admin.promocodes.codeLabel') }}
           input.input.input-bordered.rounded-xl.w-full.uppercase(
             type="text"
             v-model.trim="form.code"
@@ -90,13 +90,13 @@
 
         .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
           label.block
-            span.form-label Тип скидки
+            span.form-label {{ $t('admin.promocodes.typeLabel') }}
             select.select.select-bordered.rounded-xl.w-full(v-model="form.type")
-              option(value="percent") Процент (%)
-              option(value="fixed") Фиксированная (₽)
+              option(value="percent") {{ $t('admin.promocodes.typePercent') }}
+              option(value="fixed") {{ $t('admin.promocodes.typeFixed') }}
 
           label.block
-            span.form-label {{ form.type === 'percent' ? 'Процент (1–90)' : 'Сумма в рублях (до 10 000 000)' }}
+            span.form-label {{ form.type === 'percent' ? $t('admin.promocodes.valuePercentLabel') : $t('admin.promocodes.valueFixedLabel') }}
             input.input.input-bordered.rounded-xl.w-full(
               type="number"
               min="1"
@@ -106,11 +106,11 @@
 
         .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
           label.block
-            span.form-label Действует до (пусто — бессрочно)
+            span.form-label {{ $t('admin.promocodes.expiresLabel') }}
             input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.expiresAt")
 
           label.block
-            span.form-label Лимит применений (пусто — без лимита)
+            span.form-label {{ $t('admin.promocodes.usageLimitLabel') }}
             input.input.input-bordered.rounded-xl.w-full(
               type="number"
               min="1"
@@ -119,30 +119,31 @@
             )
 
         label.block.mb-3
-          span.form-label Памятка для себя (до 200 символов)
+          span.form-label {{ $t('admin.promocodes.noteLabel') }}
           input.input.input-bordered.rounded-xl.w-full(
             type="text"
             v-model.trim="form.description"
-            placeholder="Например: рассылка за сентябрь"
+            :placeholder="$t('admin.promocodes.notePlaceholder')"
             maxlength="200"
           )
 
         label.block.cursor-pointer
           .flex.items-center.gap-3
             input.toggle.toggle-primary(type="checkbox" v-model="form.active")
-            span.text-sm {{ form.active ? 'Включён — можно применить в корзине' : 'Выключен — код не принимается' }}
+            span.text-sm {{ form.active ? $t('admin.promocodes.activeOn') : $t('admin.promocodes.activeOff') }}
 
         p.form-error(v-if="formError" role="alert") {{ formError }}
 
         .modal-action
-          button.btn.rounded-xl(type="button" :disabled="saving" @click="closeForm") Отмена
+          button.btn.rounded-xl(type="button" :disabled="saving" @click="closeForm") {{ $t('admin.common.cancel') }}
           button.btn.btn-primary.rounded-xl(type="submit" :disabled="saving")
             span.loading.loading-spinner.loading-xs(v-if="saving")
-            | {{ isNew ? 'Добавить' : 'Сохранить' }}
+            | {{ isNew ? $t('admin.common.add') : $t('admin.common.save') }}
 </template>
 
 <script setup>
 const { $notify } = useNuxtApp()
+const { t, locale } = useI18n()
 
 const items = ref([])
 const isLoading = ref(false)
@@ -172,7 +173,7 @@ const isLimitReached = (p) =>
 
 const formatDate = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString('ru-RU')
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU')
   } catch {
     return iso
   }
@@ -186,7 +187,7 @@ const load = async () => {
     items.value = Array.isArray(resp?.promos) ? resp.promos : []
   } catch {
     loadError.value = true
-    $notify.error('Не удалось загрузить промокоды')
+    $notify.error(t('admin.promocodes.loadError'))
   } finally {
     isLoading.value = false
   }
@@ -233,11 +234,11 @@ const closeForm = () => {
 const save = async () => {
   formError.value = ''
   if (!form.value.code.trim()) {
-    formError.value = 'Введите код промокода'
+    formError.value = t('admin.promocodes.codeRequired')
     return
   }
   if (!form.value.value || form.value.value < 1) {
-    formError.value = form.value.type === 'percent' ? 'Процент — от 1' : 'Сумма — от 1 ₽'
+    formError.value = form.value.type === 'percent' ? t('admin.promocodes.percentMin') : t('admin.promocodes.fixedMin')
     return
   }
 
@@ -255,11 +256,11 @@ const save = async () => {
     const resp = isNew.value
       ? await $fetch('/api/admin/promocodes', { method: 'POST', body: payload })
       : await $fetch(`/api/admin/promocodes/${form.value.id}`, { method: 'PUT', body: payload })
-    $notify.success(resp?.message || 'Сохранено')
+    $notify.success(resp?.message || t('admin.common.saved'))
     showForm.value = false
     await load()
   } catch (error) {
-    const message = error?.data?.message || error?.message || 'Не удалось сохранить промокод'
+    const message = error?.data?.message || error?.message || t('admin.promocodes.saveError')
     formError.value = message
     $notify.error(message)
   } finally {
@@ -282,24 +283,24 @@ const toggleActive = async (promo) => {
         active: !promo.active,
       },
     })
-    $notify.success(resp?.message || (promo.active ? 'Промокод выключен' : 'Промокод включён'))
+    $notify.success(resp?.message || (promo.active ? t('admin.promocodes.turnedOff') : t('admin.promocodes.turnedOn')))
     await load()
   } catch (error) {
-    $notify.error(error?.data?.message || 'Не удалось сохранить промокод')
+    $notify.error(error?.data?.message || t('admin.promocodes.saveError'))
   } finally {
     busyId.value = null
   }
 }
 
 const remove = async (promo) => {
-  if (!confirm(`Удалить промокод ${promo.code}? Действие необратимо.`)) return
+  if (!confirm(t('admin.promocodes.deleteConfirm', { code: promo.code }))) return
   busyId.value = promo.id
   try {
     const resp = await $fetch(`/api/admin/promocodes/${promo.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || 'Промокод удалён')
+    $notify.success(resp?.message || t('admin.promocodes.deleted'))
     await load()
   } catch {
-    $notify.error('Не удалось удалить промокод')
+    $notify.error(t('admin.promocodes.deleteError'))
   } finally {
     busyId.value = null
   }

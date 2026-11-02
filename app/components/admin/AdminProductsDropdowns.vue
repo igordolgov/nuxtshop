@@ -4,9 +4,9 @@
   //- Категории
   .dropdown.dropdown-bottom(:class="{'dropdown-open': showCategories}")
     label.btn.btn-xs.bg-primary.gap-0(@click="showCategories = !showCategories" type="button")
-      | Категории:
-      span.badge.badge-sm.-pl-0.badge-primary(v-if="selectedCount") {{ selectedCount }} кат
-      span.badge.badge-sm.-pl-0.badge-primary(v-else) (все)
+      | {{ $t('admin.products.categoriesLabel') }}
+      span.badge.badge-sm.-pl-0.badge-primary(v-if="selectedCount") {{ $t('admin.products.categoriesSelected', { n: selectedCount }) }}
+      span.badge.badge-sm.-pl-0.badge-primary(v-else) {{ $t('admin.products.categoriesAll') }}
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
       .max-h-60.overflow-y-auto
@@ -21,11 +21,11 @@
           )
           span.label-text {{ cat }}
       .divider.my-1(v-if="selectedCount")
-      button.btn.btn-xs.btn-ghost.w-full(v-if="selectedCount" @click="clearAndClose" type="button") Сбросить фильтр
+      button.btn.btn-xs.btn-ghost.w-full(v-if="selectedCount" @click="clearAndClose" type="button") {{ $t('admin.products.resetFilter') }}
 
   //- Сортировка - кнопки (скрываются на мобильных, показывается dropdown)
   .hidden(class="sm:flex sm:items-center sm:gap-1")
-    span.text-xs.opacity-60 Сортировка:
+    span.text-xs.opacity-60 {{ $t('admin.products.sortLabel') }}
     button.btn.btn-xs.gap-1(
       v-for="opt in sortOptions"
       :key="opt.field"
@@ -43,7 +43,7 @@
   //- Сортировка - dropdown для мобильных
   .dropdown.dropdown-bottom(class="sm:hidden" :class="{'dropdown-open': showSort}")
     label.btn.btn-xs.btn-outline.gap-1(@click="showSort = !showSort" type="button")
-      | Сортировка
+      | {{ $t('admin.products.sort') }}
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-40.z-50.mt-1(v-if="showSort" @click.stop)
       .px-2.py-1.cursor-pointer(class="hover:bg-base-200" rounded

@@ -134,7 +134,9 @@ export default defineNuxtConfig({
   // детерминированный SSR без hydration mismatch (в отличие от cookie-детекта).
   // detectBrowserLanguage отключён сознательно: авто-редирект по языку браузера
   // ломал бы swr-кэш главной и SEO (один URL — один язык).
-  // Админка (/admin/**) НЕ локализуется — она для персонала магазина.
+  // Админка (/admin/**) локализуется теми же префиксами (/en/admin, /es/admin):
+  // RU-версия без префикса, EN/ES — через переключатель в шапке. Персонал
+  // может работать на любом из трёх языков витрины.
   i18n: {
     defaultLocale: 'ru',
     strategy: 'prefix_except_default',

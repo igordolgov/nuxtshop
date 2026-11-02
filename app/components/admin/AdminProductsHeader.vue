@@ -5,25 +5,25 @@
     .flex.items-center.justify-between.gap-2
       //- Левая часть
       .flex.items-center.gap-2
-        h1.text-base.font-bold(class="sm:text-lg") Товары
-        .text-base-content.pt-1 (всего: {{ stats.total }})
+        h1.text-base.font-bold(class="sm:text-lg") {{ $t('admin.products.title') }}
+        .text-base-content.pt-1 {{ $t('admin.products.totalCount', { n: stats.total }) }}
 
       //- Правая часть
       .flex.items-center.gap-3
         button.btn-sm.btn-square.cursor-pointer(
           @click="$emit('refresh')"
-          title="Обновить"
+          :title="$t('admin.products.refreshTitle')"
           type="button"
         )
           icon(name="heroicons:arrow-path" size="20")
         button.btn.btn-sm.btn-primary.btn-square(
           @click="$emit('add')"
-          title="Добавить"
+          :title="$t('admin.products.addTitle')"
           type="button"
           class="sm:btn-auto"
         )
           icon(name="heroicons:plus" size="20")
-          span.hidden.sm-inline.ml-1 Добавить
+          span.hidden.sm-inline.ml-1 {{ $t('admin.products.addTitle') }}
 
     //- Фильтры строкой ниже
     .mt-2

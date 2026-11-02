@@ -12,7 +12,7 @@
       :disabled="isSubmitting"
     ) ✕
 
-    h3.text-base.font-bold.mb-2(class="sm:text-xl") Редактировать товар
+    h3.text-base.font-bold.mb-2(class="sm:text-xl") {{ $t('admin.productForm.editTitle') }}
     form(@submit.prevent="handleSubmit" v-if="form")
       //- Языковые вкладки: RU — основной контент (обязательный), EN/ES —
       //- необязательные переводы (пусто → витрина показывает русский)
@@ -20,7 +20,7 @@
         button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
         button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
         button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
-        span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60") Необязательно — без перевода показывается русский
+        span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60") {{ $t('admin.productForm.optionalHint') }}
 
       //- Основная информация - 2 колонки на мобильных, 6 на десктопе
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-6")
@@ -28,28 +28,28 @@
         template(v-if="langTab === 'ru'")
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs Название *
+              span.label-text.text-xs {{ $t('admin.productForm.nameLabel') }}
             input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="form.name"
               required
-              placeholder="Название"
+              :placeholder="$t('admin.productForm.namePlaceholder')"
               :disabled="isSubmitting"
             )
 
           //- Категории — обязательное поле, мультвыбор с подсказками
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs Категории *
+              span.label-text.text-xs {{ $t('admin.productForm.categoriesLabel') }}
             AdminCategoryPicker(
               v-model="form.categories"
               :allCategories="props.allCategories || []"
               :disabled="isSubmitting"
               :error="categoriesEmpty"
-              placeholder="Выбрать или ввести новую"
+              :placeholder="$t('admin.productForm.categoriesPlaceholder')"
             )
             label.label.py-1(v-if="categoriesEmpty")
-              span.label-text-alt.text-error Укажите хотя бы одну категорию
+              span.label-text-alt.text-error {{ $t('admin.productForm.categoriesRequired') }}
 
         template(v-else-if="langTab === 'en'")
           .form-control(class="sm:col-span-2")
@@ -96,7 +96,7 @@
         //- Цена
         .form-control(class="sm:col-span-1")
           label.label.py-1
-            span.label-text.text-xs Цена *
+            span.label-text.text-xs {{ $t('admin.productForm.priceLabel') }}
           input.input.input-bordered.input-sm.w-full(
             type="number"
             v-model.number="form.price"
@@ -110,7 +110,7 @@
         //- Количество на складе
         .form-control(class="sm:col-span-1")
           label.label.py-1
-            span.label-text.text-xs Кол-во
+            span.label-text.text-xs {{ $t('admin.productForm.qtyLabel') }}
           input.input.input-bordered.input-sm.w-full(
             type="number"
             v-model.number="form.stockQuantity"
@@ -124,14 +124,14 @@
       .form-control.mb-2
         .flex.items-center.justify-between
           label.label.py-1
-            span.label-text.text-xs Описание ({{ langLabel }})
+            span.label-text.text-xs {{ $t('admin.productForm.descriptionLabel', { lang: langLabel }) }}
           label.cursor-pointer.flex.items-center.gap-1.text-xs
             input.checkbox.checkbox-primary.checkbox-xs(
               type="checkbox"
               v-model="form.inStock"
               :disabled="isSubmitting"
             )
-            | В наличии
+            | {{ $t('admin.productForm.inStock') }}
         textarea.textarea.textarea-bordered.textarea-sm.w-full(
           v-if="langTab === 'ru'"
           v-model="form.description"
@@ -158,12 +158,12 @@
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-4")
         .form-control(class="sm:col-span-3")
           label.label.py-1
-            span.label-text.text-xs Изображение
+            span.label-text.text-xs {{ $t('admin.productForm.imageLabel') }}
           .flex.flex-col.gap-1
             input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="form.image"
-              placeholder="URL изображения"
+              :placeholder="$t('admin.productForm.imageUrlPlaceholder')"
               :disabled="isSubmitting"
             )
             .flex.gap-1.items-center
@@ -184,7 +184,7 @@
         //- Превью
         .form-control.flex.items-end
           .w-full
-            .text-xs.text-gray-500.mb-1 Превью
+            .text-xs.text-gray-500.mb-1 {{ $t('admin.productForm.preview') }}
             .w-full.h-16.border.rounded.overflow-hidden.flex.items-center.justify-center.bg-base-200(
               class="sm:h-20"
             )
@@ -198,12 +198,12 @@
                   @error="handleImageError"
                 )
               template(v-else)
-                .text-xs.text-gray-400 Нет
+                .text-xs.text-gray-400 {{ $t('admin.productForm.previewNone') }}
 
       //- Галерея изображений
       .form-control.mb-1
         label.label.py-1
-          span.label-text.text-xs Галерея ({{ form.gallery.length }}/{{ MAX_GALLERY_IMAGES }})
+          span.label-text.text-xs {{ $t('admin.productForm.galleryLabel', { n: form.gallery.length, m: MAX_GALLERY_IMAGES }) }}
         .flex.gap-1.items-center
           input.file-input.file-input-bordered.flex-1.file-input-xs(
             type="file"
@@ -229,7 +229,7 @@
               //- lazy: превью галереи догружаются по мере видимости
               NuxtImg(
                 :src="image"
-                :alt="`Изображение ${index + 1}`"
+                :alt="$t('admin.productForm.galleryImageAlt', { n: index + 1 })"
                 class="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -256,15 +256,15 @@
           type="button"
           @click="handleCancel"
           :disabled="isSubmitting"
-        ) Отмена
+        ) {{ $t('admin.common.cancel') }}
         button.btn.btn-primary.btn-sm(
           type="submit"
           :disabled="isSubmitting || !isFormValid || hasTooManyGalleryImages"
         )
           span.loading.loading-spinner.loading-xs.mr-1(v-if="isSubmitting")
           span(v-if="uploadProgress > 0 && uploadProgress < 100") {{ uploadProgress }}%
-          span(v-else-if="isSubmitting") Сохранение...
-          span(v-else) Сохранить
+          span(v-else-if="isSubmitting") {{ $t('admin.common.saving') }}
+          span(v-else) {{ $t('admin.common.save') }}
 </template>
 
 <script setup>
@@ -279,6 +279,7 @@
 const { updateProduct } = useProducts()
 const { resizeToWebp } = useImageResize()
 const notify = useNotifyQueue()
+const { t } = useI18n()
 
 const props = defineProps({
   isOpen: Boolean,
@@ -323,8 +324,8 @@ const isValidImage = (imageUrl) => {
 }
 
 const handleImageError = () => {
-  formError.value = 'Не удалось загрузить изображение'
-  notify.error('Не удалось загрузить изображение')
+  formError.value = t('admin.productForm.imageError')
+  notify.error(t('admin.productForm.imageError'))
   form.value.image = ''
 }
 
@@ -338,7 +339,7 @@ const handleMainImageUpload = async (event) => {
 
   const validation = validateImageFile(file)
   if (!validation.valid) {
-    formError.value = validation.error
+    formError.value = t(validation.error, validation.params)
     return
   }
 
@@ -346,10 +347,10 @@ const handleMainImageUpload = async (event) => {
   try {
     form.value.image = await resizeToWebp(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
     formError.value = ''
-    notify.success('Загружено')
+    notify.success(t('admin.common.uploaded'))
   } catch (err) {
     console.error('Ошибка обработки изображения:', err)
-    formError.value = 'Ошибка загрузки'
+    formError.value = t('admin.productForm.uploadError')
   } finally {
     uploadProgress.value = 0
     if (mainImageInput.value) mainImageInput.value.value = ''
@@ -362,7 +363,7 @@ const handleGalleryUpload = async (event) => {
 
   const availableSlots = MAX_GALLERY_IMAGES - form.value.gallery.length
   if (availableSlots <= 0) {
-    formError.value = `Максимум ${MAX_GALLERY_IMAGES} изображений`
+    formError.value = t('admin.productForm.maxImages', { n: MAX_GALLERY_IMAGES })
     return
   }
 
@@ -374,7 +375,7 @@ const handleGalleryUpload = async (event) => {
   for (const file of filesToProcess) {
     const validation = validateImageFile(file)
     if (!validation.valid) {
-      formError.value = validation.error
+      formError.value = t(validation.error, validation.params)
       continue
     }
     try {
@@ -388,7 +389,7 @@ const handleGalleryUpload = async (event) => {
   }
 
   uploadProgress.value = 0
-  if (loadedCount > 0) notify.success(`Загружено ${loadedCount}`)
+  if (loadedCount > 0) notify.success(t('admin.common.uploadedCount', { n: loadedCount }))
   if (galleryInput.value) galleryInput.value.value = ''
 }
 
@@ -403,7 +404,7 @@ const handleSubmit = async () => {
   if (!form.value || !isFormValid.value) return
 
   if (hasTooManyGalleryImages.value) {
-    formError.value = `Максимум ${MAX_GALLERY_IMAGES} изображений`
+    formError.value = t('admin.productForm.maxImages', { n: MAX_GALLERY_IMAGES })
     return
   }
 
@@ -433,14 +434,14 @@ const handleSubmit = async () => {
       categoriesEs: [...(form.value.categoriesEs || [])],
     }
 
-    if (updatedProduct.name.length === 0) throw new Error('Название обязательно')
-    if (updatedProduct.price < 0) throw new Error('Цена не может быть отрицательной')
+    if (updatedProduct.name.length === 0) throw new Error(t('admin.productForm.nameRequired'))
+    if (updatedProduct.price < 0) throw new Error(t('admin.productForm.priceNegative'))
 
     uploadProgress.value = 60
     const product = await updateProduct(props.product.id, updatedProduct)
     uploadProgress.value = 90
 
-    notify.success('Товар обновлен')
+    notify.success(t('admin.productForm.savedToast'))
     emit('productUpdated', product)
 
     uploadProgress.value = 100
@@ -452,7 +453,7 @@ const handleSubmit = async () => {
   } catch (error) {
     // ofetch кладёт тело ответа в error.data — там текст ошибки сервера;
     // error.message у FetchError — безликое «[PUT] /api/...: 400»
-    formError.value = error?.data?.message || error.message || 'Ошибка'
+    formError.value = error?.data?.message || error.message || t('admin.common.error')
     uploadProgress.value = 0
     isSubmitting.value = false
   }

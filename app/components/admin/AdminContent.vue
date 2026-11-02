@@ -8,29 +8,29 @@
   //- Тулбар
   .flex.items-center.justify-between.gap-2.flex-wrap.mb-4
     div
-      h2.text-xl.font-semibold.text-base-content Контент сайта
+      h2.text-xl.font-semibold.text-base-content {{ $t('admin.content.title') }}
       p.text-sm(class="mt-0.5 text-base-content/60")
-        | {{ isLoading ? 'Загрузка…' : lastSavedLabel }}
+        | {{ isLoading ? $t('admin.common.loading') : lastSavedLabel }}
 
     .flex.gap-2
       button.btn.btn-ghost.btn-sm.rounded-xl(
         type="button"
         :disabled="isLoading || saving"
-        aria-label="Перечитать с сервера"
+        :aria-label="$t('admin.content.refreshAria')"
         @click="load"
       )
         svg.w-4.h-4(:class="{ 'animate-spin': isLoading }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15")
       button.btn.btn-primary.btn-sm.rounded-xl(type="button" :disabled="isLoading || saving" @click="save")
         span.loading.loading-spinner.loading-xs(v-if="saving")
-        | Сохранить
+        | {{ $t('admin.common.save') }}
 
   //- Скелетон / ошибка
   .space-y-3(v-if="isLoading && !loaded")
     .skeleton.h-24.rounded-2xl(v-for="i in 3" :key="i")
   .text-center.py-12(v-else-if="loadError")
-    p(class="text-base-content/50 mb-4") Не удалось загрузить контент
-    button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") Повторить
+    p(class="text-base-content/50 mb-4") {{ $t('admin.content.loadError') }}
+    button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") {{ $t('admin.common.retry') }}
 
   form(v-else @submit.prevent="save" novalidate)
     //- ─── Языковые вкладки: RU — весь контент, EN/ES — только переводы ──
@@ -39,208 +39,209 @@
       button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
       button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
       span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60")
-        | Необязательно — состав списка задается на вкладке «Русский», здесь только переводы: пустое поле → на витрине показывается русский
+        | {{ $t('admin.content.optionalHint') }}
 
     //- ─── Контакты ──────────────────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
-      h3.card-title Связь
+      h3.card-title {{ $t('admin.content.contactsTitle') }}
       .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
         label.block
-          span.form-label Телефон
+          span.form-label {{ $t('admin.content.phone') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="form.contacts.phone" :maxlength="LIMITS.phone" placeholder="8 (800) 555-35-35")
-          p.field-hint tel:-ссылка на витрине: {{ telHref || '—' }}
+          p.field-hint {{ $t('admin.content.telHrefHint', { href: telHref || '—' }) }}
         label.block
-          span.form-label Email
+          span.form-label {{ $t('admin.content.email') }}
           input.input.input-bordered.rounded-xl.w-full(type="email" v-model.trim="form.contacts.email" :maxlength="LIMITS.email" placeholder="support@shop.ru")
         label.block
-          span.form-label Режим — будни
+          span.form-label {{ $t('admin.content.hoursWeek') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="form.contacts.hoursWeek" :maxlength="LIMITS.hours" placeholder="9:00–20:00")
         label.block
-          span.form-label Режим — выходные
+          span.form-label {{ $t('admin.content.hoursWeekend') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="form.contacts.hoursWeekend" :maxlength="LIMITS.hours" placeholder="10:00–18:00")
       label.block.mt-3
-        span.form-label Карта (OpenStreetMap)
+        span.form-label {{ $t('admin.content.mapLabel') }}
         input.input.input-bordered.rounded-xl.w-full(type="url" v-model.trim="form.contacts.mapSrc" :maxlength="LIMITS.mapSrc" placeholder="https://www.openstreetmap.org/export/embed.html?…")
         p.field-hint
-          | С openstreetmap.org: «Экспорт» → «Поделиться картой» → скопировать src ифрейма. Пусто — карта по умолчанию.
+          | {{ $t('admin.content.mapHint') }}
 
     //- ─── Мессенджеры ───────────────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
-        h3.card-title Мессенджеры
+        h3.card-title {{ $t('admin.content.messengersTitle') }}
         span.counter {{ form.contacts.messengers.length }} из {{ LIMITS.messengers }}
       .list-row(v-for="(m, i) in form.contacts.messengers" :key="`msgr-${i}`")
         label.block.flex-1.min-w-0
-          span.form-label Название
+          span.form-label {{ $t('admin.content.messengerName') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="m.name" :maxlength="LIMITS.messengerName" placeholder="Telegram")
         label.block.flex-1.min-w-0
-          span.form-label Ник или ссылка
+          span.form-label {{ $t('admin.content.messengerHandle') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="m.handle" :maxlength="LIMITS.messengerHandle" placeholder="@shop")
-        button.row-remove(type="button" :aria-label="`Убрать мессенджер ${m.name || i + 1}`" @click="form.contacts.messengers.splice(i, 1)") ✕
+        button.row-remove(type="button" :aria-label="$t('admin.content.removeMessengerAria', { name: m.name || i + 1 })" @click="form.contacts.messengers.splice(i, 1)") ✕
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
         :disabled="form.contacts.messengers.length >= LIMITS.messengers"
         @click="addMessenger"
-      ) + Добавить мессенджер
+      ) {{ $t('admin.content.addMessenger') }}
 
     //- ─── Магазины ──────────────────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
-        h3.card-title Магазины и пункты выдачи
+        h3.card-title {{ $t('admin.content.storesTitle') }}
         span.counter {{ form.contacts.stores.length }} из {{ LIMITS.stores }}
       .store-block(v-for="(s, i) in form.contacts.stores" :key="`store-${i}`")
         .list-row
           label.block.flex-1.min-w-0
-            span.form-label Город
+            span.form-label {{ $t('admin.content.city') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.city" :maxlength="LIMITS.city" placeholder="Москва")
           label.block.flex-1.min-w-0
-            span.form-label Бейдж
+            span.form-label {{ $t('admin.content.badge') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.badge" :maxlength="LIMITS.badge" placeholder="Флагман")
-          button.row-remove(type="button" :aria-label="`Убрать магазин ${s.city || i + 1}`" @click="form.contacts.stores.splice(i, 1)") ✕
+          button.row-remove(type="button" :aria-label="$t('admin.content.removeStoreAria', { city: s.city || i + 1 })" @click="form.contacts.stores.splice(i, 1)") ✕
         .list-row.mt-2
           label.block.flex-1.min-w-0
-            span.form-label Адрес
+            span.form-label {{ $t('admin.content.address') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.address" :maxlength="LIMITS.address" placeholder="ул. Тверская, 12")
           label.block.flex-1.min-w-0
-            span.form-label Часы
+            span.form-label {{ $t('admin.content.hours') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.hours" :maxlength="LIMITS.storeHours" placeholder="Ежедневно 10:00–21:00")
           label.block.flex-1.min-w-0
-            span.form-label Телефон
+            span.form-label {{ $t('admin.content.phoneShort') }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="s.phone" :maxlength="LIMITS.storePhone" placeholder="8 (495) …")
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
         :disabled="form.contacts.stores.length >= LIMITS.stores"
         @click="addStore"
-      ) + Добавить магазин
+      ) {{ $t('admin.content.addStore') }}
 
     //- Магазины: переводы EN/ES — те же записи, другие поля
     section.editor-card(v-show="langTab !== 'ru'")
-      h3.card-title Магазины — переводы ({{ langLabel }})
+      h3.card-title {{ $t('admin.content.storesTrTitle', { lang: langLabel }) }}
       .store-block(v-for="(s, i) in form.contacts.stores" :key="`store-tr-${i}`")
         .list-row
           label.block.flex-1.min-w-0
-            span.form-label Город ({{ langLabel }})
+            span.form-label {{ $t('admin.content.city') }} ({{ langLabel }})
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[cityField]" :maxlength="LIMITS.city" :placeholder="s.city")
           label.block.flex-1.min-w-0
-            span.form-label Бейдж ({{ langLabel }})
+            span.form-label {{ $t('admin.content.badge') }} ({{ langLabel }})
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[badgeField]" :maxlength="LIMITS.badge" :placeholder="s.badge")
         .list-row.mt-2
           label.block.flex-1.min-w-0
-            span.form-label Адрес ({{ langLabel }})
+            span.form-label {{ $t('admin.content.address') }} ({{ langLabel }})
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[addressField]" :maxlength="LIMITS.address" :placeholder="s.address")
           label.block.flex-1.min-w-0
-            span.form-label Часы ({{ langLabel }})
+            span.form-label {{ $t('admin.content.hours') }} ({{ langLabel }})
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model="s[hoursField]" :maxlength="LIMITS.storeHours" :placeholder="s.hours")
       p.text-xs(class="mt-2 text-base-content/50")
-        | Телефон не переводится. Пустое поле — на витрине показывается русский текст.
+        | {{ $t('admin.content.phoneNotTranslated') }}
 
     //- ─── FAQ ───────────────────────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
-        h3.card-title Частые вопросы (страница «Контакты»)
+        h3.card-title {{ $t('admin.content.faqTitle') }}
         span.counter {{ form.contacts.faq.length }} из {{ LIMITS.faq }}
       .faq-block(v-for="(f, i) in form.contacts.faq" :key="`faq-${i}`")
         .list-row
           label.block.flex-1.min-w-0
-            span.form-label Вопрос {{ i + 1 }}
+            span.form-label {{ $t('admin.content.question', { n: i + 1 }) }}
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="f.q" :maxlength="LIMITS.faqQ" placeholder="Как быстро вы доставляете?")
-          button.row-remove(type="button" :aria-label="`Убрать вопрос ${i + 1}`" @click="form.contacts.faq.splice(i, 1)") ✕
+          button.row-remove(type="button" :aria-label="$t('admin.content.removeQuestionAria', { n: i + 1 })" @click="form.contacts.faq.splice(i, 1)") ✕
         label.block.mt-2
-          span.form-label Ответ
+          span.form-label {{ $t('admin.content.answer') }}
           textarea.textarea.textarea-bordered.rounded-xl.w-full.leading-relaxed(v-model="f.a" rows="3" :maxlength="LIMITS.faqA")
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
         :disabled="form.contacts.faq.length >= LIMITS.faq"
         @click="addFaq"
-      ) + Добавить вопрос
+      ) {{ $t('admin.content.addQuestion') }}
 
     //- FAQ: переводы EN/ES
     section.editor-card(v-show="langTab !== 'ru'")
-      h3.card-title Частые вопросы — переводы ({{ langLabel }})
+      h3.card-title {{ $t('admin.content.faqTrTitle', { lang: langLabel }) }}
       .faq-block(v-for="(f, i) in form.contacts.faq" :key="`faq-tr-${i}`")
         .list-row
           label.block.flex-1.min-w-0
-            span.form-label Вопрос {{ i + 1 }} ({{ langLabel }})
+            span.form-label {{ $t('admin.content.question', { n: i + 1 }) }} ({{ langLabel }})
             input.input.input-bordered.rounded-xl.w-full(type="text" v-model="f[qField]" :maxlength="LIMITS.faqQ" :placeholder="f.q")
         label.block.mt-2
-          span.form-label Ответ ({{ langLabel }})
+          span.form-label {{ $t('admin.content.answer') }} ({{ langLabel }})
           textarea.textarea.textarea-bordered.rounded-xl.w-full.leading-relaxed(v-model="f[aField]" rows="3" :maxlength="LIMITS.faqA" :placeholder="f.a")
 
     //- ─── О магазине: цифры ─────────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
-        h3.card-title «О магазине» — цифры
+        h3.card-title {{ $t('admin.content.statsTitle') }}
         span.counter {{ form.about.stats.length }} из {{ LIMITS.stats }}
       .list-row(v-for="(st, i) in form.about.stats" :key="`stat-${i}`")
         label.block.w-36.flex-shrink-0
-          span.form-label Значение
+          span.form-label {{ $t('admin.content.statValue') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.value" :maxlength="LIMITS.statValue" placeholder="8 лет")
         label.block.flex-1.min-w-0
-          span.form-label Подпись
+          span.form-label {{ $t('admin.content.statLabel') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="st.label" :maxlength="LIMITS.statLabel" placeholder="на рынке техники")
-        button.row-remove(type="button" :aria-label="`Убрать цифру ${i + 1}`" @click="form.about.stats.splice(i, 1)") ✕
+        button.row-remove(type="button" :aria-label="$t('admin.content.removeStatAria', { n: i + 1 })" @click="form.about.stats.splice(i, 1)") ✕
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
         :disabled="form.about.stats.length >= LIMITS.stats"
         @click="addStat"
-      ) + Добавить цифру
+      ) {{ $t('admin.content.addStat') }}
 
     //- Цифры: переводы EN/ES
     section.editor-card(v-show="langTab !== 'ru'")
-      h3.card-title «О магазине» — цифры, переводы ({{ langLabel }})
+      h3.card-title {{ $t('admin.content.statsTrTitle', { lang: langLabel }) }}
       .list-row(v-for="(st, i) in form.about.stats" :key="`stat-tr-${i}`")
         label.block.w-36.flex-shrink-0
-          span.form-label Значение ({{ langLabel }})
+          span.form-label {{ $t('admin.content.statValue') }} ({{ langLabel }})
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model="st[valueField]" :maxlength="LIMITS.statValue" :placeholder="st.value")
         label.block.flex-1.min-w-0
-          span.form-label Подпись ({{ langLabel }})
+          span.form-label {{ $t('admin.content.statLabel') }} ({{ langLabel }})
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model="st[labelField]" :maxlength="LIMITS.statLabel" :placeholder="st.label")
 
     //- ─── О магазине: история ───────────────────────────────────────────
     section.editor-card(v-show="langTab === 'ru'")
       .flex.items-center.justify-between.gap-2.mb-3
-        h3.card-title «О магазине» — история
+        h3.card-title {{ $t('admin.content.historyTitle') }}
         span.counter {{ form.about.history.length }} из {{ LIMITS.history }}
       .list-row(v-for="(h, i) in form.about.history" :key="`hist-${i}`")
         label.block.w-28.flex-shrink-0
-          span.form-label Год
+          span.form-label {{ $t('admin.content.year') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="h.year" :maxlength="LIMITS.year" placeholder="2026")
         label.block.flex-1.min-w-0
-          span.form-label Событие
+          span.form-label {{ $t('admin.content.event') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model.trim="h.text" :maxlength="LIMITS.historyText" placeholder="Открыли первый магазин…")
-        button.row-remove(type="button" :aria-label="`Убрать событие ${i + 1}`" @click="form.about.history.splice(i, 1)") ✕
+        button.row-remove(type="button" :aria-label="$t('admin.content.removeEventAria', { n: i + 1 })" @click="form.about.history.splice(i, 1)") ✕
       button.btn.btn-outline.btn-sm.rounded-xl.mt-2(
         type="button"
         :disabled="form.about.history.length >= LIMITS.history"
         @click="addHistory"
-      ) + Добавить событие
+      ) {{ $t('admin.content.addEvent') }}
 
     //- История: переводы EN/ES
     section.editor-card(v-show="langTab !== 'ru'")
-      h3.card-title «О магазине» — история, переводы ({{ langLabel }})
+      h3.card-title {{ $t('admin.content.historyTrTitle', { lang: langLabel }) }}
       .list-row(v-for="(h, i) in form.about.history" :key="`hist-tr-${i}`")
         label.block.w-28.flex-shrink-0
-          span.form-label Год
+          span.form-label {{ $t('admin.content.year') }}
           input.input.input-bordered.rounded-xl.w-full(type="text" :value="h.year" disabled)
         label.block.flex-1.min-w-0
-          span.form-label Событие ({{ langLabel }})
+          span.form-label {{ $t('admin.content.event') }} ({{ langLabel }})
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model="h[textField]" :maxlength="LIMITS.historyText" :placeholder="h.text")
 
     //- ─── Низ формы ─────────────────────────────────────────────────────
     p.form-error(v-if="formError" role="alert") {{ formError }}
     .flex.gap-2.justify-end.flex-wrap.mt-4
-      button.btn.rounded-xl(type="button" :disabled="saving" @click="load") Отменить правки
+      button.btn.rounded-xl(type="button" :disabled="saving" @click="load") {{ $t('admin.content.discardChanges') }}
       button.btn.btn-primary.rounded-xl(type="submit" :disabled="saving")
         span.loading.loading-spinner.loading-xs(v-if="saving")
-        | Сохранить контент
+        | {{ $t('admin.content.saveContentBtn') }}
     p.text-xs(class="mt-2 text-base-content/50")
-      | Изменения появляются на /contacts и /about сразу после сохранения (страницы читают /api/content).
+      | {{ $t('admin.content.saveHint') }}
 </template>
 
 <script setup>
 import { CONTENT_LIMITS, normalizePhoneHref } from '#shared/siteContent'
 
 const { $notify } = useNuxtApp()
+const { t, locale } = useI18n()
 
 const LIMITS = CONTENT_LIMITS
 
@@ -286,12 +287,13 @@ const telHref = computed(() =>
 )
 
 const lastSavedLabel = computed(() => {
-  if (!form.updatedAt) return 'Сохранённых правок нет — показываются дефолты'
+  if (!form.updatedAt) return t('admin.content.lastSavedNone')
   const d = new Date(form.updatedAt)
+  const loc = locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU'
   const when = Number.isNaN(d.getTime())
     ? form.updatedAt
-    : d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-  return `Сохранено: ${when}`
+    : d.toLocaleString(loc, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+  return t('admin.content.lastSaved', { when })
 })
 
 const applyContent = (content) => {
@@ -339,7 +341,7 @@ const load = async () => {
     loaded.value = true
   } catch {
     loadError.value = true
-    $notify.error('Не удалось загрузить контент')
+    $notify.error(t('admin.content.loadError'))
   } finally {
     isLoading.value = false
   }
@@ -377,12 +379,12 @@ const save = async () => {
   try {
     const resp = await $fetch('/api/content', { method: 'PUT', body: form })
     applyContent(resp?.content)
-    $notify.success(resp?.message || 'Контент сохранён')
+    $notify.success(resp?.message || t('admin.content.savedToast'))
     // Витрины держат этот же ключ useAsyncData — обновим, чтобы клиентский
     // переход на /contacts или /about увидел свежий контент без F5.
     refreshNuxtData('site-content').catch(() => {})
   } catch (error) {
-    const message = error?.data?.message || error?.message || 'Не удалось сохранить контент'
+    const message = error?.data?.message || error?.message || t('admin.content.saveError')
     formError.value = message
     $notify.error(message)
   } finally {

@@ -5,17 +5,17 @@
     .container.mx-auto.p-2(class="sm:p-3 lg:p-4")
       .flex.justify-between.items-center.gap-2
         .flex-1.min-w-0
-          h1.card-title.text-xl(class="lg:text-2xl") Пользователи
+          h1.card-title.text-xl(class="lg:text-2xl") {{ $t('admin.users.title') }}
         .flex.items-center.gap-2
-          .badge.badge-primary.badge-sm(class="lg:badge-md") Администратор
-          NuxtLink.btn.btn-outline.btn-xs(class="lg:btn-sm" to="/admin") 
-            span ← Назад
+          .badge.badge-primary.badge-sm(class="lg:badge-md") {{ $t('admin.users.adminBadge') }}
+          NuxtLink.btn.btn-outline.btn-xs(class="lg:btn-sm" :to="localePath('/admin')") 
+            span {{ $t('admin.users.back') }}
 
   .container.mx-auto.p-2(class="sm:p-3 lg:p-4")
     //- Сообщение о загрузке
     .text-center.py-6(v-if="loading")
       .loading.loading-spinner.loading-lg
-      p.mt-2.text-sm Загрузка пользователей...
+      p.mt-2.text-sm {{ $t('admin.users.loading') }}
 
     //- Сообщение об ошибке
     template(v-else-if="error")
@@ -23,7 +23,7 @@
         svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z")
         span.text-sm {{ error }}
-        button.btn.btn-xs.btn-ghost.ml-auto(@click="loadUsers") Повторить
+        button.btn.btn-xs.btn-ghost.ml-auto(@click="loadUsers") {{ $t('admin.common.retry') }}
 
     //- Контент
     template(v-else)
@@ -35,12 +35,12 @@
               thead
                 tr
                   th ID
-                  th Имя
+                  th {{ $t('admin.users.colName') }}
                   th Email
-                  th Роль
-                  th Телефон
-                  th Зарегистрирован
-                  th Действия
+                  th {{ $t('admin.users.colRole') }}
+                  th {{ $t('admin.users.colPhone') }}
+                  th {{ $t('admin.users.colRegistered') }}
+                  th {{ $t('admin.users.colActions') }}
               tbody
                 tr(v-for="user in users" :key="user.id")
                   td.font-mono.text-xs {{ user.id.slice(-6) }}
@@ -52,24 +52,24 @@
                       @change="updateUserRole(user.id, $event.target.value)"
                       :disabled="user.id === currentUserId"
                     )
-                      option.rlg(value="user") Пользователь
-                      option(value="manager") Менеджер
-                      option(value="admin") Администратор
-                    .text-xs.opacity-60.mt-0-5(v-if="user.id === currentUserId") (это вы)
+                      option.rlg(value="user") {{ $t('admin.users.roleUser') }}
+                      option(value="manager") {{ $t('admin.users.roleManager') }}
+                      option(value="admin") {{ $t('admin.users.roleAdmin') }}
+                    .text-xs.opacity-60.mt-0-5(v-if="user.id === currentUserId") {{ $t('admin.users.thisIsYou') }}
                   td {{ user.phone || '—' }}
                   td.text-xs {{ formatDate(user.createdAt) }}
                   td
                     .flex.gap-1
                       button.btn.btn-ghost.btn-xs(
                         @click="editUser(user)"
-                        title="Редактировать профиль"
+                        :title="$t('admin.users.editProfileTitle')"
                       )
                         svg.w-4.h-4(fill="none" stroke="currentColor" viewBox="0 0 24 24")
                           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z")
                       button.btn.btn-error.btn-xs(
                         @click="deleteUser(user)"
                         :disabled="user.id === currentUserId"
-                        title="Удалить пользователя"
+                        :title="$t('admin.users.deleteUserTitle')"
                       )
                         svg.w-4.h-4(fill="none" stroke="currentColor" viewBox="0 0 24 24")
                           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16")
@@ -107,33 +107,33 @@
             
             //- Смена роли
             .flex.items-center.justify-between.gap-2.border-t.border-base-200
-              .text-sm.opacity-60 Роль:
+              .text-sm.opacity-60 {{ $t('admin.users.roleLabel') }}
               select.select.select-sm.select-bordered(
                 :value="user.role" 
                 @change="updateUserRole(user.id, $event.target.value)"
                 :disabled="user.id === currentUserId"
                 class="w-36"
               )
-                option(value="user") Пользователь
-                option(value="manager") Менеджер
-                option(value="admin") Администратор
+                option(value="user") {{ $t('admin.users.roleUser') }}
+                option(value="manager") {{ $t('admin.users.roleManager') }}
+                option(value="admin") {{ $t('admin.users.roleAdmin') }}
             
             //- Пометка "это вы"
-            .text-xs.text-info(v-if="user.id === currentUserId") (это вы)
+            .text-xs.text-info(v-if="user.id === currentUserId") {{ $t('admin.users.thisIsYou') }}
             
             //- Действия
             .flex.justify-end.gap-1
               button.btn.btn-ghost.btn-sm(
                 @click="editUser(user)"
-                title="Редактировать"
+                :title="$t('admin.users.editProfileTitle')"
               )
                 svg.w-5.h-5(fill="none" stroke="currentColor" viewBox="0 0 24 24")
                   path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z")
-                span.ml-1.text-sm Редактировать
+                span.ml-1.text-sm {{ $t('admin.users.editBtn') }}
               button.btn.btn-error.btn-sm(
                 @click="deleteUser(user)"
                 :disabled="user.id === currentUserId"
-                title="Удалить"
+                :title="$t('admin.common.delete')"
               )
                 svg.w-4.h-4(fill="none" stroke="currentColor" viewBox="0 0 24 24")
                   path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16")
@@ -142,42 +142,42 @@
       .card.bg-base-100.shadow-xl(v-if="users.length === 0")
         .card-body.text-center.py-8
           .text-5xl.mb-2 👥
-          h3.text-lg.font-semibold.mb-1 Пользователи не найдены
-          p.text-sm.opacity-70.mb-3 Зарегистрируйте первого пользователя
-          button.btn.btn-primary.btn-sm(@click="loadUsers") Обновить
+          h3.text-lg.font-semibold.mb-1 {{ $t('admin.users.emptyTitle') }}
+          p.text-sm.opacity-70.mb-3 {{ $t('admin.users.emptyHint') }}
+          button.btn.btn-primary.btn-sm(@click="loadUsers") {{ $t('admin.common.refresh') }}
 
       //- Статистика
       .card.bg-base-100.shadow-xl.mt-2(v-if="users.length > 0")
         .card-body.p-2(class="lg:p-3")
-          h4.text-lg.font-semibold(class="lg:hidden") Статистика
+          h4.text-lg.font-semibold(class="lg:hidden") {{ $t('admin.users.statsTitle') }}
           //- Мобильный: сетка 2x2
           .grid.grid-cols-2.gap-3.text-center(class="lg:hidden")
             .stat.bg-sky-950.rounded-lg.p-0
-              .stat-title.text-xs Всего
+              .stat-title.text-xs {{ $t('admin.users.statTotal') }}
               .stat-value.text-base {{ users.length }}
             .stat.bg-sky-950.rounded-lg.p-0
-              .stat-title.text-xs Админов
+              .stat-title.text-xs {{ $t('admin.users.statAdmins') }}
               .stat-value.text-base {{ adminCount }}
             .stat.bg-sky-950.rounded-lg.p-0
-              .stat-title.text-xs Менеджеров
+              .stat-title.text-xs {{ $t('admin.users.statManagers') }}
               .stat-value.text-base {{ managerCount }}
             .stat.bg-sky-950.rounded-lg.p-0
-              .stat-title.text-xs Пользователей
+              .stat-title.text-xs {{ $t('admin.users.statUsers') }}
               .stat-value.text-base {{ userCount }}
           
           //- Десктоп: горизонтальная статистика
           .stats.shadow.w-full.hidden(class="lg:flex")
             .stat
-              .stat-title Всего пользователей
+              .stat-title {{ $t('admin.users.statTotalD') }}
               .stat-value {{ users.length }}
             .stat
-              .stat-title Администраторов
+              .stat-title {{ $t('admin.users.statAdminsD') }}
               .stat-value {{ adminCount }}
             .stat
-              .stat-title Менеджеров
+              .stat-title {{ $t('admin.users.statManagersD') }}
               .stat-value {{ managerCount }}
             .stat
-              .stat-title Пользователей
+              .stat-title {{ $t('admin.users.statUsersD') }}
               .stat-value {{ userCount }}
 
   //- Мобильная навигация: только < 768px (как на витрине;
@@ -196,6 +196,10 @@ definePageMeta({
 
 const { $notify } = useNuxtApp()
 const appState = useAppState()
+const { t, locale } = useI18n()
+const localePath = useLocalePath()
+
+useHead({ title: () => t('admin.users.pageTitle') })
 
 const users = ref([])
 const loading = ref(true)
@@ -209,9 +213,9 @@ const userCount = computed(() => users.value.filter(u => u.role === 'user').leng
 
 const getRoleLabel = (role) => {
   const labels = {
-    admin: 'Админ',
-    manager: 'Менеджер',
-    user: 'Пользователь'
+    admin: t('admin.users.roleAdminShort'),
+    manager: t('admin.users.roleManager'),
+    user: t('admin.users.roleUser'),
   }
   return labels[role] || role
 }
@@ -224,11 +228,11 @@ const loadUsers = async () => {
     if (data?.success) {
       users.value = data.users
     } else {
-      throw new Error(data?.error || 'Ошибка загрузки пользователей')
+      throw new Error(data?.error || t('admin.users.loadError'))
     }
   } catch (err) {
-    error.value = err.message || 'Не удалось загрузить пользователей'
-    $notify.error('Ошибка загрузки пользователей')
+    error.value = err.message || t('admin.users.loadErrorText')
+    $notify.error(t('admin.users.loadError'))
   } finally {
     loading.value = false
   }
@@ -249,22 +253,22 @@ const updateUserRole = async (userId, newRole) => {
       if (userIndex !== -1) {
         users.value[userIndex] = data.user
       }
-      $notify.success(`Роль изменена на "${getRoleLabel(newRole)}"`)
+      $notify.success(t('admin.users.roleChanged', { role: getRoleLabel(newRole) }))
     } else {
-      throw new Error(data?.message || 'Ошибка обновления роли')
+      throw new Error(data?.message || t('admin.users.roleUpdateError'))
     }
   } catch (err) {
-    $notify.error(err.message || 'Ошибка обновления роли')
+    $notify.error(err.message || t('admin.users.roleUpdateError'))
     await loadUsers()
   }
 }
 
 const editUser = (user) => {
-  $notify.info(`Редактирование ${user.name}`, 'В разработке')
+  $notify.info(t('admin.users.editWip', { name: user.name }), t('admin.users.editWipTitle'))
 }
 
 const deleteUser = async (user) => {
-  if (!confirm(`Удалить пользователя "${user.name}"?`)) return
+  if (!confirm(t('admin.users.deleteConfirm', { name: user.name }))) return
   
   try {
     const data = await $fetch(`/api/admin/users/${user.id}`, {
@@ -272,18 +276,19 @@ const deleteUser = async (user) => {
     })
     
     if (data?.success) {
-      $notify.success(`Пользователь ${user.name} удален`)
+      $notify.success(t('admin.users.deleted', { name: user.name }))
       await loadUsers()
     } else {
-      throw new Error(data?.message || 'Ошибка удаления')
+      throw new Error(data?.message || t('admin.users.deleteError'))
     }
   } catch (err) {
-    $notify.error(err.message || 'Ошибка удаления пользователя')
+    $notify.error(err.message || t('admin.users.deleteErrorToast'))
   }
 }
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('ru-RU')
+  const loc = locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU'
+  return new Date(dateString).toLocaleDateString(loc)
 }
 
 onMounted(() => {

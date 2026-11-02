@@ -20,7 +20,9 @@ import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 import AdminPromocodes from '~/components/admin/AdminPromocodes.vue'
 
+const { t } = useI18n()
+
 const { isMobile } = useMobileDetection()
 
-useHead({ title: 'Промокоды — админка' })
+useHead({ title: () => t('admin.promocodes.pageTitle') })
 </script>

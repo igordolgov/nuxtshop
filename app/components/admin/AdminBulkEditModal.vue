@@ -16,13 +16,13 @@
       type="button"
     ) ✕
 
-    h3.text-base.font-bold(class="sm:text-lg") Массовое изменение
-    p.text-sm.opacity-70 Товаров выбрано: {{ products.length }}
+    h3.text-base.font-bold(class="sm:text-lg") {{ $t('admin.bulkEdit.title') }}
+    p.text-sm.opacity-70 {{ $t('admin.bulkEdit.productsSelected', { n: products.length }) }}
 
     form(@submit.prevent="handleSubmit")
       //- Наличие
       .mb-4
-        .label-text.text-xs.font-semibold.mb-1 Наличие
+        .label-text.text-xs.font-semibold.mb-1 {{ $t('admin.bulkEdit.availability') }}
         .flex.flex-col(class="gap-1.5")
           label.flex.items-center.gap-2.cursor-pointer.text-sm
             input.radio.radio-primary.radio-xs(
@@ -32,7 +32,7 @@
               v-model="availabilityMode"
               :disabled="isSubmitting"
             )
-            | Не менять
+            | {{ $t('admin.bulkEdit.keep') }}
           label.flex.items-center.gap-2.cursor-pointer.text-sm
             input.radio.radio-primary.radio-xs(
               type="radio"
@@ -41,7 +41,7 @@
               v-model="availabilityMode"
               :disabled="isSubmitting"
             )
-            | В наличии
+            | {{ $t('admin.bulkEdit.setInStock') }}
           label.flex.items-center.gap-2.cursor-pointer.text-sm
             input.radio.radio-primary.radio-xs(
               type="radio"
@@ -50,7 +50,7 @@
               v-model="availabilityMode"
               :disabled="isSubmitting"
             )
-            | Нет в наличии
+            | {{ $t('admin.bulkEdit.setOutOfStock') }}
 
         .mt-2(v-if="availabilityMode === 'in'")
           input.input.input-bordered.input-sm.w-full(
@@ -58,23 +58,23 @@
             min="0"
             step="1"
             v-model.number="stockQuantity"
-            placeholder="Количество (пусто — оставить текущее)"
+            :placeholder="$t('admin.bulkEdit.quantityPlaceholder')"
             :disabled="isSubmitting"
           )
-          .text-xs.opacity-60.mt-1 У товаров с нулевым количеством будет проставлено 1
+          .text-xs.opacity-60.mt-1 {{ $t('admin.bulkEdit.zeroQtyHint') }}
 
       //- Категории
       .mb-2
-        .label-text.text-xs.font-semibold.mb-1 Категории
+        .label-text.text-xs.font-semibold.mb-1 {{ $t('admin.bulkEdit.categories') }}
         select.select.select-bordered.select-sm.w-full(
           v-model="categoriesMode"
           :disabled="isSubmitting"
-          aria-label="Режим изменения категорий"
+          :aria-label="$t('admin.bulkEdit.categoriesModeAria')"
         )
-          option(value="keep") Не менять
-          option(value="add") Добавить к текущим
-          option(value="replace") Заменить все
-          option(value="remove") Убрать из текущих
+          option(value="keep") {{ $t('admin.bulkEdit.keep') }}
+          option(value="add") {{ $t('admin.bulkEdit.modeAdd') }}
+          option(value="replace") {{ $t('admin.bulkEdit.modeReplace') }}
+          option(value="remove") {{ $t('admin.bulkEdit.modeRemove') }}
 
         .mt-2(v-if="categoriesMode !== 'keep'")
           AdminCategoryPicker(
@@ -84,11 +84,11 @@
             :error="categoriesEmpty"
             :placeholder="categoriesPlaceholder"
           )
-          .text-xs.text-error.mt-1(v-if="categoriesEmpty") Укажите хотя бы одну категорию
+          .text-xs.text-error.mt-1(v-if="categoriesEmpty") {{ $t('admin.bulkEdit.categoriesRequired') }}
 
       //- Предупреждение: «убрать» опустошает категории у части выбранных
       .alert.alert-warning.p-2.text-xs.mt-2(v-if="emptyAfterRemoval > 0")
-        span У {{ emptyAfterRemoval }} товар(ов) после удаления этих категорий не останется ни одной. Уберите меньше или сначала добавьте другие.
+        span {{ $t('admin.bulkEdit.emptyAfterRemoval', { n: emptyAfterRemoval }) }}
 
       .alert.alert-error.p-2.text-xs.mt-2(v-if="formError") {{ formError }}
 
@@ -97,13 +97,13 @@
           type="button"
           @click="handleCancel"
           :disabled="isSubmitting"
-        ) Отмена
+        ) {{ $t('admin.common.cancel') }}
         button.btn.btn-primary.btn-sm(
           type="submit"
           :disabled="isSubmitting || !canApply"
         )
           span.loading.loading-spinner.loading-xs.mr-1(v-if="isSubmitting")
-          | {{ isSubmitting ? 'Применение…' : `Применить (${products.length})` }}
+          | {{ isSubmitting ? $t('admin.common.applying') : $t('admin.bulkEdit.applyBtn', { n: products.length }) }}
 </template>
 
 <script setup>
@@ -116,6 +116,7 @@
 // ============================================
 const { bulkUpdateProducts } = useProducts()
 const notify = useNotifyQueue()
+const { t } = useI18n()
 
 const props = defineProps({
   isOpen: Boolean,
@@ -159,11 +160,13 @@ const canApply = computed(
 
 const categoriesPlaceholder = computed(
   () =>
-    ({
-      add: 'Какие категории добавить',
-      replace: 'Новый список категорий',
-      remove: 'Какие категории убрать'
-    })[categoriesMode.value] || ''
+    (
+      {
+        add: t('admin.bulkEdit.placeholderAdd'),
+        replace: t('admin.bulkEdit.placeholderReplace'),
+        remove: t('admin.bulkEdit.placeholderRemove'),
+      }
+    )[categoriesMode.value] || '',
 )
 
 watch(
@@ -210,14 +213,14 @@ const handleSubmit = async () => {
     const ids = props.products.map((p) => p.id)
     const result = await bulkUpdateProducts(ids, patch)
 
-    notify.success(result.message || 'Обновлено')
+    notify.success(result.message || t('admin.common.updated'))
     if (result.skippedCount > 0) {
-      notify.info(`Пропущено ${result.skippedCount}: остались бы без категорий`)
+      notify.info(t('admin.bulkEdit.skipped', { n: result.skippedCount }))
     }
     emit('applied', result)
   } catch (error) {
     // ofetch кладёт тело ответа в error.data — там текст ошибки сервера
-    formError.value = error?.data?.message || error.message || 'Ошибка'
+    formError.value = error?.data?.message || error.message || t('admin.common.error')
   } finally {
     isSubmitting.value = false
   }

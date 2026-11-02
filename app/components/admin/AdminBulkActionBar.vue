@@ -9,37 +9,37 @@ Transition(name="bulk-bar")
   .bulk-bar.fixed.z-30(
     v-if="count > 0"
     role="toolbar"
-    aria-label="Групповые операции с выбранными товарами"
+    :aria-label="$t('admin.bulkBar.aria')"
   )
     .flex.items-center.gap-1.bg-neutral.text-neutral-content.rounded-2xl.shadow-xl.px-2.py-2(
       class="sm:gap-2 sm:px-3"
     )
       span.badge.badge-primary.badge-sm.font-bold {{ count }}
-      span.text-sm.whitespace-nowrap.hidden(class="sm:inline") выбрано
+      span.text-sm.whitespace-nowrap.hidden(class="sm:inline") {{ $t('admin.bulkBar.selected') }}
 
       .w-px.h-6(class="bg-white/20")
 
       button.btn.btn-sm.btn-primary(
         @click="$emit('edit')"
         type="button"
-        title="Массовое изменение категорий и наличия"
+        :title="$t('admin.bulkBar.editTitle')"
       )
         icon(name="heroicons:adjustments-horizontal" size="16")
-        span Изменить
+        span {{ $t('admin.common.edit') }}
 
       button.btn.btn-sm.btn-error(
         @click="$emit('remove')"
         type="button"
-        title="Удалить выбранные товары"
+        :title="$t('admin.bulkBar.deleteTitle')"
       )
         icon(name="heroicons:trash" size="16")
-        span.hidden(class="sm:inline") Удалить
+        span.hidden(class="sm:inline") {{ $t('admin.common.delete') }}
 
       button.btn.btn-sm.btn-ghost.btn-square(
         @click="$emit('clear')"
         type="button"
-        title="Снять выделение"
-        aria-label="Снять выделение"
+        :title="$t('admin.bulkBar.clearTitle')"
+        :aria-label="$t('admin.bulkBar.clearAria')"
       )
         icon(name="heroicons:x-mark" size="18")
 </template>

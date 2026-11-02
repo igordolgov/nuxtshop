@@ -5,15 +5,15 @@
   .flex-1.flex.items-center.justify-center(v-if="loading")
     div.text-center
       span.loading.loading-spinner.loading-lg.text-primary
-      p.mt-3.text-base.opacity-70 Загрузка товаров...
+      p.mt-3.text-base.opacity-70 {{ $t('admin.products.loadingProducts') }}
 
   //- Пустое состояние
   .flex-1.flex.items-center.justify-center(v-else-if="products.length === 0")
     div.text-center
       .text-5xl.mb-3.opacity-30 📦
-      h3.text-lg.font-semibold.mb-2 Товары не найдены
+      h3.text-lg.font-semibold.mb-2 {{ $t('admin.products.notFound') }}
       p.text-sm.opacity-70.mb-3 {{ emptyMessage }}
-      button.btn.btn-primary.btn-sm(@click="$emit('refresh')" type="button") Обновить
+      button.btn.btn-primary.btn-sm(@click="$emit('refresh')" type="button") {{ $t('admin.common.refresh') }}
 
   //- Таблица с товарами
   .flex-1.flex.flex-col.min-h-0(v-else)
@@ -29,17 +29,17 @@
               th.w-10
                 input.checkbox.checkbox-xs.checkbox-primary.cursor-pointer(
                   type="checkbox"
-                  aria-label="Выбрать все показанные товары"
+                  :aria-label="$t('admin.products.selectAllAria')"
                   :checked="allSelected"
                   :indeterminate.prop="someSelected && !allSelected"
                   @change="$emit('toggleSelectAll')"
                 )
-              th.w-14 Фото
-              th Название
-              th.w-20.text-right Цена
-              th.w-24 Категории
-              th.w-20 Кол-во
-              th.w-20 Действия
+              th.w-14 {{ $t('admin.products.colPhoto') }}
+              th {{ $t('admin.products.colName') }}
+              th.w-20.text-right {{ $t('admin.products.colPrice') }}
+              th.w-24 {{ $t('admin.products.colCategories') }}
+              th.w-20 {{ $t('admin.products.colStock') }}
+              th.w-20 {{ $t('admin.products.colActions') }}
           tbody
             tr(
               v-for="product in products"
@@ -49,7 +49,7 @@
               td
                 input.checkbox.checkbox-xs.checkbox-primary.cursor-pointer(
                   type="checkbox"
-                  :aria-label="`Выбрать «${product.name}»`"
+                  :aria-label="$t('admin.products.selectAria', { name: product.name })"
                   :checked="isSelected(product.id)"
                   @change="$emit('toggleSelect', product.id)"
                 )
@@ -88,7 +88,7 @@
                 .badge.badge-sm.min-w-10.rounded-sm(
                   :class="product.inStock ? 'badge-success' : 'badge-error'"
                 )
-                  | {{ product.inStock ? `${product.stockQuantity || 0}` : 'Нет' }}
+                  | {{ product.inStock ? String(product.stockQuantity || 0) : $t('admin.products.outOfStockShort') }}
 
               td
                 .flex.gap-4
@@ -138,13 +138,13 @@
                   .badge.badge-sm.font-medium.rounded-sm(
                     :class="product.inStock ? 'badge-success' : 'badge-error'"
                   )
-                    | {{ product.inStock ? `${product.stockQuantity || 0} шт` : 'Нет' }}
+                    | {{ product.inStock ? $t('admin.products.qtyShort', { n: product.stockQuantity || 0 }) : $t('admin.products.outOfStockShort') }}
 
               //- Действия - увеличенные кнопки + чекбокс выбора
               .flex.gap-2.items-center
                 input.checkbox.checkbox-sm.checkbox-primary(
                   type="checkbox"
-                  :aria-label="`Выбрать «${product.name}»`"
+                  :aria-label="$t('admin.products.selectAria', { name: product.name })"
                   :checked="isSelected(product.id)"
                   @change="$emit('toggleSelect', product.id)"
                 )
@@ -173,6 +173,8 @@ const props = defineProps({
 
 defineEmits(['edit', 'delete', 'refresh', 'toggleSelect', 'toggleSelectAll'])
 
+const localePath = useLocalePath()
+
 const selectedSet = computed(() => new Set(props.selectedIds.map(String)))
 
 const isSelected = (id) => selectedSet.value.has(String(id))
@@ -189,7 +191,7 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('ru-RU').format(price || 0)
 }
 
-const getProductUrl = (product) => `/product/${product.slug || product.id}`
+const getProductUrl = (product) => localePath(`/product/${product.slug || product.id}`)
 
 const getSafeImage = (url) => {
   if (!url || url.includes('placeholder')) return null

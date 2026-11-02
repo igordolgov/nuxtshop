@@ -15,16 +15,18 @@ import AdminProducts from '../../components/admin/AdminProducts.vue'
 const { logout } = useAuth()
 const { $notify } = useNuxtApp()
 const router = useRouter()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 // Выход из системы
 const handleLogout = async () => {
   try {
     await logout()
-    $notify.success('Вы успешно вышли из системы', 'До свидания!')
-    await router.push('/')
+    $notify.success(t('admin.dashboard.logoutSuccess'), t('admin.dashboard.admin'))
+    await router.push(localePath('/'))
   } catch (error) {
     console.error('❌ Ошибка выхода:', error)
-    $notify.error('Ошибка при выходе из системы', 'Ошибка')
+    $notify.error(t('admin.dashboard.logoutError'), t('admin.common.error'))
   }
 }
 </script>

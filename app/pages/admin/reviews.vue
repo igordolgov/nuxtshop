@@ -20,7 +20,9 @@ definePageMeta({
 import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 
+const { t } = useI18n()
+
 const { isMobile } = useMobileDetection()
 
-useHead({ title: 'Отзывы — админка' })
+useHead({ title: () => t('admin.reviews.pageTitle') })
 </script>

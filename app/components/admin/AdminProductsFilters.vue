@@ -5,7 +5,7 @@
   .relative.w-full(class="sm:w-48")
     input.input.input-sm.input-bordered.w-full.pr-8(
       type="text"
-      placeholder="Поиск..."
+      :placeholder="$t('admin.products.searchPlaceholder')"
       :value="searchQuery"
       @input="$emit('update:searchQuery', $event.target.value)"
     )

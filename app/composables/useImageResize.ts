@@ -19,14 +19,26 @@ export interface ResizeOptions {
   quality?: number;
 }
 
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
+// Ошибка валидации — i18n-КЛЮЧ + параметры (не готовый текст): вызовщики
+// (админ-модалки, форма новостей) переводят его через t(key, params),
+// чтобы текст ошибки шёл на языке интерфейса админки.
+export function validateImageFile(file: File): {
+  valid: boolean;
+  error?: string;
+  params?: Record<string, string | number>;
+} {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_TYPES)[number])) {
-    return { valid: false, error: `Неподдерживаемый формат: ${file.name}` };
+    return {
+      valid: false,
+      error: 'admin.imageFile.unsupportedFormat',
+      params: { name: file.name },
+    };
   }
   if (file.size > IMAGE_MAX_FILE_SIZE_MB * 1024 * 1024) {
     return {
       valid: false,
-      error: `${file.name} слишком большой (макс. ${IMAGE_MAX_FILE_SIZE_MB} МБ)`,
+      error: 'admin.imageFile.fileTooLarge',
+      params: { name: file.name, limit: IMAGE_MAX_FILE_SIZE_MB },
     };
   }
   return { valid: true };

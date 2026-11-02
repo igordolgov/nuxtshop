@@ -3,13 +3,26 @@
 // Middleware: admin-auth — защита роутов /admin/**.
 //
 // Сервер: проверяем сессию по кукам запроса и отдаём редирект прямо в
-// SSR-ответе — никакого «мигания» админки при F5. Безопасно, потому что
+// SSR-ответе — никакого «мигания» админики при F5. Безопасно, потому что
 // /admin/** не кэшируется (SWR включён только для / и /product/**).
 //
 // Клиент: та же проверка через общий стейт useAuth (для SPA-навигаций
 // и на случай смерти сессии между навигациями).
+//
+// Локаль: админка локализуется теми же префиксами (/en/admin, /es/admin),
+// поэтому редиректы идут через localePath — не сбрасывая язык, и с
+// ?redirect=<пришедший путь>, чтобы после логина вернуть пользователя туда,
+// откуда его выкинуло (логин учитывает этот параметр).
 // ============================================
 export default defineNuxtRouteMiddleware(async (to) => {
+  const localePath = useLocalePath()
+
+  const loginRedirect = () =>
+    navigateTo(
+      localePath({ path: '/auth/login', query: { redirect: to.fullPath } }),
+      { replace: true },
+    )
+
   // ─── Сервер ───────────────────────────────────────────────
   if (import.meta.server) {
     // $fetch при SSR не пересылает куки автоматически — делаем это явно
@@ -17,10 +30,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     try {
       const data = await $fetch('/api/auth/user', { headers })
       const user = data?.user ?? null
-      if (!user) return navigateTo('/auth/login', { replace: true })
-      if (user.role !== 'admin') return navigateTo('/', { replace: true })
+      if (!user) return loginRedirect()
+      if (user.role !== 'admin') return navigateTo(localePath('/'), { replace: true })
     } catch {
-      return navigateTo('/auth/login', { replace: true })
+      return loginRedirect()
     }
     return
   }
@@ -35,10 +48,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!isAuthenticated.value) {
     console.log('🚫 /admin: не авторизован →', to.path)
-    return navigateTo('/auth/login', { replace: true })
+    return loginRedirect()
   }
   if (!isAdmin.value) {
     console.log('🚫 /admin: недостаточно прав →', to.path)
-    return navigateTo('/', { replace: true })
+    return navigateTo(localePath('/'), { replace: true })
   }
 })

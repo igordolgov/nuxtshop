@@ -107,19 +107,20 @@ const bulkDeleteProducts = appState.bulkDeleteProducts
 const initializeApp = appState.initializeApp
 
 const notify = useNotifyQueue()
+const { t } = useI18n()
 
-const sortOptions = [
-  { field: 'createdAt', label: 'По дате' },
-  { field: 'name', label: 'По названию' },
-  { field: 'price', label: 'По цене' },
-  { field: 'stockQuantity', label: 'По количеству' }
-]
+const sortOptions = computed(() => [
+  { field: 'createdAt', label: t('admin.products.sortByDate') },
+  { field: 'name', label: t('admin.products.sortByName') },
+  { field: 'price', label: t('admin.products.sortByPrice') },
+  { field: 'stockQuantity', label: t('admin.products.sortByStock') },
+])
 
-const statusFilters = [
-  { value: 'all', label: 'Все товары' },
-  { value: 'inStock', label: 'В наличии' },
-  { value: 'outOfStock', label: 'Нет в наличии' }
-]
+const statusFilters = computed(() => [
+  { value: 'all', label: t('admin.products.filterAll') },
+  { value: 'inStock', label: t('admin.products.filterInStock') },
+  { value: 'outOfStock', label: t('admin.products.filterOutOfStock') },
+])
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -204,18 +205,18 @@ const stats = computed(() => ({
 }))
 
 const emptyMessage = computed(() => {
-  if (searchQuery.value) return 'Попробуйте изменить поиск'
-  if (selectedCategories.value.length) return 'Попробуйте сбросить фильтры категорий'
-  if (currentFilter.value !== 'all') return 'Попробуйте сбросить фильтры'
-  return 'Добавьте первый товар или измените фильтры'
+  if (searchQuery.value) return t('admin.products.emptySearch')
+  if (selectedCategories.value.length) return t('admin.products.emptyCategories')
+  if (currentFilter.value !== 'all') return t('admin.products.emptyFilters')
+  return t('admin.products.emptyDefault')
 })
 
 const handleRefresh = async () => {
   try {
     await loadProducts(true)
-    notify.success('Данные обновлены')
+    notify.success(t('admin.products.dataRefreshed'))
   } catch (e) {
-    notify.error('Ошибка обновления')
+    notify.error(t('admin.common.error'))
   }
 }
 
@@ -228,7 +229,7 @@ const handleExport = () => {
   link.download = `products-${new Date().toISOString().split('T')[0]}.json`
   link.click()
   URL.revokeObjectURL(url)
-  notify.success('Экспорт завершён')
+  notify.success(t('admin.products.exportDone'))
 }
 
 const handleEdit = (product) => {
@@ -237,12 +238,12 @@ const handleEdit = (product) => {
 }
 
 const handleDelete = async (product) => {
-  if (!confirm(`Удалить "${product.name}"?`)) return
+  if (!confirm(t('admin.products.deleteConfirm', { name: product.name }))) return
   // useProducts.deleteProduct сам показывает ошибку с текстом от сервера
   // (в т.ч. «Требуется авторизация» при мёртвой сессии) и возвращает boolean
   const ok = await deleteProduct(product.id)
   if (ok) {
-    notify.success(`"${product.name}" удалён`)
+    notify.success(t('admin.products.deleted', { name: product.name }))
     // Если товар был выделен — убираем из выделения, чтобы панель
     // групповых операций не считала уже несуществующий товар
     selectedIds.value = selectedIds.value.filter((id) => id !== String(product.id))
@@ -281,11 +282,11 @@ const clearSelection = () => {
 
 const handleBulkDelete = async () => {
   const count = selectedIds.value.length
-  if (!confirm(`Удалить выбранные товары (${count})? Действие необратимо.`)) return
+  if (!confirm(t('admin.products.bulkDeleteConfirm', { n: count }))) return
   try {
     // useProducts сам показывает тост с ошибкой сервера при неудаче
     const result = await bulkDeleteProducts(selectedIds.value)
-    notify.success(result.message || `Удалено товаров: ${count}`)
+    notify.success(result.message || t('admin.products.bulkDeleted', { n: count }))
     clearSelection()
   } catch {
     // Ошибка уже показана в useProducts — здесь только не падаем
@@ -328,14 +329,14 @@ const clearCategories = () => {
 const handleProductAdded = (product) => {
   // Список уже перезагружен модалкой — только закрываем и уведомляем
   showAddModal.value = false
-  notify.success(`"${product.name}" добавлен`)
+  notify.success(t('admin.products.addedToast', { name: product.name }))
 }
 
 const handleProductUpdated = (product) => {
   // Список уже перезагружен модалкой
   showEditModal.value = false
   currentProduct.value = null
-  notify.success(`"${product.name}" обновлён`)
+  notify.success(t('admin.products.updatedToast', { name: product.name }))
 }
 </script>
 

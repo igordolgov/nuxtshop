@@ -10,16 +10,16 @@
     //- Шапка: заголовок + обновление
     .flex.items-center.justify-between.gap-2.mb-4
       div
-        h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") Заказы
+        h1.text-2xl.font-semibold.text-base-content(class="lg:text-3xl") {{ $t('admin.orders.title') }}
         p.text-sm(class="mt-0.5 text-base-content/60")
-          | {{ isLoading ? 'Загрузка…' : ('В системе: ' + orders.length) }}
+          | {{ isLoading ? $t('admin.common.loading') : $t('admin.orders.inSystem', { n: orders.length }) }}
       //- Правая группа: CSV-экспорт + обновление
       .flex.items-center.gap-1
         button.btn.btn-ghost.btn-sm.rounded-xl(
           type="button"
           :disabled="isLoading || isExporting"
-          aria-label="Скачать заказы в CSV"
-          title="Скачать заказы в CSV (Excel)"
+          :aria-label="$t('admin.orders.exportAria')"
+          :title="$t('admin.orders.exportTitle')"
           @click="exportCsv"
         )
           svg.w-4.h-4(
@@ -34,7 +34,7 @@
         button.btn.btn-ghost.btn-sm.rounded-xl(
           type="button"
           :disabled="isLoading"
-          aria-label="Обновить"
+          :aria-label="$t('admin.orders.refreshAria')"
           @click="loadOrders"
         )
           svg.w-4.h-4(
@@ -53,7 +53,7 @@
         :class="filter === 'all' ? 'btn-primary' : 'btn-outline'"
         @click="setFilter('all')"
       )
-        | Все
+        | {{ $t('admin.orders.filterAll') }}
         span.badge.badge-sm.ml-1(class="badge-neutral") {{ orders.length }}
       button.btn.btn-sm.rounded-lg(
         v-for="s in STATUS_KEYS"
@@ -79,9 +79,9 @@
         svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5")
           path(d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4")
       h2.text-lg.font-semibold.text-base-content
-        | {{ filter === 'all' ? 'Заказов пока нет' : 'Нет заказов с этим статусом' }}
+        | {{ filter === 'all' ? $t('admin.orders.emptyAll') : $t('admin.orders.emptyFiltered') }}
       p.text-sm.max-w-sm.mx-auto.mt-1(class="text-base-content/50")
-        | Заказы, оформленные покупателями, появятся здесь сразу после создания
+        | {{ $t('admin.orders.emptyHint') }}
 
     //- Список заказов
     .space-y-4(v-else)
@@ -97,7 +97,7 @@
           .min-w-0
             .font-mono.font-semibold.text-sm {{ order.id }}
             .text-xs(class="mt-0.5 text-base-content/50")
-              | {{ formatDateTime(order.createdAt) }} · {{ itemsCount(order) }} шт.
+              | {{ formatDateTime(order.createdAt) }} · {{ itemsCount(order) }} {{ $t('admin.orders.itemsUnit') }}
           .flex.items-center.gap-2.shrink-0
             span.font-semibold.text-sm.hidden(class="sm:inline") {{ formatPrice(order.total) }}
             span.badge.badge-sm.rounded-full(:class="statusBadgeClass(order.status)")
@@ -110,9 +110,9 @@
           @click="toggleExpand(order.id)"
         )
           .flex-1.min-w-0
-            .text-sm.font-medium {{ order.customer?.name || 'Без имени' }}
+            .text-sm.font-medium {{ order.customer?.name || $t('admin.orders.noName') }}
             .text-xs.mt-1.truncate(class="text-base-content/50")
-              | {{ order.customer?.phone || 'телефон не указан' }} · {{ deliveryLabel(order.deliveryMethod) }}
+              | {{ order.customer?.phone || $t('admin.orders.noPhone') }} · {{ deliveryLabel(order.deliveryMethod) }}
           .font-semibold.text-sm(class="sm:hidden") {{ formatPrice(order.total) }}
           svg.w-5.h-5.shrink-0.transition-transform(
             xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@
         //- Детали заказа
         .px-4.pb-4(v-if="expanded.has(order.id)")
           //- Состав заказа
-          .text-xs.font-semibold.uppercase.opacity-60.mb-1 Состав
+          .text-xs.font-semibold.uppercase.opacity-60.mb-1 {{ $t('admin.orders.contents') }}
           .divide-y.rounded-xl.overflow-hidden(
             class="divide-base-200 bg-base-200/40"
           )
@@ -144,48 +144,48 @@
           //- Итоги
           .mt-3.space-y-1.text-sm
             .flex.justify-between.gap-3
-              span(class="text-base-content/60") Товары
+              span(class="text-base-content/60") {{ $t('admin.orders.subtotal') }}
               span {{ formatPrice(order.subtotal) }}
             .flex.justify-between.gap-3(v-if="order.discount > 0")
-              span(class="text-base-content/60") Скидка{{ order.promoCode ? ` (${order.promoCode})` : '' }}
+              span(class="text-base-content/60") {{ order.promoCode ? $t('admin.orders.discountWithCode', { code: order.promoCode }) : $t('admin.orders.discount') }}
               span.text-success −{{ formatPrice(order.discount) }}
             .flex.justify-between.gap-3
-              span(class="text-base-content/60") Доставка
-              span {{ order.deliveryPrice > 0 ? formatPrice(order.deliveryPrice) : 'бесплатно' }}
+              span(class="text-base-content/60") {{ $t('admin.orders.delivery') }}
+              span {{ order.deliveryPrice > 0 ? formatPrice(order.deliveryPrice) : $t('admin.orders.free') }}
             .flex.justify-between.gap-3.pt-1.border-t(class="border-base-200")
-              span.font-semibold Итого
+              span.font-semibold {{ $t('admin.orders.total') }}
               span.font-semibold {{ formatPrice(order.total) }}
 
           //- Контакт и условия
           .mt-3.grid.grid-cols-1.gap-x-4.gap-y-1.text-xs(class="sm:grid-cols-2")
             div
-              span(class="text-base-content/60") Телефон:
+              span(class="text-base-content/60") {{ $t('admin.orders.phoneLabel') }}
               |
               | {{ order.customer?.phone || '—' }}
             div
-              span(class="text-base-content/60") Email:
+              span(class="text-base-content/60") {{ $t('admin.orders.emailLabel') }}
               |
               | {{ order.customer?.email || '—' }}
             div
-              span(class="text-base-content/60") Доставка:
+              span(class="text-base-content/60") {{ $t('admin.orders.deliveryLabel') }}
               |
               | {{ deliveryLabel(order.deliveryMethod) }}
             div
-              span(class="text-base-content/60") Оплата:
+              span(class="text-base-content/60") {{ $t('admin.orders.paymentLabel') }}
               |
               | {{ paymentLabel(order.paymentMethod) }}
             div(class="sm:col-span-2" v-if="order.customer?.address")
-              span(class="text-base-content/60") Адрес:
+              span(class="text-base-content/60") {{ $t('admin.orders.addressLabel') }}
               |
               | {{ order.customer.address }}
             div(class="sm:col-span-2" v-if="order.comment")
-              span(class="text-base-content/60") Комментарий:
+              span(class="text-base-content/60") {{ $t('admin.orders.commentLabel') }}
               |
               | {{ order.comment }}
 
           //- История статусов (свежие сверху)
           .mt-3(v-if="order.statusHistory && order.statusHistory.length")
-            .text-xs.font-semibold.uppercase.opacity-60.mb-1 История статусов
+            .text-xs.font-semibold.uppercase.opacity-60.mb-1 {{ $t('admin.orders.statusHistory') }}
             ul.space-y-1.text-xs
               li.flex.items-center.gap-2(
                 v-for="(h, idx) in historyDesc(order)"
@@ -199,11 +199,11 @@
           //- Смена статуса
           .mt-3.pt-3.border-t(class="border-base-300")
             .flex.flex-wrap.items-center.gap-2
-              span.text-xs(class="text-base-content/60") Сменить статус:
+              span.text-xs(class="text-base-content/60") {{ $t('admin.orders.changeStatus') }}
               select.select.select-bordered.select-sm.max-w-44(
                 v-model="nextStatus[order.id]"
                 :disabled="updating.has(order.id)"
-                aria-label="Новый статус"
+                :aria-label="$t('admin.orders.newStatusAria')"
               )
                 option(
                   v-for="s in statusOptions(order.status)"
@@ -216,7 +216,7 @@
                 @click="applyStatus(order)"
               )
                 span.loading.loading-spinner.loading-xs(v-if="updating.has(order.id)")
-                | Применить
+                | {{ $t('admin.common.apply') }}
 
   //- Мобильная навигация: только < 768px (как на витрине)
   MobileNavFooter
@@ -233,6 +233,7 @@ import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 
 const { $notify } = useNuxtApp()
+const { t, locale } = useI18n()
 
 const orders = ref([])
 const isLoading = ref(true)
@@ -245,16 +246,16 @@ const nextStatus = ref({})
 //- id заказов, для которых сейчас летит PUT
 const updating = ref(new Set())
 
-//- Подписи статусов: зеркалим ORDER_STATUS_LABELS сервера
+//- Подписи статусов: i18n (зеркалим ORDER_STATUS_LABELS сервера)
 const STATUS_KEYS = ['new', 'confirmed', 'shipped', 'delivered', 'cancelled']
-const STATUS_LABELS = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  shipped: 'В доставке',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
-}
-const statusLabel = (s) => STATUS_LABELS[s] ?? s
+const STATUS_LABELS = computed(() => ({
+  new: t('admin.orders.statusNew'),
+  confirmed: t('admin.orders.statusConfirmed'),
+  shipped: t('admin.orders.statusShipped'),
+  delivered: t('admin.orders.statusDelivered'),
+  cancelled: t('admin.orders.statusCancelled'),
+}))
+const statusLabel = (s) => STATUS_LABELS.value[s] ?? s
 
 const statusBadgeClass = (s) => ({
   new: 'badge-primary',
@@ -265,9 +266,9 @@ const statusBadgeClass = (s) => ({
 })
 
 const deliveryLabel = (m) =>
-  m === 'courier' ? 'Курьером' : m === 'post' ? 'Почтой' : 'Самовывоз'
+  m === 'courier' ? t('admin.orders.deliveryCourier') : m === 'post' ? t('admin.orders.deliveryPost') : t('admin.orders.deliveryPickup')
 
-const paymentLabel = (m) => (m === 'card' ? 'Картой' : 'Наличными')
+const paymentLabel = (m) => (m === 'card' ? t('admin.orders.paymentCard') : t('admin.orders.paymentCash'))
 
 //- ─── CSV-экспорт: blob-скачивание с обработкой ошибок ──────────────
 // Не <a href> — blob позволяет поймать 401/500 и показать тост,
@@ -286,10 +287,10 @@ const exportCsv = async () => {
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
-    $notify.success('CSV-файл заказов скачан')
+    $notify.success(t('admin.orders.csvDownloaded'))
   } catch (err) {
     console.error('[admin-orders] Ошибка экспорта:', err?.data?.message || err?.message)
-    $notify.error('Не удалось скачать CSV')
+    $notify.error(t('admin.orders.csvError'))
   } finally {
     isExporting.value = false
   }
@@ -307,7 +308,7 @@ const loadOrders = async () => {
   } catch (err) {
     // 401 при протухшей сессии: middleware не пустит, но и тут не падаем
     console.error('[admin-orders] Ошибка загрузки:', err?.data?.message || err?.message)
-    $notify.error('Не удалось загрузить заказы')
+    $notify.error(t('admin.orders.loadError'))
   } finally {
     isLoading.value = false
   }
@@ -347,13 +348,18 @@ const formatPrice = (price) =>
 
 const formatDateTime = (iso) =>
   iso
-    ? new Date(iso).toLocaleString('ru-RU', {
+    ? new Date(iso).toLocaleString(dateLocale.value, {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',
         minute: '2-digit',
       })
     : '—'
+
+// Локаль для дат/чисел — синхронно с языком интерфейса
+const dateLocale = computed(() =>
+  locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU',
+)
 
 //- Доступные для перехода статусы: все, кроме текущего
 const statusOptions = (current) => STATUS_KEYS.filter((s) => s !== current)
@@ -374,11 +380,11 @@ const applyStatus = async (order) => {
       // Сервер вернул обновлённый заказ — заменяем им карточку в списке
       orders.value = orders.value.map((o) => (o.id === order.id ? resp.order : o))
       nextStatus.value = { ...nextStatus.value, [order.id]: undefined }
-      $notify.success(resp.message || `Статус заказа ${order.id} обновлён`)
+      $notify.success(resp.message || t('admin.orders.statusUpdated', { id: order.id }))
     }
   } catch (err) {
     console.error('[admin-orders] Ошибка смены статуса:', err?.data?.message || err?.message)
-    $notify.error(err?.data?.message || 'Не удалось сменить статус')
+    $notify.error(err?.data?.message || t('admin.orders.statusChangeError'))
   } finally {
     const done = new Set(updating.value)
     done.delete(order.id)
@@ -391,5 +397,5 @@ onMounted(() => {
   loadOrders()
 })
 
-useHead({ title: 'Заказы — админка' })
+useHead({ title: () => t('admin.orders.pageTitle') })
 </script>

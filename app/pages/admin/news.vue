@@ -19,7 +19,9 @@ definePageMeta({
 import Header from '~/components/layout/Header.vue'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 
+const { t } = useI18n()
+
 const { isMobile } = useMobileDetection()
 
-useHead({ title: 'Новости — админка' })
+useHead({ title: () => t('admin.news.pageTitle') })
 </script>

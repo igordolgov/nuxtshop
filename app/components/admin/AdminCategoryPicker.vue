@@ -17,7 +17,7 @@
     button.cat-remove.shrink-0.font-bold(
       class="ml-0.5 opacity-70 hover:opacity-100"
       type="button"
-      :aria-label="`Убрать категорию ${cat}`"
+      :aria-label="$t('admin.categoryPicker.removeAria', { name: cat })"
       :disabled="disabled"
       @click.stop="remove(cat)"
     ) ✕
@@ -26,9 +26,9 @@
     ref="inputEl"
     v-model="draft"
     :list="listId"
-    :placeholder="model.length === 0 ? placeholder : ''"
+    :placeholder="model.length === 0 ? placeholder || $t('admin.categoryPicker.placeholder') : ''"
     :disabled="disabled"
-    :aria-label="placeholder || 'Категории'"
+    :aria-label="placeholder || $t('admin.categoryPicker.ariaLabel')"
     autocomplete="off"
     @keydown="onKeydown"
     @blur="commitDraft"
@@ -53,7 +53,7 @@
 const props = defineProps({
   /** Справочник известных категорий для подсказок (уже выбранные скрываются) */
   allCategories: { type: Array, default: () => [] },
-  placeholder: { type: String, default: 'Начните вводить или вставьте через запятую' },
+  placeholder: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
   /** Подсветка ошибки валидации (пустое обязательное поле) */
   error: { type: Boolean, default: false },

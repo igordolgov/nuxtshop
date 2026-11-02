@@ -106,8 +106,16 @@ const appState = useAppState()
 const { login, isAuthenticated, checkAuth, user } = appState
 
 const router = useRouter()
-// После входа возвращаемся на главную ТЕКУЩЕЙ локали
+// После входа: ?redirect= из middleware admin-auth (вернуться в админку,
+// откуда выкинуло) — с защитой от open-redirect; иначе главная локали
 const localePath = useLocalePath()
+const route = useRoute()
+const redirectTarget = computed(() => {
+  const r = route.query.redirect
+  return typeof r === 'string' && r.startsWith('/') && !r.startsWith('//')
+    ? r
+    : localePath('/')
+})
 const { $notify } = useNuxtApp()
 
 const form = ref({
@@ -127,7 +135,7 @@ onMounted(() => {
   if (import.meta.client) {
     checkAuth().then(() => {
       if (isAuthenticated.value) {
-        router.push(localePath('/'))
+        router.push(redirectTarget.value)
       }
     })
   }
@@ -182,7 +190,7 @@ const handleLogin = async () => {
 
       if (user.value) {
         $notify.success(t('auth.welcomeBack', { name: user.value.name || t('header.defaultUserName') }), t('auth.welcomeTitle'))
-        setTimeout(() => router.push(localePath('/')), 100)
+        setTimeout(() => router.push(redirectTarget.value), 100)
       } else {
         throw new Error(t('auth.errState'))
       }
