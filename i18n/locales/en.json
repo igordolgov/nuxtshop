@@ -28,7 +28,8 @@
     "users": "Users",
     "profile": "Profile",
     "login": "Sign in",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "compare": "Compare"
   },
   "header": {
     "openMenu": "Open menu",
@@ -180,7 +181,14 @@
     "imageAlt": "{name} — image {n}",
     "addWithPrice": "Add to cart · {price}",
     "nameFallback": "Product",
-    "zoomImage": "Zoom image"
+    "zoomImage": "Zoom image",
+    "notifyMe": "Notify me when available",
+    "notifyHint": "Leave an email or phone number — we will write as soon as the product is back.",
+    "notifyContactPh": "you@example.com or +1 …",
+    "notifySend": "Send",
+    "notifyDone": "Done! We will let you know when the product is back",
+    "notifyErrContact": "Enter an email or phone number (at least 10 digits)",
+    "notifyError": "Could not send. Please try again"
   },
   "productPage": {
     "notFound": "Product not found",
@@ -957,7 +965,11 @@
       "deleteConfirm": "Delete the review? This action cannot be undone.",
       "deletedToast": "Review deleted",
       "saveError": "Failed to save the review",
-      "deleteError": "Failed to delete the review"
+      "deleteError": "Failed to delete the review",
+      "tabsAria": "Moderation sections",
+      "tabProducts": "Products",
+      "tabStore": "Store",
+      "tabAlerts": "Restock alerts"
     },
     "users": {
       "title": "Users",
@@ -1071,6 +1083,49 @@
     "imageFile": {
       "unsupportedFormat": "Unsupported format: {name}",
       "fileTooLarge": "{name} is too large (max {limit} MB)"
+    },
+    "storeReviews": {
+      "title": "Store reviews",
+      "loadError": "Failed to load store reviews",
+      "emptyAll": "No store reviews yet",
+      "saveError": "Failed to update the review",
+      "deleteConfirm": "Delete this store review?",
+      "deletedToast": "Review deleted",
+      "deleteError": "Failed to delete the review"
+    },
+    "stockAlerts": {
+      "title": "Restock alerts",
+      "count": "Alerts: {n}",
+      "empty": "No alerts yet — they appear when customers leave a contact on an out-of-stock product",
+      "loadError": "Failed to load alerts",
+      "deleteConfirm": "Delete this alert?",
+      "deletedToast": "Alert deleted",
+      "deleteError": "Failed to delete the alert",
+      "deletedProduct": "product deleted (id {id})",
+      "productId": "id {id}"
     }
+  },
+  "compare": {
+    "title": "Product comparison",
+    "count": "Products in comparison: {n}",
+    "metaDescription": "Compare store products by price, rating and specifications — up to 4 products side by side.",
+    "clearAll": "Clear comparison",
+    "removeAria": "Remove {name} from comparison",
+    "toggleAria": "Add to or remove from comparison",
+    "added": "Added to comparison",
+    "limit": "You can compare up to {n} products",
+    "addMore": "Add more products — the ⇄ button on a product card — and a specification table will appear.",
+    "empty": "Nothing to compare yet",
+    "emptyHint": "Press ⇄ on a product card — a specification table will appear here (up to {n} products).",
+    "removed": "Removed from comparison",
+    "cleared": "Comparison cleared",
+    "price": "Price",
+    "rating": "Rating",
+    "stock": "Availability"
+  },
+  "storeReviews": {
+    "title": "Store reviews",
+    "write": "Write a review",
+    "empty": "Be the first — tell us how you like our store"
   }
 }

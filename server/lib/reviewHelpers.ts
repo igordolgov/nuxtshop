@@ -60,6 +60,9 @@ export function nextReviewId(items: ReviewItem[]): string {
 const MAX_AUTHOR_LEN = 40;
 const MAX_TEXT_LEN = 600;
 
+export const REVIEW_AUTHOR_MAX = MAX_AUTHOR_LEN;
+export const REVIEW_TEXT_MAX = MAX_TEXT_LEN;
+
 export class ReviewValidationError extends Error {}
 
 /**
@@ -148,8 +151,14 @@ export function normalizeReviewPhotos(raw: unknown): string[] {
 
 // ─── Витринные выборки (чистые функции — покрыты тестами) ────────────────
 
-/** Свежие сверху; при равных createdAt — больший id (стабильно). */
-export function sortReviewsDesc(items: ReviewItem[]): ReviewItem[] {
+/**
+ * Свежие сверху; при равных createdAt — больший id (стабильно).
+ * Обобщённая: работает и с отзывами о товарах, и с отзывами о магазине
+ * (StoreReviewItem) — один и тот же порядок сортировки.
+ */
+export function sortReviewsDesc<T extends { id: string | number; createdAt?: string }>(
+  items: T[],
+): T[] {
   return [...items].sort((a, b) => {
     const d = String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? ''));
     if (d !== 0) return d;
@@ -162,8 +171,11 @@ export function approvedReviews(items: ReviewItem[], productId: string): ReviewI
   return sortReviewsDesc(items.filter((r) => r.approved && String(r.productId) === String(productId)));
 }
 
-/** Сводка по списку отзывов: количество и средняя оценка (1 знак). */
-export function ratingSummary(items: ReviewItem[]): RatingSummary {
+/**
+ * Сводка по списку: количество и средняя оценка (1 знак).
+ * Обобщённая: любой { rating: number } (товарные и магазинные отзывы).
+ */
+export function ratingSummary<T extends { rating: number }>(items: T[]): RatingSummary {
   if (items.length === 0) return { count: 0, average: 0 };
   const sum = items.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
   return { count: items.length, average: Math.round((sum / items.length) * 10) / 10 };

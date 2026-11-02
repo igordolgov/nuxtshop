@@ -24,6 +24,16 @@
       size="20"
     )
 
+  //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2rem + зазор)
+  button.compare-btn(
+    class="top-10 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
+    :class="isComparedVisible ? 'bg-primary text-primary-content' : 'bg-base-100/40 text-base-content'",
+    @click="toggleCompareClick",
+    :title="$t('compare.toggleAria')",
+    :aria-label="$t('compare.toggleAria')"
+  )
+    icon(name="heroicons:arrows-right-left", size="16")
+
   //- Ссылка на товар
   .card-content
     NuxtLink.block(:to="productUrl", prefetch)
@@ -151,6 +161,17 @@ onMounted(() => {
 })
 
 const isFavorite = computed(() => isHydrated.value && app.isFavorite(props.product.id))
+
+//- Сравнение: гейт тот же, что у избранного — до гидратации «не в сравнении»
+const { $notify } = useNuxtApp()
+const { isCompared, toggleCompare } = useCompare()
+const isComparedVisible = computed(() => isHydrated.value && isCompared(props.product.id))
+
+const toggleCompareClick = () => {
+  const status = toggleCompare(props.product)
+  if (status === 'added') $notify.success(t('compare.added'))
+  if (status === 'full') $notify.warning(t('compare.limit', { n: 4 }))
+}
 
 //- Оптимизация загрузки изображений - lazy для всех кроме первых 4
 const loadingAttr = computed(() => props.index < 4 ? 'eager' : 'lazy')

@@ -28,7 +28,8 @@
     "users": "Usuarios",
     "profile": "Perfil",
     "login": "Entrar",
-    "mainNav": "Navegación principal"
+    "mainNav": "Navegación principal",
+    "compare": "Comparar"
   },
   "header": {
     "openMenu": "Abrir menú",
@@ -180,7 +181,14 @@
     "imageAlt": "{name} — imagen {n}",
     "addWithPrice": "Añadir al carrito · {price}",
     "nameFallback": "Producto",
-    "zoomImage": "Ampliar imagen"
+    "zoomImage": "Ampliar imagen",
+    "notifyMe": "Avisarme cuando haya stock",
+    "notifyHint": "Deja un email o teléfono — te escribiremos en cuanto vuelva el producto.",
+    "notifyContactPh": "tu@ejemplo.com o +34 …",
+    "notifySend": "Enviar",
+    "notifyDone": "¡Listo! Te avisaremos cuando vuelva el producto",
+    "notifyErrContact": "Indica un email o teléfono (mínimo 10 dígitos)",
+    "notifyError": "No se pudo enviar. Inténtalo de nuevo"
   },
   "productPage": {
     "notFound": "Producto no encontrado",
@@ -957,7 +965,11 @@
       "deleteConfirm": "¿Eliminar la reseña? La acción es irreversible.",
       "deletedToast": "Reseña eliminada",
       "saveError": "No se pudo guardar la reseña",
-      "deleteError": "No se pudo eliminar la reseña"
+      "deleteError": "No se pudo eliminar la reseña",
+      "tabsAria": "Secciones de moderación",
+      "tabProducts": "Productos",
+      "tabStore": "Tienda",
+      "tabAlerts": "Avisos de stock"
     },
     "users": {
       "title": "Usuarios",
@@ -1071,6 +1083,49 @@
     "imageFile": {
       "unsupportedFormat": "Formato no compatible: {name}",
       "fileTooLarge": "{name} es demasiado grande (máx. {limit} MB)"
+    },
+    "storeReviews": {
+      "title": "Opiniones sobre la tienda",
+      "loadError": "No se pudieron cargar las opiniones sobre la tienda",
+      "emptyAll": "Todavía no hay opiniones sobre la tienda",
+      "saveError": "No se pudo modificar la opinión",
+      "deleteConfirm": "¿Eliminar esta opinión sobre la tienda?",
+      "deletedToast": "Opinión eliminada",
+      "deleteError": "No se pudo eliminar la opinión"
+    },
+    "stockAlerts": {
+      "title": "Avisos de stock",
+      "count": "Avisos: {n}",
+      "empty": "Todavía no hay avisos — aparecen cuando los clientes dejan un contacto en un producto agotado",
+      "loadError": "No se pudieron cargar los avisos",
+      "deleteConfirm": "¿Eliminar este aviso?",
+      "deletedToast": "Aviso eliminado",
+      "deleteError": "No se pudo eliminar el aviso",
+      "deletedProduct": "producto eliminado (id {id})",
+      "productId": "id {id}"
     }
+  },
+  "compare": {
+    "title": "Comparación de productos",
+    "count": "Productos en comparación: {n}",
+    "metaDescription": "Compara productos de la tienda por precio, valoración y características — hasta 4 productos lado a lado.",
+    "clearAll": "Limpiar comparación",
+    "removeAria": "Quitar {name} de la comparación",
+    "toggleAria": "Añadir o quitar de la comparación",
+    "added": "Añadido a la comparación",
+    "limit": "Puedes comparar hasta {n} productos",
+    "addMore": "Añade más productos — el botón ⇄ en la tarjeta — y aparecerá la tabla de características.",
+    "empty": "Todavía no hay nada que comparar",
+    "emptyHint": "Pulsa ⇄ en una tarjeta de producto — aquí aparecerá la tabla de características (hasta {n} productos).",
+    "removed": "Quitado de la comparación",
+    "cleared": "Comparación limpiada",
+    "price": "Precio",
+    "rating": "Valoración",
+    "stock": "Disponibilidad"
+  },
+  "storeReviews": {
+    "title": "Opiniones sobre la tienda",
+    "write": "Escribir una opinión",
+    "empty": "Sé el primero — cuéntanos qué te parece nuestra tienda"
   }
 }

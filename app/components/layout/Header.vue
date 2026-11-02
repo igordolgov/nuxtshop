@@ -75,6 +75,20 @@ header.app-header.sticky.top-0.z-50.border-b(
                     span {{ $t('nav.favorites') }}
                   span.badge.badge-sm.badge-primary.rounded-full(v-if="favoritesCount > 0")
                     | {{ favoritesCount }}
+              li
+                NuxtLink.mobile-menu-item.flex.items-center.justify-between(
+                  class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  :class="isActiveRoute('/compare') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
+                  :to="localePath('/compare')"
+                  @click="onMenuItemClick"
+                  prefetch
+                )
+                  span.flex.items-center.gap-3
+                    svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+                      path(stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4")
+                    span {{ $t('nav.compare') }}
+                  span.badge.badge-sm.badge-primary.rounded-full(v-if="compareCount > 0")
+                    | {{ compareCount }}
 
           //- Раздел: Информация
           .px-3.pb-3
@@ -267,6 +281,14 @@ header.app-header.sticky.top-0.z-50.border-b(
             span {{ $t('nav.favorites') }}
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
               | {{ favoritesCount }}
+        li.relative
+          NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-2.transition-colors(
+            :class="isActiveRoute('/compare') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
+            :to="localePath('/compare')"
+          )
+            span {{ $t('nav.compare') }}
+            span.badge.badge-xs.badge-primary.rounded-full(v-if="compareCount > 0")
+              | {{ compareCount }}
         li.relative(v-if="isAdmin" ref="adminMenuRef")
           button.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-1.transition-colors(
             type="button"
@@ -569,6 +591,7 @@ const isAdminRoute = computed(() => isActiveRoute('/admin'))
 
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()
+const { compareCount } = useCompare()
 const { totalItems } = useCart()
 const appState = useAppState()
 

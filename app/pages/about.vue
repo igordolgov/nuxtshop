@@ -51,6 +51,10 @@
             h3.font-semibold.text-base-content {{ step.title }}
             p.text-sm(class="text-base-content/55") {{ step.text }}
 
+    //- Отзывы о магазине (approved из KV; отправка — на модерацию)
+    section.mb-8(class="lg:mb-12")
+      StoreReviews(:reviews="storeReviews" :summary="storeSummary")
+
     //- История
     section.mb-8(class="lg:mb-12")
       h2.section-title {{ $t('about.storyTitle') }}
@@ -107,6 +111,16 @@ const { data: contentResp } = await useAsyncData(
 )
 
 const locale = useStoreLocale()
+
+/* ─── Отзывы о магазине: одобренные — с /api/store-reviews (SSR).
+     Сбой запроса не роняет страницу — просто пустой список. ── */
+const { data: storeResp } = await useAsyncData(
+  'store-reviews',
+  () => $fetch('/api/store-reviews').catch(() => null),
+  { default: () => null },
+)
+const storeReviews = computed(() => storeResp.value?.reviews ?? [])
+const storeSummary = computed(() => storeResp.value?.summary ?? { count: 0, average: 0 })
 
 const content = computed(() => {
   const stored = contentResp.value?.content ?? DEFAULT_SITE_CONTENT
