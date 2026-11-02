@@ -20,4 +20,11 @@
 
 <script setup>
 const error = useError()
+// Локализованный <title> страниц ошибок: без него заголовок берётся из
+// статического app.head.title в nuxt.config («Интернет-магазин») и остаётся
+// русским на /en и /es (см. <title> у 404-страницы).
+const { t } = useI18n()
+useHead(() => ({
+  title: error.value?.statusCode === 404 ? t('notFound.title') : t('common.error'),
+}))
 </script>
