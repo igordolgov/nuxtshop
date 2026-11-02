@@ -4,5 +4,6 @@
   main.flex-1
     slot
   ScrollToTop
-  MessengerFab
+  //- MessengerFab — кнопки мессенджеров временно отключены (вернуть: раскомментировать)
+  //- MessengerFab
 </template>
