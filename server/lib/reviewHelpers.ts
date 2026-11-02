@@ -116,3 +116,42 @@ export function ratingSummary(items: ReviewItem[]): RatingSummary {
   const sum = items.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
   return { count: items.length, average: Math.round((sum / items.length) * 10) / 10 };
 }
+
+/**
+ * Сводки рейтинга по ВСЕМ товарам одним проходом: одобренные отзывы
+ * группируются по productId → { count, average }. Товары без отзывов
+ * в карте отсутствуют (attachRatings подставит им нулевую сводку).
+ * Чистая функция — покрыта тестами.
+ */
+export function ratingsByProduct(items: ReviewItem[]): Map<string, RatingSummary> {
+  const acc = new Map<string, { sum: number; count: number }>();
+  for (const r of items) {
+    if (!r?.approved) continue;
+    const key = String(r.productId);
+    const agg = acc.get(key) ?? { sum: 0, count: 0 };
+    agg.sum += Number(r.rating) || 0;
+    agg.count += 1;
+    acc.set(key, agg);
+  }
+  const result = new Map<string, RatingSummary>();
+  for (const [key, { sum, count }] of acc) {
+    result.set(key, { count, average: Math.round((sum / count) * 10) / 10 });
+  }
+  return result;
+}
+
+/**
+ * Прикрепляет к каждому товару витринную сводку rating { count, average }
+ * (нулевой рейтинг — когда одобренных отзывов нет). Один обмен с KV на весь
+ * список: карточкам каталога звёзды достаются без дополнительных запросов.
+ */
+export async function attachRatings<T extends { id: string | number }>(
+  event: H3Event,
+  products: T[],
+): Promise<(T & { rating: RatingSummary })[]> {
+  const summaries = ratingsByProduct(await readReviews(event));
+  return products.map((p) => ({
+    ...p,
+    rating: summaries.get(String(p.id)) ?? { count: 0, average: 0 },
+  }));
+}

@@ -4,6 +4,14 @@
   class="border-base-300 hover:border-primary/30"
   :class="{ 'has-search-highlight': hasSearchHighlight }"
 )
+  //- Дефицитный остаток: бейдж на фото при ≤ LOW_STOCK_THRESHOLD шт.
+  //- (срочность покупки; обилие на складе бейджем не подсвечиваем)
+  .stock-badge.absolute.z-10.rounded-full.shadow-sm(
+    v-if="isLowStock",
+    class="top-1 right-1 px-2 py-0.5 text-xs font-medium bg-warning/95 text-warning-content",
+    role="status"
+  ) {{ $t('product.leftShort', product.stockQuantity) }}
+
   //- Кнопка избранного
   button.favorite-btn(
     class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
@@ -59,6 +67,15 @@
         )
           span(v-html="highlightedDescription")
 
+        //- Рейтинг: ★ средняя · N отзывов (только с одобренными отзывами;
+        //- данные приходят с /api/products вместе с товаром — без pop-in)
+        .rating-row.flex.items-center.gap-1.text-xs.min-h-4(
+          v-if="(product.rating?.count ?? 0) > 0"
+        )
+          span.text-warning(aria-hidden="true") ★
+          span.font-medium {{ ratingAverage }}
+          span(class="text-base-content/50") · {{ ratingCountLabel }}
+
     //- Цена и статус
     .card-actions.flex.items-center.justify-between.px-3.pb-3.pt-1
       .font-semibold.text-base-content(
@@ -96,6 +113,32 @@ const app = useAppState()
 // Ссылка карточки сохраняет префикс локали (/en/product/…)
 const localePath = useLocalePath()
 const productUrl = computed(() => localePath(`/product/${props.product.slug}`))
+
+//- Дефицитный остаток: 1..5 шт. (0/undefined — «нет в наличии», он уже
+//- показывается ценовой строкой; больше 5 — бейдж не нужен)
+const LOW_STOCK_THRESHOLD = 5
+const isLowStock = computed(() => {
+  const qty = Number(props.product?.stockQuantity)
+  return (
+    props.product?.inStock === true &&
+    Number.isFinite(qty) &&
+    qty > 0 &&
+    qty <= LOW_STOCK_THRESHOLD
+  )
+})
+
+//- Средняя оценка в локали пользователя (4,5 в ru/es, 4.5 в en);
+//- ProductReviews на карточке товара использует тот же приём
+const { t, locale } = useI18n()
+const numberFormat = computed(() =>
+  new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 })
+)
+const ratingAverage = computed(() =>
+  numberFormat.value.format(props.product?.rating?.average ?? 0)
+)
+const ratingCountLabel = computed(() =>
+  t('reviews.count', props.product?.rating?.count ?? 0)
+)
 
 //- Гидратация: избранное живёт в localStorage, сервер его не знает и
 //- рендерит все сердечки «пустыми». Первый кадр обязан совпасть с SSR —

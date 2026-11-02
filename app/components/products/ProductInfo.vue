@@ -27,6 +27,15 @@
           class="text-base-content/80"
         ) {{ category }}
 
+      //- Сводка рейтинга: якорь на блок отзывов (#reviews ниже по странице)
+      a.rating-summary.inline-flex.items-center.gap-1.text-sm(
+        v-if="(rating?.count ?? 0) > 0"
+        href="#reviews"
+      )
+        span.text-warning(aria-hidden="true") ★
+        span.font-medium {{ ratingAverage }}
+        span(class="text-base-content/50") · {{ ratingCountLabel }}
+
       //- Описание
       p.text-sm.leading-relaxed(class="text-base-content/85") {{ product.description }}
 
@@ -45,8 +54,8 @@
             span(v-else) {{ $t('product.outOfStock') }}
 
           .text-xs.mt-1(
-            v-if="product.inStock && product.stockQuantity"
-            class="text-base-content/70"
+            v-if="product.inStock && product.stockQuantity",
+            :class="isLowStock ? 'text-warning font-medium' : 'text-base-content/70'"
           ) {{ $t('product.left', product.stockQuantity) }}
 
       //- Десктопная кнопка
@@ -91,14 +100,35 @@
 </template>
 
 <script setup>
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
-  isFavorite: { type: Boolean, default: false }
+  isFavorite: { type: Boolean, default: false },
+  // Сводка рейтинга { count, average } — приходит с /api/product/[slug]
+  rating: { type: Object, default: null }
 })
 
 defineEmits(['toggle-favorite', 'add-to-cart'])
+
+//- Дефицитный остаток: тот же порог, что и в бейдже ProductCardGrid
+const LOW_STOCK_THRESHOLD = 5
+const isLowStock = computed(() => {
+  const qty = Number(props.product?.stockQuantity)
+  return (
+    props.product?.inStock === true &&
+    Number.isFinite(qty) &&
+    qty > 0 &&
+    qty <= LOW_STOCK_THRESHOLD
+  )
+})
+
+//- Средняя оценка в локали (4,5 в ru/es, 4.5 в en)
+const numberFormat = computed(() =>
+  new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 })
+)
+const ratingAverage = computed(() => numberFormat.value.format(props.rating?.average ?? 0))
+const ratingCountLabel = computed(() => t('reviews.count', props.rating?.count ?? 0))
 
 const formatPrice = (price) => {
   if (!price && price !== 0) return '0 ₽'

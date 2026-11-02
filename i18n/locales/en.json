@@ -151,6 +151,7 @@
     "noFavoritesToClear": "No favorite items to clear",
     "vatIncluded": "VAT included",
     "left": "Only {n} left",
+    "leftShort": "Only {n} left",
     "alreadyInCart": "Already in cart",
     "soldOut": "Sold out",
     "characteristics": "Specifications",

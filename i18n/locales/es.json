@@ -151,6 +151,7 @@
     "noFavoritesToClear": "No hay artículos favoritos que borrar",
     "vatIncluded": "IVA incluido",
     "left": "¡Quedan solo {n}!",
+    "leftShort": "¡Quedan {n}!",
     "alreadyInCart": "El artículo ya está en el carrito",
     "soldOut": "Artículo agotado",
     "characteristics": "Características",

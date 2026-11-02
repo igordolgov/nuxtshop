@@ -23,9 +23,11 @@ import {
   REVIEWS_KEY,
   ReviewValidationError,
   approvedReviews,
+  attachRatings,
   nextReviewId,
   normalizeReviewInput,
   ratingSummary,
+  ratingsByProduct,
   readReviews,
   sortReviewsDesc,
   writeReviews,
@@ -122,6 +124,50 @@ describe('approvedReviews / sortReviewsDesc / ratingSummary', () => {
       review({ id: '6', createdAt: '2026-11-01T10:00:00.000Z' }),
     ];
     expect(sortReviewsDesc(tied).map((r) => r.id)).toEqual(['6', '5']);
+  });
+});
+
+describe('ratingsByProduct / attachRatings (рейтинг в каталоге)', () => {
+  const items = [
+    review({ id: '1', productId: '7', rating: 5, createdAt: '2026-11-03T10:00:00.000Z' }),
+    review({ id: '2', productId: '7', rating: 4, createdAt: '2026-11-01T10:00:00.000Z' }),
+    // не прошедший модерацию — в сводку не попадает
+    review({ id: '3', productId: '7', rating: 1, approved: false }),
+    // числовой productId — сводка по строковому ключу
+    review({ id: '4', productId: 9, rating: 3 }),
+    // битный рейтинг (0) считается как 0, а не выкидывается
+    review({ id: '5', productId: '9', rating: 0 }),
+  ];
+
+  it('группирует только approved, средняя — с 1 знаком', () => {
+    const map = ratingsByProduct(items);
+    expect(map.get('7')).toEqual({ count: 2, average: 4.5 });
+    // (3 + 0) / 2 = 1.5
+    expect(map.get('9')).toEqual({ count: 2, average: 1.5 });
+  });
+
+  it('товар без отзывов в карте отсутствует', () => {
+    expect(ratingsByProduct(items).has('42')).toBe(false);
+    expect(ratingsByProduct([]).size).toBe(0);
+  });
+
+  it('attachRatings: rating есть у ВСЕХ товаров (нулевая сводка — без отзывов)', async () => {
+    kvStore.set(REVIEWS_KEY, items);
+    const products = [
+      { id: 7, name: 'Кружка' },
+      { id: '9', name: 'Тарелка' },
+      { id: '42', name: 'Ложка' },
+    ];
+    const rated = await attachRatings(EVENT, products);
+    expect(rated.map((p) => p.rating)).toEqual([
+      { count: 2, average: 4.5 },
+      { count: 2, average: 1.5 },
+      { count: 0, average: 0 },
+    ]);
+    // исходные поля сохранены
+    expect(rated[0].name).toBe('Кружка');
+    // исходный массив не мутирован
+    expect(products[0].rating).toBeUndefined();
   });
 });
 

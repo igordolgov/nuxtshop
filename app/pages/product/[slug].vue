@@ -52,6 +52,7 @@
           .product-info.flex-1(class="sm:pt-4")
             ProductInfo(
               :product="productView"
+              :rating="ratingSummary"
               :is-favorite="isFavorite"
               :is-in-cart="isInCart(product.id)"
               @toggle-favorite="toggleFavorite"

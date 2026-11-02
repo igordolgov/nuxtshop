@@ -1,12 +1,14 @@
 // server/api/products/index.get.js
 import { readProducts } from '../../lib/productHelpers'
+import { attachRatings } from '../../lib/reviewHelpers'
 
 export default defineEventHandler(async (event) => {
   try {
     const products = await readProducts(event)
+    // rating { count, average } для карточек каталога: одна пачка отзывов
+    // из KV на весь список, нулевая сводка товарам без одобренных отзывов
+    let list = await attachRatings(event, products)
     const query = getQuery(event)
-
-    let list = products
 
     if (query.category) {
       list = list.filter((p) => p.categories?.includes(query.category))

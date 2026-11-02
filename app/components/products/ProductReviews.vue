@@ -3,7 +3,8 @@
      Отправка: POST /api/reviews → уходит на модерацию (approved:false),
      на витрине появится после публикации в /admin/reviews. -->
 <template lang="pug">
-.product-reviews.px-2.pb-15(class="lg:pb-3 lg:mt-2")
+//- id="reviews": якорь для ссылки-сводки рейтинга из ProductInfo
+.product-reviews.px-2.pb-15(class="lg:pb-3 lg:mt-2", id="reviews")
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.gap-2.flex-wrap.mb-2
       .flex.items-center.gap-2.flex-wrap
@@ -90,7 +91,11 @@ const props = defineProps({
 
 const { $notify } = useNuxtApp()
 
-const formatAverage = computed(() => String(props.summary.average ?? 0).replace('.', ','))
+const formatAverage = computed(() =>
+  new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(
+    props.summary.average ?? 0,
+  ),
+)
 
 // Формы слова «отзыв» — vue-i18n plural (reviews.count, pluralRules ru)
 const countLabel = computed(() => t('reviews.count', props.summary.count ?? 0))

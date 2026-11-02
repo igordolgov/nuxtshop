@@ -151,6 +151,7 @@
     "noFavoritesToClear": "Нет избранных товаров для очистки",
     "vatIncluded": "Включая НДС",
     "left": "Осталось: {n} шт.",
+    "leftShort": "Осталось {n} шт.",
     "alreadyInCart": "Товар уже в корзине",
     "soldOut": "Товар закончился",
     "characteristics": "Характеристики",
