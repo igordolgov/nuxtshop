@@ -18,6 +18,7 @@
         template(#dropdowns)
           AdminProductsDropdowns(
             :categories="availableCategories"
+            :categoryLabels="categoryLabels"
             :selectedCategories="selectedCategories"
             :sortOptions="sortOptions"
             :sortField="sortField"
@@ -109,6 +110,14 @@ const initializeApp = appState.initializeApp
 const notify = useNotifyQueue()
 const { t } = useI18n()
 
+// Локаль из пути (/en/… → 'en' и т.д.) — для поиска, сортировки и
+// подписи категорий. Значения фильтров и данные редактирования
+// остаются сырыми — переводится только отображение.
+const { locale, loc } = useLocalizedProduct()
+const localeTag = computed(() =>
+  locale.value === 'en' ? 'en' : locale.value === 'es' ? 'es' : 'ru',
+)
+
 const sortOptions = computed(() => [
   { field: 'createdAt', label: t('admin.products.sortByDate') },
   { field: 'name', label: t('admin.products.sortByName') },
@@ -147,6 +156,11 @@ const availableCategories = computed(() => {
   return Array.from(cats).sort()
 })
 
+// Карта «сырая категория → подпись в текущей локали» для чипов/дропдауна
+// (значения фильтров и пикер модалок остаются сырыми — переводится только
+// подпись; на ru карта пустая, дропдаун фолбэкается на сырые значения)
+const categoryLabels = computed(() => buildCategoryLabelMap(products.value, locale.value))
+
 const processedProducts = computed(() => {
   let result = [...products.value]
 
@@ -158,11 +172,19 @@ const processedProducts = computed(() => {
 
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    result = result.filter(p =>
-      p.name?.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q) ||
-      p.categories?.some(c => c.toLowerCase().includes(q))
-    )
+    // Ищем и в сырых, и в локализованных полях: на /en админ может
+    // набрать английское название (loc(p) для ru — тот же объект)
+    result = result.filter((p) => {
+      const lp = loc(p)
+      return (
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.categories?.some((c) => c.toLowerCase().includes(q)) ||
+        lp.name?.toLowerCase().includes(q) ||
+        lp.description?.toLowerCase().includes(q) ||
+        lp.categories?.some((c) => c.toLowerCase().includes(q))
+      )
+    })
   }
 
   if (selectedCategories.value.length > 0) {
@@ -179,7 +201,7 @@ const processedProducts = computed(() => {
     let bVal = b[field]
 
     if (field === 'name') {
-      return dir * (aVal || '').localeCompare(bVal || '', 'ru')
+      return dir * (aVal || '').localeCompare(bVal || '', localeTag.value)
     }
     if (field === 'createdAt') {
       // В сиде и старых записях createdAt отсутствует (есть только
@@ -238,12 +260,14 @@ const handleEdit = (product) => {
 }
 
 const handleDelete = async (product) => {
-  if (!confirm(t('admin.products.deleteConfirm', { name: product.name }))) return
+  // В сообщениях — имя в текущей локали; удаляем всё равно по id
+  const displayName = loc(product).name || product.name
+  if (!confirm(t('admin.products.deleteConfirm', { name: displayName }))) return
   // useProducts.deleteProduct сам показывает ошибку с текстом от сервера
   // (в т.ч. «Требуется авторизация» при мёртвой сессии) и возвращает boolean
   const ok = await deleteProduct(product.id)
   if (ok) {
-    notify.success(t('admin.products.deleted', { name: product.name }))
+    notify.success(t('admin.products.deleted', { name: displayName }))
     // Если товар был выделен — убираем из выделения, чтобы панель
     // групповых операций не считала уже несуществующий товар
     selectedIds.value = selectedIds.value.filter((id) => id !== String(product.id))

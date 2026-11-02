@@ -49,7 +49,7 @@
               td
                 input.checkbox.checkbox-xs.checkbox-primary.cursor-pointer(
                   type="checkbox"
-                  :aria-label="$t('admin.products.selectAria', { name: product.name })"
+                  :aria-label="$t('admin.products.selectAria', { name: loc(product).name })"
                   :checked="isSelected(product.id)"
                   @change="$emit('toggleSelect', product.id)"
                 )
@@ -59,20 +59,23 @@
                     img(
                       v-if="getSafeImage(product.image)"
                       :src="getSafeImage(product.image)"
-                      :alt="product.name"
+                      :alt="loc(product).name"
                       @error="onImageError($event)"
                     )
                     .w-full.h-full.flex.items-center.justify-center(v-else)
                       icon(name="heroicons:photo" size="16")
 
+              //- Название/описание/категории — в текущей локали (loc);
+              //- в @edit/@delete уходит СЫРОЙ product (v-for идёт по сырому
+              //- списку) — модалка редактирования должна править оригиналы
               td
                 NuxtLink.font-medium.hover-underline(
                   :to="getProductUrl(product)"
-                  v-html="highlightText(product.name)"
+                  v-html="highlightText(loc(product).name)"
                   prefetch
                 )
-                .text-xs.opacity-50(v-if="product.description" class="mt-0.5") 
-                  | {{ truncate(product.description, 50) }}
+                .text-xs.opacity-50(v-if="loc(product).description" class="mt-0.5") 
+                  | {{ truncate(loc(product).description, 50) }}
 
               td.text-right
                 .font-semibold {{ formatPrice(product.price) }}₽
@@ -80,7 +83,7 @@
               td
                 .flex.flex-wrap(class="gap-0.5")
                   span.badge.badge-xs.badge-secondary.rounded-sm(
-                    v-for="cat in getCategories(product.categories)"
+                    v-for="cat in getCategories(loc(product).categories)"
                     :key="cat"
                   ) {{ cat }}
 
@@ -120,17 +123,17 @@
                   img(
                     v-if="getSafeImage(product.image)"
                     :src="getSafeImage(product.image)"
-                    :alt="product.name"
+                    :alt="loc(product).name"
                     @error="onImageError($event)"
                   )
                   .w-full.h-full.flex.items-center.justify-center(v-else)
                     icon(name="heroicons:photo" size="20")
 
-              //- Инфо
+              //- Инфо (название в текущей локали, см. коммент в десктопной таблице)
               .flex-1.min-w-0
                 NuxtLink.font-medium.text-sm.block.truncate(
                   :to="getProductUrl(product)"
-                  v-html="highlightText(product.name)"
+                  v-html="highlightText(loc(product).name)"
                   prefetch
                 )
                 .flex.items-center.gap-2.mt-1
@@ -144,7 +147,7 @@
               .flex.gap-2.items-center
                 input.checkbox.checkbox-sm.checkbox-primary(
                   type="checkbox"
-                  :aria-label="$t('admin.products.selectAria', { name: product.name })"
+                  :aria-label="$t('admin.products.selectAria', { name: loc(product).name })"
                   :checked="isSelected(product.id)"
                   @change="$emit('toggleSelect', product.id)"
                 )
@@ -174,6 +177,11 @@ const props = defineProps({
 defineEmits(['edit', 'delete', 'refresh', 'toggleSelect', 'toggleSelectAll'])
 
 const localePath = useLocalePath()
+
+// Названия/категории в таблице — в текущей локали (/en/… → nameEn и т.д.;
+// ru → объект как есть). Данные для редактирования остаются сырыми:
+// обработчики @edit/@delete получают исходный product из v-for.
+const { loc } = useLocalizedProduct()
 
 const selectedSet = computed(() => new Set(props.selectedIds.map(String)))
 

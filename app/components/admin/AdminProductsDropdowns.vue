@@ -19,7 +19,9 @@
             :checked="selectedCategories.includes(cat)"
             @change="$emit('toggle', cat)"
           )
-          span.label-text {{ cat }}
+          //- Подпись — в текущей локали (categoryLabels); значение фильтра
+          //- остаётся сырым, поэтому фильтрация по категориям не меняется
+          span.label-text {{ categoryLabels?.get(cat) ?? cat }}
       .divider.my-1(v-if="selectedCount")
       button.btn.btn-xs.btn-ghost.w-full(v-if="selectedCount" @click="clearAndClose" type="button") {{ $t('admin.products.resetFilter') }}
 
@@ -60,6 +62,9 @@
 <script setup>
 const props = defineProps({
   categories: { type: Array, default: () => [] },
+  // Map «сырая категория → подпись в текущей локали» (необязателен:
+  // без него и на ru — сырые значения)
+  categoryLabels: { type: Map, default: null },
   selectedCategories: { type: Array, default: () => [] },
   sortOptions: { type: Array, default: () => [] },
   sortField: { type: String, default: 'createdAt' },
