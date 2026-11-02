@@ -12,7 +12,7 @@
     button.btn.btn-xs.btn-circle.btn-ghost.absolute.right-2.top-2(
       @click="handleCancel"
       :disabled="isSubmitting"
-      aria-label="Закрыть"
+      :aria-label="$t('admin.common.close')"
       type="button"
     ) ✕
 

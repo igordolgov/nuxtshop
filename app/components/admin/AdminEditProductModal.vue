@@ -192,7 +192,7 @@
                 //- decoding=async: декодирование превью вне главного потока
                 NuxtImg(
                   :src="form.image"
-                  alt="Preview"
+                  :alt="$t('admin.productForm.preview')"
                   class="w-full h-full object-cover"
                   decoding="async"
                   @error="handleImageError"
