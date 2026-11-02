@@ -13,7 +13,7 @@
     nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+          NuxtLink(class="text-base-content/60 hover:text-primary" :to="$localePath('/')" prefetch) {{ $t('nav.home') }}
         li {{ $t('nav.contacts') }}
 
     //- Заголовок

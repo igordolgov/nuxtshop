@@ -17,7 +17,7 @@
       .text-center
         .text-4xl.mb-4 🔒
         h2.text-xl.font-bold.mb-3 {{ $t('user.authRequired') }}
-        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") {{ $t('auth.login') }}
+        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo($localePath('/auth/login'))") {{ $t('auth.login') }}
 
     //- Основной контент (нижний «воздух» даёт .mobile-nav-safe на корне)
     .space-y-4(v-else)
@@ -122,17 +122,17 @@
             .card-body.p-4
               h3.card-title.text-md.mb-3 ⚡ {{ $t('user.quickActions') }}
               .flex.flex-col.gap-2
-                button.btn.btn-primary.btn-sm.justify-start(type="button" @click="navigateTo('/user/orders')")
+                button.btn.btn-primary.btn-sm.justify-start(type="button" @click="navigateTo($localePath('/user/orders'))")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4")
                   span {{ $t('header.myOrders') }}
 
-                button.btn.btn-secondary.btn-sm.justify-start(type="button" @click="navigateTo('/cart')")
+                button.btn.btn-secondary.btn-sm.justify-start(type="button" @click="navigateTo($localePath('/cart'))")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
                   span {{ $t('nav.cart') }}
 
-                button.btn.btn-accent.btn-sm.justify-start(type="button" @click="navigateTo('/favorites')")
+                button.btn.btn-accent.btn-sm.justify-start(type="button" @click="navigateTo($localePath('/favorites'))")
                   svg.w-4.h-4.mr-2(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
                     path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
                   span {{ $t('nav.favorites') }}
@@ -144,12 +144,12 @@
                 h3.card-title.text-md 📦 {{ $t('user.recentOrders') }}
                 .flex.items-center.gap-2
                   .badge.badge-sm.badge-outline.rounded-sm {{ orders.length }}
-                  NuxtLink.btn.btn-ghost.btn-xs.rounded-lg(to="/user/orders") {{ $t('user.allOrders') }}
+                  NuxtLink.btn.btn-ghost.btn-xs.rounded-lg(:to="$localePath('/user/orders')") {{ $t('user.allOrders') }}
 
               .text-center.py-4(v-if="orders.length === 0")
                 .text-2xl 📭
                 p.text-xs {{ $t('user.noOrders') }}
-                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") {{ $t('user.makeOrder') }}
+                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo($localePath('/'))") {{ $t('user.makeOrder') }}
 
               .flex.flex-col.gap-3(v-else)
                 .border.rounded-lg.overflow-hidden(
@@ -234,7 +234,7 @@
               .text-center.py-4(v-if="favoritesCount === 0")
                 .text-2xl.mb-2 🤍
                 p.text-xs {{ $t('user.noFavorites') }}
-                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo('/')") {{ $t('user.findProducts') }}
+                button.btn.btn-primary.btn-xs.mt-2(type="button" @click="navigateTo($localePath('/'))") {{ $t('user.findProducts') }}
 
               .flex.flex-col.gap-2(v-else)
                 .flex.items-center.gap-3.p-2.border.rounded-lg.cursor-pointer.transition-colors(
@@ -279,6 +279,8 @@
 
 <script setup>
 const { t, locale } = useI18n()
+// Ссылки и переходы страницы сохраняют префикс локали
+const localePath = useLocalePath()
 definePageMeta({
   middleware: 'user-auth',
 })
@@ -383,8 +385,8 @@ const getPaymentText = (method) =>
   ({ card: t('orders.payCard'), cash: t('orders.payCash') }[method] || method)
 
 const goToProduct = (product) => {
-  if (product.slug) return navigateTo(`/product/${product.slug}`)
-  if (product.id) return navigateTo(`/product/${product.id}`)
+  if (product.slug) return navigateTo(localePath(`/product/${product.slug}`))
+  if (product.id) return navigateTo(localePath(`/product/${product.id}`))
   $notify.error(t('user.productUnavailable'))
 }
 
@@ -394,7 +396,7 @@ const logout = async () => {
     const result = await appState.logout()
     if (result.success) {
       $notify.success(t('auth.logoutSuccess'))
-      await navigateTo('/')
+      await navigateTo(localePath('/'))
       setTimeout(() => location.reload(), 100)
     }
   } catch {

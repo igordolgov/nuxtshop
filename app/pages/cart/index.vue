@@ -626,6 +626,8 @@
 
 <script setup>
 const { t } = useI18n()
+// Ссылки корзины сохраняют префикс локали
+const localePath = useLocalePath()
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const { $notify } = useNuxtApp()
@@ -700,7 +702,7 @@ const handleImageError = (event) => {
   event.target.src = '/images/placeholder.jpg'
 }
 
-const goCatalog = () => navigateTo('/')
+const goCatalog = () => navigateTo(localePath('/'))
 
 //- ============================================
 //- Действия
@@ -734,7 +736,7 @@ const proceedToCheckout = async () => {
   try {
     isProcessing.value = true
     await cartCheckout()
-    await navigateTo('/cart/checkout')
+    await navigateTo(localePath('/cart/checkout'))
   } catch {
     $notify.error(t('cart.orderError'))
   } finally {

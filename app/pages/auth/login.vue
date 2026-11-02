@@ -74,7 +74,7 @@
           .text-center.mt-4
             p.text-sm
               | {{ $t('auth.noAccount') }}
-              a.link.link-primary(@click="$router.push('/auth/register')") {{ $t('auth.registerLink') }}
+              a.link.link-primary(@click="$router.push($localePath('/auth/register'))") {{ $t('auth.registerLink') }}
 
         ClientOnly
           .card.bg-base-200.mt-4(v-if="isDev")
@@ -97,7 +97,7 @@
         .text-center.mt-6.pt-6.border-t
         p.text-xs.text-base-content.opacity-50
           | {{ $t('auth.problems') }}
-          a.link.link-error(@click="$router.push('/emergency-logout')") {{ $t('emergency.title') }}
+          a.link.link-error(@click="$router.push($localePath('/emergency-logout'))") {{ $t('emergency.title') }}
 </template>
 
 <script setup>
@@ -106,6 +106,8 @@ const appState = useAppState()
 const { login, isAuthenticated, checkAuth, user } = appState
 
 const router = useRouter()
+// После входа возвращаемся на главную ТЕКУЩЕЙ локали
+const localePath = useLocalePath()
 const { $notify } = useNuxtApp()
 
 const form = ref({
@@ -125,7 +127,7 @@ onMounted(() => {
   if (import.meta.client) {
     checkAuth().then(() => {
       if (isAuthenticated.value) {
-        router.push('/')
+        router.push(localePath('/'))
       }
     })
   }
@@ -180,7 +182,7 @@ const handleLogin = async () => {
 
       if (user.value) {
         $notify.success(t('auth.welcomeBack', { name: user.value.name || t('header.defaultUserName') }), t('auth.welcomeTitle'))
-        setTimeout(() => router.push('/'), 100)
+        setTimeout(() => router.push(localePath('/')), 100)
       } else {
         throw new Error(t('auth.errState'))
       }

@@ -11,7 +11,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
   //- Шапка блока
   .home-news-head
     h2#home-news-title.text-lg.font-semibold.text-base-content(class="lg:text-xl") {{ $t('news.latest') }}
-    NuxtLink.all-link(to="/news" prefetch)
+    NuxtLink.all-link(:to="$localePath('/news')" prefetch)
       | {{ $t('news.all') }}
       svg(width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
         path(d="M5 12h14m-6-6l6 6-6 6")
@@ -21,7 +21,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
     NuxtLink.news-card(
       v-for="item in items"
       :key="item.id"
-      :to="`/news?news=${item.id}`"
+      :to="$localePath(`/news?news=${item.id}`)"
       :aria-label="item.title"
     )
       .card-media
@@ -44,7 +44,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
   //- Ссылка «Все новости» под лентой — на мобиле шапка скроллится
   //- вместе с заголовком, дублируем CTA в конце (только <md)
   .home-news-foot
-    NuxtLink.all-link(to="/news" prefetch)
+    NuxtLink.all-link(:to="$localePath('/news')" prefetch)
       | {{ $t('news.all') }}
       svg(width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
         path(d="M5 12h14m-6-6l6 6-6 6")

@@ -39,7 +39,7 @@
 
   //- Ссылка на товар
   .card-content
-    NuxtLink.block(:to="`/product/${product.slug}`" prefetch)
+    NuxtLink.block(:to="$localePath(`/product/${product.slug}`)" prefetch)
       figure.px-2.pt-2.overflow-hidden
         .image-container.relative.h-32.w-full.rounded-xl.overflow-hidden.bg-base-200.flex.items-center.justify-center
           .skeleton.absolute.inset-0.animate-pulse(v-if="imageLoading")

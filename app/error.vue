@@ -9,7 +9,7 @@
         {{ error?.statusCode === 404 ? $t('notFound.title') : $t('common.errorOccurred') }}
       </p>
       <NuxtLink 
-        to="/" 
+        :to="$localePath('/')" 
         class="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
       >
         {{ $t('notFound.home') }}

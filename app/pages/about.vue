@@ -11,7 +11,7 @@
     nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+          NuxtLink(class="text-base-content/60 hover:text-primary" :to="$localePath('/')" prefetch) {{ $t('nav.home') }}
         li {{ $t('about.title') }}
 
     //- Заголовок
@@ -68,7 +68,7 @@
         NuxtLink.category-tile(
           v-for="cat in showcase"
           :key="cat.name"
-          to="/"
+          :to="$localePath('/')"
           prefetch
         )
           .category-icon(v-html="cat.icon")
@@ -83,8 +83,8 @@
           p.text-sm.mt-1(class="text-base-content/60")
             | {{ $t('about.ctaText') }}
         .flex.gap-3.flex-wrap
-          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) {{ $t('nav.contacts') }}
-          NuxtLink.btn.btn-outline.rounded-xl(to="/" prefetch) {{ $t('productPage.toCatalog') }}
+          NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/contacts')" prefetch) {{ $t('nav.contacts') }}
+          NuxtLink.btn.btn-outline.rounded-xl(:to="$localePath('/')" prefetch) {{ $t('productPage.toCatalog') }}
 
   MobileNavFooter
 </template>

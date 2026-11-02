@@ -93,7 +93,9 @@ const app = useAppState()
 //- Вычисляемые свойства - мемоизированные
 //- ============================================
 // ✅ ИСПРАВЛЕНО: использованы обратные кавычки для шаблонной строки
-const productUrl = computed(() => `/product/${props.product.slug}`)
+// Ссылка карточки сохраняет префикс локали (/en/product/…)
+const localePath = useLocalePath()
+const productUrl = computed(() => localePath(`/product/${props.product.slug}`))
 
 //- Гидратация: избранное живёт в localStorage, сервер его не знает и
 //- рендерит все сердечки «пустыми». Первый кадр обязан совпасть с SSR —

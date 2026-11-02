@@ -420,7 +420,7 @@
           br
           | {{ $t('checkout.successContact') }}
         .modal-action.justify-center
-          NuxtLink.btn.btn-primary.rounded-xl(to="/" class="lg:btn-lg" prefetch)
+          NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/')" class="lg:btn-lg" prefetch)
             | {{ $t('checkout.successBack') }}
 
   //- Мобильный футер

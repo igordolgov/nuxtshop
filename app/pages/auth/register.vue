@@ -95,7 +95,7 @@
           .text-center.mt-4
             p.text-sm
               | {{ $t('auth.hasAccount') }} 
-              a.link.link-primary(@click="$router.push('/auth/login')") {{ $t('auth.loginLink2') }}
+              a.link.link-primary(@click="$router.push($localePath('/auth/login'))") {{ $t('auth.loginLink2') }}
 
         .alert.alert-error.mt-6(v-if="registerError")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
@@ -107,6 +107,8 @@
 const { t } = useI18n()
 const { register, isAuthenticated } = useAppState()
 const router = useRouter()
+// После регистрации возвращаемся на главную ТЕКУЩЕЙ локали
+const localePath = useLocalePath()
 const { $notify } = useNuxtApp()
 
 // Состояние формы
@@ -126,7 +128,7 @@ const loading = ref(false)
 onMounted(() => {
   if (isAuthenticated.value) {
     console.log('🔐 Пользователь уже авторизован, перенаправляем на главную')
-    router.push('/')
+    router.push(localePath('/'))
   }
 })
 
@@ -175,7 +177,7 @@ const handleRegister = async () => {
 
     if (result.success) {
       $notify.success(t('auth.registerWelcome'), t('auth.registerSuccess'))
-      router.push('/')
+      router.push(localePath('/'))
     } else {
       registerError.value = result.error
     }

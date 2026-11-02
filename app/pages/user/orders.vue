@@ -40,7 +40,7 @@
       h2.text-lg.font-semibold.text-base-content {{ $t('user.noOrdersYet') }}
       p.text-sm.mb-5.max-w-sm.mx-auto(class="text-base-content/50")
         | {{ $t('user.noOrdersHint') }}
-      NuxtLink.btn.btn-primary.rounded-xl(to="/") {{ $t('cart.goCatalog') }}
+      NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/')") {{ $t('cart.goCatalog') }}
 
     //- Список заказов
     .space-y-4(v-else)
@@ -149,6 +149,7 @@
 <script setup>
 const { t, locale } = useI18n()
 //- Страница «Мои заказы». Header/MobileNavFooter/композаблы — автоимпорт Nuxt
+const localePath = useLocalePath()
 
 const { $notify } = useNuxtApp()
 const { isMobile } = useMobileDetection()
@@ -255,10 +256,10 @@ const repeatOrder = async (order) => {
   }
   if (added === order.items.length) {
     $notify.success(t('user.itemsAddedToCart'))
-    await navigateTo('/cart')
+    await navigateTo(localePath('/cart'))
   } else if (added > 0) {
     $notify.info(t('user.addedPartial', { added, total: order.items.length }))
-    await navigateTo('/cart')
+    await navigateTo(localePath('/cart'))
   } else {
     $notify.error(t('user.addedNone'))
   }

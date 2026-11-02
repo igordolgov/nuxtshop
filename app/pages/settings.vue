@@ -17,7 +17,7 @@
       .text-center
         .text-4xl.mb-4 🔒
         h2.text-xl.font-bold.mb-3 {{ $t('user.authRequired') }}
-        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo('/auth/login')") {{ $t('auth.login') }}
+        button.btn.btn-primary.btn-sm(type="button" @click="navigateTo($localePath('/auth/login'))") {{ $t('auth.login') }}
 
     //- Основной контент (нижний «воздух» даёт .mobile-nav-safe на корне)
     .space-y-4(v-else)
@@ -39,7 +39,7 @@
                 .text-xs(class="text-base-content/50") {{ $t('settings.memberSince', { date: memberSince }) }}
           .text-xs.mt-3(class="text-base-content/50")
             | {{ $t('settings.editInProfile1') }}
-            NuxtLink.link.link-primary(to="/user") {{ $t('settings.editInProfile2') }}
+            NuxtLink.link.link-primary(:to="$localePath('/user')") {{ $t('settings.editInProfile2') }}
 
       //- ─── Оформление ───
       .card.bg-base-100.shadow-sm

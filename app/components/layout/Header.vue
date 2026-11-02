@@ -54,7 +54,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                  to="/"
+                  :to="localePath('/')"
                   @click="onMenuItemClick"
                   prefetch
                 )
@@ -65,7 +65,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/favorites') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                  to="/favorites"
+                  :to="localePath('/favorites')"
                   @click="onMenuItemClick"
                   prefetch
                 )
@@ -85,7 +85,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                  to="/news"
+                  :to="localePath('/news')"
                   @click="onMenuItemClick"
                   prefetch
                 )
@@ -96,7 +96,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/about') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                  to="/about"
+                  :to="localePath('/about')"
                   @click="onMenuItemClick"
                   prefetch
                 )
@@ -107,7 +107,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
                   class="px-4 py-3.5 rounded-xl font-semibold text-sm transition-all"
                   :class="isActiveRoute('/contacts') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-                  to="/contacts"
+                  :to="localePath('/contacts')"
                   @click="onMenuItemClick"
                   prefetch
                 )
@@ -227,7 +227,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                 | {{ l.name }}
 
       //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
-      NuxtLink.flex.items-center.gap-2.shrink-0(to="/" prefetch)
+      NuxtLink.flex.items-center.gap-2.shrink-0(:to="localePath('/')" prefetch)
         .bg-primary.rounded-xl.flex.items-center.justify-center.size-8
           span.text-primary-content.font-bold.text-sm {{ $t('nav.brandInitial') }}
         span.font-semibold.text-base-content.tracking-tight {{ $t('nav.brand') }}
@@ -238,31 +238,31 @@ header.app-header.sticky.top-0.z-50.border-b(
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
-            to="/"
+            :to="localePath('/')"
             prefetch
           ) {{ $t('nav.home') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
-            to="/news"
+            :to="localePath('/news')"
             prefetch
           ) {{ $t('nav.news') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/about') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
-            to="/about"
+            :to="localePath('/about')"
             prefetch
           ) {{ $t('nav.about') }}
         li
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.transition-colors(
             :class="isActiveRoute('/contacts') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
-            to="/contacts"
+            :to="localePath('/contacts')"
             prefetch
           ) {{ $t('nav.contacts') }}
         li.relative
           NuxtLink.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-2.transition-colors(
             :class="isActiveRoute('/favorites') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content/90'"
-            to="/favorites"
+            :to="localePath('/favorites')"
           )
             span {{ $t('nav.favorites') }}
             span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
@@ -361,7 +361,7 @@ header.app-header.sticky.top-0.z-50.border-b(
 
       //- Корзина — десктоп (на мобильных нижнее меню)
       .indicator.hidden(class="lg:block")
-        NuxtLink.btn.btn-ghost.btn-circle(to="/cart" :aria-label="$t('nav.cart')" class="w-11 h-11 min-h-0")
+        NuxtLink.btn.btn-ghost.btn-circle(:to="localePath('/cart')" :aria-label="$t('nav.cart')" class="w-11 h-11 min-h-0")
           svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85" stroke-width="1.75")
             path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
         span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1(
@@ -467,7 +467,7 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- Кнопка входа (неавторизованные)
       NuxtLink.btn.btn-primary.mr-3.rounded-xl(
         v-else
-        to="/auth/login"
+        :to="localePath('/auth/login')"
         class="min-h-11"
       )
         span {{ $t('header.login') }}
@@ -650,8 +650,14 @@ const userEmail = computed(() => user.value?.email || '')
 const userRole = computed(() => user.value?.role || 'user')
 const isAdminRouteActive = computed(() => route.path.startsWith('/admin'))
 
-const isActiveRoute = (path) => route.path === path || route.path.startsWith(path + '/')
-const isExactActiveRoute = (path) => route.path === path
+// Активные пункты меню: route.path на /en и /es несёт префикс локали
+// ('/en/favorites') — сравниваем с локализованным путём (useLocalePath)
+const localePath = useLocalePath()
+const isActiveRoute = (path) => {
+  const localized = localePath(path)
+  return route.path === localized || route.path.startsWith(localized + '/')
+}
+const isExactActiveRoute = (path) => route.path === localePath(path)
 
 const closeMobileMenu = () => { isMobileMenuOpen.value = false }
 const closeAdminMenu = () => { isAdminMenuOpen.value = false }

@@ -432,8 +432,11 @@ const displayFavoritesCount = computed(() => favoritesCount.value || 0)
 const cartItemsCount = computed(() => totalItems.value || 0)
 const isAuthenticated = computed(() => appState.isAuthenticated.value)
 
-const openHome = () => navigateTo('/')
-const openCart = () => navigateTo('/cart')
-const openFavorites = () => navigateTo('/favorites')
-const openAuth = () => navigateTo(isAuthenticated.value ? '/user' : '/auth/login')
+// Навигация нижнего меню сохраняет префикс локали (на /en и /es сырой путь
+// вернул бы посетителя на русский — см. useLocalePath)
+const localePath = useLocalePath()
+const openHome = () => navigateTo(localePath('/'))
+const openCart = () => navigateTo(localePath('/cart'))
+const openFavorites = () => navigateTo(localePath('/favorites'))
+const openAuth = () => navigateTo(localePath(isAuthenticated.value ? '/user' : '/auth/login'))
 </script>

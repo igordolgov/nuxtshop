@@ -129,6 +129,7 @@ const { isMobile } = useMobileDetection()
 
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const { addToCart } = useCart()
 const appState = useAppState()
 
@@ -225,7 +226,7 @@ const updateShowSuggestions = (value) => {
 
 const handleSuggestionSelected = async (suggestion) => {
   try {
-    await router.push(`/product/${suggestion.id}`)
+    await router.push(localePath(`/product/${suggestion.id}`))
   } catch {
     appState.setSearchQuery(suggestion.name)
     appState.search?.performSearch?.()

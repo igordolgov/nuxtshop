@@ -2,6 +2,17 @@
 /**
  * Доступ к Workers KV через event.context.cloudflare.env.
  * В `nuxt dev` биндингов нет — in-memory fallback.
+ *
+ * ⚠️ ВНУТРЕННИЕ $fetch (SSR-рендер страницы сам ходит на /api/**) создают
+ * новое h3-событие БЕЗ event.context.cloudflare — биндинг KV в нём не виден.
+ * Раньше такой запрос уходил в пустой in-memory fallback, и readProducts
+ * возвращал СИД из бандла: SSR рендерил русские товары без переводных
+ * полей (i18n витрины на /en и /es был сломан), а в проде — вообще
+ * снапшот каталога на момент сборки, а не живой KV.
+ * Лечение: биндинг KV одного изолята воркера один и тот же на всё время
+ * его жизни — запоминаем последний реальный биндинг и отдаём его
+ * внутренним запросам. Для честного «биндингов нет» (unit-тесты, nuxt dev
+ * без wrangler) остаётся in-memory fallback.
  */
 
 import type { H3Event } from 'h3';
@@ -19,8 +30,26 @@ interface KVStore {
 
 const mem = new Map<string, unknown>();
 
+// Последний реальный биндинг KV этого изолята (страховка на случай, если
+// globalThis.__env__ ещё не установлен: любой внешний запрос к /api/**
+// через storage.ts его запомнит).
+let lastKV: KVStore | null = null;
+
+// Nitro (preset cloudflare-module) на каждом РЕАЛЬНОМ запросе воркера кладёт
+// env в globalThis.__env__ (runtime/entries/cloudflare-module). Внутренние
+// $fetch (SSR-рендер страницы ходит на /api/**) создают событие без
+// event.context.cloudflare, но env воркера в глобале уже есть — читаем его.
+const globalRef = globalThis as typeof globalThis & { __env__?: { KV?: KVStore } };
+
 function getKV(event: H3Event): KVStore | null {
-  return (event.context.cloudflare?.env as { KV?: KVStore } | undefined)?.KV ?? null;
+  const env = (event.context?.cloudflare?.env ?? globalRef.__env__) as
+    | { KV?: KVStore }
+    | undefined;
+  if (env?.KV) {
+    lastKV = env.KV;
+    return env.KV;
+  }
+  return lastKV;
 }
 
 export async function kvGetJSON<T>(event: H3Event, key: string): Promise<T | null> {

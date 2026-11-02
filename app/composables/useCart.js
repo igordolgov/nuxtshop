@@ -51,6 +51,9 @@ export const useCart = () => {
 
 function createCart() {
   const router = useRouter()
+  // Витринные ссылки сохраняют префикс локали (/en/cart/checkout и т.д.);
+  // в админке локаль ru без префикса — путь остаётся прежним
+  const localePath = useLocalePath()
 
   const state = ref({
     items: [],
@@ -300,7 +303,7 @@ function createCart() {
   const proceedToCheckout = async () => {
     state.value.processing = true
     try {
-      await router.push('/cart/checkout')
+      await router.push(localePath('/cart/checkout'))
     } finally {
       state.value.processing = false
     }
@@ -320,9 +323,9 @@ function createCart() {
   }
 
   const getProductUrl = (product) => {
-    if (!product) return '/'
+    if (!product) return localePath('/')
     const slug = product.slug || slugify(product.name) || product.id
-    return `/product/${slug}`
+    return localePath(`/product/${slug}`)
   }
 
   // Инициализация — один раз при первом вызове на клиенте

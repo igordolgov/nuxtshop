@@ -17,11 +17,11 @@
             {{ $t('emergency.force') }}
           </button>
           
-          <button class="btn btn-ghost w-full" @click="$router.push('/auth/login')">
+          <button class="btn btn-ghost w-full" @click="$router.push($localePath('/auth/login'))">
             {{ $t('emergency.toLogin') }}
           </button>
           
-          <button class="btn btn-outline w-full" @click="$router.push('/')">
+          <button class="btn btn-outline w-full" @click="$router.push($localePath('/'))">
             {{ $t('emergency.toHome') }}
           </button>
         </div>

@@ -14,7 +14,7 @@
     nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" to="/" prefetch) {{ $t('nav.home') }}
+          NuxtLink(class="text-base-content/60 hover:text-primary" :to="$localePath('/')" prefetch) {{ $t('nav.home') }}
         li {{ $t('news.title') }}
 
     //- Заголовок
@@ -115,7 +115,7 @@
           div
             h3.text-lg.font-semibold.text-base-content {{ $t('news.ctaTitle') }}
             p.text-sm.mt-1(class="text-base-content/60") {{ $t('news.ctaText') }}
-          NuxtLink.btn.btn-primary.rounded-xl(to="/contacts" prefetch) {{ $t('news.ctaButton') }}
+          NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/contacts')" prefetch) {{ $t('news.ctaButton') }}
 
     //- Модальное окно с полным текстом новости
     .modal(:class="{ 'modal-open': activeNews }" role="dialog" aria-modal="true" @click.self="closeNews")
@@ -146,7 +146,7 @@
                 NuxtLink.news-product(
                   v-for="p in activeNews.products"
                   :key="p.id"
-                  :to="`/product/${p.id}`"
+                  :to="$localePath(`/product/${p.id}`)"
                 )
                   .np-media
                     img(

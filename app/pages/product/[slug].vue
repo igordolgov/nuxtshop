@@ -11,7 +11,7 @@
         .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
           ul.flex
             li
-              NuxtLink.link.link-hover(to="/" prefetch) {{ $t('nav.home') }}
+              NuxtLink.link.link-hover(:to="$localePath('/')" prefetch) {{ $t('nav.home') }}
             li(aria-current="page")
               span {{ productView?.name || $t('productPage.notFound') }}
 
@@ -31,7 +31,7 @@
           p.mb-6.text-sm(class="text-base-content/70") {{ error || $t('productPage.notExists') }}
           .flex.flex-col.gap-3
             button.btn.btn-primary.btn-sm(type="button" @click="$router.back()") {{ $t('productPage.back') }}
-            NuxtLink.btn.btn-secondary.btn-sm(to="/" prefetch) {{ $t('productPage.toCatalog') }}
+            NuxtLink.btn.btn-secondary.btn-sm(:to="$localePath('/')" prefetch) {{ $t('productPage.toCatalog') }}
 
       //- Контент товара.
       //- В landscape двухколоночная раскладка больше не используется:

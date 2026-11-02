@@ -22,7 +22,7 @@
   //- Контент карточки
   .card-content
     NuxtLink.flex.flex-row.items-center.gap-4.p-2(
-      :to="`/product/${product.slug}`",
+      :to="$localePath(`/product/${product.slug}`)",
       prefetch,
       class="group-hover:bg-base-200/50"
     )
