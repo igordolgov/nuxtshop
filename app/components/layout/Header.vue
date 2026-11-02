@@ -32,13 +32,14 @@ header.app-header.sticky.top-0.z-50.border-b(
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16")
 
         //- Меню: СИБЛИНГ кнопки (уровень .relative), не внутри svg!
-        //- max-h + overscroll-contain: на невысоких экранах меню скроллится,
+        //- Ограничение высоты и скролл — в scoped-стилях .mobile-menu:
+        //- на невысоких экранах меню скроллится с подсказкой-градиентом внизу,
         //- а не уходит за нижний край (у админа в меню 14 пунктов)
         ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           v-show="isMobileMenuOpen"
           ref="menuPanel"
           @scroll.passive="updateMenuScroll"
-          class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 max-h-[calc(100dvh-5.25rem)] overflow-x-hidden overflow-y-auto overscroll-contain"
+          class="bg-base-100 shadow-xl border border-base-300 rounded-2xl w-72 overflow-x-hidden overflow-y-auto overscroll-contain"
         )
           //- Шапка меню: кто вошёл / приглашение войти
           .px-4.pt-4.pb-3.border-b.border-base-300(class="bg-base-200/50")
@@ -49,10 +50,8 @@ header.app-header.sticky.top-0.z-50.border-b(
             .text-sm.mt-1(v-else class="text-base-content/85")
               | {{ $t('header.guestHint') }}
 
-          //- Раздел: Магазин
+          //- Раздел: Магазин — без заголовка (лишние слова, экономим высоту)
           .px-3.pt-2.pb-2
-            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-              | {{ $t('nav.shop') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -94,10 +93,8 @@ header.app-header.sticky.top-0.z-50.border-b(
                   span.badge.badge-sm.badge-primary.rounded-full(v-if="compareCount > 0")
                     | {{ compareCount }}
 
-          //- Раздел: Информация
+          //- Раздел: Информация — без заголовка
           .px-3.pb-2
-            .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-              | {{ $t('nav.info') }}
             ul.space-y-1
               li
                 NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -136,8 +133,6 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- Раздел: Админка
           template(v-if="isAdmin")
             .px-3.pb-3
-              .px-2.pb-2(class="font-bold text-[0.7rem] text-base-content/80 uppercase tracking-wider")
-                | {{ $t('nav.admin') }}
               ul.space-y-1
                 li
                   NuxtLink.mobile-menu-item.flex.items-center.gap-3(
@@ -557,6 +552,15 @@ header.app-header.sticky.top-0.z-50.border-b(
 .mobile-menu {
   animation: menuIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: top left;
+  /* Панель не выше экрана. vh понимают все браузеры (в т.ч. старые без dvh);
+     @supports нужен, чтобы минификатор не выкинул фолбэк как «дублирующий» */
+  max-height: calc(100vh - 5.25rem);
+}
+@supports (height: 100dvh) {
+  .mobile-menu {
+    /* dvh точнее на мобилках: не прыгает при скрытии адресной строки */
+    max-height: calc(100dvh - 5.25rem);
+  }
 }
 
 @keyframes menuIn {
@@ -730,6 +734,10 @@ watch(isMobileMenuOpen, async (open) => {
   await nextTick()
   updateMenuScroll()
 })
+
+//- Поворот телефона / изменение размера окна при открытом меню — пересчёт
+onMounted(() => window.addEventListener('resize', updateMenuScroll, { passive: true }))
+onBeforeUnmount(() => window.removeEventListener('resize', updateMenuScroll))
 
 const toggleAdminMenu = () => {
   isAdminMenuOpen.value = !isAdminMenuOpen.value
