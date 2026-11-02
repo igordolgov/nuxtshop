@@ -25,6 +25,11 @@
     // ПЕРЕСБОРКИ (он вшивается в prerender/<head> при билде).
     // См. nuxt.config.ts → app.head.link.
     "NUXT_PUBLIC_API_BASE_URL": "",
+    // Канонический origin сайта: og:image, og:image:alt-URLы, JSON-LD
+    // (canonical/offers.url), sitemap.xml и robots.txt. ОБЯЗАТЕЛЕН:
+    // в Workers getRequestURL() отдаёт http://localhost, без этой
+    // переменной seoHelpers.resolveSiteUrl ушёл бы в localhost-фолбэк.
+    "NUXT_PUBLIC_SITE_URL": "https://nuxt-shop.igordolgov1972.workers.dev",
   },
   "kv_namespaces": [
     {

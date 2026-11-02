@@ -16,9 +16,14 @@ export default defineNuxtConfig({
   // /api/** того же origin (Nitro). Задать на рантайме можно env-ом
   // NUXT_PUBLIC_API_BASE_URL (см. vars в wrangler.jsonc) — тогда useApi
   // будет ходить на внешний сервер, а в <head> добавится preconnect.
+  // siteUrl: канонический origin для og:image/JSON-LD/sitemap — на
+  // Cloudflare Workers getRequestURL() отдаёт http://localhost, поэтому
+  // боевой домен задаётся env-переменной (vars в wrangler.jsonc);
+  // пусто (dev) — берём origin запроса.
   runtimeConfig: {
     public: {
       apiBaseUrl: '',
+      siteUrl: '',
     },
   },
 
