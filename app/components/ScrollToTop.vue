@@ -75,7 +75,7 @@ onUnmounted(() => {
 .scroll-to-top-btn {
   position: fixed;
   right: 20px;
-  bottom: 20px;
+  bottom: 76px; /* под кнопкой мессенджеров (MessengerFab, 20+48+8) */
   width: 44px;
   height: 44px;
   display: flex;
@@ -153,15 +153,15 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .scroll-to-top-btn {
     right: 16px;
-    /* 92px — над мобильным футером */
-    bottom: 92px;
+    /* 148px — над кнопкой мессенджеров (92px) и мобильным футером */
+    bottom: 148px;
   }
 }
 
 @media (min-width: 1440px) {
   .scroll-to-top-btn {
     right: 32px;
-    bottom: 32px;
+    bottom: 96px;
     width: 56px;
     height: 56px;
   }

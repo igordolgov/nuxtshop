@@ -206,7 +206,16 @@
     "errName": "Indique su nombre (2+ caracteres)",
     "errShort": "Cuéntenos un poco más: al menos 10 caracteres",
     "moderationThanks": "¡Gracias! Su reseña aparecerá tras la moderación",
-    "sendError": "No se pudo enviar la reseña"
+    "sendError": "No se pudo enviar la reseña",
+    "photoLabel": "Fotos",
+    "photoBtn": "Foto",
+    "photoHint": "La foto del teléfono se comprime automáticamente. Aparecerá tras la moderación junto con la reseña.",
+    "photoLimit": "Puedes adjuntar hasta {n} fotos",
+    "photoRemoveAria": "Quitar foto {n}",
+    "photoAlt": "Foto de la reseña {n}",
+    "photoOpenAria": "Abrir foto {n}",
+    "photoLightboxAria": "Foto de la reseña",
+    "photoError": "No se pudo procesar la foto"
   },
   "news": {
     "title": "Noticias y ofertas",
@@ -304,7 +313,8 @@
     "errName": "Indique su nombre: mínimo 2 caracteres.",
     "errEmail": "Indique un correo válido para la respuesta.",
     "errMessage": "Describa la pregunta con más detalle: mínimo 10 caracteres.",
-    "metaDescription": "Contáctenos: teléfono {phone}, correo, mensajería, direcciones de tiendas{cities}, formulario de contacto y preguntas frecuentes."
+    "metaDescription": "Contáctenos: teléfono {phone}, correo, mensajería, direcciones de tiendas{cities}, formulario de contacto y preguntas frecuentes.",
+    "fabAria": "Contáctanos"
   },
   "cart": {
     "title": "Carrito",

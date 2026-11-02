@@ -4,6 +4,7 @@
 // Товар проверяется на существование; админам уходит уведомление в Telegram
 // (best-effort: без секретов/при сбое — тихий no-op).
 import { readProducts } from '../../lib/productHelpers'
+import { processImage } from '../../lib/imageStorage'
 import {
   ReviewValidationError,
   nextReviewId,
@@ -32,12 +33,26 @@ export default defineEventHandler(async (event) => {
     }
 
     const reviews = await readReviews(event)
+    // photos кладём ниже отдельным полем — пустой массив в KV не пишем
+    const { photos: rawPhotos, ...withoutPhotos } = clean
     const item = {
       id: nextReviewId(reviews),
-      ...clean,
+      ...withoutPhotos,
       createdAt: new Date().toISOString(),
       approved: false,
     }
+
+    // Фото покупателя: каждое data-URI уезжает в KV (img:reviews/…)
+    // и заменяется коротким путём /api/images/reviews/… — чтобы отзывы
+    // в одном KV-ключе не раздувались base64 (та же схема, что у новостей).
+    if (rawPhotos.length > 0) {
+      const photos = []
+      for (const uri of rawPhotos) {
+        photos.push(await processImage(event, uri, 'review-photo', 'reviews/review'))
+      }
+      item.photos = photos
+    }
+
     reviews.push(item)
     await writeReviews(event, reviews)
 

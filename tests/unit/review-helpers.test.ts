@@ -24,8 +24,11 @@ import {
   ReviewValidationError,
   approvedReviews,
   attachRatings,
+  MAX_REVIEW_PHOTOS,
+  MAX_REVIEW_PHOTO_BYTES,
   nextReviewId,
   normalizeReviewInput,
+  normalizeReviewPhotos,
   ratingSummary,
   ratingsByProduct,
   readReviews,
@@ -65,6 +68,7 @@ describe('normalizeReviewInput', () => {
       author: 'Иван',
       rating: 5,
       text: 'Отличная кружка',
+      photos: [],
     });
   });
 
@@ -195,5 +199,62 @@ describe('readReviews / writeReviews / nextReviewId', () => {
 
   it('writeReviews не-массив кидает ошибку', async () => {
     await expect(writeReviews(EVENT, 'мусор' as never)).rejects.toThrow(/array/i);
+  });
+});
+
+// ─── normalizeReviewPhotos — фото из формы отзыва ────────────────────────
+
+const photo = (bytes: number, mime = 'webp') => {
+  // base64: 4 символа → 3 байта; столько символов, чтобы вышло bytes байт
+  const body = 'A'.repeat(Math.ceil((bytes * 4) / 3));
+  return `data:image/${mime};base64,${body}`;
+};
+
+describe('normalizeReviewPhotos', () => {
+  it('отсутствие/пустота → []', () => {
+    expect(normalizeReviewPhotos(undefined)).toEqual([]);
+    expect(normalizeReviewPhotos(null)).toEqual([]);
+    expect(normalizeReviewPhotos([])).toEqual([]);
+    expect(normalizeReviewPhotos([''])).toEqual([]); // пустые строки отбрасываются
+  });
+
+  it('валидные data-URI проходят (webp/jpeg/png), лимит 3', () => {
+    const three = [photo(10), photo(10, 'jpeg'), photo(10, 'png')];
+    expect(normalizeReviewPhotos(three)).toEqual(three);
+    expect(MAX_REVIEW_PHOTOS).toBe(3);
+  });
+
+  it('больше лимита — ошибка', () => {
+    const four = [photo(1), photo(2), photo(3), photo(4)];
+    expect(() => normalizeReviewPhotos(four)).toThrow(/не более 3/);
+  });
+
+  it('не-картинка/не data-URI — ошибка с понятным текстом', () => {
+    expect(() => normalizeReviewPhotos(['https://example.com/a.webp'])).toThrow(/webp, jpeg или png/);
+    expect(() => normalizeReviewPhotos([photo(10, 'gif')])).toThrow(/webp, jpeg или png/);
+    expect(() => normalizeReviewPhotos(['мусор'])).toThrow(/webp, jpeg или png/);
+    expect(() => normalizeReviewPhotos([42])).toThrow(/Некорректный список|webp/);
+  });
+
+  it('не-массив — ошибка', () => {
+    expect(() => normalizeReviewPhotos('data:image/webp;base64,AAAA' as never)).toThrow(
+      /Некорректный список/,
+    );
+  });
+
+  it('фото больше MAX_REVIEW_PHOTO_BYTES — ошибка', () => {
+    expect(() => normalizeReviewPhotos([photo(MAX_REVIEW_PHOTO_BYTES + 1)])).toThrow(/больш/);
+    expect(normalizeReviewPhotos([photo(MAX_REVIEW_PHOTO_BYTES)])).toHaveLength(1);
+  });
+
+  it('дубликаты схлопываются', () => {
+    const uri = photo(10);
+    expect(normalizeReviewPhotos([uri, uri])).toEqual([uri]);
+  });
+
+  it('normalizeReviewInput прокидывает photos', () => {
+    const uri = photo(10);
+    expect(normalizeReviewInput({ ...validInput, photos: [uri] }).photos).toEqual([uri]);
+    expect(normalizeReviewInput(validInput).photos).toEqual([]);
   });
 });

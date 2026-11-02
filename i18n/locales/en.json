@@ -206,7 +206,16 @@
     "errName": "Enter your name (2+ characters)",
     "errShort": "Tell us a bit more — at least 10 characters",
     "moderationThanks": "Thank you! Your review will appear after moderation",
-    "sendError": "Failed to submit the review"
+    "sendError": "Failed to submit the review",
+    "photoLabel": "Photos",
+    "photoBtn": "Photo",
+    "photoHint": "A phone snapshot is compressed automatically. Photos will appear after moderation along with your review.",
+    "photoLimit": "You can attach up to {n} photos",
+    "photoRemoveAria": "Remove photo {n}",
+    "photoAlt": "Review photo {n}",
+    "photoOpenAria": "Open photo {n}",
+    "photoLightboxAria": "Review photo",
+    "photoError": "Could not process the photo"
   },
   "news": {
     "title": "News & Deals",
@@ -304,7 +313,8 @@
     "errName": "Enter your name — at least 2 characters.",
     "errEmail": "Enter a valid reply email.",
     "errMessage": "Describe your question in more detail — at least 10 characters.",
-    "metaDescription": "Contact us: phone {phone}, email, messengers, store addresses{cities}, feedback form and FAQ."
+    "metaDescription": "Contact us: phone {phone}, email, messengers, store addresses{cities}, feedback form and FAQ.",
+    "fabAria": "Contact us"
   },
   "cart": {
     "title": "Cart",

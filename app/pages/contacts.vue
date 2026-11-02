@@ -54,9 +54,15 @@
         h3.contact-title {{ $t('contacts.messengers') }}
         p.contact-note.mb-2 {{ $t('contacts.reply15') }}
         .flex.flex-col.gap-2
-          button.messenger-btn(type="button" v-for="m in messengers" :key="m.name" @click="copy(m.name)")
-            span {{ m.name }}
-            span.messenger-handle {{ m.handle }}
+          //- Ссылка открывает приложение (t.me / wa.me / vk.com…);
+            нераспознанный ник — прежнее поведение, копирование
+          template(v-for="m in messengerRows" :key="m.name")
+            a.messenger-btn(v-if="m.href" :href="m.href" target="_blank" rel="noopener")
+              span {{ m.name }}
+              span.messenger-handle {{ m.handle }}
+            button.messenger-btn(type="button" v-else @click="copy(m.name)")
+              span {{ m.name }}
+              span.messenger-handle {{ m.handle }}
 
     //- Оффлайн-точки
     section.mb-8(class="lg:mb-12")
@@ -152,6 +158,7 @@ import {
   localizedSiteContent,
   normalizePhoneHref,
 } from '#shared/siteContent'
+import { messengerLink } from '#shared/messengerLinks'
 
 const { data: contentResp } = await useAsyncData(
   'site-content',
@@ -167,6 +174,10 @@ const content = computed(() => {
 })
 const contacts = computed(() => content.value.contacts)
 const messengers = computed(() => contacts.value.messengers)
+/* Строки с готовыми глубокими ссылками (messengerLink → null — копирование) */
+const messengerRows = computed(() =>
+  messengers.value.map((m) => ({ ...m, href: messengerLink(m?.name, m?.handle) })),
+)
 const faq = computed(() => contacts.value.faq)
 const mapSrc = computed(() => contacts.value.mapSrc || DEFAULT_SITE_CONTENT.contacts.mapSrc)
 const phoneHref = computed(() => normalizePhoneHref(contacts.value.phone))

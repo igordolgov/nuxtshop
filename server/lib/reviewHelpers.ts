@@ -24,6 +24,8 @@ export interface ReviewItem {
   createdAt: string;
   /** Прошёл модерацию? Публично отдаются только approved. */
   approved: boolean;
+  /** Фото покупателя: пути /api/images/reviews/… (или data-URI в dev). */
+  photos?: string[];
 }
 
 /** Сводка по товару для карточки и Schema.org aggregateRating. */
@@ -91,7 +93,57 @@ export function normalizeReviewInput(raw: Record<string, unknown>): {
     throw new ReviewValidationError(`Текст отзыва — от 10 до ${MAX_TEXT_LEN} символов`);
   }
 
-  return { productId, author, rating, text };
+  return { productId, author, rating, text, photos: normalizeReviewPhotos(raw?.photos) };
+}
+
+// ─── Фото отзыва (чистые функции — покрыты тестами) ──────────────────────
+
+/** Сколько фото можно приложить к одному отзыву. */
+export const MAX_REVIEW_PHOTOS = 3;
+
+/** Лимит РАЗЖАТОГО размера одного фото (клиент жмёт в webp ~50–150 КБ). */
+export const MAX_REVIEW_PHOTO_BYTES = 300 * 1024;
+
+const REVIEW_PHOTO_RE = /^data:image\/(webp|jpeg|png);base64,([A-Za-z0-9+/=]+)$/;
+
+/**
+ * Валидирует массив фото из формы отзыва: только data-URI изображений
+ * (webp/jpeg/png — то, что выдаёт useImageResize), не больше
+ * MAX_REVIEW_PHOTOS и не больше MAX_REVIEW_PHOTO_BYTES на каждое.
+ * Пустой/отсутствующий photos → [] (фото необязательны).
+ */
+export function normalizeReviewPhotos(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (!Array.isArray(raw)) {
+    throw new ReviewValidationError('Некорректный список фото');
+  }
+  if (raw.length > MAX_REVIEW_PHOTOS) {
+    throw new ReviewValidationError(`К отзыву можно приложить не более ${MAX_REVIEW_PHOTOS} фото`);
+  }
+
+  const photos: string[] = [];
+  for (const entry of raw) {
+    const uri = typeof entry === 'string' ? entry.trim() : '';
+    if (!uri) {
+      // Пустая строка — просто пропуск; не-строка — битая полезная нагрузка
+      if (typeof entry !== 'string' && entry != null) {
+        throw new ReviewValidationError('Фото должно быть изображением webp, jpeg или png');
+      }
+      continue;
+    }
+
+    const match = REVIEW_PHOTO_RE.exec(uri);
+    if (!match) {
+      throw new ReviewValidationError('Фото должно быть изображением webp, jpeg или png');
+    }
+    // Размер ПОСЛЕ base64-декодирования: 4 символа base64 → 3 байта.
+    const bytes = Math.floor(match[2].length * 0.75);
+    if (bytes > MAX_REVIEW_PHOTO_BYTES) {
+      throw new ReviewValidationError('Фото слишком большое (макс. 300 КБ после сжатия)');
+    }
+    if (!photos.includes(uri)) photos.push(uri);
+  }
+  return photos;
 }
 
 // ─── Витринные выборки (чистые функции — покрыты тестами) ────────────────

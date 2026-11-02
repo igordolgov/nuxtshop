@@ -4,4 +4,5 @@
   main.flex-1
     slot
   ScrollToTop
+  MessengerFab
 </template>

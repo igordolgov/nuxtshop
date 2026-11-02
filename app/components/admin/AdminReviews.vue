@@ -65,6 +65,10 @@
           a.link.link-hover(class="text-primary" v-if="r.productSlug" :href="localePath(`/product/${r.productSlug}`)" target="_blank" rel="noopener") {{ r.productName || `id ${r.productId}` }}
           span(v-else class="text-base-content/50") {{ r.productName || $t('admin.reviews.deletedProduct', { id: r.productId }) }}
         p.text-sm.leading-relaxed(class="text-base-content/85") {{ r.text }}
+        //- Фото покупателя: клик — открыть оригинал в новой вкладке
+        .flex.gap-2.flex-wrap(v-if="r.photos?.length")
+          a.review-photo(v-for="(p, i) in r.photos" :key="p" :href="p" target="_blank" rel="noopener")
+            img(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy" width="64" height="64")
         .flex.gap-2.justify-end.flex-wrap
           button.btn.btn-success.btn-xs.rounded-lg(
             v-if="!r.approved"
@@ -153,3 +157,14 @@ const remove = async (review) => {
 
 onMounted(load)
 </script>
+
+<style scoped>
+/* Фото в модерации: клик открывает оригинал в новой вкладке */
+.review-photo img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 0.625rem;
+  display: block;
+}
+</style>
