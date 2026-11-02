@@ -10,9 +10,11 @@
      клиентский резолвер целиком, SSR отдаёт целевую локаль по URL. -->
 <template lang="pug">
 .relative(ref="rootRef" v-if="locales.length > 1")
+  //- Доступное имя обязано содержать видимый текст ({{ locale }}): иначе
+  //- Lighthouse a11y label-content-name-mismatch. Формат «Язык — ru».
   button.btn.btn-ghost.btn-circle(
     type="button"
-    :aria-label="$t('header.language')"
+    :aria-label="`${$t('header.language')} — ${locale}`"
     :aria-expanded="isOpen"
     aria-haspopup="menu"
     class="w-11 h-11 min-h-0"
