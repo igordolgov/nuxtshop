@@ -29,6 +29,7 @@ import {
   nextNewsId,
   normalizeNewsBody,
   normalizeNewsProductIds,
+  mergeSeedTranslations,
   publishedNews,
   readNews,
   sanitizeNewsItem,
@@ -71,6 +72,89 @@ describe('readNews / writeNews', () => {
 
   it('writeNews отвергает не-массив', async () => {
     await expect(writeNews(EVENT, 'мусор' as never)).rejects.toThrow('array');
+  });
+
+  it('записи эпохи до i18n: readNews досаживает переводы сида и сохраняет в KV', async () => {
+    // Live-запись без переводных полей (как в KV до i18n), база совпадает с сидом
+    const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
+    await writeNews(EVENT, [structuredClone(base) as typeof newsSeed[0]]);
+    const news = await readNews(EVENT);
+    expect(news[0].titleEn).toBe(titleEn);
+    expect(news[0].titleEs).toBe(titleEs);
+    expect(news[0].excerptEn).toBe(excerptEn);
+    expect(news[0].excerptEs).toBe(excerptEs);
+    expect(news[0].bodyEn).toEqual(bodyEn);
+    expect(news[0].bodyEs).toEqual(bodyEs);
+    // самоисцеление: досаженный массив записан в KV (один раз — идемпотентно)
+    const stored = kvStore.get(KEY) as typeof news;
+    expect(stored[0].titleEn).toBe(titleEn);
+  });
+
+  it('отредактированная админом новость (русский текст отличен от сида) не досаживается', async () => {
+    // Кастомная запись БЕЗ переводных полей (спред из сида тащит их — вырезаем)
+    const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
+    const custom = [{ ...base, title: 'Админ переписал заголовок' }];
+    await writeNews(EVENT, custom);
+    const news = await readNews(EVENT);
+    expect(news[0].titleEn).toBeUndefined();
+    expect(news[0].titleEs).toBeUndefined();
+  });
+});
+
+describe('mergeSeedTranslations — досадка переводов из сида', () => {
+  it('seed-идентичной записи без переводов добавляются все 6 полей', () => {
+    const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
+    const stored = [structuredClone(base) as typeof newsSeed[0]];
+    const { items, changed } = mergeSeedTranslations(stored);
+    expect(changed).toBe(true);
+    expect(items[0].titleEn).toBe(titleEn);
+    expect(items[0].titleEs).toBe(titleEs);
+    expect(items[0].excerptEn).toBe(excerptEn);
+    expect(items[0].excerptEs).toBe(excerptEs);
+    expect(items[0].bodyEn).toEqual(bodyEn);
+    expect(items[0].bodyEs).toEqual(bodyEs);
+    // вход не мутирован
+    expect(stored[0].titleEn).toBeUndefined();
+  });
+
+  it('идемпотентность: повторный вызов на досаженном — changed=false', () => {
+    const first = mergeSeedTranslations(structuredClone(newsSeed));
+    expect(first.changed).toBe(false); // сид уже с переводами
+    const stored = first.items.map(({ titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base }) => base) as typeof newsSeed;
+    const second = mergeSeedTranslations(stored);
+    expect(second.changed).toBe(true);
+    const third = mergeSeedTranslations(second.items);
+    expect(third.changed).toBe(false);
+    expect(third.items).toEqual(first.items);
+  });
+
+  it('уже заполненные переводы не перезаписываются, недостающие досаживаются', () => {
+    const manualTitleEn = 'Admin’s own English title';
+    const stored = [
+      {
+        ...structuredClone(newsSeed[0]),
+        titleEn: manualTitleEn,
+        bodyEn: undefined, // частично заполнено — досадим недостающее
+      },
+    ];
+    const { items, changed } = mergeSeedTranslations(stored);
+    expect(changed).toBe(true);
+    expect(items[0].titleEn).toBe(manualTitleEn); // чужой текст сохранён
+    expect(items[0].titleEs).toBe(newsSeed[0].titleEs);
+    expect(items[0].bodyEn).toEqual(newsSeed[0].bodyEn);
+  });
+
+  it('записи без сид-аналога и битые элементы не трогаются', () => {
+    const foreign = { ...structuredClone(newsSeed[0]), id: '999' };
+    const stored = [foreign, null as never];
+    const { items, changed } = mergeSeedTranslations(stored);
+    expect(changed).toBe(false);
+    expect(items[0]).toBe(foreign);
+    expect(items[1]).toBeNull();
+  });
+
+  it('не-массив → пустой результат без исключений', () => {
+    expect(mergeSeedTranslations(null as never)).toEqual({ items: [], changed: false });
   });
 });
 

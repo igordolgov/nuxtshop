@@ -327,23 +327,87 @@ export const newsSeed: NewsItem[] = [
 /**
  * Читает новости из KV; при пустом хранилище отдаёт сид и пытается
  * записать его в KV (best-effort — сбой записи не роняет выдачу).
+ * Для уже хранящихся записей — разовая досадка переводов из сида
+ * (см. mergeSeedTranslations): live-KV мог быть записан до появления
+ * i18n-полей, и без досадки /en и /es показывали русский фолбэк.
  */
 export async function readNews(event: H3Event): Promise<NewsItem[]> {
   const stored = await kvGetJSON<NewsItem[]>(event, NEWS_KEY);
-  if (Array.isArray(stored)) return stored;
-  const seed = newsSeed.map((n) => structuredClone(n));
-  try {
-    await kvPutJSON(event, NEWS_KEY, seed);
-  } catch (e) {
-    console.warn('news: не удалось записать сид в KV (отдаю сид без записи)', e);
+  if (!Array.isArray(stored)) {
+    const seed = newsSeed.map((n) => structuredClone(n));
+    try {
+      await kvPutJSON(event, NEWS_KEY, seed);
+    } catch (e) {
+      console.warn('news: не удалось записать сид в KV (отдаю сид без записи)', e);
+    }
+    return seed;
   }
-  return seed;
+  // Досадка переводов: идемпотентно — после записи в KV changed=false,
+  // лишних записей в KV нет (лимит free-тарифа). best-effort: сбой записи
+  // не роняет выдачу — отдаём досаженный массив без сохранения.
+  const { items, changed } = mergeSeedTranslations(stored);
+  if (!changed) return stored;
+  try {
+    await kvPutJSON(event, NEWS_KEY, items);
+  } catch (e) {
+    console.warn('news: не удалось записать переводы сида в KV (отдаю без записи)', e);
+  }
+  return items;
 }
 
 /** Единственная точка записи: массив ЦЕЛИКОМ в KV (валидация типа). */
 export async function writeNews(event: H3Event, items: NewsItem[]): Promise<void> {
   if (!Array.isArray(items)) throw new Error('News must be an array');
   await kvPutJSON(event, NEWS_KEY, items);
+}
+
+/** Поля переводов, досаживаемые из сида. */
+const SEED_TRANSLATION_FIELDS = [
+  'titleEn', 'titleEs', 'excerptEn', 'excerptEs', 'bodyEn', 'bodyEs',
+] as const;
+
+/**
+ * Чистая: досадка переводов из сида в id-совпадающие live-записи.
+ *
+ * Зачем: сид перезаписывает KV только при ПУСТОМ хранилище, поэтому
+ * новости, записанные в KV до появления i18n-полей, остались без
+ * titleEn/titleEs/… — витрина /en и /es показывала русский фолбэк.
+ *
+ * Правила безопасности:
+ *  - русский текст live-записи (title/excerpt/body) должен совпадать
+ *    с сидом дословно: отредактированные админом новости НЕ трогаем
+ *    (переводы из сида могли бы разойтись с новым текстом);
+ *  - уже заполненные переводные поля НЕ перезаписываются;
+ *  - записи без сид-аналога не изменяются; вход не мутируется.
+ *
+ * Возвращает новый массив и флаг changed (для best-effort записи).
+ */
+export function mergeSeedTranslations(
+  stored: NewsItem[],
+): { items: NewsItem[]; changed: boolean } {
+  if (!Array.isArray(stored)) return { items: [], changed: false };
+  let changed = false;
+  const items = stored.map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const seed = newsSeed.find((n) => n.id === item.id);
+    if (!seed) return item;
+    // Защита правок админа: русский текст должен совпадать с сидом дословно
+    const baseMatchesSeed =
+      item.title === seed.title &&
+      item.excerpt === seed.excerpt &&
+      JSON.stringify(item.body) === JSON.stringify(seed.body);
+    if (!baseMatchesSeed) return item;
+    const patch: Partial<Pick<NewsItem, (typeof SEED_TRANSLATION_FIELDS)[number]>> = {};
+    for (const field of SEED_TRANSLATION_FIELDS) {
+      if (item[field] === undefined && seed[field] !== undefined) {
+        patch[field] = structuredClone(seed[field]);
+      }
+    }
+    if (Object.keys(patch).length === 0) return item;
+    changed = true;
+    return { ...item, ...patch };
+  });
+  return { items, changed };
 }
 
 // ─── Валидация / нормализация (чистые функции — покрыты тестами) ─────────
