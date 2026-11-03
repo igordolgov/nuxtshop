@@ -52,11 +52,12 @@ export default defineNuxtConfig({
     },
     // Условное spread вместо [.filter(Boolean) as any]: типы точные, any не нужен
     plugins: [tailwindcss(), ...(isProd ? [removeConsole({ includes: ['log', 'debug'] })] : [])],
-    // Список чистый: только реально используемые пакеты.
+    // Список чистый: только реально используемые пакеты (pinia снята —
+    // стейт на useState, см. вердикт по модулям в этапе 6).
     // Записи @vue/devtools-* (если появятся) добавляет сам Nuxt —
     // предупреждение NUXT_B7002 на прод не влияет.
     optimizeDeps: {
-      include: ['@vueuse/core', 'idb', 'pinia', 'vue', 'vue-router'],
+      include: ['@vueuse/core', 'idb', 'vue', 'vue-router'],
     },
   },
 
@@ -130,10 +131,12 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/image',
     '@nuxt/icon',
-    '@pinia/nuxt',
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
     '@baptistecrouzet/nuxt-oxlint',
+    // '@pinia/nuxt' УДАЛЁН (этап 6, вердикт по модулям): в коде нет ни
+    // одного defineStore/импорта pinia — стейт живёт в useState/composables.
+    // Пакеты pinia и @pinia/nuxt сняты с зависимостей.
   ],
 
   // Локализация витрины: ru (по умолчанию, без префикса), en (/en), es (/es).
