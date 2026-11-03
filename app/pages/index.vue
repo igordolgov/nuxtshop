@@ -498,6 +498,30 @@ watch(showMobileFilters, updateBodyScroll)
   @media (max-width: 1023.98px) {
     padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
   }
+
+  /* Внутренний скроллбар каталога (наблюдение аудита: ползунок у
+     колонки, а не у края окна — так устроен контейнер). Делаем его
+     тонким и приглушённым, чтобы поведение читалось как намеренное.
+     Только для точных указателей: на таче скроллбары оверлейные. */
+  @media (hover: hover) and (pointer: fine) {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-base-content) 20%, transparent)
+      transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in oklab, var(--color-base-content) 36%, transparent);
+    }
+  }
 }
 
 .scroll-sentinel {

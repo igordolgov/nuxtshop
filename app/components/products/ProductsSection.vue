@@ -188,8 +188,14 @@ const showLoadMoreButton = computed(() => !props.useInfiniteScroll)
 // ⚙️ НАСТРОЙКА: количество призрачных карточек
 const initialSkeletonCount = computed(() => (props.isMobile ? 6 : 10))
 
-// Скелетоны подгрузки: короткий ряд внизу сетки
-const moreSkeletonCount = computed(() => (props.isMobile ? 4 : 5))
+// Скелетоны подгрузки: короткий ряд внизу сетки.
+// Не больше, чем реально осталось товаров: при окне 30 из 31 показываем
+// 1 призрак, а не целый ряд — исчезает «зазор» перед «Вы просмотрели все»
+// и прыжок сетки после догрузки (наблюдение визуального аудита)
+const moreSkeletonCount = computed(() => {
+  const base = props.isMobile ? 4 : 5
+  return Math.max(1, Math.min(base, remainingCount.value))
+})
 
 const gridClasses = computed(() => {
   const classes = ['grid', 'gap-2', 'sm:gap-4']
