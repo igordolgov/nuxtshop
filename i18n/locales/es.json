@@ -813,6 +813,23 @@
       "ariaLabel": "Categorías",
       "addNew": "Añadir «{name}»"
     },
+    "telegram": {
+      "title": "Bot de Telegram",
+      "connected": "Conectado",
+      "disconnected": "Sin conectar",
+      "notConfigured": "Sin configurar",
+      "loadError": "Error de estado",
+      "hintConnected": "Las fichas de pedidos llegan al chat del administrador; botones y comandos activos",
+      "hintDisconnected": "El webhook no está registrado — las fichas de pedidos no llegarán a Telegram",
+      "hintNotConfigured": "Configura los secretos del worker: TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID, TELEGRAM_ADMIN_USER_IDS, TELEGRAM_WEBHOOK_SECRET",
+      "connect": "Conectar",
+      "reconnect": "Reconectar",
+      "connectSuccess": "Webhook conectado",
+      "connectFailed": "No se pudo conectar el webhook",
+      "urlLabel": "URL",
+      "pendingLabel": "Actualizaciones pendientes",
+      "lastErrorLabel": "Error de entrega"
+    },
     "orders": {
       "title": "Pedidos",
       "pageTitle": "Pedidos — Administración",

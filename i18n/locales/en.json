@@ -813,6 +813,23 @@
       "ariaLabel": "Categories",
       "addNew": "Add \"{name}\""
     },
+    "telegram": {
+      "title": "Telegram bot",
+      "connected": "Connected",
+      "disconnected": "Not connected",
+      "notConfigured": "Not configured",
+      "loadError": "Status error",
+      "hintConnected": "Order cards are delivered to the admin chat; buttons and commands are active",
+      "hintDisconnected": "Webhook is not registered — order cards will not arrive in Telegram",
+      "hintNotConfigured": "Set the worker secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID, TELEGRAM_ADMIN_USER_IDS, TELEGRAM_WEBHOOK_SECRET",
+      "connect": "Connect",
+      "reconnect": "Reconnect",
+      "connectSuccess": "Webhook connected",
+      "connectFailed": "Failed to connect the webhook",
+      "urlLabel": "URL",
+      "pendingLabel": "Pending updates",
+      "lastErrorLabel": "Delivery error"
+    },
     "orders": {
       "title": "Orders",
       "pageTitle": "Orders — Admin",

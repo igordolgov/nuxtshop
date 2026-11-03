@@ -25,9 +25,6 @@ export default defineEventHandler(async (event) => {
 
     const order = await updateOrderStatus(event, id, body.status, body.comment)
 
-    // Этап 2 (Telegram): кнопки «Подтвердить/Отменить» будут вызывать
-    // эту же логику через внутреннюю функцию, минуя HTTP
-
     return {
       success: true,
       order,

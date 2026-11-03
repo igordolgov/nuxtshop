@@ -156,6 +156,74 @@ export async function editOrderCard(
   });
 }
 
+// ─── Регистрация вебхука (админ-эндпоинт /api/telegram/webhook/setup) ──
+
+/** Разобранный JSON-ответ Bot API (у ok:false придут error_code/description) */
+export interface BotApiResult<T = unknown> {
+  ok: boolean;
+  result?: T;
+  error_code?: number;
+  description?: string;
+}
+
+/** WebhookInfo из getWebhookInfo — поля, нужные карточке статуса в админке */
+export interface WebhookInfo {
+  url?: string;
+  pending_update_count?: number;
+  last_error_date?: number;
+  last_error_message?: string;
+}
+
+/** Как callApi, но возвращает разобранный JSON — setup-эндпоинту нужен
+ *  description от Telegram, чтобы показать админу внятную причину отказа */
+async function callApiFull<T>(
+  env: TelegramEnv,
+  method: string,
+  payload: Record<string, unknown>,
+): Promise<BotApiResult<T>> {
+  try {
+    const res = await fetch(`${API_BASE}/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const parsed = (await res.json().catch(() => null)) as BotApiResult<T> | null;
+    return parsed ?? { ok: false, description: `Telegram вернул HTTP ${res.status}` };
+  } catch (error) {
+    return { ok: false, description: errorText(error) };
+  }
+}
+
+/**
+ * Регистрация вебхука. secret_token — TELEGRAM_WEBHOOK_SECRET: Telegram
+ * прикладывает его в заголовок X-Telegram-Bot-Api-Secret-Token, который
+ * проверяет наш webhook.post.js. allowed_updates сужает поток до того,
+ * что реально обрабатывается: message = команды, callback_query = кнопки.
+ * drop_pending_updates сознательно не ставим: зависшие апдейты обработает
+ * дедуп + идемпотентность webhook-слоя, реальные заказы не теряем.
+ */
+export async function setWebhook(
+  env: TelegramEnv,
+  url: string,
+): Promise<BotApiResult<boolean>> {
+  if (!env?.TELEGRAM_BOT_TOKEN || !env?.TELEGRAM_WEBHOOK_SECRET) {
+    return { ok: false, description: 'Не заданы TELEGRAM_BOT_TOKEN / TELEGRAM_WEBHOOK_SECRET' };
+  }
+  return callApiFull<boolean>(env, 'setWebhook', {
+    url,
+    secret_token: env.TELEGRAM_WEBHOOK_SECRET,
+    allowed_updates: ['message', 'callback_query'],
+  });
+}
+
+/** Текущий статус вебхука на стороне Telegram (url, очередь, ошибки доставки) */
+export async function getWebhookInfo(env: TelegramEnv): Promise<BotApiResult<WebhookInfo>> {
+  if (!env?.TELEGRAM_BOT_TOKEN) {
+    return { ok: false, description: 'Не задан TELEGRAM_BOT_TOKEN' };
+  }
+  return callApiFull<WebhookInfo>(env, 'getWebhookInfo', {});
+}
+
 // ─── Публикации новостей ─────────────────────────────────────────────
 
 /**

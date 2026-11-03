@@ -813,6 +813,23 @@
       "ariaLabel": "Категории",
       "addNew": "Добавить «{name}»"
     },
+    "telegram": {
+      "title": "Telegram-бот",
+      "connected": "Подключён",
+      "disconnected": "Не подключён",
+      "notConfigured": "Не настроен",
+      "loadError": "Ошибка статуса",
+      "hintConnected": "Карточки заказов уходят в чат админа, кнопки и команды активны",
+      "hintDisconnected": "Вебхук не зарегистрирован — карточки заказов в Telegram приходить не будут",
+      "hintNotConfigured": "Задайте секреты воркера: TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID, TELEGRAM_ADMIN_USER_IDS, TELEGRAM_WEBHOOK_SECRET",
+      "connect": "Подключить",
+      "reconnect": "Переподключить",
+      "connectSuccess": "Вебхук подключён",
+      "connectFailed": "Не удалось подключить вебхук",
+      "urlLabel": "Адрес",
+      "pendingLabel": "Необработанных обновлений",
+      "lastErrorLabel": "Ошибка доставки"
+    },
     "orders": {
       "title": "Заказы",
       "pageTitle": "Заказы — админка",

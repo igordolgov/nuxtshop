@@ -72,9 +72,11 @@ TELEGRAM_WEBHOOK_SECRET Secret проверка, что webhook зовёт Teleg
 NUXT_PUBLIC_API_BASE Text пусто (API на том же домене)
 NUXT_PUBLIC_SITE_URL Text пусто — канонический адрес сайта для robots.txt/sitemap.xml/JSON-LD (см. раздел SEO); без него берётся домен запроса
 
-Регистрация webhook (один раз после деплоя):
+Регистрация webhook — кнопкой в админке (основной способ): /admin/orders → карточка «Telegram-бот» → «Подключить». Она вызывает POST /api/telegram/webhook/setup, который сам берёт адрес сайта (NUXT_PUBLIC_SITE_URL) и секрет из воркера; токен бота нигде не светится. При смене домена — та же кнопка («Переподключить»).
 
-npx wrangler secret put TELEGRAM_WEBHOOK_SECRETInvoke-RestMethod "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https://<домен>/api/telegram/webhook&secret_token=<СЕКРЕТ>"
+Ручной способ (если админка недоступна):
+
+Invoke-RestMethod "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https://<домен>/api/telegram/webhook&secret_token=<СЕКРЕТ>"
 
 ⚠️ Правило деплоя (проверено болезненно)
 
