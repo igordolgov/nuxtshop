@@ -512,9 +512,14 @@ header.app-header.sticky.top-0.z-50.border-b(
 </template>
 
 <style scoped>
-/* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает) */
+/* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает).
+   translateZ(0) — свой композитинг-слой: при инерционной прокрутке
+   шапка — готовый GPU-слой, и контент страницы не мелькает сквозь её
+   нижний край (артефакт «строка контента над шапкой» на телефонах).
+   Меню в шапке absolute — transform на предке ему не мешает */
 .app-header {
   padding-top: var(--safe-area-top, 0px);
+  transform: translateZ(0);
 }
 
 .filters-icon {
