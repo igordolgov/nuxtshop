@@ -215,9 +215,11 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
   const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
   if (stored) {
     // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
-    // локальные пути. KV НЕ перезаписываем (гонка read-modify-write);
-    // в KV новые пути доезжают при следующей админ-правке (writeProducts).
+    // локальные пути; сидовые варианты доливаем товарам без них.
+    // KV НЕ перезаписываем (гонка read-modify-write);
+    // в KV новые пути/варианты доезжают при следующей админ-правке (writeProducts).
     migrateProductImages(stored);
+    migrateSeedVariants(stored);
     return stored;
   }
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
@@ -342,6 +344,41 @@ export function sanitizeVariants(input: unknown): ProductVariant[] | undefined {
 /** Метка оси вариантов («Цвет»/«Память») с той же гигиеной ввода. */
 export function sanitizeVariantLabel(value: unknown): string | undefined {
   return variantString(value, 60);
+}
+
+/**
+ * Доливает сидовые варианты товарам без них — ТОЛЬКО В ПАМЯТИ (тот же
+ * паттерн, что migrateProductImages: readProducts нельзя писать в KV —
+ * гонка read-modify-write; в KV данные доезжают при следующей админ-правке,
+ * а заказы и витрина работают с merged-видом сразу).
+ *
+ * Зачем: каталог живёт в KV и был засеян ДО появления вариантов —
+ * обновление сида само по себе прод не видит. Правила слияния:
+ *  · товар уже с вариантами → не трогаем (админские правки главнее);
+ *  · в сиде варианта нет → не трогаем;
+ *  · variants[0].price = ЖИВАЯ базовая цена товара (контракт «базовая = от»,
+ *    если админ менял цену — сидовые абсолюты не перебивают её).
+ */
+export function migrateSeedVariants(products: Product[]): void {
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
+  for (const product of products) {
+    if (product.variants?.length) continue;
+    const seedProduct = seedBySlug.get(product.slug);
+    if (!seedProduct?.variants?.length) continue;
+    if (seedProduct.variantName && !product.variantName) {
+      product.variantName = seedProduct.variantName;
+    }
+    if (seedProduct.variantNameEn && !product.variantNameEn) {
+      product.variantNameEn = seedProduct.variantNameEn;
+    }
+    if (seedProduct.variantNameEs && !product.variantNameEs) {
+      product.variantNameEs = seedProduct.variantNameEs;
+    }
+    product.variants = seedProduct.variants.map((v, index) =>
+      index === 0 ? { ...v, price: product.price } : { ...v },
+    );
+  }
 }
 
 // ── Локализованные поля товара (nameEn/…/categoriesEs) ───────────────
