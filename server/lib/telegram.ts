@@ -255,8 +255,10 @@ export function formatOrderCard(
 
   lines.push('<b>Состав:</b>');
   for (const item of order.items) {
+    // Вариант (цвет/память) — в скобках после названия товара
+    const variantSuffix = item.variantName ? ` (${escapeHtml(item.variantName)})` : '';
     lines.push(
-      `• ${escapeHtml(item.name)} × ${item.quantity} — ${formatRub(item.price * item.quantity)}`,
+      `• ${escapeHtml(item.name)}${variantSuffix} × ${item.quantity} — ${formatRub(item.price * item.quantity)}`,
     );
   }
   lines.push('');

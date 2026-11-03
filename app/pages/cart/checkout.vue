@@ -42,6 +42,7 @@
                       )
                   .flex-1.min-w-0
                     .font-medium.text-sm.truncate(class="lg:text-md") {{ displayName(item) }}
+                    .text-xs.truncate(class="text-base-content/60" v-if="item?.variantName") {{ item.variantName }}
                     .flex.items-center.justify-between.mt-1
                       span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
                       .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
@@ -434,6 +435,8 @@ definePageMeta({
 })
 
 import { getDeliveryPrice } from '@/utils/deliveryPrice'
+// Варианты: разбор составного id позиции «productId::variantId»
+import { parseCartLineId } from '@/utils/productVariants'
 
 // Header/MobileNavFooter/useCart/useProductUtils/useOrders — автоимпорт Nuxt
 const { isMobile } = useMobileDetection()
@@ -461,8 +464,11 @@ const { getSafeImage, formatPrice } = useProductUtils()
 const appState = useAppState()
 const { loc } = useLocalizedProduct()
 const displayName = (item) => {
+  // Вариантная позиция — составной id «productId::variantId»: ищем свежий
+  // товар по голому productId (см. parseCartLineId)
+  const { productId } = parseCartLineId(item?.id)
   const fresh = appState.products.value?.find(
-    (p) => String(p.id) === String(item?.id),
+    (p) => String(p.id) === String(productId),
   )
   return fresh ? loc(fresh).name : (item?.name ?? '')
 }

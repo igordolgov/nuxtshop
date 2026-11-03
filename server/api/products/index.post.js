@@ -15,6 +15,8 @@ import {
   normalizeCategories,
   applyLocalizedPatch,
   extractLocalizedPatch,
+  sanitizeVariants,
+  sanitizeVariantLabel,
 } from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
@@ -67,6 +69,11 @@ export default defineEventHandler(async (event) => {
         inStock: stockQuantity > 0,
         stockQuantity,
         characteristics: body.characteristics || {},
+        // Варианты: при создании опциональны; битый вход молча отбрасывается
+        variants: sanitizeVariants(body.variants),
+        variantName: sanitizeVariantLabel(body.variantName),
+        variantNameEn: sanitizeVariantLabel(body.variantNameEn),
+        variantNameEs: sanitizeVariantLabel(body.variantNameEs),
         createdAt: now,
         updatedAt: now,
       },

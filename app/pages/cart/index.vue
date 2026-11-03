@@ -98,6 +98,8 @@
                             class="hover:text-primary"
                             @click="goToProduct(item)"
                           ) {{ displayName(item) }}
+                          .variant-chip.text-xs.mb-2(class="text-base-content/70" v-if="item.variantName")
+                            | {{ item.variantName }}
                           span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ item.category }}
                           .flex.items-center.gap-1.mt-1
                             button.qty-btn(
@@ -163,6 +165,8 @@
                             class="hover:text-primary"
                             @click="goToProduct(item)"
                           ) {{ displayName(item) }}
+                          .variant-chip.text-xs(class="mt-0.5 text-base-content/70" v-if="item.variantName")
+                            | {{ item.variantName }}
                           span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
                           .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
                             | {{ $t('cart.qtyExceededFull') }}
@@ -632,6 +636,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 // Правила доставки — единый модуль (аудит F3)
 import { getDeliveryPrice } from '@/utils/deliveryPrice'
+// Варианты: разбор составного id позиции «productId::variantId»
+import { parseCartLineId } from '@/utils/productVariants'
 
 const { t } = useI18n()
 // Ссылки корзины сохраняют префикс локали
@@ -645,8 +651,11 @@ const { $notify } = useNuxtApp()
 const appState = useAppState()
 const { loc } = useLocalizedProduct()
 const displayName = (item) => {
+  // Позиция варианта лежит в корзине под составным id «productId::variantId» —
+  // свежий товар ищем по голому productId (parseCartLineId режет суффикс)
+  const { productId } = parseCartLineId(item?.id)
   const fresh = appState.products.value?.find(
-    (p) => String(p.id) === String(item?.id),
+    (p) => String(p.id) === String(productId),
   )
   return fresh ? loc(fresh).name : (item?.name ?? '')
 }
@@ -761,7 +770,10 @@ const proceedToCheckout = async () => {
 }
 
 const goToProduct = (product) => {
-  navigateTo(getProductUrl(product))
+  // У вариантной позиции item.id — «productId::variantId», а getProductUrl
+  // ждёт товар; URL строим по productId, чтобы ссылка вела на карточку
+  const { productId } = parseCartLineId(product?.id)
+  navigateTo(getProductUrl({ ...product, id: productId }))
 }
 
 //- ============================================

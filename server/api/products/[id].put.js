@@ -7,6 +7,8 @@ import {
   normalizeCategories,
   extractLocalizedPatch,
   applyLocalizedPatch,
+  sanitizeVariants,
+  sanitizeVariantLabel,
 } from '../../lib/productHelpers'
 import { requireAdmin } from '../../utils/auth'
 import { processImage, processGallery } from '../../lib/imageStorage'
@@ -70,6 +72,24 @@ export default defineEventHandler(async (event) => {
         inStock: stockQuantity > 0,
         stockQuantity,
         characteristics: body.characteristics ?? existing.characteristics,
+        // Варианты (цвет/память): не пришли — не трогаем; пришли —
+        // санитайзер; [] — удалить (товар без вариантов)
+        variants:
+          body.variants !== undefined
+            ? sanitizeVariants(body.variants)
+            : existing.variants,
+        variantName:
+          body.variantName !== undefined
+            ? sanitizeVariantLabel(body.variantName)
+            : existing.variantName,
+        variantNameEn:
+          body.variantNameEn !== undefined
+            ? sanitizeVariantLabel(body.variantNameEn)
+            : existing.variantNameEn,
+        variantNameEs:
+          body.variantNameEs !== undefined
+            ? sanitizeVariantLabel(body.variantNameEs)
+            : existing.variantNameEs,
         slug,
         updatedAt: new Date().toISOString(),
       },

@@ -115,6 +115,25 @@ export interface Product {
   // Параллельные массивы к categories: элемент i переводит categories[i]
   categoriesEn?: string[];
   categoriesEs?: string[];
+  // ── Варианты (цвет/память/размер, этап variants) ────────────────────
+  // Контракт: variants[0].price === price (базовая цена = «от», карточки
+  // каталога и быстрый «+» работают с первым вариантом); остаток варианта
+  // не задан → наследуется от товара; price варианта не задан → базовая.
+  variantName?: string;
+  variantNameEn?: string;
+  variantNameEs?: string;
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  nameEn?: string;
+  nameEs?: string;
+  price?: number;
+  image?: string;
+  inStock?: boolean;
+  stockQuantity?: number;
 }
 
 const TRANSLIT: Record<string, string> = {
@@ -267,6 +286,62 @@ export function normalizeCategories(
     seen.add(c);
     return true;
   });
+}
+
+// ── Варианты товара (цвет/память/размер) ─────────────────────────────
+//
+// Тело админ-запросов — недоверенный ввод: приводим к ProductVariant,
+// отбрасывая мусор. Правила:
+//   id   — непустая строка ≤ 80 (уникальность в рамках товара проверяет
+//          вызывающая сторона; дубликаты выкидываем здесь);
+//   name — непустая строка ≤ 120 (+ nameEn/nameEs ≤ 120);
+//   price — конечное число 0..10^9, иначе поле не задаётся (наследуется);
+//   image — строка ≤ 500 (путь или URL), иначе не задаётся;
+//   stockQuantity — целое 0..10^6, иначе наследуется от товара;
+//   inStock — boolean.
+// Пустой/битый вход → undefined (вариантов у товара нет).
+
+const VARIANT_MAX = 50;
+
+function variantString(value: unknown, max: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed && trimmed.length <= max ? trimmed : undefined;
+}
+
+export function sanitizeVariants(input: unknown): ProductVariant[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const out: ProductVariant[] = [];
+  const seenIds = new Set<string>();
+  for (const raw of input.slice(0, VARIANT_MAX)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const rec = raw as Record<string, unknown>;
+    const id = variantString(rec.id, 80);
+    const name = variantString(rec.name, 120);
+    if (!id || !name || seenIds.has(id)) continue;
+    seenIds.add(id);
+    const variant: ProductVariant = { id, name };
+    const nameEn = variantString(rec.nameEn, 120);
+    if (nameEn) variant.nameEn = nameEn;
+    const nameEs = variantString(rec.nameEs, 120);
+    if (nameEs) variant.nameEs = nameEs;
+    if (typeof rec.price === 'number' && Number.isFinite(rec.price) && rec.price >= 0 && rec.price <= 1e9) {
+      variant.price = rec.price;
+    }
+    const image = variantString(rec.image, 500);
+    if (image) variant.image = image;
+    if (typeof rec.stockQuantity === 'number' && Number.isInteger(rec.stockQuantity) && rec.stockQuantity >= 0 && rec.stockQuantity <= 1e6) {
+      variant.stockQuantity = rec.stockQuantity;
+    }
+    if (typeof rec.inStock === 'boolean') variant.inStock = rec.inStock;
+    out.push(variant);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+/** Метка оси вариантов («Цвет»/«Память») с той же гигиеной ввода. */
+export function sanitizeVariantLabel(value: unknown): string | undefined {
+  return variantString(value, 60);
 }
 
 // ── Локализованные поля товара (nameEn/…/categoriesEs) ───────────────

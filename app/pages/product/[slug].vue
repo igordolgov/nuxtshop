@@ -50,6 +50,7 @@
               :product="productView"
               :gallery="productGallery"
               :product-name="productView?.name"
+              :jump-to-image="galleryJumpTo"
             )
 
           //- Информация о товаре (productView — локализованная копия:
@@ -60,6 +61,8 @@
               :rating="ratingSummary"
               :is-favorite="isFavorite"
               :is-in-cart="isInCart(product.id)"
+              :selected-variant-id="selectedVariantId"
+              @update:selectedVariantId="selectedVariantId = $event"
               @toggle-favorite="toggleFavorite"
               @add-to-cart="addToCartHandler"
             )
@@ -104,16 +107,16 @@
   )
     button.btn.btn-lg.w-full.rounded-t-box(
       type="button"
-      :disabled="!product.inStock || isInCart(product.id)"
-      @click="addToCartHandler"
-      :class="isInCart(product.id) ? 'btn-success' : (product.inStock ? 'btn-primary' : 'btn-oos')"
+      :disabled="!selectedStock.inStock || isInCart(product.id, selectedVariantId)"
+      @click="addToCartHandler()"
+      :class="isInCart(product.id, selectedVariantId) ? 'btn-success' : (selectedStock.inStock ? 'btn-primary' : 'btn-oos')"
     )
       .flex.items-center.justify-center.w-full
         //- SVG вместо эмодзи 🛒/✅: цветные эмодзи-глифы (сине-серая тележка,
         //- зелёная галка) сливались с фоном btn-primary/btn-success. Текущий
         //- цвет иконки = primary/success-content — контрастная пара темы
         svg.w-6.h-6.mr-2(
-          v-if="!isInCart(product.id)"
+          v-if="!isInCart(product.id, selectedVariantId)"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -131,8 +134,8 @@
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
         span
-          span(v-if="isInCart(product.id)") {{ $t('product.alreadyInCart') }}
-          span(v-else-if="product.inStock") {{ $t('product.addWithPrice', { price: formatPrice(product.price) + ' ₽' }) }}
+          span(v-if="isInCart(product.id, selectedVariantId)") {{ $t('product.alreadyInCart') }}
+          span(v-else-if="selectedStock.inStock") {{ $t('product.addWithPrice', { price: formatPrice(variantPrice(product, selectedVariant)) + ' ₽' }) }}
           span(v-else) {{ $t('product.soldOut') }}
 
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
@@ -156,6 +159,15 @@ const appState = useAppState()
 const { products } = appState
 const { addToCart, cartItems } = useCart()
 const { addRecentlyViewed } = useRecentlyViewed()
+// Варианты товара: чистые хелперы (id позиции, цена/склад, дефолт)
+import {
+  firstVariant,
+  findVariant,
+  variantStock,
+  variantPrice,
+  cartLineId,
+  VARIANT_SEPARATOR,
+} from '~/utils/productVariants'
 
 const productSlug = computed(() => route.params.slug)
 
@@ -190,6 +202,25 @@ const jsonLd = computed(() => responseData.value?.jsonLd ?? null)
 // Локализованная копия для отображения и SEO: имя/описание/категории —
 // в языке страницы (фолбэк — русский), все служебные поля — как есть
 const productView = computed(() => loc(product.value))
+
+// ─── Варианты (цвет/память/размер) ──────────────────────────────────
+// Состояние выбора живёт здесь (не в ProductInfo): мобильная нижняя CTA
+// добавляет ТОТ ЖЕ вариант, что и пилюли. Дефолт — первый вариант:
+// детерминирован и на сервере, и на клиенте — гидратация не расходится.
+const selectedVariantId = ref(null)
+watch(
+  product,
+  (p) => {
+    selectedVariantId.value = firstVariant(p)?.id ?? null
+  },
+  { immediate: true },
+)
+const selectedVariant = computed(() => findVariant(product.value, selectedVariantId.value))
+const selectedStock = computed(() => variantStock(product.value, selectedVariant.value))
+
+// Выбрали вариант с собственной картинкой — галерея прыгает на неё.
+// null у товара без вариантов/без картинки: галерея живёт своей жизнью.
+const galleryJumpTo = computed(() => selectedVariant.value?.image ?? null)
 
 // Одобренные отзывы товара + сводка (приходят вместе с карточкой, SSR)
 const reviews = computed(() => responseData.value?.reviews ?? [])
@@ -261,13 +292,17 @@ const isFavorite = computed(() => {
   return appState.isFavorite(product.value.id)
 })
 
-const isInCart = (productId) => {
+const isInCart = (productId, variantId = null) => {
   if (!productId) return false
   const items = cartItems.value
   if (!items || !Array.isArray(items)) return false
+  // С вариантом — точная позиция «productId::variantId»; без — товар
+  // в целом: позиция без варианта ИЛИ любая его вариантная строка
   return items.some((item) => {
     if (!item || item.id === undefined || item.id === null) return false
-    return String(item.id) === String(productId)
+    const id = String(item.id)
+    if (variantId !== null) return id === cartLineId(productId, variantId)
+    return id === String(productId) || id.startsWith(`${productId}${VARIANT_SEPARATOR}`)
   })
 }
 
@@ -284,10 +319,13 @@ const toggleSimilarFavorite = (similarProduct) => {
   appState.toggleFavorite(similarProduct)
 }
 
-const addToCartHandler = async () => {
-  if (!product.value || isInCart(product.value.id)) return
+const addToCartHandler = async (payload = null) => {
+  if (!product.value) return
+  // Точная позиция выбранного варианта; null для товаров без вариантов
+  const variant = payload?.variant ?? selectedVariant.value ?? null
+  if (isInCart(product.value.id, variant?.id ?? null)) return
   try {
-    await addToCart(product.value)
+    await addToCart(product.value, variant)
     $notify.success(t('product.cartAdded'))
   } catch {
     $notify.error(t('product.cartAddErrorLong'))

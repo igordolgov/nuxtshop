@@ -184,7 +184,10 @@ import { useResizeObserver } from '@vueuse/core'
 const props = defineProps({
   product: { type: Object, default: () => ({}) },
   gallery: { type: Array, default: () => [] },
-  productName: { type: String, default: '' }
+  productName: { type: String, default: '' },
+  // URL картинки выбранного варианта (цвет/память): галерея прыгает на
+  // неё. null/undefined — товар без вариантов или вариант без картинки
+  jumpToImage: { type: String, default: null }
 })
 
 // ============================================
@@ -717,6 +720,21 @@ watch(() => props.gallery, async (newGallery) => {
 watch(currentIndex, async () => {
   await updateSlidePosition()
 })
+
+//- Выбор варианта с собственной картинкой: прыжок на слайд с ней.
+//- URL нет в галерее — молча игнорируем (картинка варианта может
+//- отсутствовать среди слайдов, это не ошибка)
+watch(
+  () => props.jumpToImage,
+  async (url) => {
+    if (!url) return
+    const index = props.gallery.indexOf(url)
+    if (index >= 0 && index !== currentIndex.value) {
+      await goToImage(index)
+    }
+  },
+  { immediate: true },
+)
 
 // ============================================
 // ResizeObserver – автоматическое обновление при изменении размеров контейнера

@@ -63,10 +63,15 @@ export interface OrderItem {
   id: string;
   slug: string | null;
   name: string;
-  price: number; // цена за штуку на момент заказа (из KV)
+  price: number; // цена за штуку на момент заказа (из KV; у варианта — его цена)
   quantity: number;
   image: string | null;
   category: string | null;
+  // Вариант товара (цвет/память). null — товар без вариантов.
+  // id позиции в корзине — «productId::variantId»: серверу достаточно
+  // клиентского id, отдельного поля вариант-товара в каталоге нет.
+  variantId: string | null;
+  variantName: string | null;
 }
 
 export interface OrderCustomer {
@@ -226,29 +231,52 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     throw createError({ statusCode: 400, message: 'Выберите способ оплаты' });
   }
 
-  // 3. Товары из KV: цены и наличие — серверные
+  // 3. Товары из KV: цены и наличие — серверные.
+  // Корзинная позиция варианта приходит составным id «productId::variantId»
+  // (см. useCart.addToCart): склад и цена берутся из варианта, а не товара.
   const products = await readProducts(event);
   const items: OrderItem[] = [];
-  for (const [id, quantity] of qtyById) {
-    const product = products.find((p) => String(p.id) === id);
+  for (const [lineId, quantity] of qtyById) {
+    const sep = String(lineId).indexOf('::');
+    const productId = sep === -1 ? String(lineId) : String(lineId).slice(0, sep);
+    const variantId = sep === -1 ? null : String(lineId).slice(sep + 2) || null;
+    const product = products.find((p) => String(p.id) === productId);
     if (!product) {
-      throw createError({ statusCode: 400, message: `Товар с ID ${id} не найден` });
+      throw createError({ statusCode: 400, message: `Товар с ID ${productId} не найден` });
     }
-    const stock = product.stockQuantity ?? 0;
+    let price = product.price;
+    let stock = product.stockQuantity ?? 0;
+    let variantName: string | null = null;
+    let variantImage: string | null = null;
+    if (variantId !== null) {
+      const variant = product.variants?.find((v) => v.id === variantId);
+      if (!variant) {
+        throw createError({
+          statusCode: 400,
+          message: `У товара «${product.name}» нет варианта ${variantId}`,
+        });
+      }
+      price = variant.price ?? product.price;
+      stock = variant.stockQuantity ?? product.stockQuantity ?? 0;
+      variantName = variant.name;
+      variantImage = variant.image ?? null;
+    }
     if (quantity > stock) {
       throw createError({
         statusCode: 409,
-        message: `«${product.name}»: доступно ${stock} шт., запрошено ${quantity}`,
+        message: `«${product.name}${variantName ? ` (${variantName})` : ''}»: доступно ${stock} шт., запрошено ${quantity}`,
       });
     }
     items.push({
       id: product.id,
       slug: product.slug ?? null,
       name: product.name,
-      price: product.price,
+      price,
       quantity,
-      image: product.image ?? null,
+      image: variantImage ?? product.image ?? null,
       category: product.categories?.[0] ?? null,
+      variantId,
+      variantName,
     });
   }
 

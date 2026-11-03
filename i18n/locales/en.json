@@ -189,7 +189,8 @@
     "notifySend": "Send",
     "notifyDone": "Done! We will let you know when the product is back",
     "notifyErrContact": "Enter an email or phone number (at least 10 digits)",
-    "notifyError": "Could not send. Please try again"
+    "notifyError": "Could not send. Please try again",
+    "variant": "Option"
   },
   "productPage": {
     "notFound": "Product not found",

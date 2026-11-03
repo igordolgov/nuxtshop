@@ -49,27 +49,27 @@
       //- Описание
       p.text-sm.leading-relaxed(class="text-base-content/85") {{ product.description }}
 
-      //- Цена и наличие
+      //- Цена и наличие (у варианта — своя цена/склад, этап «варианты»)
       .flex.items-end.justify-between.gap-4.py-1
         .price-section
-          .text-3xl.font-bold.text-base-content {{ formatPrice(product.price) }} ₽
+          .text-3xl.font-bold.text-base-content {{ formatPrice(currentPrice) }} ₽
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
         .stock-section.text-right
           .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.text-xs.font-medium(
-            :class="product.inStock ? 'bg-success/10 text-success' : 'bg-error/10 text-error'"
+            :class="currentStock.inStock ? 'bg-success/10 text-success' : 'bg-error/10 text-error'"
           )
-            span.size-2.rounded-full(:class="product.inStock ? 'bg-success' : 'bg-error'")
-            span(v-if="product.inStock") {{ $t('product.inStock') }}
+            span.size-2.rounded-full(:class="currentStock.inStock ? 'bg-success' : 'bg-error'")
+            span(v-if="currentStock.inStock") {{ $t('product.inStock') }}
             span(v-else) {{ $t('product.outOfStock') }}
 
           .text-xs.mt-1(
-            v-if="product.inStock && product.stockQuantity",
+            v-if="currentStock.inStock && currentStock.stockQuantity",
             :class="isLowStock ? 'text-warning font-medium' : 'text-base-content/70'"
-          ) {{ $t('product.left', product.stockQuantity) }}
+          ) {{ $t('product.left', currentStock.stockQuantity) }}
 
       //- Нет в наличии: заявка «сообщить о поступлении» (email или телефон)
-      .stock-alert(v-if="!product.inStock")
+      .stock-alert(v-if="!currentStock.inStock")
         button.btn.btn-outline.btn-sm.rounded-xl.w-full(
           v-if="alertState === 'idle'"
           type="button"
@@ -100,19 +100,39 @@
             path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
           | {{ $t('product.notifyDone') }}
 
+      //- Варианты (цвет/память/размер): пилюли под ценой. Выбранный
+      //- вариант определяет цену/склад/картинку и уходит в корзину;
+      //- недоступные (свой нулевой склад) задизейблены. SSR-safe:
+      //- дефолт — первый вариант (детерминирован на сервере и клиенте).
+      .variant-picker(v-if="hasVariants")
+        .text-xs.font-medium(class="mb-1.5 text-base-content/70")
+          | {{ variantLabel }}:
+        .flex.flex-wrap.gap-2(role="radiogroup" :aria-label="variantLabel")
+          button.variant-pill.rounded-full.text-sm.border.transition-colors(
+            class="px-3 py-1.5",
+            v-for="v in product.variants",
+            :key="v.id",
+            type="button",
+            role="radio",
+            :aria-checked="v.id === selectedVariantId",
+            :disabled="!variantAvailable(v)",
+            :class="variantPillClass(v)",
+            @click="$emit('update:selectedVariantId', v.id)"
+          ) {{ localizedVariantTitle(v) }}
+
       //- Десктопная кнопка
-      .hidden(class="lg:block" :class="isInCart ? 'b' : ''")
+      .hidden(class="lg:block" :class="currentInCart ? 'b' : ''")
         button.btn.w-full.btn-lg.rounded-xl.border-0(
-          :disabled="!product.inStock || isInCart"
-          @click="$emit('add-to-cart')"
-          :class="isInCart ? 'btn-success text-success-content' : (product.inStock ? 'btn-primary' : 'btn-oos')"
+          :disabled="!currentStock.inStock || currentInCart"
+          @click="$emit('add-to-cart', { variant: selectedVariant })"
+          :class="currentInCart ? 'btn-success text-success-content' : (currentStock.inStock ? 'btn-primary' : 'btn-oos')"
         )
           span.flex.items-center.justify-center.gap-2.w-full
             span
-              span(v-if="isInCart") {{ $t('product.alreadyInCart') }}
-              span(v-else-if="product.inStock") {{ $t('product.addToCart') }}
+              span(v-if="currentInCart") {{ $t('product.alreadyInCart') }}
+              span(v-else-if="currentStock.inStock") {{ $t('product.addToCart') }}
               span(v-else) {{ $t('product.soldOut') }}
-            span.font-normal.opacity-80(v-if="!isInCart && product.inStock") · {{ formatPrice(product.price) }} ₽
+            span.font-normal.opacity-80(v-if="!currentInCart && currentStock.inStock") · {{ formatPrice(currentPrice) }} ₽
 
       //- Характеристики
       .rounded-2xl.border.border-base-300.overflow-hidden
@@ -134,28 +154,68 @@
             .flex.justify-between.py-2.border-t.border-base-200
               span(class="text-base-content/70") {{ $t('product.status') }}
               span.font-medium(
-                :class="product.inStock ? 'text-success' : 'text-error'"
-              ) {{ product.inStock ? $t('product.statusAvailable') : $t('product.statusUnavailable') }}
+                :class="currentStock.inStock ? 'text-success' : 'text-error'"
+              ) {{ currentStock.inStock ? $t('product.statusAvailable') : $t('product.statusUnavailable') }}
             .flex.justify-between.py-2.border-t.border-base-200
               span(class="text-base-content/70") {{ $t('product.dateAdded') }}
               span.font-medium {{ formatDate(product.createdAt) }}
 </template>
 
 <script setup>
+// Варианты: чистые хелперы (составной id позиции, цена/склад, локализация)
+import {
+  hasVariants as hasVariantsOf,
+  findVariant,
+  variantPrice,
+  variantStock,
+  cartLineId,
+  localizedVariantName,
+  localizedVariantLabel,
+} from '~/utils/productVariants'
+
 const { t, locale } = useI18n()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
   isFavorite: { type: Boolean, default: false },
   // Сводка рейтинга { count, average } — приходит с /api/product/[slug]
-  rating: { type: Object, default: null }
+  rating: { type: Object, default: null },
+  // Выбранный вариант (id) — состояние держит родитель ([slug].vue):
+  // мобильная нижняя CTA добавляет ТОТ ЖЕ вариант, что и пилюли здесь
+  selectedVariantId: { type: String, default: null }
 })
 
-defineEmits(['toggle-favorite', 'add-to-cart'])
+const emit = defineEmits(['toggle-favorite', 'add-to-cart', 'update:selectedVariantId'])
+void emit
 
 const { $notify } = useNuxtApp()
 // formatPrice — единый из useProductUtils (₽ добавляется в шаблоне, аудит F13)
 const { formatPrice } = useProductUtils()
+
+//- ── Варианты (цвет/память/размер) ─────────────────────────────────────
+// Чистые хелперы из utils/productVariants.js; cartItems — прямой доступ
+// к синглтону корзины: CTA должна знать о позиции ИМЕННО выбранного
+// варианта (проп isInCart проверяет товар в целом — этого мало).
+const { cartItems } = useCart()
+
+const hasVariants = computed(() => hasVariantsOf(props.product))
+const selectedVariant = computed(() => findVariant(props.product, props.selectedVariantId))
+const currentPrice = computed(() => variantPrice(props.product, selectedVariant.value))
+const currentStock = computed(() => variantStock(props.product, selectedVariant.value))
+const variantLabel = computed(() => localizedVariantLabel(props.product, locale.value))
+const localizedVariantTitle = (v) => localizedVariantName(v, locale.value)
+/** Вариант доступен для покупки (свой склад/наследованный). */
+const variantAvailable = (v) => variantStock(props.product, v).inStock
+/** Класс пилюли: выбранная — primary-заливка, остальные — нейтральные */
+const variantPillClass = (v) =>
+  v.id === props.selectedVariantId
+    ? 'border-primary bg-primary/10 text-primary font-medium'
+    : 'border-base-300 text-base-content/80 hover:border-base-content/40'
+const currentInCart = computed(() => {
+  if (!hasVariants.value) return props.isInCart
+  const line = cartLineId(props.product?.id, selectedVariant.value?.id)
+  return cartItems.value?.some((i) => i?.id === line) ?? false
+})
 
 //- ── Сравнение (ClientOnly в шаблоне: состояние после гидратации) ──────
 const { isCompared, toggleCompare } = useCompare()

@@ -13,10 +13,28 @@ import { ref, computed } from 'vue'
 // до него чекаут держал собственный статический список цен и суммы
 // корзина/чекаут расходились (аудит F3)
 import { getDeliveryPrice } from '../utils/deliveryPrice'
+// Варианты товара: составной id позиции, цена/склад варианта, заморозка
+// названия в языке страницы (контракт — server/lib/productHelpers.ts)
+import {
+  cartLineId,
+  variantPrice,
+  variantStock,
+  cartVariantTitle,
+  firstVariant,
+} from '../utils/productVariants'
 
 const STORAGE_KEY = 'cart'
 
 const DELIVERY_METHOD_IDS = ['courier', 'pickup', 'post']
+
+/** Текущая локаль в не-setup контексте (как в tr.js — через синглтон). */
+const currentLocale = () => {
+  try {
+    return useNuxtApp().$i18n?.locale?.value || 'ru'
+  } catch {
+    return 'ru'
+  }
+}
 
 const slugify = (str) => {
   if (!str) return ''
@@ -177,42 +195,55 @@ function createCart() {
 
   // ─── Методы ───────────────────────────────────────────────
 
-  const addToCart = async (product) => {
+  const addToCart = async (product, variant = null) => {
     if (!product?.id) {
       console.error('Invalid product:', product)
       return false
     }
 
-    const existing = state.value.items.find((item) => item.id === product.id)
+    // Вариант (цвет/память): позиция ключуется составным id
+    // «productId::variantId» — два цвета лежат в корзине как две строки;
+    // сервер (orderHelpers.createOrder) разбирает id сам.
+    // Вариант не указан (быстрый «+» из списков) — берём первый: он несёт
+    // базовую цену товара (контракт seeds, см. productVariants.js).
+    const effectiveVariant = variant ?? firstVariant(product)
+    const lineId = cartLineId(product.id, effectiveVariant?.id)
+    const stock = variantStock(product, effectiveVariant)
+    const price = variantPrice(product, effectiveVariant)
+
+    const existing = state.value.items.find((item) => item.id === lineId)
 
     if (existing) {
       const nextQty = existing.quantity + 1
-      const max = product.stockQuantity || 0
+      const max = stock.stockQuantity || 0
       if (nextQty > max) {
         throw new Error(`Нельзя добавить больше ${max} шт. товара "${product.name}"`)
       }
       existing.quantity = nextQty
     } else {
-      if ((product.stockQuantity || 0) === 0) {
+      if ((stock.stockQuantity || 0) === 0) {
         throw new Error(`Товар "${product.name}" отсутствует на складе`)
       }
 
       const productSlug = product.slug || slugify(product.name)
+      const variantTitle = cartVariantTitle(effectiveVariant, currentLocale())
 
       state.value.items.push({
-        id: product.id,
+        id: lineId,
         name: product.name || tr('cart.unnamedProduct', 'Без названия'),
+        variantId: effectiveVariant?.id ?? null,
+        variantName: variantTitle,
         description: product.description || '',
-        price: product.price || 0,
-        currentPrice: product.price || 0,
-        originalPrice: product.originalPrice || product.price || 0,
+        price,
+        currentPrice: price,
+        originalPrice: product.originalPrice || price,
         quantity: 1,
-        image: product.image || '',
+        image: effectiveVariant?.image || product.image || '',
         // Категория через resolveCategory: строка / объект / массив —
         // всё покрывается (раньше только categories?.[0] → всегда «Другое»)
         category: resolveCategory(product),
-        stockQuantity: product.stockQuantity || 0,
-        inStock: product.inStock ?? true,
+        stockQuantity: stock.stockQuantity || 0,
+        inStock: stock.inStock,
         discount: product.discount || 0,
         slug: productSlug || null,
       })

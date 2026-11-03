@@ -189,7 +189,8 @@
     "notifySend": "Enviar",
     "notifyDone": "¡Listo! Te avisaremos cuando vuelva el producto",
     "notifyErrContact": "Indica un email o teléfono (mínimo 10 dígitos)",
-    "notifyError": "No se pudo enviar. Inténtalo de nuevo"
+    "notifyError": "No se pudo enviar. Inténtalo de nuevo",
+    "variant": "Opción"
   },
   "productPage": {
     "notFound": "Producto no encontrado",
