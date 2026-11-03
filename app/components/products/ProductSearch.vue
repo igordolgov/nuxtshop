@@ -73,15 +73,22 @@ const emit = defineEmits<{
 }>()
 
 // Локальные переменные
-const searchTimeout = ref<NodeJS.Timeout | null>(null)
+const inputRef = ref<HTMLInputElement>()
 
-// Функция debounce
-const debounce = (fn: Function, delay: number) => {
-  let timeoutId: NodeJS.Timeout
-  return (...args: any[]) => {
+// Типизированный debounce (без Function/any[]): .cancel() нужен кнопке
+// очистки, чтобы отменить ещё не сработавший отложенный emit
+type Debounced<A extends unknown[]> = ((...args: A) => void) & { cancel: () => void }
+const debounce = <A extends unknown[]>(fn: (...args: A) => void, delay: number): Debounced<A> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const debounced: Debounced<A> = (...args: A) => {
     if (timeoutId) clearTimeout(timeoutId)
     timeoutId = setTimeout(() => fn(...args), delay)
   }
+  debounced.cancel = () => {
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = undefined
+  }
+  return debounced
 }
 
 // Обработчик ввода
@@ -94,18 +101,11 @@ const handleInput = debounce((event: Event) => {
 
 // Очистка поиска
 const clearSearch = () => {
+  handleInput.cancel()
   emit('update:modelValue', '')
   emit('clear')
   emit('search', '')
-  
-  if (searchTimeout.value) {
-    clearTimeout(searchTimeout.value)
-    searchTimeout.value = null
-  }
 }
-
-// Автофокус при монтировании (опционально)
-const inputRef = ref<HTMLInputElement>()
 
 defineExpose({
   focus: () => inputRef.value?.focus(),

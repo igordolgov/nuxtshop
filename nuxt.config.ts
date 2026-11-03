@@ -50,9 +50,8 @@ export default defineNuxtConfig({
       devSourcemap: false,
       transformer: 'lightningcss',
     },
-    plugins: [tailwindcss(), isProd ? removeConsole({ includes: ['log', 'debug'] }) : null].filter(
-      Boolean,
-    ) as any,
+    // Условное spread вместо [.filter(Boolean) as any]: типы точные, any не нужен
+    plugins: [tailwindcss(), ...(isProd ? [removeConsole({ includes: ['log', 'debug'] })] : [])],
     // Список чистый: только реально используемые пакеты.
     // Записи @vue/devtools-* (если появятся) добавляет сам Nuxt —
     // предупреждение NUXT_B7002 на прод не влияет.
