@@ -2,7 +2,7 @@
 // вопросы». Google показывает расширенный сниппет только если размеченные
 // вопрос-ответы ВИДНЫ пользователю на странице: функция вызывается тем же
 // компонентом, который рендерит список, и размечает ровно его содержимое.
-import type { FaqEntry } from '../../shared/siteContent'
+import type { FaqEntry } from '../../shared/siteContent';
 
 export interface FaqJsonLd {
   '@context': 'https://schema.org';

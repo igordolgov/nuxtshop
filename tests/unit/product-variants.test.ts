@@ -1,4 +1,4 @@
-// Тесты чистых хелперов вариантов товара (app/utils/productVariants.js).
+// Тесты чистых хелперов вариантов товара (app/utils/productVariants.ts).
 // Контракт: variants[0].price === product.price; склад/цена варианта
 // не заданы → наследуются от товара; id корзинной позиции —
 // «productId::variantId» (сервер разбирает сам).

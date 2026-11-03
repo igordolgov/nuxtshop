@@ -12,15 +12,15 @@
 
 export function withImageFormat(url: string): string {
   try {
-    const parsed = new URL(url)
-    if (parsed.hostname !== 'images.unsplash.com') return url
-    if (!parsed.searchParams.has('auto')) parsed.searchParams.set('auto', 'format')
-    if (!parsed.searchParams.has('q')) parsed.searchParams.set('q', '75')
-    return parsed.toString()
+    const parsed = new URL(url);
+    if (parsed.hostname !== 'images.unsplash.com') return url;
+    if (!parsed.searchParams.has('auto')) parsed.searchParams.set('auto', 'format');
+    if (!parsed.searchParams.has('q')) parsed.searchParams.set('q', '75');
+    return parsed.toString();
   } catch {
     // Некорректный URL возвращаем как есть — картинка уже имеет fallback
     // в вызывающих компонентах (onerror → placeholder)
-    return url
+    return url;
   }
 }
 
@@ -37,13 +37,13 @@ export function withImageFormat(url: string): string {
 // и внешние URL второй версии не имеют — возвращаем undefined, атрибут
 // не выводится и поведение остаётся прежним.
 
-const LOCAL_PRODUCT_IMAGE_RE = /^\/images\/products\/(photo-\d+-[a-f0-9]+)\.webp$/
+const LOCAL_PRODUCT_IMAGE_RE = /^\/images\/products\/(photo-\d+-[a-f0-9]+)\.webp$/;
 
 /** srcset «400w + 800w» для локальных фото каталога или undefined. */
 export function productSrcset(url: unknown): string | undefined {
-  if (typeof url !== 'string') return undefined
-  const m = url.match(LOCAL_PRODUCT_IMAGE_RE)
-  if (!m) return undefined
-  const id = m[1]
-  return `/images/products/small/${id}.webp 400w, /images/products/${id}.webp 800w`
+  if (typeof url !== 'string') return undefined;
+  const m = url.match(LOCAL_PRODUCT_IMAGE_RE);
+  if (!m) return undefined;
+  const id = m[1];
+  return `/images/products/small/${id}.webp 400w, /images/products/${id}.webp 800w`;
 }

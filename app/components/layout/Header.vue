@@ -21,7 +21,7 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- ни бургера, ни десктоп-меню — они включались с 1024px)
       .relative(class="lg:hidden" ref="mobileMenuRef")
         //- data-fly-compare — приёмник «синей точки» сравнения
-        //- (см. app/utils/compareFly.js)
+        //- (см. app/utils/compareFly.ts)
         button.btn.btn-ghost.btn-circle.relative(
           type="button"
           :aria-expanded="isMobileMenuOpen"
@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
 })
 
 //- ============================================
-//- Полёт «синей точки» сравнения (см. app/utils/compareFly.js):
+//- Полёт «синей точки» сравнения (см. app/utils/compareFly.ts):
 //- карточки диспатчат COMPARE_FLY_EVENT, здесь точка летит по лёгкой дуге
 //- к видимому приёмнику [data-fly-compare], исчезает у цели, а бейдж
 //- на бургере мигает ~1.5 с. prefers-reduced-motion — без полёта.

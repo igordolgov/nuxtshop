@@ -1,4 +1,4 @@
-// Тесты app/composables/useRecentlyViewed.js — чистая логика истории
+// Тесты app/composables/useRecentlyViewed.ts — чистая логика истории
 // просмотров (pushRecent) без localStorage; сам композабл тонкий
 // клиентский слой вокруг неё.
 import { describe, expect, it } from 'vitest';

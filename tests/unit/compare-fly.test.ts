@@ -1,4 +1,4 @@
-// Тесты хелперов «синей точки» сравнения (app/utils/compareFly.js):
+// Тесты хелперов «синей точки» сравнения (app/utils/compareFly.ts):
 // расчёт точки старта полёта и выбор видимого приёмника [data-fly-compare].
 // Сам полёт (Web Animations API) и бейдж покрыты кодом Header.vue /.prod.
 import { describe, expect, it } from 'vitest';

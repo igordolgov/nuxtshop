@@ -1,0 +1,44 @@
+// middleware/manager-auth.ts
+// ============================================
+// Middleware: manager-auth — доступ manager и admin.
+// Сервер: SSR-проверка по кукам (роуты не кэшируются).
+// Клиент: проверка через общий стейт useAuth.
+// ============================================
+export default defineNuxtRouteMiddleware(async () => {
+  // ─── Сервер ───────────────────────────────────────────────
+  if (import.meta.server) {
+    // $fetch при SSR не пересылает куки автоматически — делаем это явно
+    const headers = useRequestHeaders(['cookie']);
+    try {
+      const data = await $fetch<{
+        success: boolean;
+        user: { role: 'user' | 'manager' | 'admin' } | null;
+      }>('/api/auth/user', { headers });
+      const user = data?.user ?? null;
+      if (!user) return navigateTo('/auth/login', { replace: true });
+      if (!['manager', 'admin'].includes(user.role)) {
+        return navigateTo('/', { replace: true });
+      }
+    } catch {
+      return navigateTo('/auth/login', { replace: true });
+    }
+    return;
+  }
+
+  // ─── Клиент ───────────────────────────────────────────────
+  const { $notify } = useNuxtApp();
+  const { authChecked, isAuthenticated, isManager, checkAuth } = useAuth();
+
+  if (!authChecked.value) {
+    await checkAuth();
+  }
+
+  if (!isAuthenticated.value) {
+    $notify.error('Для доступа необходимо войти в систему');
+    return navigateTo('/auth/login', { replace: true });
+  }
+  if (!isManager.value) {
+    $notify.error('Недостаточно прав для доступа');
+    return navigateTo('/', { replace: true });
+  }
+});

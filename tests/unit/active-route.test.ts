@@ -1,4 +1,4 @@
-// Тесты app/composables/useActiveRoute.js — чистая логика matchActiveRoute /
+// Тесты app/composables/useActiveRoute.ts — чистая логика matchActiveRoute /
 // matchExactActiveRoute. localePath подменяется готовым локализованным путём:
 // ru — без префикса ('/'), en — '/en', es — '/es' (strategy: prefix_except_default).
 import { describe, expect, it } from 'vitest';
