@@ -9,30 +9,32 @@ import {
   promoIssue,
   PROMO_ISSUE_MESSAGES,
   calcDiscount,
-} from '../../lib/promoHelpers'
+} from '../../lib/promoHelpers';
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBody(event);
 
-  const code = String(body?.code ?? '').trim().toUpperCase()
+  const code = String(body?.code ?? '')
+    .trim()
+    .toUpperCase();
   if (!code) {
-    throw createError({ statusCode: 400, message: 'Введите промокод' })
+    throw createError({ statusCode: 400, message: 'Введите промокод' });
   }
 
-  const promos = await readPromoCodes(event)
-  const promo = findPromoByCode(promos, code)
+  const promos = await readPromoCodes(event);
+  const promo = findPromoByCode(promos, code);
 
   if (!promo) {
-    return { valid: false, reason: 'not_found', message: 'Промокод не найден' }
+    return { valid: false, reason: 'not_found', message: 'Промокод не найден' };
   }
 
-  const issue = promoIssue(promo)
+  const issue = promoIssue(promo);
   if (issue) {
-    return { valid: false, reason: issue, message: PROMO_ISSUE_MESSAGES[issue] }
+    return { valid: false, reason: issue, message: PROMO_ISSUE_MESSAGES[issue] };
   }
 
-  const subtotal = Number(body?.subtotal)
-  const discount = calcDiscount(promo, Number.isFinite(subtotal) ? subtotal : 0)
+  const subtotal = Number(body?.subtotal);
+  const discount = calcDiscount(promo, Number.isFinite(subtotal) ? subtotal : 0);
 
   return {
     valid: true,
@@ -44,5 +46,5 @@ export default defineEventHandler(async (event) => {
       expiresAt: promo.expiresAt,
       description: promo.description || null,
     },
-  }
-})
+  };
+});

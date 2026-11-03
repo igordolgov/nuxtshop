@@ -1,4 +1,4 @@
-// server/api/orders/export.get.js
+// server/api/orders/export.get.ts
 // CSV-выгрузка всех заказов (GET /api/orders/export). Только админ.
 //
 // Формат «Excel RU»: BOM + разделитель «;» + CRLF (см. server/lib/csvHelpers.ts) —
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
     return csv;
   } catch (error) {
-    if (error.statusCode) throw error;
+    if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка CSV-экспорта заказов:', error);
     throw createError({ statusCode: 500, message: 'Не удалось сформировать CSV' });
   }

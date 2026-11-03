@@ -8,40 +8,40 @@ import {
   findPromoByCode,
   nextPromoId,
   PromoValidationError,
-} from '../../../lib/promoHelpers'
-import { requireAdmin } from '../../../utils/auth'
+} from '../../../lib/promoHelpers';
+import { requireAdmin } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requireAdmin(event);
 
-  const body = await readBody(event)
+  const body = await readBody(event);
 
-  let fields
+  let fields;
   try {
-    fields = normalizePromoInput(body ?? {})
+    fields = normalizePromoInput(body ?? {});
   } catch (error) {
     if (error instanceof PromoValidationError) {
-      throw createError({ statusCode: 400, message: error.message })
+      throw createError({ statusCode: 400, message: error.message });
     }
-    throw error
+    throw error;
   }
 
-  const promos = await readPromoCodes(event)
+  const promos = await readPromoCodes(event);
   if (findPromoByCode(promos, fields.code)) {
-    throw createError({ statusCode: 409, message: `Промокод ${fields.code} уже существует` })
+    throw createError({ statusCode: 409, message: `Промокод ${fields.code} уже существует` });
   }
 
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   const promo = {
     id: nextPromoId(promos),
     ...fields,
     usedCount: 0,
     createdAt: now,
     updatedAt: now,
-  }
+  };
 
-  promos.push(promo)
-  await writePromoCodes(event, promos)
+  promos.push(promo);
+  await writePromoCodes(event, promos);
 
-  return { success: true, promo, message: `Промокод ${promo.code} создан` }
-})
+  return { success: true, promo, message: `Промокод ${promo.code} создан` };
+});

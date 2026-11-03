@@ -8,39 +8,39 @@ import {
   normalizePromoInput,
   findPromoByCode,
   PromoValidationError,
-} from '../../../lib/promoHelpers'
-import { requireAdmin } from '../../../utils/auth'
+} from '../../../lib/promoHelpers';
+import { requireAdmin } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requireAdmin(event);
 
-  const id = getRouterParam(event, 'id')
-  const body = await readBody(event)
+  const id = getRouterParam(event, 'id');
+  const body = await readBody(event);
 
-  const promos = await readPromoCodes(event)
-  const promo = promos.find((p) => String(p.id) === String(id))
+  const promos = await readPromoCodes(event);
+  const promo = promos.find((p) => String(p.id) === String(id));
   if (!promo) {
-    throw createError({ statusCode: 404, message: 'Промокод не найден' })
+    throw createError({ statusCode: 404, message: 'Промокод не найден' });
   }
 
-  let fields
+  let fields;
   try {
-    fields = normalizePromoInput(body ?? {}, promo)
+    fields = normalizePromoInput(body ?? {}, promo);
   } catch (error) {
     if (error instanceof PromoValidationError) {
-      throw createError({ statusCode: 400, message: error.message })
+      throw createError({ statusCode: 400, message: error.message });
     }
-    throw error
+    throw error;
   }
 
   // Уникальность кода среди ДРУГИХ промокодов
-  const duplicate = findPromoByCode(promos, fields.code)
+  const duplicate = findPromoByCode(promos, fields.code);
   if (duplicate && duplicate.id !== promo.id) {
-    throw createError({ statusCode: 409, message: `Промокод ${fields.code} уже существует` })
+    throw createError({ statusCode: 409, message: `Промокод ${fields.code} уже существует` });
   }
 
-  Object.assign(promo, fields, { updatedAt: new Date().toISOString() })
-  await writePromoCodes(event, promos)
+  Object.assign(promo, fields, { updatedAt: new Date().toISOString() });
+  await writePromoCodes(event, promos);
 
-  return { success: true, promo, message: `Промокод ${promo.code} сохранён` }
-})
+  return { success: true, promo, message: `Промокод ${promo.code} сохранён` };
+});

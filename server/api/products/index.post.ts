@@ -1,4 +1,4 @@
-// server/api/products/index.post.js
+// server/api/products/index.post.ts
 // Создание товара (POST /api/products). Только админ.
 // Категории ОБЯЗАТЕЛЬНЫ, форматы нормализует normalizeCategories
 // (в productHelpers, общая с PUT):
@@ -17,52 +17,64 @@ import {
   extractLocalizedPatch,
   sanitizeVariants,
   sanitizeVariantLabel,
-} from '../../lib/productHelpers'
-import { requireAdmin } from '../../utils/auth'
-import { processImage, processGallery } from '../../lib/imageStorage'
+} from '../../lib/productHelpers';
+import { requireAdmin } from '../../utils/auth';
+import { processImage, processGallery } from '../../lib/imageStorage';
+
+// Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
+// categories/gallery/variants в любом допустимом формате)
+type ProductBody = Record<string, unknown> & {
+  name?: string;
+  price?: string | number;
+  description?: string;
+  image?: string;
+  gallery?: Array<string | null | undefined> | null;
+  characteristics?: Record<string, string>;
+  stockQuantity?: string | number;
+};
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event)
+    await requireAdmin(event);
 
-    const body = await readBody(event)
+    const body = await readBody<ProductBody>(event);
     if (!body?.name?.trim()) {
-      throw createError({ statusCode: 400, message: 'Название товара обязательно' })
+      throw createError({ statusCode: 400, message: 'Название товара обязательно' });
     }
-    if (!body.price || Number.isNaN(parseFloat(body.price))) {
-      throw createError({ statusCode: 400, message: 'Цена товара обязательна' })
+    if (!body.price || Number.isNaN(parseFloat(String(body.price)))) {
+      throw createError({ statusCode: 400, message: 'Цена товара обязательна' });
     }
 
     // Категории: обязательны (сообщения согласованы с валидацией в админке).
     // null → поле не пришло; для POST это так же пусто, как []
-    const categories = normalizeCategories(body) ?? []
+    const categories = normalizeCategories(body) ?? [];
     if (categories.length === 0) {
-      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' })
+      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' });
     }
 
-    const products = await readProducts(event)
+    const products = await readProducts(event);
 
-    const newId = products.length > 0 ? Math.max(...products.map((p) => Number(p.id) || 0)) + 1 : 1
-    const slug = generateUniqueSlug(slugify(body.name) || `product-${newId}`, products)
+    const newId = products.length > 0 ? Math.max(...products.map((p) => Number(p.id) || 0)) + 1 : 1;
+    const slug = generateUniqueSlug(slugify(body.name) || `product-${newId}`, products);
 
     // Fallback-картинка — СУЩЕСТВУЮЩИЙ файл (раньше был
     // /images/products/placeholder.webp, которого нет в public/images)
-    let imageUrl = body.image || '/images/placeholder.jpg'
+    let imageUrl = body.image || '/images/placeholder.jpg';
     if (body.image?.startsWith('data:image/')) {
-      imageUrl = await processImage(event, body.image, 'main')
+      imageUrl = await processImage(event, body.image, 'main');
     }
-    const gallery = await processGallery(event, body.gallery)
+    const gallery = await processGallery(event, body.gallery);
 
-    const stockQuantity = parseInt(body.stockQuantity) || 0
+    const stockQuantity = parseInt(String(body.stockQuantity)) || 0;
 
-    const now = new Date().toISOString()
+    const now = new Date().toISOString();
     const newProduct = applyLocalizedPatch(
       {
         id: String(newId),
         slug,
         name: body.name.trim(),
         description: body.description || '',
-        price: parseFloat(body.price),
+        price: parseFloat(String(body.price)),
         image: imageUrl,
         categories,
         gallery,
@@ -80,15 +92,15 @@ export default defineEventHandler(async (event) => {
       // Переводы (nameEn/…/categoriesEs) необязательны: пустые/нулевые
       // значения в новую запись не попадают — фолбэк на русский
       extractLocalizedPatch(body),
-    )
+    );
 
-    products.push(newProduct)
-    await writeProducts(event, products)
+    products.push(newProduct);
+    await writeProducts(event, products);
 
-    return { success: true, product: newProduct, message: 'Товар успешно добавлен' }
+    return { success: true, product: newProduct, message: 'Товар успешно добавлен' };
   } catch (error) {
-    if (error.statusCode) throw error
-    console.error('Ошибка добавления товара:', error)
-    throw createError({ statusCode: 500, message: 'Не удалось добавить товар' })
+    if (error && typeof error === 'object' && 'statusCode' in error) throw error;
+    console.error('Ошибка добавления товара:', error);
+    throw createError({ statusCode: 500, message: 'Не удалось добавить товар' });
   }
-})
+});
