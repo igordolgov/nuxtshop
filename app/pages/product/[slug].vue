@@ -6,7 +6,9 @@
 
   //- Хлебные крошки: sticky ПОД шапкой сайта (раньше top-0 — уезжали под неё).
   //- Видны на ВСЕХ экранах: на десктопе путь категорий ещё полезнее,
-  //- чем на телефоне (раньше sm:hidden прятал их от 640px — аудит F10)
+  //- чем на телефоне (раньше sm:hidden прятал их от 640px — аудит F10).
+  //- Категория — текстовая крошка (не ссылка): фильтры каталога живут
+  //- в локальном состоянии панелей, честная ссылка на неё невозможна
   .breadcrumbs-bar.sticky.z-10.bg-base-100.border-b.border-base-200.shadow-sm
     .container.min-h-10.mx-auto.px-2
       nav(:aria-label="$t('catalog.breadcrumbs')")
@@ -14,6 +16,8 @@
           ul.flex
             li
               NuxtLink.link.link-hover(:to="$localePath('/')" prefetch) {{ $t('nav.home') }}
+            li(v-if="productView?.categories?.length")
+              span(class="text-base-content/55") {{ productView.categories[0] }}
             li(aria-current="page")
               span {{ productView?.name || $t('productPage.notFound') }}
 
@@ -402,13 +406,19 @@ watch(() => route.params.slug, () => {
   top: var(--header-height, 56px);
 }
 
-/* Кнопка «В корзину» — над нижней навигацией с учётом safe-area */
+/* Кнопка «В корзину» — над нижней навигацией с учётом safe-area.
+   z-60 и translateZ(0): контент карточки с transform-анимациями
+   (галерея, бейджи, тосты) при инерционной прокрутке получает
+   GPU-слои и мог отрисовываться ПОВЕРХ закреплённого низа (z-40).
+   Свой композитинг-слой + z выше контента (0–30) — артефакт исчезает.
+   Зум галереи (100/1000) и лайтбокс отзывов (10001) остаются выше. */
 .fixed-bottom-cart-button {
   position: fixed;
   bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px));
   left: 0;
   right: 0;
-  z-index: 40;
+  z-index: 60;
+  transform: translateZ(0);
   padding: 0 6px;
 }
 

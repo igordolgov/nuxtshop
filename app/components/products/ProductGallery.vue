@@ -821,6 +821,14 @@ useResizeObserver(imageWrapper, async () => {
   opacity: 1;
   transform: scale(1.1);
 }
+/* Стрелки листания — только десктоп (lg+): на телефоне есть свайп и
+   точки, а полупрозрачные круги поверх фото загромождают кадр и
+   перехватывают жест у краёв (@touchstart.stop.prevent) */
+@media (max-width: 1023.98px) {
+  .image-nav-btn {
+    display: none;
+  }
+}
 .image-slides-container {
   width: 100%;
   height: 100%;
@@ -838,6 +846,14 @@ useResizeObserver(imageWrapper, async () => {
 }
 .indicator-dot {
   box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.3);
+  /* Тач-цель: визуально точка 8px, кликабельная зона ~24px
+     (WCAG 2.5.8 — минимальная область попадания) */
+  position: relative;
+}
+.indicator-dot::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 .indicator-dot:hover {
   transform: scale(1.5);

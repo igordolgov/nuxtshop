@@ -6,7 +6,7 @@
     Поиск ГЛОБАЛЬНЫЙ: состояние из appState.search напрямую. -->
 <template lang="pug">
 header.app-header.sticky.top-0.z-50.border-b(
-  class="bg-base-100/95 backdrop-blur border-base-300"
+  class="bg-base-100 border-base-300"
 )
   //- ═══ Строка 1: навигация и действия ═══
   .flex.items-center.justify-between.gap-2(class="px-0 lg:px-6 h-14")
