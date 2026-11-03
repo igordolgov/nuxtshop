@@ -52,20 +52,38 @@ const forceReset = async () => {
     if (process.client) {
       localStorage.clear()
       sessionStorage.clear()
-      
+
       // Очищаем все куки
       document.cookie.split(';').forEach(cookie => {
         const name = cookie.split('=')[0].trim()
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
       })
     }
-    
+
     // Выходим из системы
     await logout()
-    
+
+    // Полный сброс = ещё и слоя PWA: старый service worker с
+    // предкэшированными ассетами иначе переживёт очистку localStorage —
+    // и посетитель снова получит «старую версию» после перезагрузки.
+    if (process.client) {
+      try {
+        if ('caches' in window) {
+          const keys = await caches.keys()
+          await Promise.all(keys.map((key) => caches.delete(key)))
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(registrations.map((reg) => reg.unregister()))
+        }
+      } catch (swError) {
+        console.error('Ошибка очистки SW/кэша:', swError)
+      }
+    }
+
     // Редирект
     window.location.href = '/auth/login'
-    
+
   } catch (error) {
     console.error('Ошибка сброса:', error)
     window.location.href = '/auth/login'

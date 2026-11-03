@@ -104,10 +104,14 @@
     SiteFooter
 
   //- Мобильная кнопка «В корзину»: над нижней навигацией + safe-area
-  //- (раньше — магические 57px)
+  //- (раньше — магические 57px). Автоскрытие по направлению прокрутки
+  //- (паттерн WB/Ozon): вниз — прячется и перестаёт перекрывать
+  //- «Похожие товары»/«Недавно смотрели», вверх — возвращается.
   .fixed-bottom-cart-button(
     v-if="product && !isLoading && !error"
     class="lg:hidden"
+    :class="{ 'cta-hidden': !ctaVisible }"
+    :aria-hidden="!ctaVisible"
   )
     button.btn.btn-lg.w-full.rounded-t-box(
       type="button"
@@ -350,9 +354,21 @@ const addSimilarToCart = async (item) => {
 // window.scrollTo внутренний контейнер не трогает — он скроллится
 // отдельно (фикс «карточка открылась с середины»)
 const scrollContainer = ref(null)
+
+// ─── Автоскрытие нижней CTA по направлению прокрутки ───────────────
+// Закреплённая кнопка постоянно висела над контентом: «Недавно
+// смотрели» и отзывы прокручивались у неё из-под бок, и это выглядело
+// как «плашка перекрывает страницу». Теперь CTA прячется при прокрутке
+// вниз и возвращается при прокрутке вверх / у верха карточки
+// (паттерн WB/Ozon). Реагируем ТОЛЬКО на скролл страницы (window) и
+// скролл-контейнер карточки: прокрутка вложенных списков (варианты,
+// превью галереи) кнопку не дёргает.
+const { isVisible: ctaVisible, reset: resetCtaVisibility } = useScrollDirection({ threshold: 240 })
+
 const resetScroll = () => {
   window.scrollTo(0, 0)
   if (scrollContainer.value) scrollContainer.value.scrollTop = 0
+  resetCtaVisibility()
 }
 
 // ─── История просмотров: slug из URL — наверх списка localStorage ───
@@ -420,6 +436,28 @@ watch(() => route.params.slug, () => {
   z-index: 60;
   transform: translateZ(0);
   padding: 0 6px;
+
+  /* Автоскрытие по направлению прокрутки: плавный съезд вниз ПОД
+     нижнюю навигацию (свой сдвиг = высота CTA + высота навигации,
+     иначе кнопка остаётся виднеться над панелью) */
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.28s ease;
+  will-change: transform;
+}
+
+/* Прокрутка вниз: спрятана и не ловит тапы (aria-hidden в шаблоне) */
+.fixed-bottom-cart-button.cta-hidden {
+  transform: translateZ(0)
+    translateY(calc(100% + var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fixed-bottom-cart-button {
+    transition: none;
+  }
 }
 
 .fixed-bottom-cart-button .btn {

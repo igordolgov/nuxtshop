@@ -18,37 +18,25 @@ button.scroll-to-top-btn(
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
 const props = defineProps({
   threshold: { type: Number, default: 200 },
 })
 
-const isVisible = ref(false)
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-/**
- * scroll не всплывает, но capture-фаза проходит через всех предков.
- * Один слушатель на window с capture: true ловит scroll любого элемента.
- */
-const onScroll = (event) => {
-  const target = event?.target
-
-  let scrollTop = 0
-  if (!target || target === document || target === window) {
-    scrollTop = window.scrollY || document.documentElement.scrollTop || 0
-  } else if (target.scrollTop != null) {
-    scrollTop = target.scrollTop
-  }
-
-  isVisible.value = scrollTop > props.threshold
-}
+//- Видимость по направлению прокрутки (паттерн WB/Ozon): прокрутка
+//- вниз — кнопка уезжает и не накрывает контент (например, «Очистить»
+//- в «Недавно смотрели»), прокрутка вверх — возвращается. У верха
+//- страницы (<= threshold) всегда скрыта (atTop: 'hide' — кнопка
+//- «наверх» у верха не нужна). useScrollDirection сам ставит
+//- capture-слушатель на window (scroll не всплывает) и отсекает
+//- горизонтальные ленты/мелкие списки (переполнение < threshold).
+const { isVisible } = useScrollDirection({ threshold: props.threshold, atTop: 'hide' })
 
 const scrollToTop = () => {
-  const behavior = prefersReducedMotion() ? 'auto' : 'smooth'
+  const behavior =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
 
   window.scrollTo({ top: 0, behavior })
 
@@ -58,17 +46,6 @@ const scrollToTop = () => {
     }
   })
 }
-
-onMounted(() => {
-  window.addEventListener('scroll', onScroll, {
-    passive: true,
-    capture: true,
-  })
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', onScroll, { capture: true })
-})
 </script>
 
 <style scoped>
