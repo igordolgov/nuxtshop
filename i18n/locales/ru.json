@@ -810,7 +810,8 @@
     "categoryPicker": {
       "placeholder": "Начните вводить или вставьте через запятую",
       "removeAria": "Убрать категорию {name}",
-      "ariaLabel": "Категории"
+      "ariaLabel": "Категории",
+      "addNew": "Добавить «{name}»"
     },
     "orders": {
       "title": "Заказы",

@@ -810,7 +810,8 @@
     "categoryPicker": {
       "placeholder": "Empieza a escribir o pega separado por comas",
       "removeAria": "Quitar la categoría {name}",
-      "ariaLabel": "Categorías"
+      "ariaLabel": "Categorías",
+      "addNew": "Añadir «{name}»"
     },
     "orders": {
       "title": "Pedidos",

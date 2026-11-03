@@ -810,7 +810,8 @@
     "categoryPicker": {
       "placeholder": "Start typing or paste, comma-separated",
       "removeAria": "Remove category {name}",
-      "ariaLabel": "Categories"
+      "ariaLabel": "Categories",
+      "addNew": "Add \"{name}\""
     },
     "orders": {
       "title": "Orders",
