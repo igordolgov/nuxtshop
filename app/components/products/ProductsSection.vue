@@ -57,11 +57,14 @@
       .products-grid(
         :class="gridClasses"
       )
-        ProductCard.product-card(
+        //- card-enter + --card-i: каскадное появление партии карточек
+        //- (main.css; чистый CSS, transform+opacity, без JS)
+        ProductCard.product-card.card-enter(
           v-for="(product, index) in visibleProducts"
           :key="product.id"
           :product="product"
           :index="index"
+          :style="{ '--card-i': index % 12 }"
           :viewMode="isMobile ? 'list' : 'grid'"
           @toggleFavorite="$emit('toggleFavorite', $event)"
           @addToCart="$emit('addToCart', $event)"
@@ -419,9 +422,9 @@ defineExpose({
 .product-card {
   /* Без content-visibility: auto — обёртки карточек первого экрана
      лежат на пути LCP (render delay 2 090 мс на PageSpeed, см.
-     ProductCardGrid.vue). */
+     ProductCardGrid.vue). Анимация появления — .card-enter (main.css):
+     здесь её раньше не было — keyframes fadeIn не существовали. */
   contain: layout style;
-  animation: fadeIn 0.3s ease-out;
 }
 
 .scroll-sentinel {

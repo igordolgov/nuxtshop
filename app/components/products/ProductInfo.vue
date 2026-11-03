@@ -15,7 +15,7 @@
             )
               icon(name="heroicons:arrows-right-left" size="18")
             button.shrink-0.size-9.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/50 hover:text-error hover:border-error/40'"
+              :class="[isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/50 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
               @click="$emit('toggle-favorite')"
               :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
             )

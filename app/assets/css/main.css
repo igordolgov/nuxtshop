@@ -316,3 +316,129 @@ body {
     padding-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Motion-полиш (2026-11): современная микро-анимация «захочется
+   пользоваться», но без цены для скорости.
+
+   Правила экономии:
+   · анимируются ТОЛЬКО transform и opacity — GPU-композитинг,
+     ни одного layout/paint;
+   · все эффекты одноразовые (нет бесконечных циклов, кроме уже
+     существовавших shimmer скелетонов и пульса бейджа сравнения);
+   · ноль нового JavaScript — только декларативный CSS;
+   · prefers-reduced-motion глушится глобальным правилом выше.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Смена страниц: подъём + проявление ─────────────────────────
+   pageTransition в nuxt.config переключён с 'fade' на 'page'.
+   out-in: уход 0.12 с → приход 0.2 с — навигация остаётся
+   «мгновенной», но появляется ощущение приложения. */
+.page-enter-active {
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.page-leave-active {
+  transition: opacity 0.12s ease-in;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-leave-to {
+  opacity: 0;
+}
+
+/* ── Карточки каталога: каскадное появление партии ──────────────
+   --card-i ставит ProductsSection (index % 12); задержка после
+   8-й карточки не растёт (min с 8 → максимум ~0.34 с). Первая
+   карточка стартует без задержки — LCP не страдает. */
+@layer components {
+  .card-enter {
+    animation: cardIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(min(var(--card-i, 0), 8) * 42ms);
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Счётчики-бейджи: упругий «поп» при смене значения ───────────
+   Вешается вместе с :key="count" — при изменении счётчика элемент
+   пересоздаётся и анимация проигрывается заново (без JS-часов). */
+@layer components {
+  .count-pop {
+    animation: countPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@keyframes countPop {
+  0% {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ── Сердечко избранного: упругий «поп» ──────────────────────────
+   Класс появляется вместе с isFavorite — анимация играется один
+   раз при добавлении; снятие (класс исчез) — без анимации. */
+@layer components {
+  .fav-pop {
+    animation: favPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@keyframes favPop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28) rotate(-8deg);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ── Подсказки поиска: плавное выпадение ────────────────────────
+   Transition name="fade-slide" в SmartSearchInput был и раньше,
+   но CSS-классов для него не существовало — панель появлялась
+   мгновенно («мигала»). */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ── Смена темы: мягкий кросс-фейд ──────────────────────────────
+   Header.toggleTheme вызывает document.startViewTransition, когда
+   API доступно (Chrome/Safari 18+); остальное — мгновенно, как
+   сейчас. Длительность стандартного кросс-фейда чуть ускоряем. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}

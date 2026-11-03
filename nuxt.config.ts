@@ -313,10 +313,11 @@ export default defineNuxtConfig({
         },
       ],
     },
-    // Мягкий fade между страницами — классы .fade-* уже есть в main.css.
+    // Переход между страницами: подъём + проявление (классы .page-* в
+    // main.css) — app-ощущение без потери скорости (out-in 0.12+0.2 с).
     // Тяжёлым страницам (админка) отключается локально:
     //   definePageMeta({ pageTransition: false })
-    pageTransition: { name: 'fade', mode: 'out-in' },
+    pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: false,
   },
 

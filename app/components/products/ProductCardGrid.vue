@@ -12,10 +12,10 @@
     role="status"
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 
-  //- Кнопка избранного
+  //- Кнопка избранного (fav-pop — упругий «поп» при добавлении, main.css)
   button.favorite-btn(
     class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
-    :class="isFavorite ? 'bg-error text-white' : 'bg-base-100/40 text-base-content'",
+    :class="[isFavorite ? 'bg-error text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
     @click="toggleFavorite",
     :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
     :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"

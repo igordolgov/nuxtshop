@@ -1,8 +1,11 @@
 <!-- app\components\products\ProductCard.vue -->
 <template lang="pug">
+//- index прокидывается вниз (см. props): ProductCardGrid по нему включает
+//- eager+fetchpriority=high для первых 4 картинок (LCP) и каскад появления
 component(
   :is="cardComponent",
   :product="product",
+  :index="index",
   :searchQuery="searchQuery",
   @toggle-favorite="$emit('toggle-favorite', $event)",
   @add-to-cart="$emit('add-to-cart', $event)"
@@ -26,6 +29,12 @@ const props = defineProps({
   searchQuery: {
     type: String,
     default: ''
+  },
+  //- Позиция карточки в списке (ProductsSection): транзитно для
+  //- ProductCardGrid — eager-загрузка первых картинок + каскад анимации
+  index: {
+    type: Number,
+    default: 0
   }
 })
 

@@ -37,6 +37,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           //- после прилёта мигает (is-blinking вешается на ~1.5 с)
           span.burger-compare-badge(
             v-if="compareCount > 0"
+            :key="compareCount"
             :class="{ 'is-blinking': burgerBlink }"
             aria-hidden="true"
           ) {{ compareCount }}
@@ -86,7 +87,7 @@ header.app-header.sticky.top-0.z-50.border-b(
                     svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
                       path(stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
                     span {{ $t('nav.favorites') }}
-                  span.badge.badge-sm.badge-primary.rounded-full(v-if="favoritesCount > 0")
+                  span.badge.badge-sm.badge-primary.rounded-full.count-pop(v-if="favoritesCount > 0" :key="favoritesCount")
                     | {{ favoritesCount }}
               li
                 NuxtLink.mobile-menu-item.flex.items-center.justify-between(
@@ -197,7 +198,7 @@ header.app-header.sticky.top-0.z-50.border-b(
             :to="localePath('/favorites')"
           )
             span {{ $t('nav.favorites') }}
-            span.badge.badge-xs.badge-primary.rounded-full(v-if="favoritesCount > 0")
+            span.badge.badge-xs.badge-primary.rounded-full.count-pop(v-if="favoritesCount > 0" :key="favoritesCount")
               | {{ favoritesCount }}
         li.relative
           //- data-fly-compare: на десктопе бургер скрыт, точка летит сюда
@@ -207,7 +208,7 @@ header.app-header.sticky.top-0.z-50.border-b(
             data-fly-compare
           )
             span {{ $t('nav.compare') }}
-            span.badge.badge-xs.badge-primary.rounded-full(v-if="compareCount > 0")
+            span.badge.badge-xs.badge-primary.rounded-full.count-pop(v-if="compareCount > 0" :key="compareCount")
               | {{ compareCount }}
         li.relative(v-if="isAdmin" ref="adminMenuRef")
           button.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-1.transition-colors(
@@ -306,8 +307,9 @@ header.app-header.sticky.top-0.z-50.border-b(
         NuxtLink.btn.btn-ghost.btn-circle(:to="localePath('/cart')" :aria-label="$t('nav.cart')" class="w-11 h-11 min-h-0")
           svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85" stroke-width="1.75")
             path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
-        span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1(
+        span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1.count-pop(
           v-if="cartItemsCount > 0"
+          :key="cartItemsCount"
         ) {{ cartItemsCount }}
 
       //- Переключатель языка — на десктопе (на мобильных — раздел «Язык» в бургер-меню)
@@ -490,12 +492,40 @@ header.app-header.sticky.top-0.z-50.border-b(
   justify-content: center;
   box-sizing: border-box;
   pointer-events: none;
-  animation: badgePulse 1.8s ease-in-out infinite;
+  /* badgeIn — упругий «поп» при изменении счётчика (remount через :key);
+     badgePulse — мягкое «дыхание» после, с задержкой в конец badgeIn */
+  animation:
+    badgeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    badgePulse 1.8s ease-in-out 0.35s infinite;
+}
+
+@keyframes badgeIn {
+  0% { transform: scale(0.3); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 }
 
 @keyframes badgePulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.22); }
+}
+
+/* Каскад пунктов при каждом открытии меню: display:none → блок
+   перезапускает CSS-анимацию, JS не нужен. 6 пунктов × 30 мс —
+   меню «распахивается» из-под бургера. */
+#mobile-menu .px-3 > ul > li {
+  animation: menuItemIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+#mobile-menu .px-3 > ul > li:nth-child(1) { animation-delay: 0.03s; }
+#mobile-menu .px-3 > ul > li:nth-child(2) { animation-delay: 0.06s; }
+#mobile-menu .px-3 > ul > li:nth-child(3) { animation-delay: 0.09s; }
+#mobile-menu .px-3 > ul > li:nth-child(4) { animation-delay: 0.12s; }
+#mobile-menu .px-3 > ul > li:nth-child(5) { animation-delay: 0.15s; }
+#mobile-menu .px-3 > ul > li:nth-child(6) { animation-delay: 0.18s; }
+
+@keyframes menuItemIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
 }
 
 .burger-compare-badge.is-blinking {
@@ -794,11 +824,25 @@ const navigateToPath = async (path) => {
   await navigateTo(path)
 }
 
+const applyTheme = (theme) => {
+  currentTheme.value = theme
+  document.documentElement.setAttribute('data-theme', theme)
+  localStorage.setItem('theme', theme)
+}
+
 const toggleTheme = () => {
   if (!import.meta.client) return
-  currentTheme.value = currentTheme.value === 'corporate' ? 'business' : 'corporate'
-  document.documentElement.setAttribute('data-theme', currentTheme.value)
-  localStorage.setItem('theme', currentTheme.value)
+  const next = currentTheme.value === 'corporate' ? 'business' : 'corporate'
+  // View Transitions: мягкий кросс-фейд темы (Chrome/Safari 18+); нет API
+  // или включено «уменьшить движение» — мгновенно, как раньше
+  if (
+    typeof document.startViewTransition === 'function' &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    document.startViewTransition(() => applyTheme(next))
+    return
+  }
+  applyTheme(next)
 }
 
 const handleLogout = async () => {
