@@ -10,6 +10,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -34,6 +38,12 @@ jobs:
       - name: Oxlint (быстрый JS/TS линтер)
         run: pnpm exec oxlint
 
+      - name: Knip (мёртвый код и лишние зависимости)
+        run: pnpm knip
+
+      - name: Oxfmt (формат кода)
+        run: pnpm fmt:check
+
       - name: Markuplint (шаблоны .vue/pug)
         run: pnpm lint:markup
 
@@ -42,3 +52,30 @@ jobs:
 
       - name: Сборка
         run: pnpm build
+
+  deploy:
+    # Авто-деплой в прод из main после зелёной проверки.
+    # Секрет CLOUDFLARE_API_TOKEN (шаблон «Edit Cloudflare Workers»).
+    # Пока секрет не задан, шаг деплоя молча пропускается —
+    # CI остаётся зелёным, деплой делается вручную.
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Установка зависимостей
+        run: pnpm install --frozen-lockfile
+
+      - name: Деплой на Cloudflare Workers
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        run: pnpm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
