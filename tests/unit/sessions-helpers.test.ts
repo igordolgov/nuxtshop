@@ -64,8 +64,6 @@ describe('kvListKeys (in-memory fallback)', () => {
 
 describe('destroyOtherSessions (интеграция с in-memory KV)', () => {
   const fakeEvent = { context: {} } as never;
-  // Уникальный префикс на прогон, чтобы тесты не мешали друг другу
-  const pfx = `test:run:${Date.now()}:`;
   // destroyOtherSessions листит префикс session: — эмулируем его через
   // реальные ключи session:<token> (в тестах KV общий, изолируем userId)
   const USER = 'u-test-' + Math.random().toString(36).slice(2);

@@ -92,7 +92,7 @@ describe('readNews / writeNews', () => {
 
   it('отредактированная админом новость (русский текст отличен от сида) не досаживается', async () => {
     // Кастомная запись БЕЗ переводных полей (спред из сида тащит их — вырезаем)
-    const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
+    const { titleEn: _titleEn, titleEs: _titleEs, excerptEn: _excerptEn, excerptEs: _excerptEs, bodyEn: _bodyEn, bodyEs: _bodyEs, ...base } = newsSeed[0];
     const custom = [{ ...base, title: 'Админ переписал заголовок' }];
     await writeNews(EVENT, custom);
     const news = await readNews(EVENT);
@@ -120,7 +120,7 @@ describe('mergeSeedTranslations — досадка переводов из си�
   it('идемпотентность: повторный вызов на досаженном — changed=false', () => {
     const first = mergeSeedTranslations(structuredClone(newsSeed));
     expect(first.changed).toBe(false); // сид уже с переводами
-    const stored = first.items.map(({ titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base }) => base) as typeof newsSeed;
+    const stored = first.items.map(({ titleEn: _titleEn, titleEs: _titleEs, excerptEn: _excerptEn, excerptEs: _excerptEs, bodyEn: _bodyEn, bodyEs: _bodyEs, ...base }) => base) as typeof newsSeed;
     const second = mergeSeedTranslations(stored);
     expect(second.changed).toBe(true);
     const third = mergeSeedTranslations(second.items);
