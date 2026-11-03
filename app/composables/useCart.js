@@ -9,8 +9,14 @@
 // ============================================
 
 import { ref, computed } from 'vue'
+// Правила доставки — единый модуль (зеркало server/lib/orderHelpers.ts):
+// до него чекаут держал собственный статический список цен и суммы
+// корзина/чекаут расходились (аудит F3)
+import { getDeliveryPrice } from '../utils/deliveryPrice'
 
 const STORAGE_KEY = 'cart'
+
+const DELIVERY_METHOD_IDS = ['courier', 'pickup', 'post']
 
 const slugify = (str) => {
   if (!str) return ''
@@ -59,6 +65,9 @@ function createCart() {
     items: [],
     // Применённый промокод: { code, type: 'percent'|'fixed', value } или ''
     promo: '',
+    // Способ доставки: выбирается в корзине, чекаут читает тот же
+    // источник (синхронизация корзина ↔ чекаут, аудит F3)
+    deliveryMethod: 'courier',
     processing: false,
     error: '',
   })
@@ -92,8 +101,11 @@ function createCart() {
     return Math.max(0, Math.min(Math.round(raw), Math.round(base)))
   })
 
-  // ⚙️ НАСТРОЙКА: бесплатная доставка от 2000 ₽, иначе 300 ₽
-  const deliveryPrice = computed(() => (subtotal.value > 2000 ? 0 : 300))
+  // Цена доставки по выбранному способу и сумме — правила в
+  // app/utils/deliveryPrice.js (зеркало серверных)
+  const deliveryPrice = computed(() =>
+    getDeliveryPrice(state.value.deliveryMethod, subtotal.value),
+  )
 
   const total = computed(() => subtotal.value - discount.value + deliveryPrice.value)
 
@@ -109,6 +121,8 @@ function createCart() {
     cartItems.value.some((item) => (item.quantity || 0) > (item.stockQuantity || 999)),
   )
 
+  const deliveryMethod = computed(() => state.value.deliveryMethod)
+
   // ─── Storage ──────────────────────────────────────────────
 
   const saveCartToStorage = () => {
@@ -116,7 +130,11 @@ function createCart() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ items: state.value.items, promo: state.value.promo }),
+        JSON.stringify({
+          items: state.value.items,
+          promo: state.value.promo,
+          deliveryMethod: state.value.deliveryMethod,
+        }),
       )
     } catch (error) {
       console.error('Error saving cart:', error)
@@ -138,6 +156,11 @@ function createCart() {
       const savedPromo = parsed.promo
       state.value.promo =
         savedPromo && typeof savedPromo === 'object' && savedPromo.code ? savedPromo : ''
+      // Способ доставки: сохранённый валидный — восстанавливаем,
+      // мусор/старые записи без поля — дефолт «курьером»
+      if (DELIVERY_METHOD_IDS.includes(parsed.deliveryMethod)) {
+        state.value.deliveryMethod = parsed.deliveryMethod
+      }
       console.log('📥 Корзина загружена:', state.value.items.length, 'товаров')
     } catch (error) {
       console.error('Error loading cart:', error)
@@ -231,6 +254,16 @@ function createCart() {
     state.value.promo = ''
     saveCartToStorage()
     emitUpdated()
+  }
+
+  /**
+   * Выбор способа доставки: единая точка для корзины и чекаута —
+   * выбор в корзине сразу виден в итогах чекаута и наоборот.
+   */
+  const setDeliveryMethod = (methodId) => {
+    if (!DELIVERY_METHOD_IDS.includes(methodId)) return
+    state.value.deliveryMethod = methodId
+    saveCartToStorage()
   }
 
   const applyPromoCode = async (code) => {
@@ -359,6 +392,8 @@ function createCart() {
     total,
     totalItems,
     deliveryPrice,
+    deliveryMethod,
+    setDeliveryMethod,
     discountPercent,
     hasOutOfStockItems,
 

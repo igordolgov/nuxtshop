@@ -38,8 +38,13 @@
       "binding": "KV",
       // ⚙️ НАСТРОЙКА: ID вашего KV namespace
       "id": "2882e3a4601940b881c2140f1401989f",
-      // Удалённое KV при wrangler dev
-      "remote": true,
+      // Удалённое KV при wrangler dev.
+      // ⚠️ remote: true требует CLOUDFLARE_API_TOKEN: на чистой машине
+      // (без wrangler-логина) любая запись в dev — например, сессия —
+      // роняет процесс (UserError … requireAuth → Error reloading remote
+      // server). Для локальной разработки данные всё равно сидируются
+      // из server/data/*.json; удалённый KV используется прод-деплоем.
+      "remote": false,
     },
   ],
   // Картинки из админки: Workers KV (namespace выше) под префиксом "img:",

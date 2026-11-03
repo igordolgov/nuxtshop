@@ -12,27 +12,28 @@
     role="status"
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 
-  //- Кнопка избранного (fav-pop — упругий «поп» при добавлении, main.css)
+  //- Кнопка избранного (fav-pop — упругий «поп» при добавлении, main.css).
+  //- 40px (size-10) — тач-минимум, раньше 32px (аудит F7)
   button.favorite-btn(
-    class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
+    class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
     :class="[isFavorite ? 'bg-error text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
     @click="toggleFavorite",
     :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
     :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
   )
     icon(:name="isFavorite ? 'heroicons:heart-solid' : 'heroicons:heart'",
-      size="20"
+      size="22"
     )
 
-  //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2rem + зазор)
+  //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2.5rem + зазор)
   button.compare-btn(
-    class="top-10 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-8 transition-colors",
+    class="top-12 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
     :class="isComparedVisible ? 'bg-primary text-primary-content' : 'bg-base-100/40 text-base-content'",
     @click="toggleCompareClick",
     :title="$t('compare.toggleAria')",
     :aria-label="$t('compare.toggleAria')"
   )
-    icon(name="heroicons:arrows-right-left", size="16")
+    icon(name="heroicons:arrows-right-left", size="18")
 
   //- Ссылка на товар
   .card-content
@@ -262,9 +263,10 @@ const hasSearchHighlight = computed(() => {
 //- ============================================
 //- Методы
 //- ============================================
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('ru-RU').format(price || 0)
-}
+// formatPrice — единый из useProductUtils (без валюты, шаблон сам
+// добавляет «₽» — раньше здесь была вторая реализация, риск «₽ ₽»,
+// аудит F13)
+const { formatPrice } = useProductUtils()
 
 const highlightText = (text, query) => {
   if (!text || !query) return text

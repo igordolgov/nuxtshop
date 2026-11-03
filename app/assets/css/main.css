@@ -200,18 +200,35 @@ body {
 
 /* ─── Уведомления ────────────────────────────────────────────── */
 
+/* Геометрия тоста — через переменные: инлайн-стили в useNotifyQueue
+   ссылаются на них (var(--notify-*)), поэтому переопределения здесь
+   не проигрывают специфичности инлайна. Раньше класс вообще не вешался
+   на элемент, а инлайн top:20px клал тост поверх шапки (аудит F5). */
 .custom-notification {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   backdrop-filter: blur(10px);
   border: 1px solid rgb(255 255 255 / 0.1);
+
+  /* Десктоп: сверху по центру */
+  --notify-top: 20px;
+  --notify-left: 50%;
+  --notify-right: auto;
+  --notify-shift: -50%;
+  --notify-min-width: 250px;
+  --notify-max-width: 500px;
 }
 
+/* Мобильные (<768px): тост ПОД двухстрочной шапкой (104px + 8px),
+   во всю ширину с полями 20px (минимум 280px) — не перекрывает
+   логотип и пункты шапки */
 @media (max-width: 768px) {
   .custom-notification {
-    min-width: calc(100vw - 40px);
-    max-width: calc(100vw - 40px);
-    right: 20px;
-    left: 20px;
+    --notify-top: calc(var(--header-height, 104px) + 8px);
+    --notify-left: 20px;
+    --notify-right: 20px;
+    --notify-shift: 0px;
+    --notify-min-width: 280px;
+    --notify-max-width: none;
   }
 }
 

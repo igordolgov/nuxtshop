@@ -71,10 +71,10 @@
     
     //- Цена и статус
     .card-actions.justify-between.items-center.mt-0.px-3.pb-2
-      .text-base.font-bold.text-primary.transition-all.duration-300(
+      .text-base.font-bold.text-base-content.transition-all.duration-300(
         v-if="product.inStock"
         class="lg:text-lg group-hover:scale-105"
-      ) {{ formatPrice(product.price) }}
+      ) {{ formatPrice(product.price) }} ₽
       .text-md.text-error.transition-all.duration-300(
         v-else
         class="group-hover:scale-105"
@@ -97,9 +97,9 @@ defineEmits(['remove-favorite', 'add-to-cart'])
 const currentImage = ref('')
 const imageLoading = ref(true)
 
-const formatPrice = (price) => {
-  return price ? `${price.toLocaleString('ru-RU')} ₽` : '0 ₽'
-}
+// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне,
+// раньше здесь была своя реализация с валютой — риск «₽ ₽», аудит F13)
+const { formatPrice } = useProductUtils()
 
 const getValidImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined') return '/images/placeholder.jpg'
@@ -146,8 +146,9 @@ onMounted(() => {
 }
 
 .btn-action {
-  width: 1.5rem;
-  height: 1.5rem;
+  /* 40px — тач-минимум (раньше 24px, аудит F7) */
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   border: none;
   display: flex;
@@ -158,8 +159,8 @@ onMounted(() => {
 }
 
 .btn-action svg {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .btn-action:hover {

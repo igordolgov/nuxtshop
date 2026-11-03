@@ -61,7 +61,8 @@
               span.label-text-alt.text-error {{ errors.password }}
 
           .form-control.mt-6
-            button.btn.btn-primary(
+            //- w-full — как у «Зарегистрироваться» на регистре (аудит F15)
+            button.btn.btn-primary.w-full(
               type="submit"
               :disabled="loading"
               :class="{ 'loading': loading }"
@@ -73,7 +74,9 @@
 
           .text-center.mt-4
             p.text-sm
-              | {{ $t('auth.noAccount') }}
+              //- &nbsp; — Pug не ставит пробел между текстовой строкой и <a>,
+              //- получалось «Нет аккаунта?Зарегистрируйтесь» (аудит F11)
+              | {{ $t('auth.noAccount') }}&nbsp;
               a.link.link-primary(@click="$router.push($localePath('/auth/register'))") {{ $t('auth.registerLink') }}
 
         ClientOnly

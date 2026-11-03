@@ -19,9 +19,10 @@
       ClientOnly
         .flex.items-center.gap-4(v-if="favoriteProducts.length > 0")
           p.text-sm {{ $t('favorites.count', favoriteProducts.length) }}
+          //- Красный деструктив — единый стиль с корзиной/сравнением (аудит F14)
           button.btn.btn-ghost.btn-sm.rounded-xl.text-error(
             @click="clearAllFavorites"
-            class="hover:text-error text-base-content/65"
+            class="hover:bg-error/10"
           ) {{ $t('favorites.clearAll') }}
 
     //- Сетка / пустое состояние / скелетон — только клиент
@@ -54,6 +55,9 @@
       template(#fallback)
         .grid.grid-cols-2.gap-3(class="sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6")
           .skeleton.h-64.rounded-xl(v-for="i in 8" :key="i")
+
+  //- Десктопный футер (аудит F16); на мобиле навигацию держит нижнее меню
+  SiteFooter
 
   MobileNavFooter
 </template>

@@ -168,6 +168,9 @@
           .modal-action
             button.btn.rounded-xl(type="button" @click="closeNews") {{ $t('catalog.close') }}
 
+  //- Десктопный футер (аудит F16); на мобиле навигацию держит нижнее меню
+  SiteFooter
+
   MobileNavFooter
 </template>
 

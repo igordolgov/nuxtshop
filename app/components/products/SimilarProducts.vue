@@ -15,17 +15,18 @@
                                 :key="item.id"
                         )
                                 .card.bg-base-100.shadow-md.transition-all.duration-300.h-full.flex.flex-col.group(class="hover:shadow-lg")
-                                        //- Кнопки действий
+                                        //- Кнопки действий: тач-цель 40px (size-10) вместо
+                                        //- btn-xs ≈24px — на телефоне попадать трудно (аудит F7)
                                         .absolute.top-1.left-2.z-10
                                                 //- text-white, а не text-error-content: в business
                                                 //- error-content тёмный — сердече «чёрное на красном»
                                                 //- (паттерн ProductInfo/ProductCardGrid — белый)
-                                                button.btn.btn-circle.btn-xs(
-                                                        :class="item.isFavorite ? 'btn-error text-white' : 'btn-ghost bg-base-100/80'"
+                                                button.size-10.rounded-full.flex.items-center.justify-center.backdrop-blur.transition-colors(
+                                                        :class="item.isFavorite ? 'bg-error text-white' : 'bg-base-100/80 text-base-content'"
                                                         @click.stop="$emit('toggle-favorite', item.id)"
                                                         :title="item.isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
                                                 )
-                                                        svg.w-4.h-4(
+                                                        svg.w-5.h-5(
                                                                 :class="item.isFavorite ? 'fill-current' : 'fill-none stroke-current text-base-content/70'"
                                                                 xmlns="http://www.w3.org/2000/svg"
                                                                 viewBox="0 0 24 24"
@@ -34,10 +35,11 @@
                                                                 path(d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")
                                         
                                         .absolute.top-1.right-2.z-10
-                                                button.btn.btn-circle.btn-xs(
+                                                button.size-10.rounded-full.flex.items-center.justify-center.transition-colors(
+                                                        class="disabled:opacity-60 disabled:cursor-default"
                                                         @click.stop="$emit('add-to-cart', item)"
                                                         :disabled="!item.inStock || isInCart(item.id)"
-                                                        :class="isInCart(item.id) ? 'btn-success text-success-content' : 'btn-primary text-primary-content'"
+                                                        :class="isInCart(item.id) ? 'bg-success text-success-content' : 'bg-primary text-primary-content'"
                                                         :title="isInCart(item.id) ? $t('product.inCartAlready') : $t('product.addToCart')"
                                                 )
                                                         svg.w-6.h-6(
@@ -82,8 +84,8 @@
                                                                 h3.card-title.text-xs.font-semibold.text-base-content.line-clamp-2.mb-1(class="lg:text-sm") {{ item.name }}
                                                                 p.text-xs.text-base-content.opacity-70.line-clamp-2.max-h-10(class="lg:text-xs") {{ item.description }}
                                                         
-                                                        .flex.items-center.justify-between.-mt-1.border-t.border-base-200
-                                                                .text-md.font-bold.text-primary {{ formatPrice(item.price) }}
+                                                .flex.items-center.justify-between.-mt-1.border-t.border-base-200
+                                                                .text-md.font-bold.text-primary {{ formatPrice(item.price) }} ₽
                                                                 .text-xs(
                                                                         :class="item.inStock ? 'text-success' : 'text-error'"
                                                                 ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
@@ -115,10 +117,9 @@ const getValidImageUrl = (url) => {
         return fallbackImage
 }
 
-const formatPrice = (price) => {
-        if (!price && price !== 0) return '0 ₽'
-        return `${price.toLocaleString('ru-RU')} ₽`
-}
+// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне,
+// раньше здесь была своя реализация с валютой — аудит F13)
+const { formatPrice } = useProductUtils()
 
 const handleImageError = (event) => {
         if (event?.target) event.target.src = fallbackImage

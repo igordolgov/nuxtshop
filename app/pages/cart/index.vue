@@ -50,9 +50,9 @@
               .flex.items-center.gap-3
                 span.text-sm(v-if="totalItems > 0" class="text-base-content/65")
                   | {{ $t('cart.itemsCount', totalItems) }}
-                button.btn.btn-ghost.btn-xs.rounded-lg(
+                button.btn.btn-ghost.btn-xs.rounded-lg.text-error(
                   v-if="cartItems && cartItems.length > 0"
-                  class="hover:text-error text-base-content/65"
+                  class="hover:bg-error/10"
                   type="button"
                   @click="clearCart"
                 )
@@ -91,8 +91,8 @@
                               @error="handleImageError"
                             )
                           .price-info.mt-2
-                            .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
-                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}{{ $t('cart.perUnit') }}
+                            .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
+                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
                         .flex-grow.min-w-0
                           h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
                             class="hover:text-primary"
@@ -190,9 +190,9 @@
                             @click="updateQuantity(item.id, item.quantity + 1)"
                           ) +
                     .col-span-2.text-right
-                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }}{{ $t('cart.perUnit') }}
+                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
                     .col-span-2.text-right
-                      .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }}
+                      .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
                     .col-span-1.text-center
                       button.remove-btn-inline(
                         type="button"
@@ -205,7 +205,7 @@
 
           //- ПРАВАЯ КОЛОНКА — ОФОРМЛЕНИЕ ЗАКАЗА (карточка на десктопе)
           .cart-right.col-span-2.max-w-full.min-w-0(v-if="totalItems" class="lg:mb-0")
-            .checkout-card.w-full(class="lg:top-4 lg:sticky lg:h-[calc(100dvh-88px)]")
+            .checkout-card.w-full(class="lg:top-4 lg:sticky")
               .card.bg-base-100.border.border-base-300.rounded-2xl.h-full.flex.flex-col
                 .card-body.px-4.py-4.flex.flex-col.flex-1.overflow-y-auto.gap-4
                   h2.text-lg.font-semibold.text-base-content(class="lg:text-xl")
@@ -214,19 +214,19 @@
                   .space-y-2
                     .flex.justify-between.text-sm
                       span(class="text-base-content/65") {{ $t('cart.items', { n: totalItems }) }}
-                      span.font-medium {{ formatPrice(subtotal) }}
+                      span.font-medium {{ formatPrice(subtotal) }} ₽
 
                     .flex.justify-between.text-sm
                       span(class="text-base-content/65") {{ $t('cart.delivery') }}
-                      span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) }}
+                      span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) + ' ₽' }}
 
                     .flex.justify-between.text-sm(v-if="discount > 0")
                       span(class="text-base-content/65") {{ $t('cart.discount') }}
-                      span.font-medium.text-error -{{ formatPrice(discount) }}
+                      span.font-medium.text-error -{{ formatPrice(discount) }} ₽
 
                     .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
                       span.text-base.font-semibold {{ $t('cart.total') }}
-                      span.text-2xl.font-bold.text-base-content {{ formatPrice(total) }}
+                      span.text-2xl.font-bold.text-base-content {{ formatPrice(total) }} ₽
 
                   .form-control
                     .join.w-full
@@ -263,7 +263,7 @@
                         )
                         .flex-grow
                           .font-medium.text-sm {{ $t('cart.courier') }}
-                          .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: deliveryPrice === 0 ? $t('cart.free').toLowerCase() : formatPrice(deliveryPrice) }) }}
+                          .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: courierPrice === 0 ? $t('cart.free').toLowerCase() : formatPrice(courierPrice) + ' ₽' }) }}
 
                       label.option-tile(
                         :class="{ 'option-tile-active': selectedDelivery === 'pickup' }"
@@ -308,7 +308,7 @@
                           .font-medium.text-sm {{ $t('cart.cash') }}
                           .text-xs(class="text-base-content/65") {{ $t('cart.cashNote') }}
 
-                .card-actions.px-4.py-3.mt-auto.border-t.border-base-300(v-if="!isMobile")
+                .card-actions.px-4.py-3.mt-6.border-t.border-base-300(v-if="!isMobile")
                   button.btn.btn-primary.btn-lg.w-full.rounded-xl(
                     type="button"
                     :disabled="isProcessing || hasOutOfStockItems"
@@ -332,8 +332,12 @@
       template(v-if="!isProcessing")
         span.text-base
           template(v-if="hasOutOfStockItems") {{ $t('cart.qtyProblems') }}
-          template(v-else) {{ $t('cart.checkoutBtnPrice', { price: formatPrice(total) }) }}
+          template(v-else) {{ $t('cart.checkoutBtnPrice', { price: formatPrice(total) + ' ₽' }) }}
       span.loading.loading-spinner(v-else)
+
+  //- Десктопный футер (аудит F16); на мобиле — плавающая кнопка оформления
+  //- и нижнее меню, футер не нужен
+  SiteFooter
 
   //- Нижняя навигация (сам компонент ведает ориентацией и переходами)
   MobileNavFooter
@@ -625,10 +629,13 @@
 </style>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+// Правила доставки — единый модуль (аудит F3)
+import { getDeliveryPrice } from '@/utils/deliveryPrice'
+
 const { t } = useI18n()
 // Ссылки корзины сохраняют префикс локали
 const localePath = useLocalePath()
-import { ref, onMounted, onUnmounted } from 'vue'
 
 const { $notify } = useNuxtApp()
 
@@ -652,6 +659,8 @@ const {
   total,
   totalItems,
   deliveryPrice,
+  deliveryMethod,
+  setDeliveryMethod,
   updateItemQuantity,
   removeFromCart,
   clearCart,
@@ -661,6 +670,7 @@ const {
   hasOutOfStockItems,
   getProductUrl,
 } = useCart()
+const { formatPrice } = useProductUtils()
 
 //- ============================================
 //- Состояние
@@ -668,9 +678,20 @@ const {
 const isMounted = ref(false)
 const isProcessing = ref(false)
 const promoCode = ref('')
-const selectedDelivery = ref('courier')
+//- Способ доставки — из состояния корзины (единый источник с чекаутом);
+//- v-model на радио пишет через setDeliveryMethod, выбор сразу виден
+//- в чекауте (аудит F3)
+const selectedDelivery = computed({
+  get: () => deliveryMethod.value,
+  set: (methodId) => setDeliveryMethod(methodId),
+})
 const selectedPayment = ref('card')
 const isMobile = ref(false)
+
+//- Цена курьера для плитки: считается именно по способу «курьер»,
+//- а не по текущему выбору (раньше при самовывозе плитка курьера
+//- показывала «бесплатно» — чужую цену)
+const courierPrice = computed(() => getDeliveryPrice('courier', subtotal.value))
 
 //- ============================================
 //- Устройство.
@@ -688,13 +709,8 @@ const onResize = () => checkMobile()
 //- ============================================
 //- Форматирование и утилиты
 //- ============================================
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0,
-  }).format(price)
-}
+// formatPrice — единый из useProductUtils (без валюты; ₽ добавляется
+// в шаблоне — аудит F13)
 
 // Формы «товар» — vue-i18n plural (cart.itemsCount)
 

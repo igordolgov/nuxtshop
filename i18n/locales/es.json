@@ -185,7 +185,7 @@
     "zoomImage": "Ampliar imagen",
     "notifyMe": "Avisarme cuando haya stock",
     "notifyHint": "Deja un email o teléfono — te escribiremos en cuanto vuelva el producto.",
-    "notifyContactPh": "tu@ejemplo.com o +34 …",
+    "notifyContactPh": "tu{'@'}ejemplo.com o +34 …",
     "notifySend": "Enviar",
     "notifyDone": "¡Listo! Te avisaremos cuando vuelva el producto",
     "notifyErrContact": "Indica un email o teléfono (mínimo 10 dígitos)",
@@ -1128,5 +1128,13 @@
     "title": "Opiniones sobre la tienda",
     "write": "Escribir una opinión",
     "empty": "Sé el primero — cuéntanos qué te parece nuestra tienda"
+  },
+  "footer": {
+    "tagline": "Tienda online de tecnología desde 2018: showrooms físicos, garantía de 2 años, entrega desde 1 día y soporte sin días libres.",
+    "sections": "Secciones",
+    "buyers": "Para compradores",
+    "contacts": "Contactos",
+    "workingHours": "Horario de llamadas",
+    "rights": "Todos los derechos reservados."
   }
 }

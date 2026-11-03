@@ -88,18 +88,25 @@ export const useNotifyQueue = () => {
     `;
     
     notification.id = notificationId;
+    // Класс .custom-notification (main.css): раньше вешался только в CSS,
+    // но элемент его никогда не получал — мобильные стили не применялись,
+    // тост висел поверх шапки и был узким (аудит F5).
+    // Геометрия — через CSS-переменные: инлайн-стили ссылаются на них,
+    // поэтому мобильные переопределения из main.css не проигрывают
+    // специфичности инлайна.
     notification.innerHTML = `
-      <div style="
+      <div class="custom-notification" style="
         position: fixed;
-        top: ${notificationConfig.position.top};
-        left: ${notificationConfig.position.left};
-        transform: ${notificationConfig.position.transform};
+        top: var(--notify-top, ${notificationConfig.position.top});
+        left: var(--notify-left, ${notificationConfig.position.left});
+        right: var(--notify-right, auto);
+        transform: translateX(var(--notify-shift, ${notificationConfig.position.transform}));
         padding: ${notificationConfig.appearance.padding};
         border-radius: ${notificationConfig.appearance.borderRadius};
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         z-index: ${notificationConfig.appearance.zIndex};
-        min-width: ${notificationConfig.size.minWidth};
-        max-width: ${notificationConfig.size.maxWidth};
+        min-width: var(--notify-min-width, ${notificationConfig.size.minWidth});
+        max-width: var(--notify-max-width, ${notificationConfig.size.maxWidth});
         ${styleString}
         animation: slideInFromTop ${notificationConfig.timing.animationDuration}ms ease-out;
       ">
@@ -118,14 +125,16 @@ export const useNotifyQueue = () => {
       const styleElement = document.createElement('style');
       styleElement.id = 'notification-styles';
       styleElement.textContent = `
-        /* АНИМАЦИЯ ДЛЯ ПОЗИЦИИ СВЕРХУ ПО ЦЕНТРУ */
+        /* АНИМАЦИЯ ДЛЯ ПОЗИЦИИ СВЕРХУ ПО ЦЕНТРУ.
+           Сдвиг по X — через --notify-shift: на десктопе -50% (центр),
+           на мобильных 0 (тост растянут на всю ширину с полями) */
         @keyframes slideInFromTop {
-          from { transform: translate(-50%, -100%); opacity: 0; }
-          to { transform: translate(-50%, 0); opacity: 1; }
+          from { transform: translateX(var(--notify-shift, -50%)) translateY(-100%); opacity: 0; }
+          to { transform: translateX(var(--notify-shift, -50%)) translateY(0); opacity: 1; }
         }
         @keyframes slideOutToTop {
-          from { transform: translate(-50%, 0); opacity: 1; }
-          to { transform: translate(-50%, -100%); opacity: 0; }
+          from { transform: translateX(var(--notify-shift, -50%)) translateY(0); opacity: 1; }
+          to { transform: translateX(var(--notify-shift, -50%)) translateY(-100%); opacity: 0; }
         }
       `;
       document.head.appendChild(styleElement);

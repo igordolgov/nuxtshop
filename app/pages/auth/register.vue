@@ -84,7 +84,8 @@
               span.label-text-alt.text-error {{ errors.confirmPassword }}
 
           .form-control.mt-6
-            button.btn.btn-primary(
+            //- w-full — обе auth-кнопки в одном стиле (аудит F15)
+            button.btn.btn-primary.w-full(
               type="submit"
               :disabled="loading"
               :class="{ 'loading': loading }"
@@ -94,7 +95,8 @@
 
           .text-center.mt-4
             p.text-sm
-              | {{ $t('auth.hasAccount') }} 
+              //- &nbsp; — Pug склеивает текст и ссылку без пробела
+              | {{ $t('auth.hasAccount') }}&nbsp;
               a.link.link-primary(@click="$router.push($localePath('/auth/login'))") {{ $t('auth.loginLink2') }}
 
         .alert.alert-error.mt-6(v-if="registerError")

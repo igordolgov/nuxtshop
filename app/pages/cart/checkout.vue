@@ -16,7 +16,7 @@
           )
             .step-content.flex.flex-col.items-center.px-2
               .step-number.mb-1(:class="{ 'bg-primary text-primary-content': currentStep >= index + 1, 'bg-base-300': currentStep < index + 1 }") {{ index + 1 }}
-              span.step-name.whitespace-normal.break-words.text-center(class="lg:font-medium text-[0.65rem] lg:text-sm") {{ $t(step.nameKey) }}
+              span.step-name.whitespace-nowrap.overflow-hidden.text-ellipsis.max-w-full.text-center(class="lg:font-medium text-[0.6rem] lg:text-sm") {{ $t(step.nameKey) }}
             .step-connector(v-if="index < checkoutSteps.length - 1")
 
     //- Основная сетка
@@ -157,7 +157,7 @@
                           .font-bold.text-sm {{ $t(method.nameKey) }}
                           span.text-base-content(class="opacity-70 text-[0.65rem]") {{ $t(method.descriptionKey) }}
                       .mt-1.text-right
-                        .text-sm.font-bold {{ method.price === 0 ? $t('cart.free') : $t('checkout.plus', { price: formatPrice(method.price) }) }}
+                        .text-sm.font-bold {{ methodPrice(method.id) === 0 ? $t('cart.free') : $t('checkout.plus', { price: formatPrice(methodPrice(method.id)) }) }}
 
                 //- Адрес доставки (для курьера и почты)
                 .mt-4(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
@@ -433,6 +433,8 @@ definePageMeta({
   ssr: false,
 })
 
+import { getDeliveryPrice } from '@/utils/deliveryPrice'
+
 // Header/MobileNavFooter/useCart/useProductUtils/useOrders — автоимпорт Nuxt
 const { isMobile } = useMobileDetection()
 const { t } = useI18n()
@@ -447,6 +449,9 @@ const {
   removePromoCode,
   revalidatePromo,
   clearCart,
+  deliveryPrice,
+  deliveryMethod,
+  setDeliveryMethod,
 } = useCart()
 const { getSafeImage, formatPrice } = useProductUtils()
 
@@ -502,12 +507,19 @@ const paymentData = ref({
 //- Ошибки валидации
 const errors = ref({})
 
-//- Методы доставки (id/цены согласованы с server/lib/orderHelpers.ts)
+//- Методы доставки. Цен НЕ храним: она считается по единому модулю
+//- app/utils/deliveryPrice.js (зеркало server/lib/orderHelpers.ts) от
+//- суммы корзины — курьер становится бесплатным от порога так же,
+//- как в корзине (аудит F3: у одной закупки была одна сумма в корзине
+//- и другая в чекауте)
 const deliveryMethods = [
-  { id: 'courier', nameKey: 'checkout.deliveryCourier', descriptionKey: 'checkout.deliveryCourierDesc', price: 300 },
-  { id: 'pickup', nameKey: 'checkout.deliveryPickup', descriptionKey: 'checkout.deliveryPickupDesc', price: 0 },
-  { id: 'post', nameKey: 'checkout.deliveryPost', descriptionKey: 'checkout.deliveryPostDesc', price: 200 },
+  { id: 'courier', nameKey: 'checkout.deliveryCourier', descriptionKey: 'checkout.deliveryCourierDesc' },
+  { id: 'pickup', nameKey: 'checkout.deliveryPickup', descriptionKey: 'checkout.deliveryPickupDesc' },
+  { id: 'post', nameKey: 'checkout.deliveryPost', descriptionKey: 'checkout.deliveryPostDesc' },
 ]
+
+//- Цена конкретного способа для плиток шага «Доставка»
+const methodPrice = (methodId) => getDeliveryPrice(methodId, subtotal.value)
 
 //- Методы оплаты (только поддерживаемые сервером; способ 'online' убран)
 const paymentMethods = [
@@ -520,11 +532,9 @@ const errorMessage = (err) =>
   err?.data?.message || err?.data?.statusMessage || err?.message || t('checkout.unknownError')
 
 //- Вычисляемые свойства
-const selectedDeliveryPrice = computed(() => {
-  if (!orderForm.value?.deliveryMethod) return 0
-  const method = deliveryMethods.find((m) => m.id === orderForm.value.deliveryMethod)
-  return method ? method.price : 0
-})
+//- Цена доставки — из состояния корзины (единый источник с корзиной):
+//- способ доставки выбирается в обоих местах, сумма всегда одна
+const selectedDeliveryPrice = deliveryPrice
 
 //- Предпросмотр итога. Финальную сумму считает сервер — при изменении
 //- цен в KV возможна небольшая разница с реальным заказом
@@ -680,6 +690,14 @@ const placeOrder = async () => {
 //- между сессиями — невалидный удаляется, чтобы не путать покупателя
 //- показанной скидкой, которой при заказе не будет.
 onMounted(async () => {
+  //- Способ доставки: стартуем с выбора, сделанного в корзине (F3),
+  //- дальше держим форму и состояние корзины в синхроне в обе стороны
+  orderForm.value.deliveryMethod = deliveryMethod.value
+  watch(
+    () => orderForm.value.deliveryMethod,
+    (methodId) => setDeliveryMethod(methodId),
+  )
+
   try {
     const promoOk = await revalidatePromo()
     if (!promoOk) {

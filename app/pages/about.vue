@@ -90,6 +90,9 @@
           NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/contacts')" prefetch) {{ $t('nav.contacts') }}
           NuxtLink.btn.btn-outline.rounded-xl(:to="$localePath('/')" prefetch) {{ $t('productPage.toCatalog') }}
 
+  //- Десктопный футер (аудит F16); на мобиле навигацию держит нижнее меню
+  SiteFooter
+
   MobileNavFooter
 </template>
 

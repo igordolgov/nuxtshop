@@ -21,10 +21,11 @@
           | {{ $t('compare.count', { n: compareCount }) }}
 
       ClientOnly
+        //- Красный деструктив — единый стиль с корзиной/избранным (аудит F14)
         button.btn.btn-ghost.btn-sm.rounded-xl.text-error(
           v-if="compareCount > 0"
           type="button"
-          class="hover:text-error text-base-content/65"
+          class="hover:bg-error/10"
           @click="clearAll"
         ) {{ $t('compare.clearAll') }}
 
@@ -94,6 +95,9 @@
 
       template(#fallback)
         .skeleton.h-72.rounded-2xl
+
+  //- Десктопный футер (аудит F16); на мобиле навигацию держит нижнее меню
+  SiteFooter
 
   MobileNavFooter
 </template>

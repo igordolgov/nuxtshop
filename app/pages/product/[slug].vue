@@ -4,9 +4,11 @@
 .product-page.bg-base-100.text-base-content.flex.flex-col
   Header
 
-  //- Хлебные крошки: sticky ПОД шапкой сайта (раньше top-0 — уезжали под неё)
+  //- Хлебные крошки: sticky ПОД шапкой сайта (раньше top-0 — уезжали под неё).
+  //- Видны на ВСЕХ экранах: на десктопе путь категорий ещё полезнее,
+  //- чем на телефоне (раньше sm:hidden прятал их от 640px — аудит F10)
   .breadcrumbs-bar.sticky.z-10.bg-base-100.border-b.border-base-200.shadow-sm
-    .container.min-h-10.mx-auto.px-2(class="sm:hidden lg:p-4 lg:pb-0")
+    .container.min-h-10.mx-auto.px-2
       nav(:aria-label="$t('catalog.breadcrumbs')")
         .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
           ul.flex
@@ -15,8 +17,11 @@
             li(aria-current="page")
               span {{ productView?.name || $t('productPage.notFound') }}
 
-  //- Основной контент
-  .flex-1.overflow-auto.flex.flex-col.pb-14(ref="scrollContainer" class="lg:pb-0")
+  //- Основной контент.
+  //- Нижний отступ — класс product-scroll-safe (см. стили): pb-14 (56px)
+  //- был меньше суммы фиксированных слоёв (CTA 52px + нижняя навигация
+  //- 60px + safe-area) — хвост контента уходил под кнопку (аудит F8)
+  .flex-1.overflow-auto.flex.flex-col.product-scroll-safe(ref="scrollContainer" class="lg:pb-0")
     .container.mx-auto.px-2.flex-1(class="lg:px-4 lg:pb-0")
       //- Состояние загрузки
       .flex.flex-col.items-center.justify-center.min-h-96(v-if="isLoading")
@@ -87,6 +92,10 @@
       :summary="ratingSummary"
     )
 
+    //- Десктопный футер (аудит F16) — внутри скроллящегося контейнера:
+    //- контент карточки прокручивается сам (ref="scrollContainer")
+    SiteFooter
+
   //- Мобильная кнопка «В корзину»: над нижней навигацией + safe-area
   //- (раньше — магические 57px)
   .fixed-bottom-cart-button(
@@ -123,7 +132,7 @@
           path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
         span
           span(v-if="isInCart(product.id)") {{ $t('product.alreadyInCart') }}
-          span(v-else-if="product.inStock") {{ $t('product.addWithPrice', { price: formatPrice(product.price) }) }}
+          span(v-else-if="product.inStock") {{ $t('product.addWithPrice', { price: formatPrice(product.price) + ' ₽' }) }}
           span(v-else) {{ $t('product.soldOut') }}
 
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
@@ -262,10 +271,9 @@ const isInCart = (productId) => {
   })
 }
 
-const formatPrice = (price) => {
-  if (!price && price !== 0) return '0 ₽'
-  return `${price.toLocaleString('ru-RU')} ₽`
-}
+// formatPrice — единый из useProductUtils; в строку кнопки «В корзину»
+// валюта добавляется рядом с параметром локали (аудит F13)
+const { formatPrice } = useProductUtils()
 
 const toggleFavorite = () => {
   if (!product.value) return
@@ -338,6 +346,17 @@ watch(() => route.params.slug, () => {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Нижний воздух на мобильных: фиксированная CTA (52px + зазор) + нижняя
+   навигация (60px) + safe-area + запас 12px — по образцу .mobile-nav-safe.
+   Навигация/CTA видны <1024px (lg:hidden), поэтому брейкпоинт тот же */
+@media (max-width: 1023.98px) {
+  .product-scroll-safe {
+    padding-bottom: calc(
+      var(--mobile-nav-height, 60px) + 64px + var(--safe-area-bottom, 0px) + 12px
+    );
+  }
 }
 
 /* Крошки прилипают ПОД шапкой сайта (56px), а не к верху экрана */

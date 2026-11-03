@@ -141,6 +141,9 @@
           .collapse-content
             p.text-sm.leading-relaxed(class="text-base-content/70") {{ faq.a }}
 
+  //- Десктопный футер (аудит F16); на мобиле навигацию держит нижнее меню
+  SiteFooter
+
   MobileNavFooter
 </template>
 

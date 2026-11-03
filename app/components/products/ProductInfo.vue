@@ -7,19 +7,21 @@
         h1.text-xl.font-semibold.text-base-content.leading-snug(class="lg:text-2xl") {{ product.name }}
         ClientOnly
           .flex.shrink-0.gap-2
-            button.size-9.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="isComparedNow ? 'bg-primary text-primary-content border-primary' : 'border-base-300 text-base-content/50 hover:text-primary hover:border-primary/40'"
+            //- Тач-цель 40px (size-10), иконка /70 вместо полупрозрачной /50 —
+            //- на белом фоне выглядели бледно (аудит F6)
+            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
+              :class="isComparedNow ? 'bg-primary text-primary-content border-primary' : 'border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40'"
               :title="$t('compare.toggleAria')"
               :aria-label="$t('compare.toggleAria')"
               @click="onCompareClick"
             )
-              icon(name="heroicons:arrows-right-left" size="18")
-            button.shrink-0.size-9.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="[isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/50 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
+              icon(name="heroicons:arrows-right-left" size="20")
+            button.shrink-0.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
+              :class="[isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/70 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
               @click="$emit('toggle-favorite')"
               :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
             )
-              svg.w-4.h-4(
+              svg.w-5.h-5(
                 :class="isFavorite ? 'fill-current' : 'fill-none stroke-current'"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -50,7 +52,7 @@
       //- Цена и наличие
       .flex.items-end.justify-between.gap-4.py-1
         .price-section
-          .text-3xl.font-bold.text-base-content {{ formatPrice(product.price) }}
+          .text-3xl.font-bold.text-base-content {{ formatPrice(product.price) }} ₽
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
         .stock-section.text-right
@@ -110,7 +112,7 @@
               span(v-if="isInCart") {{ $t('product.alreadyInCart') }}
               span(v-else-if="product.inStock") {{ $t('product.addToCart') }}
               span(v-else) {{ $t('product.soldOut') }}
-            span.font-normal.opacity-80(v-if="!isInCart && product.inStock") · {{ formatPrice(product.price) }}
+            span.font-normal.opacity-80(v-if="!isInCart && product.inStock") · {{ formatPrice(product.price) }} ₽
 
       //- Характеристики
       .rounded-2xl.border.border-base-300.overflow-hidden
@@ -152,6 +154,8 @@ const props = defineProps({
 defineEmits(['toggle-favorite', 'add-to-cart'])
 
 const { $notify } = useNuxtApp()
+// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне, аудит F13)
+const { formatPrice } = useProductUtils()
 
 //- ── Сравнение (ClientOnly в шаблоне: состояние после гидратации) ──────
 const { isCompared, toggleCompare } = useCompare()
@@ -232,11 +236,6 @@ const numberFormat = computed(() =>
 )
 const ratingAverage = computed(() => numberFormat.value.format(props.rating?.average ?? 0))
 const ratingCountLabel = computed(() => t('reviews.count', props.rating?.count ?? 0))
-
-const formatPrice = (price) => {
-  if (!price && price !== 0) return '0 ₽'
-  return `${price.toLocaleString('ru-RU')} ₽`
-}
 
 const formatDate = (dateString) => {
   if (!dateString) return t('product.unknown')

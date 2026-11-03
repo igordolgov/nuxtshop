@@ -185,7 +185,7 @@
     "zoomImage": "Zoom image",
     "notifyMe": "Notify me when available",
     "notifyHint": "Leave an email or phone number — we will write as soon as the product is back.",
-    "notifyContactPh": "you@example.com or +1 …",
+    "notifyContactPh": "you{'@'}example.com or +1 …",
     "notifySend": "Send",
     "notifyDone": "Done! We will let you know when the product is back",
     "notifyErrContact": "Enter an email or phone number (at least 10 digits)",
@@ -1128,5 +1128,13 @@
     "title": "Store reviews",
     "write": "Write a review",
     "empty": "Be the first — tell us how you like our store"
+  },
+  "footer": {
+    "tagline": "Online tech store since 2018: offline showrooms, 2-year warranty, next-day delivery and round-the-clock support.",
+    "sections": "Sections",
+    "buyers": "For buyers",
+    "contacts": "Contacts",
+    "workingHours": "Phone hours",
+    "rights": "All rights reserved."
   }
 }
