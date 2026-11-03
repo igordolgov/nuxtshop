@@ -37,10 +37,7 @@ const DEAD_PHOTO_REPLACEMENTS: Record<string, string> = {
 // Как и миграция Unsplash, применяется ТОЛЬКО в памяти при выдаче: live-KV
 // содержит старые пути, но после следующей админ-правки товар уйдёт в KV
 // уже с новыми путями — без ручных операций и без перезаписи KV целиком.
-const PHOTO_PATH_REPLACEMENTS = photoReplacementsJson as Record<
-  string,
-  Record<string, string>
->;
+const PHOTO_PATH_REPLACEMENTS = photoReplacementsJson as Record<string, Record<string, string>>;
 
 /**
  * photo-id из unsplash-URL или голого «photo-…»; null для data-URI
@@ -274,7 +271,7 @@ export function normalizeCategories(
   let list: string[];
   if (Array.isArray(raw)) {
     list = raw
-      .map((c) => (typeof c === 'string' ? c : (c as { name?: unknown })?.name ?? ''))
+      .map((c) => (typeof c === 'string' ? c : ((c as { name?: unknown })?.name ?? '')))
       .map((c) => String(c).trim());
   } else if (typeof raw === 'string') {
     list = raw.split(',').map((c) => c.trim());
@@ -327,12 +324,22 @@ export function sanitizeVariants(input: unknown): ProductVariant[] | undefined {
     if (nameEn) variant.nameEn = nameEn;
     const nameEs = variantString(rec.nameEs, 120);
     if (nameEs) variant.nameEs = nameEs;
-    if (typeof rec.price === 'number' && Number.isFinite(rec.price) && rec.price >= 0 && rec.price <= 1e9) {
+    if (
+      typeof rec.price === 'number' &&
+      Number.isFinite(rec.price) &&
+      rec.price >= 0 &&
+      rec.price <= 1e9
+    ) {
       variant.price = rec.price;
     }
     const image = variantString(rec.image, 500);
     if (image) variant.image = image;
-    if (typeof rec.stockQuantity === 'number' && Number.isInteger(rec.stockQuantity) && rec.stockQuantity >= 0 && rec.stockQuantity <= 1e6) {
+    if (
+      typeof rec.stockQuantity === 'number' &&
+      Number.isInteger(rec.stockQuantity) &&
+      rec.stockQuantity >= 0 &&
+      rec.stockQuantity <= 1e6
+    ) {
       variant.stockQuantity = rec.stockQuantity;
     }
     if (typeof rec.inStock === 'boolean') variant.inStock = rec.inStock;
@@ -390,12 +397,7 @@ export function migrateSeedVariants(products: Product[]): void {
 //   непустая строка        → trim + лимит длины, сохраняем.
 // Для POST «не трогаем» = поле просто не попадает в новую запись.
 
-const LOCALIZED_TEXT_FIELDS = [
-  'nameEn',
-  'nameEs',
-  'descriptionEn',
-  'descriptionEs',
-] as const;
+const LOCALIZED_TEXT_FIELDS = ['nameEn', 'nameEs', 'descriptionEn', 'descriptionEs'] as const;
 
 const LOCALIZED_TEXT_LIMITS: Record<(typeof LOCALIZED_TEXT_FIELDS)[number], number> = {
   nameEn: 200,

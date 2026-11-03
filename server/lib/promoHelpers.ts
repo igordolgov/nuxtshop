@@ -84,7 +84,9 @@ export function normalizePromoInput(
   raw: Record<string, unknown>,
   existing?: PromoCode,
 ): Omit<PromoCode, 'id' | 'usedCount' | 'createdAt' | 'updatedAt'> {
-  const code = String(raw?.code ?? '').trim().toUpperCase();
+  const code = String(raw?.code ?? '')
+    .trim()
+    .toUpperCase();
   if (!PROMO_CODE_RE.test(code)) {
     throw new PromoValidationError(
       'Код: 2–32 символа, только латиница, цифры и дефис (например SUMMER15)',
@@ -114,9 +116,11 @@ export function normalizePromoInput(
     }
   }
 
-  const description = String(raw?.description ?? '').trim().slice(0, MAX_DESCRIPTION_LEN);
+  const description = String(raw?.description ?? '')
+    .trim()
+    .slice(0, MAX_DESCRIPTION_LEN);
   const expiresAt = parseDate(raw?.expiresAt);
-  const active = raw?.active === undefined ? existing?.active ?? true : Boolean(raw.active);
+  const active = raw?.active === undefined ? (existing?.active ?? true) : Boolean(raw.active);
 
   return { code, type, value, active, expiresAt, usageLimit, description };
 }
@@ -125,7 +129,9 @@ export function normalizePromoInput(
 
 /** Регистронезависимый поиск по коду. */
 export function findPromoByCode(items: PromoCode[], code: string): PromoCode | null {
-  const wanted = String(code ?? '').trim().toUpperCase();
+  const wanted = String(code ?? '')
+    .trim()
+    .toUpperCase();
   if (!wanted) return null;
   return items.find((p) => p.code.toUpperCase() === wanted) ?? null;
 }

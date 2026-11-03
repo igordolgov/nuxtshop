@@ -155,10 +155,7 @@ function generateOrderId(): string {
 }
 
 /** Валидация контактов покупателя; возвращает нормализованные значения */
-function validateCustomer(
-  customer: CreateOrderInput['customer'],
-  deliveryMethod: DeliveryMethod,
-) {
+function validateCustomer(customer: CreateOrderInput['customer'], deliveryMethod: DeliveryMethod) {
   const name = customer?.name?.trim() ?? '';
   if (name.length < 2 || name.length > 100) {
     throw createError({ statusCode: 400, message: 'Укажите имя (2–100 символов)' });
@@ -214,17 +211,17 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   }
 
   // 2. Способы доставки/оплаты — только допустимые значения
-  const deliveryMethod: DeliveryMethod | null = (
-    ['courier', 'pickup', 'post'] as const
-  ).includes(input.deliveryMethod as DeliveryMethod)
+  const deliveryMethod: DeliveryMethod | null = (['courier', 'pickup', 'post'] as const).includes(
+    input.deliveryMethod as DeliveryMethod,
+  )
     ? (input.deliveryMethod as DeliveryMethod)
     : null;
   if (!deliveryMethod) {
     throw createError({ statusCode: 400, message: 'Выберите способ доставки' });
   }
-  const paymentMethod: PaymentMethod | null = (
-    ['card', 'cash'] as const
-  ).includes(input.paymentMethod as PaymentMethod)
+  const paymentMethod: PaymentMethod | null = (['card', 'cash'] as const).includes(
+    input.paymentMethod as PaymentMethod,
+  )
     ? (input.paymentMethod as PaymentMethod)
     : null;
   if (!paymentMethod) {
@@ -385,9 +382,7 @@ async function adjustStockForOrder(
       if (!product) continue;
       const stock = product.stockQuantity ?? 0;
       if (item.quantity > stock) {
-        shortages.push(
-          `«${product.name}»: на складе ${stock} шт., в заказе ${item.quantity}`,
-        );
+        shortages.push(`«${product.name}»: на складе ${stock} шт., в заказе ${item.quantity}`);
       }
     }
     if (shortages.length) {
@@ -403,8 +398,7 @@ async function adjustStockForOrder(
     const product = byId.get(String(item.id));
     if (!product) continue;
     const stock = product.stockQuantity ?? 0;
-    const next =
-      mode === 'deduct' ? Math.max(0, stock - item.quantity) : stock + item.quantity;
+    const next = mode === 'deduct' ? Math.max(0, stock - item.quantity) : stock + item.quantity;
     if (next !== stock) {
       product.stockQuantity = next;
       product.inStock = next > 0;

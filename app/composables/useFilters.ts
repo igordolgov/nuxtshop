@@ -1,7 +1,7 @@
 // app/composables/useFilters.ts
 import { ref, computed, type Ref } from 'vue';
 import { localizedProduct } from '../utils/localizedProduct';
-import type { CatalogProduct } from './useProducts';
+import type { CatalogProduct } from './catalogProduct';
 
 /** Локализованная копия товара (localizedProduct добавляет categoriesRaw) */
 export type LocalizedCatalogProduct = CatalogProduct & { categoriesRaw?: string[] };

@@ -24,9 +24,7 @@ export function sessionsToInvalidate(
   userId: string,
   keepKey?: string,
 ): string[] {
-  return entries
-    .filter((e) => e.key !== keepKey && e.record?.userId === userId)
-    .map((e) => e.key);
+  return entries.filter((e) => e.key !== keepKey && e.record?.userId === userId).map((e) => e.key);
 }
 
 /**

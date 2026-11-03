@@ -59,11 +59,11 @@ export async function optimizeImage(
   _options: OptimizeOptions = {},
 ): Promise<Buffer> {
   if (!Buffer.isBuffer(imageBuffer) || imageBuffer.length === 0) {
-    throw new Error('Некорректный буфер изображения')
+    throw new Error('Некорректный буфер изображения');
   }
 
-  console.log('🖼️ Возвращаю оригинал. Используйте Cloudflare Image Resizing для оптимизации.')
-  return imageBuffer
+  console.log('🖼️ Возвращаю оригинал. Используйте Cloudflare Image Resizing для оптимизации.');
+  return imageBuffer;
 }
 
 const FORMAT_MAP: Record<string, string> = {
@@ -74,11 +74,11 @@ const FORMAT_MAP: Record<string, string> = {
   'image/gif': 'webp',
   'image/avif': 'avif',
   'image/tiff': 'webp',
-}
+};
 
 /** Определяет оптимальный формат для изображения по MIME */
 export function getOptimalFormat(mimeType?: string): string {
-  return FORMAT_MAP[mimeType?.toLowerCase() ?? ''] || 'webp'
+  return FORMAT_MAP[mimeType?.toLowerCase() ?? ''] || 'webp';
 }
 
 /**
@@ -92,18 +92,18 @@ export function calculateQuality(originalSize: number, options: QualityOptions =
     threshold1 = 500000,
     threshold2 = 2000000,
     threshold3 = 5000000,
-  } = options
+  } = options;
 
-  if (originalSize <= threshold1) return maxQuality
-  if (originalSize <= threshold2) return 80
-  if (originalSize <= threshold3) return 70
-  return minQuality
+  if (originalSize <= threshold1) return maxQuality;
+  if (originalSize <= threshold2) return 80;
+  if (originalSize <= threshold3) return 70;
+  return minQuality;
 }
 
 /** Проверяет буфер по magic bytes: JPEG / PNG / GIF / WebP (RIFF) */
 export async function isValidImage(buffer: Buffer): Promise<boolean> {
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
-    return false
+    return false;
   }
 
   const signatures: number[][] = [
@@ -111,16 +111,16 @@ export async function isValidImage(buffer: Buffer): Promise<boolean> {
     [0x89, 0x50, 0x4e, 0x47], // PNG
     [0x47, 0x49, 0x46, 0x38], // GIF
     [0x52, 0x49, 0x46, 0x46], // WebP (RIFF)
-  ]
+  ];
 
   for (const sig of signatures) {
     if (buffer.length >= sig.length) {
-      const matches = sig.every((byte, i) => buffer[i] === byte)
-      if (matches) return true
+      const matches = sig.every((byte, i) => buffer[i] === byte);
+      if (matches) return true;
     }
   }
 
-  return false
+  return false;
 }
 
 /** Метаданные изображения (на Workers — только size, остальное в Resizing) */
@@ -134,7 +134,7 @@ export async function getImageMetadata(buffer: Buffer): Promise<ImageMetadata> {
     orientation: null,
     density: null,
     note: 'Use Cloudflare Image Resizing for metadata extraction',
-  }
+  };
 }
 
 /** Создаёт превью изображения (на Workers — passthrough оригинала) */
@@ -144,20 +144,23 @@ export async function createThumbnail(imageBuffer: Buffer, size = 200): Promise<
     maxHeight: size,
     quality: 75,
     format: 'webp',
-  })
+  });
 }
 
 /** Генерирует Cloudflare Image Resizing URL (/cdn-cgi/image/…) */
-export function getCloudflareImageUrl(imagePath: string, options: CloudflareImageOptions = {}): string {
-  const { width = 400, height, quality = 80, format = 'webp', fit = 'cover', dpr = 1 } = options
+export function getCloudflareImageUrl(
+  imagePath: string,
+  options: CloudflareImageOptions = {},
+): string {
+  const { width = 400, height, quality = 80, format = 'webp', fit = 'cover', dpr = 1 } = options;
 
-  const params: string[] = []
-  if (width) params.push(`width=${width}`)
-  if (height) params.push(`height=${height}`)
-  params.push(`quality=${quality}`)
-  params.push(`format=${format}`)
-  params.push(`fit=${fit}`)
-  if (dpr > 1) params.push(`dpr=${dpr}`)
+  const params: string[] = [];
+  if (width) params.push(`width=${width}`);
+  if (height) params.push(`height=${height}`);
+  params.push(`quality=${quality}`);
+  params.push(`format=${format}`);
+  params.push(`fit=${fit}`);
+  if (dpr > 1) params.push(`dpr=${dpr}`);
 
-  return `/cdn-cgi/image/${params.join(',')}${imagePath}`
+  return `/cdn-cgi/image/${params.join(',')}${imagePath}`;
 }

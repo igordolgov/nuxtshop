@@ -66,262 +66,18 @@
                 span.text-sm
                   | {{ $t('cart.qtyWarning') }}
 
-              //- МОБИЛЬНАЯ ВЕРСИЯ: горизонтальная лента карточек.
-              //- overflow и snap — в scoped-CSS класса (единая точка правды);
-              //- -mx-3 px-3 — лента выходит к краям экрана (peek)
-              .cart-items-scroll-wrapper(class="md:hidden -mx-3 mb-1 px-3 pb-2")
-                .cart-items.flex.flex-nowrap.gap-3.pb-1
-                  .cart-item-card.bg-base-100.flex-shrink-0.border.rounded-2xl(
-                    v-for="item in cartItems"
-                    :key="item.id"
-                    :class="item.quantity > getMaxQuantity(item) ? 'border-warning' : 'border-base-300'"
-                  )
-                    .p-3.relative
-                      .flex.items-start.gap-3
-                        .flex-shrink-0
-                          .item-image.w-20.h-20.rounded-xl.bg-base-200.flex.items-center.justify-center.overflow-hidden
-                            //- width/height = 80px (w-20 h-20): резерв места до загрузки
-                            NuxtImg.w-full.h-full.object-cover(
-                              :src="item.image || '/images/placeholder.jpg'"
-                              :alt="displayName(item)"
-                              width="80"
-                              height="80"
-                              loading="lazy"
-                              decoding="async"
-                              @error="handleImageError"
-                            )
-                          .price-info.mt-2
-                            .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
-                            .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
-                        .flex-grow.min-w-0
-                          h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
-                            class="hover:text-primary"
-                            @click="goToProduct(item)"
-                          ) {{ displayName(item) }}
-                          .variant-chip.text-xs.mb-2(class="text-base-content/70" v-if="item.variantName")
-                            | {{ item.variantName }}
-                          span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ item.category }}
-                          .flex.items-center.gap-1.mt-1
-                            button.qty-btn(
-                              type="button"
-                              :aria-label="$t('cart.decrease')"
-                              :disabled="item.quantity <= 1"
-                              @click="updateQuantity(item.id, item.quantity - 1)"
-                            ) –
-                            span.px-2.text-sm.font-semibold(
-                              :class="{ 'text-warning': item.quantity > getMaxQuantity(item) }"
-                            ) {{ item.quantity }}
-                            button.qty-btn(
-                              type="button"
-                              :aria-label="$t('cart.increase')"
-                              :disabled="item.quantity >= getMaxQuantity(item)"
-                              @click="updateQuantity(item.id, item.quantity + 1)"
-                            ) +
-                        button.remove-btn(
-                          type="button"
-                          :title="$t('cart.remove')"
-                          :aria-label="$t('cart.remove')"
-                          @click="removeFromCart(item.id)"
-                        )
-                          svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                            path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
-                      .text-xs.mt-2(
-                        v-if="getMaxQuantity(item) < 999"
-                        :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : 'text-base-content/75'"
-                      )
-                        | {{ $t('cart.available', { n: getMaxQuantity(item) }) }}
-                        span.text-warning.ml-1(v-if="item.quantity > getMaxQuantity(item)") {{ $t('cart.qtyExceeded') }}
+              CartItemsList
 
-              //- ДЕСКТОПНАЯ ВЕРСИЯ: таблица со внутренним скроллом
-              .hidden(
-                class="lg:block lg:pr-1 lg:max-h-[calc(100dvh-140px)] lg:overflow-y-auto"
-              )
-                .cart-list-header.grid.grid-cols-12.gap-4.px-4.py-2.rounded-xl.font-medium.text-xs.uppercase.tracking-wide(
-                  class="bg-base-200 lg:mb-2 text-base-content/65"
-                )
-                  .col-span-5 {{ $t('cart.product') }}
-                  .col-span-2.text-center {{ $t('cart.qty') }}
-                  .col-span-2.text-right {{ $t('cart.price') }}
-                  .col-span-2.text-right {{ $t('cart.total') }}
-                  .col-span-1
-                .cart-items-list.space-y-2
-                  .cart-item-row.grid.grid-cols-12.gap-4.px-4.py-3.bg-base-100.border.rounded-xl.items-center(
-                    v-for="item in cartItems"
-                    :key="item.id"
-                    :class="item.quantity > getMaxQuantity(item) ? 'border-warning' : 'border-base-300'"
-                  )
-                    .col-span-5.flex.items-center.gap-3
-                      .flex-shrink-0
-                        .item-image.w-12.h-12.rounded-lg.bg-base-200.flex.items-center.justify-center.overflow-hidden
-                          NuxtImg.w-full.h-full.object-cover(
-                            :src="item.image || '/images/placeholder.jpg'"
-                            :alt="displayName(item)"
-                            loading="lazy"
-                            @error="handleImageError"
-                          )
-                      .flex-grow.min-w-0
-                        .flex.flex-col
-                          h3.item-name.font-medium.text-sm.transition-colors.cursor-pointer.truncate(
-                            class="hover:text-primary"
-                            @click="goToProduct(item)"
-                          ) {{ displayName(item) }}
-                          .variant-chip.text-xs(class="mt-0.5 text-base-content/70" v-if="item.variantName")
-                            | {{ item.variantName }}
-                          span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
-                          .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
-                            | {{ $t('cart.qtyExceededFull') }}
-                          .text-xs.mt-1(
-                            v-if="getMaxQuantity(item) < 999"
-                            class="text-base-content/60"
-                            :class="getMaxQuantity(item) <= 3 ? 'text-warning font-medium' : ''"
-                          ) {{ $t('cart.available', { n: getMaxQuantity(item) }) }}
-                    .col-span-2
-                      .flex.justify-center
-                        .flex.items-center.gap-1
-                          button.qty-btn(
-                            type="button"
-                            :aria-label="$t('cart.decrease')"
-                            :disabled="item.quantity <= 1"
-                            @click="updateQuantity(item.id, item.quantity - 1)"
-                          ) –
-                          span.px-2.text-sm.font-semibold(
-                            :class="{ 'text-warning': item.quantity > getMaxQuantity(item) }"
-                          ) {{ item.quantity }}
-                          button.qty-btn(
-                            type="button"
-                            :aria-label="$t('cart.increase')"
-                            :disabled="item.quantity >= getMaxQuantity(item)"
-                            @click="updateQuantity(item.id, item.quantity + 1)"
-                          ) +
-                    .col-span-2.text-right
-                      .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
-                    .col-span-2.text-right
-                      .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
-                    .col-span-1.text-center
-                      button.remove-btn-inline(
-                        type="button"
-                        :title="$t('cart.remove')"
-                        :aria-label="$t('cart.remove')"
-                        @click="removeFromCart(item.id)"
-                      )
-                        svg.w-4.h-4(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-                          path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
-
-          //- ПРАВАЯ КОЛОНКА — ОФОРМЛЕНИЕ ЗАКАЗА (карточка на десктопе)
+          //- Правая колонка — оформление; панель — CartCheckoutPanel.vue
+          //- (состояние обработки и переход в чекаут остаются на странице)
           .cart-right.col-span-2.max-w-full.min-w-0(v-if="totalItems" class="lg:mb-0")
-            .checkout-card.w-full(class="lg:top-4 lg:sticky")
-              .card.bg-base-100.border.border-base-300.rounded-2xl.h-full.flex.flex-col
-                .card-body.px-4.py-4.flex.flex-col.flex-1.overflow-y-auto.gap-4
-                  h2.text-lg.font-semibold.text-base-content(class="lg:text-xl")
-                    | {{ $t('cart.checkout') }}
-
-                  .space-y-2
-                    .flex.justify-between.text-sm
-                      span(class="text-base-content/65") {{ $t('cart.items', { n: totalItems }) }}
-                      span.font-medium {{ formatPrice(subtotal) }} ₽
-
-                    .flex.justify-between.text-sm
-                      span(class="text-base-content/65") {{ $t('cart.delivery') }}
-                      span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) + ' ₽' }}
-
-                    .flex.justify-between.text-sm(v-if="discount > 0")
-                      span(class="text-base-content/65") {{ $t('cart.discount') }}
-                      span.font-medium.text-error -{{ formatPrice(discount) }} ₽
-
-                    .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
-                      span.text-base.font-semibold {{ $t('cart.total') }}
-                      span.text-2xl.font-bold.text-base-content {{ formatPrice(total) }} ₽
-
-                  .form-control
-                    .join.w-full
-                      input.input.input-bordered.join-item.flex-grow.rounded-l-xl.text-base(
-                        type="text"
-                        :placeholder="$t('cart.promoPlaceholder')"
-                        autocomplete="off"
-                        v-model="promoCode"
-                        @keyup.enter="applyPromo"
-                      )
-                      button.btn.btn-primary.join-item.rounded-r-xl(
-                        type="button"
-                        :disabled="!promoCode.trim() || isProcessing"
-                        class="px-4"
-                        @click="applyPromo"
-                      )
-                        span(v-if="!isProcessing") {{ $t('cart.apply') }}
-                        span.loading.loading-spinner.loading-sm(v-else)
-
-                  .form-control
-                    label.label.p-0.mb-2
-                      span.label-text.font-medium.text-sm {{ $t('cart.deliveryMethod') }}
-                    //- Две колонки на всех экранах (и на телефоне):
-                    //- по 2 плитки в блоке — одна колонка выглядела пусто
-                    .grid.grid-cols-2.gap-2
-                      label.option-tile(
-                        :class="{ 'option-tile-active': selectedDelivery === 'courier' }"
-                      )
-                        input.radio.radio-sm(
-                          type="radio"
-                          name="delivery"
-                          value="courier"
-                          v-model="selectedDelivery"
-                        )
-                        .flex-grow
-                          .font-medium.text-sm {{ $t('cart.courier') }}
-                          .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: courierPrice === 0 ? $t('cart.free').toLowerCase() : formatPrice(courierPrice) + ' ₽' }) }}
-
-                      label.option-tile(
-                        :class="{ 'option-tile-active': selectedDelivery === 'pickup' }"
-                      )
-                        input.radio.radio-sm(
-                          type="radio"
-                          name="delivery"
-                          value="pickup"
-                          v-model="selectedDelivery"
-                        )
-                        .flex-grow
-                          .font-medium.text-sm {{ $t('cart.pickup') }}
-                          .text-xs(class="text-base-content/65") {{ $t('cart.pickupEta') }}
-
-                  .form-control
-                    label.label.p-0.mb-2
-                      span.label-text.font-medium.text-sm {{ $t('cart.paymentMethod') }}
-                    .grid.grid-cols-2.gap-2
-                      label.option-tile(
-                        :class="{ 'option-tile-active': selectedPayment === 'card' }"
-                      )
-                        input.radio.radio-sm(
-                          type="radio"
-                          name="payment"
-                          value="card"
-                          v-model="selectedPayment"
-                        )
-                        .flex-grow
-                          .font-medium.text-sm {{ $t('cart.card') }}
-                          .text-xs(class="text-base-content/65") {{ $t('cart.cardNote') }}
-
-                      label.option-tile(
-                        :class="{ 'option-tile-active': selectedPayment === 'cash' }"
-                      )
-                        input.radio.radio-sm(
-                          type="radio"
-                          name="payment"
-                          value="cash"
-                          v-model="selectedPayment"
-                        )
-                        .flex-grow
-                          .font-medium.text-sm {{ $t('cart.cash') }}
-                          .text-xs(class="text-base-content/65") {{ $t('cart.cashNote') }}
-
-                .card-actions.px-4.py-3.mt-6.border-t.border-base-300(v-if="!isMobile")
-                  button.btn.btn-primary.btn-lg.w-full.rounded-xl(
-                    type="button"
-                    :disabled="isProcessing || hasOutOfStockItems"
-                    :class="{ 'btn-error': hasOutOfStockItems }"
-                    @click="proceedToCheckout"
-                  )
-                    template(v-if="!isProcessing")
-                      span {{ hasOutOfStockItems ? $t('cart.qtyProblems') : $t('cart.checkoutBtn') }}
-                    span.loading.loading-spinner(v-else)
+            CartCheckoutPanel(
+              v-model:promo-code="promoCode"
+              :is-processing="isProcessing"
+              :has-out-of-stock-items="hasOutOfStockItems"
+              @apply-promo="applyPromo"
+              @checkout="proceedToCheckout"
+            )
 
   //- ПЛАВАЮЩАЯ ПАНЕЛЬ ОФОРМЛЕНИЯ (мобильные).
   //- Вся позиция/видимость — в scoped-CSS класса (не на Tailwind-утилитах):
@@ -450,112 +206,6 @@
   color: var(--color-warning);
   border: 1px solid color-mix(in oklab, var(--color-warning) 25%, transparent);
 }
-
-/* ============================================
-  КНОПКИ КОЛИЧЕСТВА / УДАЛЕНИЯ
-  36px — ближе к гайдлайну тач-таргета 44px
-============================================ */
-.qty-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--color-base-300);
-  background: transparent;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
-  transition:
-    background var(--transition-fast, 0.15s),
-    border-color var(--transition-fast, 0.15s);
-}
-
-.qty-btn:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  color: var(--color-primary);
-}
-
-.qty-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.remove-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
-  transition:
-    color var(--transition-fast, 0.15s),
-    background var(--transition-fast, 0.15s);
-}
-
-.remove-btn:hover {
-  color: var(--color-error);
-  background: color-mix(in oklab, var(--color-error) 8%, transparent);
-}
-
-.remove-btn-inline {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
-  transition:
-    color var(--transition-fast, 0.15s),
-    background var(--transition-fast, 0.15s);
-}
-
-.remove-btn-inline:hover {
-  color: var(--color-error);
-  background: color-mix(in oklab, var(--color-error) 8%, transparent);
-}
-
-/* ============================================
-  ЛЕНТА КАРТОЧЕК (МОБИЛЬНЫЕ)
-  overflow и snap — здесь, в одном месте; скролл-контейнер
-  переполняется только если grid-колонка снаружи зажата
-  (grid-cols-1 в шаблоне — обязательно!)
-============================================ */
-.cart-items-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
-  /* Старт снапа = внутренний паддинг ленты (px-3 = 12px) */
-  scroll-padding-left: 0.75rem;
-}
-
-.cart-items {
-  width: max-content;
-}
-
-.cart-item-card {
-  width: 300px;
-  scroll-snap-align: start;
-}
-
-@media (min-width: 769px) {
-  .cart-item-card {
-    width: 340px;
-  }
-}
-
-@media (max-width: 740px) and (orientation: landscape) {
-  .cart-item-card {
-    width: 280px;
-  }
-}
-
 /* ============================================
   ПЛАВАЮЩАЯ ПАНЕЛЬ ОФОРМЛЕНИЯ — самодостаточный класс:
   позиция, фон, видимость полностью здесь (карта z-index:
@@ -581,63 +231,10 @@
   }
 }
 
-/* ============================================
-  ПЛИТКИ ВЫБОРА — «Способ доставки» / «Способ оплаты».
-  Класс использовался в шаблоне, но стилей не имел вовсе:
-  радио оказывалось на отдельной строке НАД названием, плитки
-  сливались с карточкой, активное состояние никак не читалось.
-  align-items: flex-start — радио на одной линии с названием.
-============================================ */
-.option-tile {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  min-width: 0;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--color-base-300);
-  border-radius: 0.75rem;
-  background: var(--color-base-100);
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast, 0.15s),
-    background var(--transition-fast, 0.15s);
-}
-
-.option-tile:hover {
-  border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
-}
-
-/* Радио прижато к первой строке (названию), не сжимается текстом */
-.option-tile input.radio {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.option-tile-active {
-  border-color: var(--color-primary);
-  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
-}
-
-/* ============================================
-  УТИЛИТЫ
-============================================ */
-.item-image {
-  min-width: 80px;
-}
-
-@media (max-width: 768px) {
-  .item-image {
-    min-width: 64px;
-  }
-}
 </style>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-// Правила доставки — единый модуль (аудит F3)
-import { getDeliveryPrice } from '@/utils/deliveryPrice'
-// Варианты: разбор составного id позиции «productId::variantId»
-import { parseCartLineId } from '@/utils/productVariants'
+import { ref, onMounted } from 'vue'
 
 const { t } = useI18n()
 // Ссылки корзины сохраняют префикс локали
@@ -645,39 +242,17 @@ const localePath = useLocalePath()
 
 const { $notify } = useNuxtApp()
 
-// Локализация названий в корзине: снапшот в localStorage хранит имя на
-// языке МОМЕНТА добавления; на витрине показываем актуальное имя товара
-// из каталога в ТЕКУЩЕЙ локали (фолбэк — снапшот)
-const appState = useAppState()
-const { loc } = useLocalizedProduct()
-const displayName = (item) => {
-  // Позиция варианта лежит в корзине под составным id «productId::variantId» —
-  // свежий товар ищем по голому productId (parseCartLineId режет суффикс)
-  const { productId } = parseCartLineId(item?.id)
-  const fresh = appState.products.value?.find(
-    (p) => String(p.id) === String(productId),
-  )
-  return fresh ? loc(fresh).name : (item?.name ?? '')
-}
-
-//- Один вызов useCart. Header/MobileNavFooter автоимпортятся Nuxt
+//- Один вызов useCart. Header/MobileNavFooter автоимпортятся Nuxt.
+//- Позиции списка — CartItemsList.vue, панель оформления —
+//- CartCheckoutPanel.vue (компоненты сами читают useCart)
 const {
   cartItems,
-  subtotal,
-  discount,
   total,
   totalItems,
-  deliveryPrice,
-  deliveryMethod,
-  setDeliveryMethod,
-  updateItemQuantity,
-  removeFromCart,
   clearCart,
   applyPromoCode,
-  proceedToCheckout: cartCheckout,
-  getMaxQuantity,
   hasOutOfStockItems,
-  getProductUrl,
+  proceedToCheckout: cartCheckout,
 } = useCart()
 const { formatPrice } = useProductUtils()
 
@@ -686,68 +261,24 @@ const { formatPrice } = useProductUtils()
 //- ============================================
 const isMounted = ref(false)
 const isProcessing = ref(false)
+//- Строка ввода промокода живёт в панели (v-model:promo-code); здесь —
+//- применение и уведомления
 const promoCode = ref('')
-//- Способ доставки — из состояния корзины (единый источник с чекаутом);
-//- v-model на радио пишет через setDeliveryMethod, выбор сразу виден
-//- в чекауте (аудит F3)
-const selectedDelivery = computed({
-  get: () => deliveryMethod.value,
-  set: (methodId) => setDeliveryMethod(methodId),
-})
-const selectedPayment = ref('card')
-const isMobile = ref(false)
 
-//- Цена курьера для плитки: считается именно по способу «курьер»,
-//- а не по текущему выбору (раньше при самовывозе плитка курьера
-//- показывала «бесплатно» — чужую цену)
-const courierPrice = computed(() => getDeliveryPrice('courier', subtotal.value))
-
-//- ============================================
-//- Устройство.
-//- Локальные isHorizontal/checkOrientation удалены: боковая навигация
-//- в landscape больше не существует, нижнее меню постоянно.
-//- Порог мобайла согласован с useMobileDetection (< 1024)
-//- ============================================
-const checkMobile = () => {
-  if (!import.meta.client) return
-  isMobile.value = window.innerWidth < 1024
-}
-
-const onResize = () => checkMobile()
-
-//- ============================================
-//- Форматирование и утилиты
-//- ============================================
 // formatPrice — единый из useProductUtils (без валюты; ₽ добавляется
 // в шаблоне — аудит F13)
-
-// Формы «товар» — vue-i18n plural (cart.itemsCount)
-
-const handleImageError = (event) => {
-  event.target.src = '/images/placeholder.jpg'
-}
 
 const goCatalog = () => navigateTo(localePath('/'))
 
 //- ============================================
 //- Действия
 //- ============================================
-const updateQuantity = async (itemId, newQuantity) => {
-  if (newQuantity < 1) return
-
-  try {
-    await updateItemQuantity(itemId, newQuantity)
-  } catch (error) {
-    $notify.error(error.message || t('cart.qtyUpdateError'))
-  }
-}
-
-const applyPromo = async () => {
-  if (!promoCode.value.trim()) return
+const applyPromo = async (code) => {
+  if (!code?.trim()) return
 
   try {
     isProcessing.value = true
-    await applyPromoCode(promoCode.value)
+    await applyPromoCode(code)
     $notify.success(t('cart.promoOk'))
     promoCode.value = ''
   } catch {
@@ -769,25 +300,12 @@ const proceedToCheckout = async () => {
   }
 }
 
-const goToProduct = (product) => {
-  // У вариантной позиции item.id — «productId::variantId», а getProductUrl
-  // ждёт товар; URL строим по productId, чтобы ссылка вела на карточку
-  const { productId } = parseCartLineId(product?.id)
-  navigateTo(getProductUrl({ ...product, id: productId }))
-}
-
 //- ============================================
 //- Lifecycle
 //- ============================================
 onMounted(() => {
   isMounted.value = true
-  checkMobile()
-  window.addEventListener('resize', onResize, { passive: true })
   window.scrollTo(0, 0)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', onResize)
 })
 
 useHead(() => ({ title: t('cart.title') }))

@@ -76,7 +76,8 @@ export function normalizeReviewInput(raw: Record<string, unknown>): {
   rating: number;
   text: string;
 } {
-  const productId = typeof raw?.productId === 'string' ? raw.productId.trim() : String(raw?.productId ?? '').trim();
+  const productId =
+    typeof raw?.productId === 'string' ? raw.productId.trim() : String(raw?.productId ?? '').trim();
   if (!productId || productId.length > 64) {
     throw new ReviewValidationError('Не указан товар для отзыва');
   }
@@ -168,7 +169,9 @@ export function sortReviewsDesc<T extends { id: string | number; createdAt?: str
 
 /** Одобренные отзывы товара, свежие сверху. */
 export function approvedReviews(items: ReviewItem[], productId: string): ReviewItem[] {
-  return sortReviewsDesc(items.filter((r) => r.approved && String(r.productId) === String(productId)));
+  return sortReviewsDesc(
+    items.filter((r) => r.approved && String(r.productId) === String(productId)),
+  );
 }
 
 /**

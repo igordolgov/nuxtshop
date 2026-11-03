@@ -202,10 +202,7 @@ async function callApiFull<T>(
  * drop_pending_updates сознательно не ставим: зависшие апдейты обработает
  * дедуп + идемпотентность webhook-слоя, реальные заказы не теряем.
  */
-export async function setWebhook(
-  env: TelegramEnv,
-  url: string,
-): Promise<BotApiResult<boolean>> {
+export async function setWebhook(env: TelegramEnv, url: string): Promise<BotApiResult<boolean>> {
   if (!env?.TELEGRAM_BOT_TOKEN || !env?.TELEGRAM_WEBHOOK_SECRET) {
     return { ok: false, description: 'Не заданы TELEGRAM_BOT_TOKEN / TELEGRAM_WEBHOOK_SECRET' };
   }

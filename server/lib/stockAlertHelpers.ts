@@ -73,12 +73,17 @@ export function normalizeStockAlertInput(raw: Record<string, unknown>): {
  * Уже есть заявка с этим контактом на этот товар? Email сравниваем без
  * учёта регистра, телефоны — по цифровому «скелету» (8-ки и 7-ки равны).
  */
-export function hasStockAlert(alerts: StockAlertItem[], productId: string, contact: string): boolean {
+export function hasStockAlert(
+  alerts: StockAlertItem[],
+  productId: string,
+  contact: string,
+): boolean {
   const wanted = contact.toLowerCase();
   const wantedDigits = digits(contact);
-  const wantedPhone = wantedDigits.length === 11 && wantedDigits.startsWith('8')
-    ? `7${wantedDigits.slice(1)}`
-    : wantedDigits;
+  const wantedPhone =
+    wantedDigits.length === 11 && wantedDigits.startsWith('8')
+      ? `7${wantedDigits.slice(1)}`
+      : wantedDigits;
 
   return alerts.some(
     (a) =>

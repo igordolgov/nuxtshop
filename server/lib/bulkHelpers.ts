@@ -77,9 +77,7 @@ export function normalizeIdList(raw: unknown): string[] | null {
  * поэтому переиспользуется normalizeCategories.
  * Бросает 400 при некорректных полях (клиент показывает текст сервера).
  */
-export function parseBulkPatch(
-  body: Record<string, unknown> | null | undefined,
-): BulkPatch {
+export function parseBulkPatch(body: Record<string, unknown> | null | undefined): BulkPatch {
   const patch: BulkPatch = { hasChanges: false };
 
   // inStock — строго boolean: JS-клиент шлёт true/false, ««1»/»yes»» — ошибка
@@ -111,15 +109,14 @@ export function parseBulkPatch(
     throw bad('Укажите хотя бы одну категорию для замены');
   }
   patch.setCategories = set ?? undefined;
-  patch.addCategories =
-    normalizeCategories({ categories: body?.addCategories }) ?? undefined;
-  patch.removeCategories =
-    normalizeCategories({ categories: body?.removeCategories }) ?? undefined;
+  patch.addCategories = normalizeCategories({ categories: body?.addCategories }) ?? undefined;
+  patch.removeCategories = normalizeCategories({ categories: body?.removeCategories }) ?? undefined;
 
   // Три режима правки категорий взаимоисключающи — иначе непонятно,
   // что значит «заменить на X и одновременно добавить Y»
-  const categoryModes = [patch.setCategories, patch.addCategories, patch.removeCategories]
-    .filter((v) => v !== undefined).length;
+  const categoryModes = [patch.setCategories, patch.addCategories, patch.removeCategories].filter(
+    (v) => v !== undefined,
+  ).length;
   if (categoryModes > 1) {
     throw bad('Выберите один режим изменения категорий: заменить, добавить или убрать');
   }
@@ -211,10 +208,7 @@ export function applyBulkPatch(
 }
 
 /** Удаляет выбранные товары, не мутируя входной массив */
-export function applyBulkDelete(
-  products: Product[],
-  ids: string[],
-): BulkDeleteResult {
+export function applyBulkDelete(products: Product[], ids: string[]): BulkDeleteResult {
   const idSet = new Set(ids.map(String));
   const remaining: Product[] = [];
   const deleted: Product[] = [];

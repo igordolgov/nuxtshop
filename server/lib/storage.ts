@@ -42,9 +42,7 @@ let lastKV: KVStore | null = null;
 const globalRef = globalThis as typeof globalThis & { __env__?: { KV?: KVStore } };
 
 function getKV(event: H3Event): KVStore | null {
-  const env = (event.context?.cloudflare?.env ?? globalRef.__env__) as
-    | { KV?: KVStore }
-    | undefined;
+  const env = (event.context?.cloudflare?.env ?? globalRef.__env__) as { KV?: KVStore } | undefined;
   if (env?.KV) {
     lastKV = env.KV;
     return env.KV;

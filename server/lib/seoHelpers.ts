@@ -8,9 +8,7 @@ import type { Product } from './productHelpers';
 
 // nitro объявляет useRuntimeConfig как глобаль; в vitest (окружение node)
 // её нет — поэтому проверяем typeof и оборачиваем в try/catch.
-declare function useRuntimeConfig(event?: unknown):
-  | { public?: { siteUrl?: string } }
-  | undefined;
+declare function useRuntimeConfig(event?: unknown): { public?: { siteUrl?: string } } | undefined;
 
 const DEV_FALLBACK = 'http://localhost:3000';
 
@@ -169,8 +167,7 @@ export function buildProductJsonLd(
   // префикса (strategy prefix_except_default)
   opts?: { localePrefix?: string },
 ): Record<string, unknown> {
-  const prefix =
-    opts?.localePrefix && opts.localePrefix !== 'ru' ? `/${opts.localePrefix}` : '';
+  const prefix = opts?.localePrefix && opts.localePrefix !== 'ru' ? `/${opts.localePrefix}` : '';
   const images = [product.image, ...(product.gallery ?? [])]
     .map((src) => absoluteImageUrl(src, siteUrl))
     .filter((url): url is string => Boolean(url))

@@ -10,7 +10,8 @@
 // Здесь только делегация под старым API (favorites.*) для совместимости.
 // ============================================
 
-import { useProducts, type CatalogProduct } from './useProducts';
+import { useProducts } from './useProducts';
+import type { CatalogProduct } from './catalogProduct';
 import {
   useFilters,
   type LocalizedCatalogProduct,

@@ -45,8 +45,7 @@ export function localizedProduct<T extends Record<string, unknown>>(
 
   const name = nonEmpty(product[`name${suffix}`]) ?? (product.name as T['name']);
   const description =
-    nonEmpty(product[`description${suffix}`]) ??
-    (product.description as T['description']);
+    nonEmpty(product[`description${suffix}`]) ?? (product.description as T['description']);
 
   const rawCategories = Array.isArray(product.categories)
     ? (product.categories as string[])
@@ -55,9 +54,7 @@ export function localizedProduct<T extends Record<string, unknown>>(
 
   let categories = rawCategories;
   if (Array.isArray(translated) && translated.length > 0) {
-    const localizedList = (translated as unknown[]).map((item) =>
-      nonEmpty(item),
-    );
+    const localizedList = (translated as unknown[]).map((item) => nonEmpty(item));
     if (rawCategories) {
       categories = rawCategories.map((raw, i) => localizedList[i] ?? raw);
     } else {
