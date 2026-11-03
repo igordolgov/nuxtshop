@@ -39,7 +39,7 @@ export const useNotifyQueue = () => {
   // ПОЗИЦИЯ СВЕРХУ ПО ЦЕНТРУ
   const notificationConfig = {
     position: {
-      top: '20px',        // Отступ сверху
+      top: 'calc(var(--header-height, 56px) + 8px)', // Под шапкой на всех экранах (аудит F5)
       left: '50%',        // Позиционирование по центру
       transform: 'translateX(-50%)' // Смещение для точного центрирования
     },

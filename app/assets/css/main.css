@@ -209,8 +209,10 @@ body {
   backdrop-filter: blur(10px);
   border: 1px solid rgb(255 255 255 / 0.1);
 
-  /* Десктоп: сверху по центру */
-  --notify-top: 20px;
+  /* Десктоп: сверху по центру, ПОД шапкой (56px + 8px) —
+     единая формула с мобилой; на планшетах (769–1023px)
+     --header-height = 104px, тост сам опустится ниже двухстрочной шапки */
+  --notify-top: calc(var(--header-height, 56px) + 8px);
   --notify-left: 50%;
   --notify-right: auto;
   --notify-shift: -50%;
