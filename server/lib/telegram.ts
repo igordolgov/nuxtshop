@@ -16,7 +16,7 @@ import { ORDER_STATUS_LABELS, type OrderStatus } from './orderHelpers';
 
 const API_BASE = 'https://api.telegram.org';
 
-interface TelegramEnv {
+export interface TelegramEnv {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_ADMIN_CHAT_ID?: string;
   TELEGRAM_ADMIN_USER_IDS?: string;

@@ -1,26 +1,28 @@
-// server/lib/telegramCommands.js
-// Слэш-команды бота (этап 3): /pending, /stats, /stock, /help.
+// server/lib/telegramCommands.ts
+// Слэш-команды бота: /pending, /stats, /stock, /help.
 // Вызываются из webhook-эндпоинта (после whitelist — команды
 // доступны только админам из TELEGRAM_ADMIN_USER_IDS).
 // Все данные — из orderHelpers/productHelpers (KV), без кэша.
 // ВАЖНО: readOrders — из orderHelpers (заказы),
 // readProducts — из productHelpers (товары); это разные модули.
 
-import { readOrders } from './orderHelpers';
-import { readProducts } from './productHelpers';
+import type { H3Event } from 'h3';
+import { readOrders, type Order } from './orderHelpers';
+import { readProducts, type Product } from './productHelpers';
+import type { TelegramEnv } from './telegram';
 
 // ⚙️ НАСТРОЙКА: порог «заканчивающийся товар» для /stock
 const LOW_STOCK_THRESHOLD = 5;
 
 /** Экранирование HTML: parse_mode='HTML' падает на «голых» < > & */
-function escapeHtml(str) {
+function escapeHtml(str: unknown): string {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
 
-function formatRub(n) {
+function formatRub(n: number | null | undefined): string {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
@@ -30,9 +32,9 @@ function formatRub(n) {
 
 // ─── Отправка (те же гарантии, что в telegram.ts) ───────────────────
 
-async function sendMessageSafe(env, text) {
+async function sendMessageSafe(env: TelegramEnv, text: string): Promise<boolean> {
   const { sendMessage } = await import('./telegram');
-  const ok = await sendMessage(env, env.TELEGRAM_ADMIN_CHAT_ID, text);
+  const ok = await sendMessage(env, env.TELEGRAM_ADMIN_CHAT_ID!, text);
   // Логируем ТОЛЬКО неудачу: успешные отправки шумели в stdout тестов,
   // а в проде полезная информация — сам текст отправленного сообщения.
   if (!ok) console.warn('[telegram-cmd] ответ на команду НЕ отправлен');
@@ -41,15 +43,15 @@ async function sendMessageSafe(env, text) {
 
 // ─── /pending: заказы, ожидающие обработки ──────────────────────────
 
-async function cmdPending(event, env) {
-  const orders = await readOrders(event);
+async function cmdPending(event: H3Event, env: TelegramEnv): Promise<boolean> {
+  const orders: Order[] = await readOrders(event);
   const pending = orders.filter((o) => o.status === 'new');
 
   if (pending.length === 0) {
     return sendMessageSafe(env, '🆕 Новых заказов нет. Всё обработано ✅');
   }
 
-  const lines = [`🆕 <b>Новых заказов: ${pending.length}</b>`, ''];
+  const lines: string[] = [`🆕 <b>Новых заказов: ${pending.length}</b>`, ''];
   for (const o of pending) {
     lines.push(
       `🧾 <b>${escapeHtml(o.id)}</b> — ${formatRub(o.total)}`,
@@ -65,20 +67,17 @@ async function cmdPending(event, env) {
 
 // ─── /stats: сводка за сегодня ──────────────────────────────────────
 
-async function cmdStats(event, env) {
-  const orders = await readOrders(event);
+async function cmdStats(event: H3Event, env: TelegramEnv): Promise<boolean> {
+  const orders: Order[] = await readOrders(event);
   const today = new Date().toISOString().slice(0, 10);
 
   const todayOrders = orders.filter((o) => o.createdAt.slice(0, 10) === today);
   const paid = todayOrders.filter((o) => o.status !== 'cancelled');
   const revenue = paid.reduce((sum, o) => sum + o.total, 0);
   const avg = paid.length ? Math.round(revenue / paid.length) : 0;
-  const items = paid.reduce(
-    (s, o) => s + o.items.reduce((n, i) => n + i.quantity, 0),
-    0,
-  );
+  const items = paid.reduce((s, o) => s + o.items.reduce((n, i) => n + i.quantity, 0), 0);
 
-  const lines = [
+  const lines: string[] = [
     `📊 <b>Статистика за ${today}</b>`,
     '',
     `🧾 Заказов: ${todayOrders.length} (из них отменено: ${todayOrders.length - paid.length})`,
@@ -92,21 +91,18 @@ async function cmdStats(event, env) {
 
 // ─── /stock: заканчивающиеся товары ─────────────────────────────────
 
-async function cmdStock(event, env) {
-  const products = await readProducts(event);
+async function cmdStock(event: H3Event, env: TelegramEnv): Promise<boolean> {
+  const products: Product[] = await readProducts(event);
   const low = products
     .filter((p) => (p.stockQuantity ?? 0) <= LOW_STOCK_THRESHOLD)
     .sort((a, b) => (a.stockQuantity ?? 0) - (b.stockQuantity ?? 0))
     .slice(0, 15);
 
   if (low.length === 0) {
-    return sendMessageSafe(
-      env,
-      `📦 Все товары в достатке (порог: ${LOW_STOCK_THRESHOLD} шт.)`,
-    );
+    return sendMessageSafe(env, `📦 Все товары в достатке (порог: ${LOW_STOCK_THRESHOLD} шт.)`);
   }
 
-  const lines = [`📦 <b>Заканчивающиеся товары (≤${LOW_STOCK_THRESHOLD} шт.):</b>`, ''];
+  const lines: string[] = [`📦 <b>Заканчивающиеся товары (≤${LOW_STOCK_THRESHOLD} шт.):</b>`, ''];
   for (const p of low) {
     const emoji = (p.stockQuantity ?? 0) === 0 ? '🔴' : (p.stockQuantity ?? 0) <= 2 ? '🟠' : '🟡';
     lines.push(`${emoji} ${escapeHtml(p.name)} — <b>${p.stockQuantity ?? 0} шт.</b>`);
@@ -117,7 +113,7 @@ async function cmdStock(event, env) {
 
 // ─── /help и /start: справка по командам ────────────────────────────
 
-async function cmdHelp(env) {
+async function cmdHelp(env: TelegramEnv): Promise<boolean> {
   return sendMessageSafe(
     env,
     [
@@ -133,16 +129,25 @@ async function cmdHelp(env) {
 
 // ─── Точка входа: разбор сообщения ──────────────────────────────────
 
+/** Форма сообщения Telegram, нужная для команд (текст; остальное не читаем) */
+export interface TelegramCommandMessage {
+  text?: string;
+}
+
 /**
  * Обрабатывает text-сообщение (команду) из webhook.
- * @returns {boolean} — распознана ли команда
+ * @returns распознана ли команда
  */
-export async function handleMessage(event, env, message) {
+export async function handleMessage(
+  event: H3Event,
+  env: TelegramEnv,
+  message: TelegramCommandMessage | null | undefined,
+): Promise<boolean> {
   const text = message?.text?.trim() ?? '';
   if (!text.startsWith('/')) return false;
 
   // /pending@nuxtshop_admin_bot → /pending (срезаем суффикс бота)
-  const command = text.split(/\s+/)[0].split('@')[0].toLowerCase();
+  const command = text.split(/\s+/)[0]!.split('@')[0]!.toLowerCase();
 
   switch (command) {
     case '/pending':

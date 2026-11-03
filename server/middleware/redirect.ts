@@ -1,9 +1,10 @@
-// server/middleware/redirect.js
+// server/middleware/redirect.ts
 // Серверный middleware: редиректы старых URL, товара с числовым ID на slug,
 // срез trailing slash, приведение путей к нижнему регистру.
 // Кроссплатформенно: без fs (на Cloudflare Workers его нет) —
 // товары читаются из KV через productHelpers.
 
+import type { H3Event } from 'h3'
 import { readProducts } from '../lib/productHelpers'
 
 /**
@@ -11,13 +12,13 @@ import { readProducts } from '../lib/productHelpers'
  * module-scope кэш с TTL — теперь общая логика живёт в cache.ts, а
  * readProducts уже кэширован (один запрос KV за TTL на изолят).
  */
-async function getProductsForRedirect(event) {
+async function getProductsForRedirect(event: H3Event) {
   try {
     const products = await readProducts(event)
     return Array.isArray(products) ? products : []
   } catch (error) {
     // KV недоступен — редиректы товаров деградируют, запрос не ломаем
-    console.error('❌ Ошибка чтения товаров для редиректов:', error.message)
+    console.error('❌ Ошибка чтения товаров для редиректов:', error instanceof Error ? error.message : error)
     return []
   }
 }
@@ -28,7 +29,7 @@ async function getProductsForRedirect(event) {
  * Каталог в проекте — главная '/'; страниц /products, /checkout, /contact,
  * /promotions НЕТ (проверено по app/pages). Не возвращать их в карту.
  */
-const STATIC_REDIRECTS = {
+const STATIC_REDIRECTS: Record<string, string> = {
   // Старые категории → каталог (главная)
   '/catalog': '/',
   '/shop': '/',
@@ -47,7 +48,7 @@ const STATIC_REDIRECTS = {
 
 export default defineEventHandler(async (event) => {
   // event.path вместо event.node.req.url — работает на любом рантайме Nitro
-  const pathname = event.path.split('?')[0].split('#')[0]
+  const pathname = event.path.split('?')[0]!.split('#')[0]!
 
   // 1. Статические редиректы
   const staticRedirect = STATIC_REDIRECTS[pathname]
@@ -60,10 +61,10 @@ export default defineEventHandler(async (event) => {
   const oldProductMatch = pathname.match(/^\/product\/(\d+)$/)
 
   if (oldProductMatch) {
-    const id = oldProductMatch[1]
+    const id = oldProductMatch[1]!
 
     const products = await getProductsForRedirect(event)
-    const product = products.find((p) => String(p.id) === id || p.id === Number(id))
+    const product = products.find((p) => String(p.id) === id)
 
     if (product?.slug) {
       const newUrl = `/product/${product.slug}`

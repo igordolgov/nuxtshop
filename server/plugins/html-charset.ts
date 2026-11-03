@@ -3,7 +3,7 @@
 // Проблема: проверяльщики скорости (Lighthouse/PSI, GTmetrix, PR-CY) ругались
 // «Требуется задать кодировку символов» на редиректах. Обычные SSR-страницы
 // отдаются Nitro'ом как «text/html;charset=utf-8», но h3 sendRedirect()
-// (наш server/middleware/redirect.js и SSR navigateTo в auth-middlewares)
+// (наш server/middleware/redirect.ts и SSR navigateTo в auth-middlewares)
 // жёстко ставит «Content-Type: text/html» без charset. Хук render:response
 // (html-cache-control.ts) сюда не доходит: редирект завершает запрос
 // до конвейера рендеринга.

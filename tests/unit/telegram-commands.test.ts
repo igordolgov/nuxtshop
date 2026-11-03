@@ -1,4 +1,4 @@
-// Тесты server/lib/telegramCommands.js — слэш-команды админ-бота.
+// Тесты server/lib/telegramCommands.ts — слэш-команды админ-бота.
 // Мокируются KV (как в остальных тестах) и модуль telegram (sendMessage):
 // ловим ТРЕТИЙ аргумент sendMessage(env, chatId, text) — текст ответа.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
