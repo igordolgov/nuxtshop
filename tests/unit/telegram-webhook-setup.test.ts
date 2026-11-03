@@ -18,10 +18,11 @@ afterEach(() => {
 
 describe('setWebhook', () => {
   it('шлёт url, secret_token и allowed_updates; description от Telegram пробрасывается', async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(JSON.stringify({ ok: true, result: true, description: 'Webhook was set' }), {
-        status: 200,
-      }),
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ ok: true, result: true, description: 'Webhook was set' }), {
+          status: 200,
+        }),
     );
     vi.stubGlobal('fetch', fetchMock);
 
@@ -50,11 +51,16 @@ describe('setWebhook', () => {
   });
 
   it('отказ Bot API (битый секрет) — ok:false с description от Telegram', async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(
-        JSON.stringify({ ok: false, error_code: 400, description: 'Bad Request: bad secret token' }),
-        { status: 400 },
-      ),
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            ok: false,
+            error_code: 400,
+            description: 'Bad Request: bad secret token',
+          }),
+          { status: 400 },
+        ),
     );
     vi.stubGlobal('fetch', fetchMock);
 
@@ -77,19 +83,20 @@ describe('setWebhook', () => {
 
 describe('getWebhookInfo', () => {
   it('разбирает WebhookInfo: url, очередь, последняя ошибка', async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          ok: true,
-          result: {
-            url: 'https://shop.example.ru/api/telegram/webhook',
-            pending_update_count: 2,
-            last_error_date: 1700000000,
-            last_error_message: 'Wrong response from the webhook',
-          },
-        }),
-        { status: 200 },
-      ),
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            result: {
+              url: 'https://shop.example.ru/api/telegram/webhook',
+              pending_update_count: 2,
+              last_error_date: 1700000000,
+              last_error_message: 'Wrong response from the webhook',
+            },
+          }),
+          { status: 200 },
+        ),
     );
     vi.stubGlobal('fetch', fetchMock);
 

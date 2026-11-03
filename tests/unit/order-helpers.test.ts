@@ -7,9 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const kvStore = new Map<string, unknown>();
 
 vi.mock('../../server/lib/storage', () => ({
-  kvGetJSON: vi.fn(async (_event: unknown, key: string) =>
-    (kvStore.get(key) as unknown) ?? null,
-  ),
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => (kvStore.get(key) as unknown) ?? null),
   kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
     kvStore.set(key, structuredClone(value));
   }),
@@ -172,7 +170,12 @@ describe('createOrder — корзина и склад', () => {
   it('дубликаты корзины схлопываются по id (2+3 = 5 шт.)', async () => {
     const order = await createOrder(
       event,
-      makeInput({ items: [{ id: '1', quantity: 2 }, { id: '1', quantity: 3 }] }),
+      makeInput({
+        items: [
+          { id: '1', quantity: 2 },
+          { id: '1', quantity: 3 },
+        ],
+      }),
     );
     expect(order.items).toHaveLength(1);
     expect(order.items[0]!.quantity).toBe(5);
@@ -202,7 +205,10 @@ describe('createOrder — корзина и склад', () => {
   it('запрос больше склада — 409 с названием товара', async () => {
     await expect(
       createOrder(event, makeInput({ items: [{ id: '1', quantity: 6 }] })),
-    ).rejects.toMatchObject({ statusCode: 409, message: expect.stringContaining('Тестовый товар') });
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: expect.stringContaining('Тестовый товар'),
+    });
   });
 
   it('неизвестный товар — 400', async () => {
@@ -212,12 +218,12 @@ describe('createOrder — корзина и склад', () => {
   });
 
   it('недопустимый способ доставки/оплаты — 400', async () => {
-    await expect(
-      createOrder(event, makeInput({ deliveryMethod: 'дрон' })),
-    ).rejects.toMatchObject({ statusCode: 400 });
-    await expect(
-      createOrder(event, makeInput({ paymentMethod: 'крипта' })),
-    ).rejects.toMatchObject({ statusCode: 400 });
+    await expect(createOrder(event, makeInput({ deliveryMethod: 'дрон' }))).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    await expect(createOrder(event, makeInput({ paymentMethod: 'крипта' }))).rejects.toMatchObject({
+      statusCode: 400,
+    });
   });
 });
 
@@ -305,9 +311,9 @@ describe('персистентность и статусы', () => {
       statusCode: 404,
     });
     const created = await createOrder(event, makeInput());
-    await expect(
-      updateOrderStatus(event, created.id, 'взломан' as never),
-    ).rejects.toMatchObject({ statusCode: 400 });
+    await expect(updateOrderStatus(event, created.id, 'взломан' as never)).rejects.toMatchObject({
+      statusCode: 400,
+    });
   });
 
   it('writeOrders отклоняет не-массив', async () => {

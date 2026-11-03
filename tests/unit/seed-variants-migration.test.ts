@@ -1,10 +1,7 @@
 // Тесты migrateSeedVariants: долив сидовых вариантов товарам без них —
 // в памяти, без перезаписи админских данных.
 import { describe, expect, it } from 'vitest';
-import {
-  migrateSeedVariants,
-  type Product,
-} from '../../server/lib/productHelpers';
+import { migrateSeedVariants, type Product } from '../../server/lib/productHelpers';
 
 function product(overrides: Partial<Product> = {}): Product {
   return {

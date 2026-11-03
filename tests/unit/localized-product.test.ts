@@ -3,15 +3,9 @@
 // (приём переводов PUT/POST: отсутствие поля / пустая строка / значение).
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildCategoryLabelMap,
-  localizedProduct,
-} from '../../app/utils/localizedProduct';
+import { buildCategoryLabelMap, localizedProduct } from '../../app/utils/localizedProduct';
 import { localizedProduct as localizedProductServer } from '../../server/lib/localizedProduct';
-import {
-  applyLocalizedPatch,
-  extractLocalizedPatch,
-} from '../../server/lib/productHelpers';
+import { applyLocalizedPatch, extractLocalizedPatch } from '../../server/lib/productHelpers';
 
 // ─── localizedProduct ─────────────────────────────────────────────────
 
@@ -32,7 +26,12 @@ describe('localizedProduct', () => {
 
   it('en: перевод есть — берутся переводные поля', () => {
     const view = localizedProduct(
-      { ...baseProduct, nameEn: 'Smartphone', descriptionEn: 'Good phone', categoriesEn: ['Electronics', 'Phones'] },
+      {
+        ...baseProduct,
+        nameEn: 'Smartphone',
+        descriptionEn: 'Good phone',
+        categoriesEn: ['Electronics', 'Phones'],
+      },
       'en',
     );
     expect(view.name).toBe('Smartphone');
@@ -59,18 +58,12 @@ describe('localizedProduct', () => {
   });
 
   it('es: частичный перевод категорий — поэлементный фолбэк по индексу', () => {
-    const view = localizedProduct(
-      { ...baseProduct, categoriesEs: ['Electrónica'] },
-      'es',
-    );
+    const view = localizedProduct({ ...baseProduct, categoriesEs: ['Electrónica'] }, 'es');
     expect(view.categories).toEqual(['Electrónica', 'Телефоны']);
   });
 
   it('es: без базовых категорий — только непустые переводы', () => {
-    const view = localizedProduct(
-      { id: '2', categoriesEs: ['Electrónica', ''] },
-      'es',
-    );
+    const view = localizedProduct({ id: '2', categoriesEs: ['Electrónica', ''] }, 'es');
     expect(view.categories).toEqual(['Electrónica']);
     expect(view.categoriesRaw).toEqual([]);
   });
@@ -203,8 +196,6 @@ describe('server/app copies are in sync', () => {
   ];
 
   it.each(cases)('совпадение вывода для %j, локаль %s', (input, locale) => {
-    expect(localizedProductServer(input, locale)).toEqual(
-      localizedProduct(input, locale),
-    );
+    expect(localizedProductServer(input, locale)).toEqual(localizedProduct(input, locale));
   });
 });

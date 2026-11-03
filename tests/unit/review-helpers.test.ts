@@ -62,7 +62,11 @@ beforeEach(() => {
 
 describe('normalizeReviewInput', () => {
   it('валидирует и триммит корректный отзыв', () => {
-    const clean = normalizeReviewInput({ ...validInput, author: '  Иван  ', text: '  Отличная кружка  ' });
+    const clean = normalizeReviewInput({
+      ...validInput,
+      author: '  Иван  ',
+      text: '  Отличная кружка  ',
+    });
     expect(clean).toEqual({
       productId: '7',
       author: 'Иван',
@@ -74,7 +78,9 @@ describe('normalizeReviewInput', () => {
 
   it('productId обязателен', () => {
     expect(() => normalizeReviewInput({ ...validInput, productId: '' })).toThrow(/Не указан товар/);
-    expect(() => normalizeReviewInput({ ...validInput, productId: undefined })).toThrow(/Не указан товар/);
+    expect(() => normalizeReviewInput({ ...validInput, productId: undefined })).toThrow(
+      /Не указан товар/,
+    );
   });
 
   it('имя: от 2 до 40 символов', () => {
@@ -92,7 +98,9 @@ describe('normalizeReviewInput', () => {
 
   it('текст: от 10 до 600 символов', () => {
     expect(() => normalizeReviewInput({ ...validInput, text: 'коротко' })).toThrow(/Текст отзыва/);
-    expect(() => normalizeReviewInput({ ...validInput, text: 'Б'.repeat(601) })).toThrow(/Текст отзыва/);
+    expect(() => normalizeReviewInput({ ...validInput, text: 'Б'.repeat(601) })).toThrow(
+      /Текст отзыва/,
+    );
   });
 
   it('ошибка — экземпляр ReviewValidationError (endpoint отдаст 400)', () => {
@@ -230,7 +238,9 @@ describe('normalizeReviewPhotos', () => {
   });
 
   it('не-картинка/не data-URI — ошибка с понятным текстом', () => {
-    expect(() => normalizeReviewPhotos(['https://example.com/a.webp'])).toThrow(/webp, jpeg или png/);
+    expect(() => normalizeReviewPhotos(['https://example.com/a.webp'])).toThrow(
+      /webp, jpeg или png/,
+    );
     expect(() => normalizeReviewPhotos([photo(10, 'gif')])).toThrow(/webp, jpeg или png/);
     expect(() => normalizeReviewPhotos(['мусор'])).toThrow(/webp, jpeg или png/);
     expect(() => normalizeReviewPhotos([42])).toThrow(/Некорректный список|webp/);

@@ -72,8 +72,8 @@ describe('storage: KV доступен внутренним $fetch без event.
   });
 
   it('биндинг из контекста события приоритетнее глобального __env__', async () => {
-    const kvGlobal = makeKV({ 'k': 'global' });
-    const kvLocal = makeKV({ 'k': 'local' });
+    const kvGlobal = makeKV({ k: 'global' });
+    const kvLocal = makeKV({ k: 'local' });
     (globalThis as GlobalWithEnv).__env__ = { KV: kvGlobal };
 
     const eventWithKV = {

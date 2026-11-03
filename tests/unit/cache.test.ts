@@ -54,9 +54,7 @@ describe('cached — single-flight', () => {
           release = resolve;
         }),
     );
-    const all = Promise.all(
-      Array.from({ length: 5 }, () => cached('flight', 1000, loader)),
-    );
+    const all = Promise.all(Array.from({ length: 5 }, () => cached('flight', 1000, loader)));
     await sleep(10);
     release(['x']);
     const results = await all;

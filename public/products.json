@@ -4,10 +4,7 @@
     "name": "Смартфон Samsung Galaxy S23",
     "description": "Флагманский смартфон с мощным процессором и отличной камерой. Идеален для работы и развлечений.",
     "price": 79990,
-    "categories": [
-      "Электроника",
-      "Смартфоны"
-    ],
+    "categories": ["Электроника", "Смартфоны"],
     "image": "/images/products/photo-1511707171634-5f897ff02aa9.webp",
     "gallery": [
       "/images/products/photo-1511707171634-5f897ff02aa9.webp",
@@ -25,10 +22,7 @@
     "name": "Ноутбук Apple MacBook Pro 16",
     "description": "Профессиональный ноутбук для творческих задач. Высокая производительность и качественный дисплей.",
     "price": 249990,
-    "categories": [
-      "Электроника",
-      "Ноутбуки"
-    ],
+    "categories": ["Электроника", "Ноутбуки"],
     "image": "/images/products/photo-1541807084-5c52b6b3adef.webp",
     "gallery": [
       "/images/products/photo-1541807084-5c52b6b3adef.webp",
@@ -45,10 +39,7 @@
     "name": "Беспроводные наушники Sony WH-1000XM4",
     "description": "Наушники с шумоподавлением и премиальным звуком. До 30 часов работы от аккумулятора.",
     "price": 29990,
-    "categories": [
-      "Электроника",
-      "Аудиотехника"
-    ],
+    "categories": ["Электроника", "Аудиотехника"],
     "image": "/images/products/photo-1505740420928-5e560c06d30e.webp",
     "gallery": [
       "/images/products/photo-1505740420928-5e560c06d30e.webp",
@@ -65,10 +56,7 @@
     "name": "Фотокамера Canon EOS R6",
     "description": "Зеркальная камера для профессиональной съемки. Быстрый автофокус и стабилизация изображения.",
     "price": 189990,
-    "categories": [
-      "Электроника",
-      "Фототехника"
-    ],
+    "categories": ["Электроника", "Фототехника"],
     "image": "/images/products/photo-1502920917128-1aa500764cbd.webp",
     "gallery": [
       "/images/products/photo-1502920917128-1aa500764cbd.webp",
@@ -85,10 +73,7 @@
     "name": "Умные часы Apple Watch Series 9",
     "description": "Смарт-часы с расширенными функциями здоровья и фитнеса. Водонепроницаемость и GPS.",
     "price": 45990,
-    "categories": [
-      "Электроника",
-      "Умные часы"
-    ],
+    "categories": ["Электроника", "Умные часы"],
     "image": "/images/products/photo-1544117519-31a4b719223d.webp",
     "gallery": [
       "/images/products/photo-1523275335684-37898b6baf30.webp",
@@ -105,10 +90,7 @@
     "name": "Игровая консоль PlayStation 5",
     "description": "Новейшая игровая консоль с поддержкой 4K и 120 FPS. В комплекте контроллер DualSense.",
     "price": 69990,
-    "categories": [
-      "Электроника",
-      "Игровые консоли"
-    ],
+    "categories": ["Электроника", "Игровые консоли"],
     "image": "/images/products/photo-1606813907291-d86efa9b94db.webp",
     "gallery": [
       "/images/products/photo-1606813907291-d86efa9b94db.webp",
@@ -125,10 +107,7 @@
     "name": "Джинсы классические синие",
     "description": "Классические джинсы прямого кроя из качественного денима. Универсальная модель на каждый день.",
     "price": 4990,
-    "categories": [
-      "Одежда",
-      "Джинсы"
-    ],
+    "categories": ["Одежда", "Джинсы"],
     "image": "/images/products/photo-1542272604-787c3835535d.webp",
     "gallery": [
       "/images/products/photo-1542272604-787c3835535d.webp",
@@ -145,10 +124,7 @@
     "name": "Кроссовки Nike Air Max 270",
     "description": "Спортивные кроссовки с технологией Air Max для максимального комфорта при ходьбе и беге.",
     "price": 12990,
-    "categories": [
-      "Одежда",
-      "Обувь"
-    ],
+    "categories": ["Одежда", "Обувь"],
     "image": "/images/products/photo-1542291026-7eec264c27ff.webp",
     "gallery": [
       "/images/products/photo-1542291026-7eec264c27ff.webp",
@@ -166,10 +142,7 @@
     "name": "Футболка хлопковая белая",
     "description": "Классическая футболка из 100% хлопка. Удобная и дышащая ткань, подходит для повседневной носки.",
     "price": 1990,
-    "categories": [
-      "Одежда",
-      "Футболки"
-    ],
+    "categories": ["Одежда", "Футболки"],
     "image": "/images/products/photo-1521572163474-6864f9cf17ab.webp",
     "gallery": [
       "/images/products/photo-1521572163474-6864f9cf17ab.webp",
@@ -186,10 +159,7 @@
     "name": "Куртка зимняя пуховая",
     "description": "Теплая зимняя куртка с пуховым наполнителем. Защита от ветра и влаги, идеальна для холодной погоды.",
     "price": 15990,
-    "categories": [
-      "Одежда",
-      "Куртки"
-    ],
+    "categories": ["Одежда", "Куртки"],
     "image": "/images/products/photo-920000100005-0188f26b39.webp",
     "gallery": [
       "/images/products/photo-920000100005-0188f26b39.webp",
@@ -205,10 +175,7 @@
     "name": "Кофеварка автоматическая DeLonghi",
     "description": "Автоматическая кофеварка для приготовления эспрессо, капучино и латте. Встроенная кофемолка.",
     "price": 45990,
-    "categories": [
-      "Для дома",
-      "Кухня"
-    ],
+    "categories": ["Для дома", "Кухня"],
     "image": "/images/products/photo-920000100008-ce9596f84f.webp",
     "gallery": [
       "/images/products/photo-920000100008-ce9596f84f.webp",
@@ -225,14 +192,9 @@
     "name": "Пылесос робот Xiaomi",
     "description": "Умный робот-пылесос с навигацией и влажной уборкой. Управление через приложение, автоматическая зарядка.",
     "price": 29990,
-    "categories": [
-      "Для дома",
-      "Техника для уборки"
-    ],
+    "categories": ["Для дома", "Техника для уборки"],
     "image": "/images/products/photo-920000100012-b59b25fbd2.webp",
-    "gallery": [
-      "/images/products/photo-920000100012-b59b25fbd2.webp"
-    ],
+    "gallery": ["/images/products/photo-920000100012-b59b25fbd2.webp"],
     "inStock": true,
     "isFavorite": true,
     "stockQuantity": 14,
@@ -244,14 +206,9 @@
     "name": "Настольная лампа LED",
     "description": "Современная настольная лампа с регулируемой яркостью и цветовой температурой. Сенсорное управление.",
     "price": 3490,
-    "categories": [
-      "Для дома",
-      "Освещение"
-    ],
+    "categories": ["Для дома", "Освещение"],
     "image": "/images/products/photo-1507473885765-e6ed057f782c.webp",
-    "gallery": [
-      "/images/products/photo-1507473885765-e6ed057f782c.webp"
-    ],
+    "gallery": ["/images/products/photo-1507473885765-e6ed057f782c.webp"],
     "inStock": true,
     "stockQuantity": 22,
     "slug": "nastolnaya-lampa-led",
@@ -262,10 +219,7 @@
     "name": "Книга 'Искусство программирования'",
     "description": "Фундаментальный труд Дональда Кнута о компьютерных алгоритмах и программировании.",
     "price": 5990,
-    "categories": [
-      "Книги",
-      "Программирование"
-    ],
+    "categories": ["Книги", "Программирование"],
     "image": "/images/products/photo-1544716278-ca5e3f4abd8c.webp",
     "gallery": [
       "/images/products/photo-1544716278-ca5e3f4abd8c.webp",
@@ -283,10 +237,7 @@
     "name": "Велосипед горный Trek",
     "description": "Горный велосипед с алюминиевой рамой, амортизационной вилкой и 21 скоростью. Для активного отдыха.",
     "price": 45990,
-    "categories": [
-      "Спорт",
-      "Велосипеды"
-    ],
+    "categories": ["Спорт", "Велосипеды"],
     "image": "/images/products/photo-1485965120184-e220f721d03e.webp",
     "gallery": [
       "/images/products/photo-1485965120184-e220f721d03e.webp",
@@ -302,11 +253,7 @@
     "name": "Смарт-часы Garmin Fenix 7",
     "description": "Многофункциональные смарт-часы для спорта и активного образа жизни с GPS и пульсоксиметром.",
     "price": 59990,
-    "categories": [
-      "Электроника",
-      "Умные часы",
-      "Спорт"
-    ],
+    "categories": ["Электроника", "Умные часы", "Спорт"],
     "image": "/images/products/photo-920000100014-b358fd0903.webp",
     "gallery": [
       "/images/products/photo-920000100014-b358fd0903.webp",
@@ -322,10 +269,7 @@
     "name": "Игровая мышь Razer DeathAdder",
     "description": "Эргономичная игровая мышь с оптическим сенсором 20000 DPI и RGB подсветкой.",
     "price": 6990,
-    "categories": [
-      "Электроника",
-      "Игровые аксессуары"
-    ],
+    "categories": ["Электроника", "Игровые аксессуары"],
     "image": "/images/products/photo-920000100016-176350502f.webp",
     "gallery": [
       "/images/products/photo-920000100016-176350502f.webp",
@@ -342,10 +286,7 @@
     "name": "Клавиатура механическая Logitech",
     "description": "Механическая клавиатура с переключателями Romer-G и RGB подсветкой. Для геймеров и программистов.",
     "price": 12990,
-    "categories": [
-      "Электроника",
-      "Игровые аксессуары"
-    ],
+    "categories": ["Электроника", "Игровые аксессуары"],
     "image": "/images/products/photo-920000100019-f68db1f95b.webp",
     "gallery": [
       "/images/products/photo-920000100019-f68db1f95b.webp",
@@ -361,10 +302,7 @@
     "name": "Монитор Dell 27' 4K",
     "description": "Профессиональный монитор с разрешением 4K, цветовым охватом sRGB 99% и эргономичной подставкой.",
     "price": 45990,
-    "categories": [
-      "Электроника",
-      "Компьютеры"
-    ],
+    "categories": ["Электроника", "Компьютеры"],
     "image": "/images/products/photo-920000100022-e3ff617e08.webp",
     "gallery": [
       "/images/products/photo-920000100022-e3ff617e08.webp",
@@ -381,10 +319,7 @@
     "name": "Внешний жесткий диск Seagate 2TB",
     "description": "Портативный жесткий диск с USB 3.0 для хранения данных. Компактный и надежный.",
     "price": 5990,
-    "categories": [
-      "Электроника",
-      "Компьютеры"
-    ],
+    "categories": ["Электроника", "Компьютеры"],
     "image": "/images/products/photo-1597852074816-d933c7d2b988.webp",
     "gallery": [
       "/images/products/photo-1597852074816-d933c7d2b988.webp",
@@ -401,10 +336,7 @@
     "name": "Электрический чайник Bosch",
     "description": "Стеклянный электрический чайник с подсветкой и функцией поддержания температуры.",
     "price": 3490,
-    "categories": [
-      "Для дома",
-      "Кухня"
-    ],
+    "categories": ["Для дома", "Кухня"],
     "image": "/images/products/photo-920000100028-dd1ecea0c2.webp",
     "gallery": [
       "/images/products/photo-920000100028-dd1ecea0c2.webp",
@@ -420,10 +352,7 @@
     "name": "Блендер погружной Braun",
     "description": "Мощный погружной блендер с несколькими насадками для приготовления супов, смузи и соусов.",
     "price": 5990,
-    "categories": [
-      "Для дома",
-      "Кухня"
-    ],
+    "categories": ["Для дома", "Кухня"],
     "image": "/images/products/photo-920000100030-1167308a72.webp",
     "gallery": [
       "/images/products/photo-920000100030-1167308a72.webp",
@@ -439,14 +368,9 @@
     "name": "Набор посуды Tefal",
     "description": "Набор из 6 предметов антипригарной посуды с керамическим покрытием. Подходит для всех типов плит.",
     "price": 12990,
-    "categories": [
-      "Для дома",
-      "Кухня"
-    ],
+    "categories": ["Для дома", "Кухня"],
     "image": "/images/products/photo-920000100033-7e7a88c516.webp",
-    "gallery": [
-      "/images/products/photo-920000100033-7e7a88c516.webp"
-    ],
+    "gallery": ["/images/products/photo-920000100033-7e7a88c516.webp"],
     "inStock": true,
     "isFavorite": true,
     "stockQuantity": 9,
@@ -458,10 +382,7 @@
     "name": "Офисное кресло ErgoChair",
     "description": "Эргономичное офисное кресло с поддержкой поясницы, регулировкой высоты и подлокотников.",
     "price": 15990,
-    "categories": [
-      "Для дома",
-      "Офис"
-    ],
+    "categories": ["Для дома", "Офис"],
     "image": "/images/products/photo-920000100034-8011a646c3.webp",
     "gallery": [
       "/images/products/photo-920000100034-8011a646c3.webp",
@@ -477,10 +398,7 @@
     "name": "Беспроводная колонка JBL Flip 6",
     "description": "Портативная Bluetooth колонка с водонепроницаемостью и мощным звуком. До 12 часов работы.",
     "price": 8990,
-    "categories": [
-      "Электроника",
-      "Аудиотехника"
-    ],
+    "categories": ["Электроника", "Аудиотехника"],
     "image": "/images/products/photo-1608043152269-423dbba4e7e1.webp",
     "gallery": [
       "/images/products/photo-1608043152269-423dbba4e7e1.webp",
@@ -498,11 +416,7 @@
     "name": "Фитнес-трекер Xiaomi Mi Band 8",
     "description": "Фитнес-браслет с мониторингом сна, пульса и активности. Водонепроницаемость и длительная работа.",
     "price": 3990,
-    "categories": [
-      "Электроника",
-      "Умные часы",
-      "Спорт"
-    ],
+    "categories": ["Электроника", "Умные часы", "Спорт"],
     "image": "/images/products/photo-1575311373937-040b8e1fd5b6.webp",
     "gallery": [
       "/images/products/photo-1575311373937-040b8e1fd5b6.webp",
@@ -519,10 +433,7 @@
     "name": "Игровая приставка Nintendo Switch",
     "description": "Гибридная игровая консоль для дома и путешествий. В комплекте Joy-Con контроллеры.",
     "price": 29990,
-    "categories": [
-      "Электроника",
-      "Игровые консоли"
-    ],
+    "categories": ["Электроника", "Игровые консоли"],
     "image": "/images/products/photo-920000100040-d9bad6c82a.webp",
     "gallery": [
       "/images/products/photo-920000100041-7a21749eea.webp",
@@ -539,10 +450,7 @@
     "name": "Планшет Apple iPad Air",
     "description": "Мощный планшет с чипом M1, дисплеем Liquid Retina и поддержкой Apple Pencil.",
     "price": 69990,
-    "categories": [
-      "Электроника",
-      "Планшеты"
-    ],
+    "categories": ["Электроника", "Планшеты"],
     "image": "/images/products/photo-1544244015-0df4b3ffc6b0.webp",
     "gallery": [
       "/images/products/photo-1544244015-0df4b3ffc6b0.webp",
@@ -558,14 +466,9 @@
     "name": "Электросамокат Xiaomi Pro 2",
     "description": "Городской электросамокат с запасом хода 45 км, максимальной скоростью 25 км/ч и складной конструкцией.",
     "price": 34990,
-    "categories": [
-      "Электроника",
-      "Транспорт"
-    ],
+    "categories": ["Электроника", "Транспорт"],
     "image": "/images/products/photo-920000100042-cfe3edd150.webp",
-    "gallery": [
-      "/images/products/photo-920000100042-cfe3edd150.webp"
-    ],
+    "gallery": ["/images/products/photo-920000100042-cfe3edd150.webp"],
     "inStock": true,
     "stockQuantity": 5,
     "updatedAt": "2026-02-10T22:25:04.910Z",
@@ -576,11 +479,7 @@
     "name": "Умная колонка Яндекс Станция",
     "description": "Умная колонка с голосовым помощником Алисой, поддержкой стриминговых сервисов и управлением умным домом.",
     "price": 12990,
-    "categories": [
-      "Электроника",
-      "Аудиотехника",
-      "Умный дом"
-    ],
+    "categories": ["Электроника", "Аудиотехника", "Умный дом"],
     "image": "/images/products/photo-920000100043-e39c94c4f3.webp",
     "gallery": [
       "/images/products/photo-920000100043-e39c94c4f3.webp",
@@ -599,9 +498,7 @@
     "description": "одвлыа одфылоав дылова дылоав длоыад оыдлвао дылва",
     "price": 17777,
     "image": "/images/products/product-31-main-1771520260558.webp",
-    "categories": [
-      "новые"
-    ],
+    "categories": ["новые"],
     "gallery": [
       "/images/products/product-31-main-1771520260558.webp",
       "/images/products/product-31-gallery-0-1788296766664.webp"

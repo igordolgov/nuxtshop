@@ -7,9 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const kvStore = new Map<string, unknown>();
 
 vi.mock('../../server/lib/storage', () => ({
-  kvGetJSON: vi.fn(async (_event: unknown, key: string) =>
-    (kvStore.get(key) as unknown) ?? null,
-  ),
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => (kvStore.get(key) as unknown) ?? null),
   kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
     kvStore.set(key, structuredClone(value));
   }),

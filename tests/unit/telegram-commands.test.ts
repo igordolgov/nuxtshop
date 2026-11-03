@@ -6,9 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const kvStore = new Map<string, unknown>();
 
 vi.mock('../../server/lib/storage', () => ({
-  kvGetJSON: vi.fn(async (_event: unknown, key: string) =>
-    (kvStore.get(key) as unknown) ?? null,
-  ),
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => (kvStore.get(key) as unknown) ?? null),
   kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
     kvStore.set(key, structuredClone(value));
   }),
@@ -71,7 +69,14 @@ describe('handleMessage — разбор команд', () => {
 describe('/pending — новые заказы', () => {
   it('нет новых — «всё обработано»', async () => {
     kvStore.set('data:orders', [
-      { id: 'ORD-1', status: 'delivered', total: 100, items: [], customer: {}, createdAt: '2026-01-01T10:00' },
+      {
+        id: 'ORD-1',
+        status: 'delivered',
+        total: 100,
+        items: [],
+        customer: {},
+        createdAt: '2026-01-01T10:00',
+      },
     ]);
     await handleMessage(event, env, { text: '/pending' });
     expect(lastReply()).toContain('Новых заказов нет');
@@ -111,10 +116,31 @@ describe('/stats — статистика за сегодня', () => {
   it('выручка и средний чек по не-отменённым заказам', async () => {
     const today = new Date().toISOString();
     kvStore.set('data:orders', [
-      { id: 'A', status: 'new', total: 1000, items: [{ quantity: 1 }], customer: {}, createdAt: today },
-      { id: 'B', status: 'delivered', total: 500, items: [{ quantity: 2 }], customer: {}, createdAt: today },
+      {
+        id: 'A',
+        status: 'new',
+        total: 1000,
+        items: [{ quantity: 1 }],
+        customer: {},
+        createdAt: today,
+      },
+      {
+        id: 'B',
+        status: 'delivered',
+        total: 500,
+        items: [{ quantity: 2 }],
+        customer: {},
+        createdAt: today,
+      },
       { id: 'C', status: 'cancelled', total: 777, items: [], customer: {}, createdAt: today },
-      { id: 'D', status: 'new', total: 9999, items: [], customer: {}, createdAt: '2020-01-01T00:00:00.000Z' },
+      {
+        id: 'D',
+        status: 'new',
+        total: 9999,
+        items: [],
+        customer: {},
+        createdAt: '2020-01-01T00:00:00.000Z',
+      },
     ]);
     await handleMessage(event, env, { text: '/stats' });
     const reply = lastReply();

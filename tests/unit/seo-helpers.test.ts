@@ -215,7 +215,8 @@ describe('buildProductJsonLd — aggregateRating (отзывы)', () => {
   it('без отзывов/с нулями — aggregateRating не ставится', () => {
     expect(buildProductJsonLd(product, 'https://shop.ru').aggregateRating).toBeUndefined();
     expect(
-      buildProductJsonLd(product, 'https://shop.ru', 'RUB', { count: 0, average: 0 }).aggregateRating,
+      buildProductJsonLd(product, 'https://shop.ru', 'RUB', { count: 0, average: 0 })
+        .aggregateRating,
     ).toBeUndefined();
     expect(
       buildProductJsonLd(product, 'https://shop.ru', 'RUB', null).aggregateRating,

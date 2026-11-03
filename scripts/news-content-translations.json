@@ -197,10 +197,30 @@
       }
     ],
     "stats": [
-      { "valueEn": "8 years", "valueEs": "8 años", "labelEn": "in the tech market", "labelEs": "en el mercado de tecnología" },
-      { "valueEn": "12,000+", "valueEs": "12 000+", "labelEn": "happy customers", "labelEs": "clientes satisfechos" },
-      { "valueEn": "30+", "valueEs": "30+", "labelEn": "brands in the catalog", "labelEs": "marcas en el catálogo" },
-      { "valueEn": "4", "valueEs": "4", "labelEn": "pickup points", "labelEs": "puntos de recogida" }
+      {
+        "valueEn": "8 years",
+        "valueEs": "8 años",
+        "labelEn": "in the tech market",
+        "labelEs": "en el mercado de tecnología"
+      },
+      {
+        "valueEn": "12,000+",
+        "valueEs": "12 000+",
+        "labelEn": "happy customers",
+        "labelEs": "clientes satisfechos"
+      },
+      {
+        "valueEn": "30+",
+        "valueEs": "30+",
+        "labelEn": "brands in the catalog",
+        "labelEs": "marcas en el catálogo"
+      },
+      {
+        "valueEn": "4",
+        "valueEs": "4",
+        "labelEn": "pickup points",
+        "labelEs": "puntos de recogida"
+      }
     ],
     "history": [
       {

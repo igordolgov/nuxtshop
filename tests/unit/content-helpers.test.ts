@@ -28,11 +28,7 @@ import {
   normalizePhoneHref,
   sanitizeSiteContent,
 } from '../../shared/siteContent';
-import {
-  CONTENT_KEY,
-  readContent,
-  writeContent,
-} from '../../server/lib/contentHelpers';
+import { CONTENT_KEY, readContent, writeContent } from '../../server/lib/contentHelpers';
 
 const EVENT = {} as never;
 
@@ -93,7 +89,9 @@ describe('sanitizeSiteContent', () => {
   });
 
   it('отсутствующие поля берутся из дефолтов (частичный payload ничего не стирает)', () => {
-    const clean = sanitizeSiteContent({ contacts: { phone: '8 (800) 100-00-00', email: 'a@b.ru' } });
+    const clean = sanitizeSiteContent({
+      contacts: { phone: '8 (800) 100-00-00', email: 'a@b.ru' },
+    });
     expect(clean.contacts.stores).toEqual(DEFAULT_SITE_CONTENT.contacts.stores);
     expect(clean.contacts.faq).toEqual(DEFAULT_SITE_CONTENT.contacts.faq);
     expect(clean.about.stats).toEqual(DEFAULT_SITE_CONTENT.about.stats);
@@ -109,9 +107,9 @@ describe('sanitizeSiteContent', () => {
   });
 
   it('пустой телефон → ошибка', () => {
-    expect(() =>
-      sanitizeSiteContent({ contacts: { phone: '   ', email: 'a@b.ru' } }),
-    ).toThrow(ContentValidationError);
+    expect(() => sanitizeSiteContent({ contacts: { phone: '   ', email: 'a@b.ru' } })).toThrow(
+      ContentValidationError,
+    );
   });
 
   it('кривой email → ошибка с внятным сообщением', () => {
@@ -123,7 +121,11 @@ describe('sanitizeSiteContent', () => {
   it('карта — только openstreetmap.org', () => {
     expect(() =>
       sanitizeSiteContent({
-        contacts: { phone: '8 (800) 555-35-35', email: 'a@b.ru', mapSrc: 'https://maps.example.com/embed' },
+        contacts: {
+          phone: '8 (800) 555-35-35',
+          email: 'a@b.ru',
+          mapSrc: 'https://maps.example.com/embed',
+        },
       }),
     ).toThrow(/openstreetmap/);
   });
@@ -134,8 +136,11 @@ describe('sanitizeSiteContent', () => {
       address: 'адрес',
       phone: '8 (800) 000-00-00',
     }));
-    expect(() => sanitizeSiteContent({ contacts: { phone: '8 (800) 555-35-35', email: 'a@b.ru', stores: many } }))
-      .toThrow(/Не больше 8/);
+    expect(() =>
+      sanitizeSiteContent({
+        contacts: { phone: '8 (800) 555-35-35', email: 'a@b.ru', stores: many },
+      }),
+    ).toThrow(/Не больше 8/);
   });
 
   it('частично заполненная строка → ошибка с городом', () => {
@@ -152,7 +157,11 @@ describe('sanitizeSiteContent', () => {
 
   it('пустые строки списка пропускаются; осознанно пустой список сохраняется пустым', () => {
     const clean = sanitizeSiteContent({
-      contacts: { phone: '8 (800) 555-35-35', email: 'a@b.ru', messengers: [{ name: '', handle: '' }] },
+      contacts: {
+        phone: '8 (800) 555-35-35',
+        email: 'a@b.ru',
+        messengers: [{ name: '', handle: '' }],
+      },
     });
     // Пустая строка формы выкинута, а админ осознанно удалил остальных —
     // воскресать дефолты нельзя.

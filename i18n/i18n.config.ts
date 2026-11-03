@@ -4,12 +4,12 @@
 export default defineI18nConfig(() => ({
   pluralRules: {
     ru: (choice, choicesLength) => {
-      const teen = choice > 10 && choice < 20
-      const endsWithOne = choice % 10 === 1
-      if (choicesLength < 3) return !endsWithOne || teen ? 1 : 0
-      if (teen) return 2
-      if (endsWithOne) return 0
-      return choice % 10 >= 2 && choice % 10 <= 4 ? 1 : 2
+      const teen = choice > 10 && choice < 20;
+      const endsWithOne = choice % 10 === 1;
+      if (choicesLength < 3) return !endsWithOne || teen ? 1 : 0;
+      if (teen) return 2;
+      if (endsWithOne) return 0;
+      return choice % 10 >= 2 && choice % 10 <= 4 ? 1 : 2;
     },
   },
-}))
+}));

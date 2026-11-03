@@ -31,9 +31,7 @@ describe('processImage — с KV-биндингом (прод без R2)', () =>
     expect(out).toMatch(/^\/api\/images\/products\/product-\d+-[a-f0-9]{8}\.png$/);
     expect(put).toHaveBeenCalledTimes(1);
     const [key, body, opts] = put.mock.calls[0];
-    expect(key).toMatch(
-      new RegExp(`^${IMAGE_KV_PREFIX}products/product-\\d+-[a-f0-9]{8}\\.png$`),
-    );
+    expect(key).toMatch(new RegExp(`^${IMAGE_KV_PREFIX}products/product-\\d+-[a-f0-9]{8}\\.png$`));
     expect(Buffer.isBuffer(body)).toBe(true);
     expect(opts.metadata.contentType).toBe('image/png');
   });

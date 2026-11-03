@@ -15,15 +15,15 @@
 // API/статика (не text/html) не затрагиваются.
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('render:response', (response, { event }) => {
-    const headers = response.headers ?? (response.headers = {})
-    const ct = String(headers['content-type'] ?? event.node.res.getHeader('content-type') ?? '')
-    if (!ct.includes('text/html')) return
-    const cur = String(headers['cache-control'] ?? event.node.res.getHeader('cache-control') ?? '')
-    if (/(^|[,\s])(no-cache|no-store|max-age=0)/.test(cur)) return
-    const parts = ['max-age=0', 'must-revalidate']
-    const sm = /s-maxage=(\d+)/.exec(cur)
-    if (sm) parts.push(`s-maxage=${sm[1]}`)
-    if (/stale-while-revalidate/.test(cur)) parts.push('stale-while-revalidate')
-    headers['cache-control'] = parts.join(', ')
-  })
-})
+    const headers = response.headers ?? (response.headers = {});
+    const ct = String(headers['content-type'] ?? event.node.res.getHeader('content-type') ?? '');
+    if (!ct.includes('text/html')) return;
+    const cur = String(headers['cache-control'] ?? event.node.res.getHeader('cache-control') ?? '');
+    if (/(^|[,\s])(no-cache|no-store|max-age=0)/.test(cur)) return;
+    const parts = ['max-age=0', 'must-revalidate'];
+    const sm = /s-maxage=(\d+)/.exec(cur);
+    if (sm) parts.push(`s-maxage=${sm[1]}`);
+    if (/stale-while-revalidate/.test(cur)) parts.push('stale-while-revalidate');
+    headers['cache-control'] = parts.join(', ');
+  });
+});

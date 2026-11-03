@@ -38,7 +38,11 @@ const validInput = {
 
 describe('normalizeStoreReviewInput', () => {
   it('валидирует и триммит корректный отзыв', () => {
-    const clean = normalizeStoreReviewInput({ ...validInput, author: '  Мария  ', text: '  Отличный магазин  ' });
+    const clean = normalizeStoreReviewInput({
+      ...validInput,
+      author: '  Мария  ',
+      text: '  Отличный магазин  ',
+    });
     expect(clean).toEqual({ author: 'Мария', rating: 5, text: 'Отличный магазин' });
   });
 
@@ -59,9 +63,30 @@ describe('normalizeStoreReviewInput', () => {
 describe('approvedStoreReviews / storeRatingSummary', () => {
   it('только approved, свежие сверху', () => {
     const items = [
-      { id: '1', author: 'A', rating: 4, text: 'Первый отзыв', createdAt: '2026-01-01', approved: true },
-      { id: '2', author: 'B', rating: 5, text: 'Второй отзыв', createdAt: '2026-02-01', approved: false },
-      { id: '3', author: 'C', rating: 3, text: 'Третий отзыв', createdAt: '2026-03-01', approved: true },
+      {
+        id: '1',
+        author: 'A',
+        rating: 4,
+        text: 'Первый отзыв',
+        createdAt: '2026-01-01',
+        approved: true,
+      },
+      {
+        id: '2',
+        author: 'B',
+        rating: 5,
+        text: 'Второй отзыв',
+        createdAt: '2026-02-01',
+        approved: false,
+      },
+      {
+        id: '3',
+        author: 'C',
+        rating: 3,
+        text: 'Третий отзыв',
+        createdAt: '2026-03-01',
+        approved: true,
+      },
     ];
     const visible = approvedStoreReviews(items);
     expect(visible.map((r) => r.id)).toEqual(['3', '1']);
@@ -86,7 +111,14 @@ describe('readStoreReviews / writeStoreReviews / nextStoreReviewId', () => {
 
   it('запись-чтение по ключу data:store-reviews, id — максимум + 1', async () => {
     const items = [
-      { id: '1', author: 'A', rating: 5, text: 'Отличный магазин', createdAt: '2026-01-01', approved: true },
+      {
+        id: '1',
+        author: 'A',
+        rating: 5,
+        text: 'Отличный магазин',
+        createdAt: '2026-01-01',
+        approved: true,
+      },
     ];
     await writeStoreReviews(EVENT, items);
     expect(await readStoreReviews(EVENT)).toEqual(items);

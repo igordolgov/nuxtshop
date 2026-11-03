@@ -37,9 +37,7 @@ describe('normalizeStockAlertInput', () => {
     expect(() => normalizeStockAlertInput({ productId: '', contact: 'a@b.ru' })).toThrow(
       StockAlertValidationError,
     );
-    expect(() => normalizeStockAlertInput({ contact: 'a@b.ru' })).toThrow(
-      /Не указан товар/,
-    );
+    expect(() => normalizeStockAlertInput({ contact: 'a@b.ru' })).toThrow(/Не указан товар/);
   });
 
   it('контакт обязателен и не длиннее 120', () => {

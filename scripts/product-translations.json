@@ -4,437 +4,247 @@
     "nameEs": "Teléfono inteligente Samsung Galaxy S23",
     "descriptionEn": "Flagship smartphone with a powerful processor and an excellent camera. Perfect for work and entertainment.",
     "descriptionEs": "Teléfono inteligente insignia con un potente procesador y una excelente cámara. Ideal para el trabajo y el entretenimiento.",
-    "categoriesEn": [
-      "Electronics",
-      "Smartphones"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Smartphones"
-    ]
+    "categoriesEn": ["Electronics", "Smartphones"],
+    "categoriesEs": ["Electrónica", "Smartphones"]
   },
   "noutbuk-apple-macbook-pro-16": {
     "nameEn": "Apple MacBook Pro 16 laptop",
     "nameEs": "Portátil Apple MacBook Pro 16",
     "descriptionEn": "Professional laptop for creative work. High performance and a high-quality display.",
     "descriptionEs": "Portátil profesional para tareas creativas. Alto rendimiento y una pantalla de gran calidad.",
-    "categoriesEn": [
-      "Electronics",
-      "Laptops"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Laptops"
-    ]
+    "categoriesEn": ["Electronics", "Laptops"],
+    "categoriesEs": ["Electrónica", "Laptops"]
   },
   "besprovodnye-naushniki-sony-wh-1000xm4": {
     "nameEn": "Sony WH-1000XM4 wireless headphones",
     "nameEs": "Auriculares inalámbricos Sony WH-1000XM4",
     "descriptionEn": "Headphones with noise cancellation and premium sound. Up to 30 hours of battery life.",
     "descriptionEs": "Auriculares con cancelación de ruido y sonido premium. Hasta 30 horas de batería.",
-    "categoriesEn": [
-      "Electronics",
-      "Audio"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Audio"
-    ]
+    "categoriesEn": ["Electronics", "Audio"],
+    "categoriesEs": ["Electrónica", "Audio"]
   },
   "fotokamera-canon-eos-r6": {
     "nameEn": "Canon EOS R6 camera",
     "nameEs": "Cámara Canon EOS R6",
     "descriptionEn": "Professional-grade camera for shooting. Fast autofocus and image stabilization.",
     "descriptionEs": "Cámara de nivel profesional para fotografía. Enfoque automático rápido y estabilización de imagen.",
-    "categoriesEn": [
-      "Electronics",
-      "Cameras"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Cámaras"
-    ]
+    "categoriesEn": ["Electronics", "Cameras"],
+    "categoriesEs": ["Electrónica", "Cámaras"]
   },
   "umnye-chasy-apple-watch-series-9": {
     "nameEn": "Apple Watch Series 9 smartwatch",
     "nameEs": "Reloj inteligente Apple Watch Series 9",
     "descriptionEn": "Smartwatch with advanced health and fitness features. Water resistance and GPS.",
     "descriptionEs": "Reloj inteligente con funciones avanzadas de salud y fitness. Resistencia al agua y GPS.",
-    "categoriesEn": [
-      "Electronics",
-      "Smartwatches"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Relojes inteligentes"
-    ]
+    "categoriesEn": ["Electronics", "Smartwatches"],
+    "categoriesEs": ["Electrónica", "Relojes inteligentes"]
   },
   "igrovaya-konsol-playstation-5": {
     "nameEn": "PlayStation 5 game console",
     "nameEs": "Consola de videojuegos PlayStation 5",
     "descriptionEn": "The latest gaming console with 4K and 120 FPS support. DualSense controller included.",
     "descriptionEs": "La consola de videojuegos más reciente con compatibilidad 4K y 120 FPS. Incluye mando DualSense.",
-    "categoriesEn": [
-      "Electronics",
-      "Game consoles"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Consolas de videojuegos"
-    ]
+    "categoriesEn": ["Electronics", "Game consoles"],
+    "categoriesEs": ["Electrónica", "Consolas de videojuegos"]
   },
   "dzhinsy-klassicheskie-sinie": {
     "nameEn": "Classic blue jeans",
     "nameEs": "Jeans clásicos azules",
     "descriptionEn": "Classic straight-fit jeans made of quality denim. A versatile everyday model.",
     "descriptionEs": "Jeans clásicos de corte recto hechos de denim de calidad. Un modelo versátil para todos los días.",
-    "categoriesEn": [
-      "Clothing",
-      "Jeans"
-    ],
-    "categoriesEs": [
-      "Ropa",
-      "Jeans"
-    ]
+    "categoriesEn": ["Clothing", "Jeans"],
+    "categoriesEs": ["Ropa", "Jeans"]
   },
   "krossovki-nike-air-max-270": {
     "nameEn": "Nike Air Max 270 sneakers",
     "nameEs": "Zapatillas Nike Air Max 270",
     "descriptionEn": "Athletic sneakers with Air Max technology for maximum comfort while walking and running.",
     "descriptionEs": "Zapatillas deportivas con tecnología Air Max para la máxima comodidad al caminar y correr.",
-    "categoriesEn": [
-      "Clothing",
-      "Shoes"
-    ],
-    "categoriesEs": [
-      "Ropa",
-      "Calzado"
-    ]
+    "categoriesEn": ["Clothing", "Shoes"],
+    "categoriesEs": ["Ropa", "Calzado"]
   },
   "futbolka-hlopkovaya-belaya": {
     "nameEn": "White cotton T-shirt",
     "nameEs": "Camiseta blanca de algodón",
     "descriptionEn": "Classic 100% cotton T-shirt. Comfortable, breathable fabric — great for everyday wear.",
     "descriptionEs": "Camiseta clásica de 100% algodón. Tela cómoda y transpirable, perfecta para el uso diario.",
-    "categoriesEn": [
-      "Clothing",
-      "T-shirts"
-    ],
-    "categoriesEs": [
-      "Ropa",
-      "Camisetas"
-    ]
+    "categoriesEn": ["Clothing", "T-shirts"],
+    "categoriesEs": ["Ropa", "Camisetas"]
   },
   "kurtka-zimnyaya-puhovaya": {
     "nameEn": "Winter down jacket",
     "nameEs": "Chaqueta de invierno con plumón",
     "descriptionEn": "Warm winter jacket with down filling. Wind and moisture protection — ideal for cold weather.",
     "descriptionEs": "Chaqueta de invierno cálida con relleno de plumón. Protección contra el viento y la humedad, ideal para el frío.",
-    "categoriesEn": [
-      "Clothing",
-      "Jackets"
-    ],
-    "categoriesEs": [
-      "Ropa",
-      "Chaquetas"
-    ]
+    "categoriesEn": ["Clothing", "Jackets"],
+    "categoriesEs": ["Ropa", "Chaquetas"]
   },
   "kofevarka-avtomaticheskaya-delonghi": {
     "nameEn": "DeLonghi automatic coffee maker",
     "nameEs": "Cafetera automática DeLonghi",
     "descriptionEn": "Automatic coffee maker for espresso, cappuccino and latte. Built-in grinder.",
     "descriptionEs": "Cafetera automática para preparar espresso, capuchino y latte. Molinillo integrado.",
-    "categoriesEn": [
-      "For home",
-      "Kitchen"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Cocina"
-    ]
+    "categoriesEn": ["For home", "Kitchen"],
+    "categoriesEs": ["Para el hogar", "Cocina"]
   },
   "pylesos-robot-xiaomi": {
     "nameEn": "Xiaomi robot vacuum",
     "nameEs": "Aspiradora robot Xiaomi",
     "descriptionEn": "Smart robot vacuum with navigation and wet mopping. App control and automatic recharging.",
     "descriptionEs": "Aspiradora robot inteligente con navegación y limpieza húmeda. Control por aplicación y carga automática.",
-    "categoriesEn": [
-      "For home",
-      "Cleaning appliances"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Electrodomésticos de limpieza"
-    ]
+    "categoriesEn": ["For home", "Cleaning appliances"],
+    "categoriesEs": ["Para el hogar", "Electrodomésticos de limpieza"]
   },
   "nastolnaya-lampa-led": {
     "nameEn": "LED desk lamp",
     "nameEs": "Lámpara de escritorio LED",
     "descriptionEn": "Modern desk lamp with adjustable brightness and color temperature. Touch control.",
     "descriptionEs": "Lámpara de escritorio moderna con brillo y temperatura de color ajustables. Control táctil.",
-    "categoriesEn": [
-      "For home",
-      "Lighting"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Iluminación"
-    ]
+    "categoriesEn": ["For home", "Lighting"],
+    "categoriesEs": ["Para el hogar", "Iluminación"]
   },
   "kniga-iskusstvo-programmirovaniya": {
     "nameEn": "Book \"The Art of Computer Programming\"",
     "nameEs": "Libro «El arte de programar»",
     "descriptionEn": "Donald Knuth's foundational work on computer algorithms and programming.",
     "descriptionEs": "Obra fundamental de Donald Knuth sobre algoritmos y programación.",
-    "categoriesEn": [
-      "Books",
-      "Programming"
-    ],
-    "categoriesEs": [
-      "Libros",
-      "Programación"
-    ]
+    "categoriesEn": ["Books", "Programming"],
+    "categoriesEs": ["Libros", "Programación"]
   },
   "velosiped-gornyy-trek": {
     "nameEn": "Trek mountain bike",
     "nameEs": "Bicicleta de montaña Trek",
     "descriptionEn": "Mountain bike with an aluminum frame, suspension fork and 21 speeds. For outdoor activities.",
     "descriptionEs": "Bicicleta de montaña con cuadro de aluminio, horquilla de suspensión y 21 velocidades. Para actividades al aire libre.",
-    "categoriesEn": [
-      "Sports",
-      "Bicycles"
-    ],
-    "categoriesEs": [
-      "Deportes",
-      "Bicicletas"
-    ]
+    "categoriesEn": ["Sports", "Bicycles"],
+    "categoriesEs": ["Deportes", "Bicicletas"]
   },
   "smart-chasy-garmin-fenix-7": {
     "nameEn": "Garmin Fenix 7 smartwatch",
     "nameEs": "Reloj inteligente Garmin Fenix 7",
     "descriptionEn": "Multisport GPS smartwatch for sports and an active lifestyle, with a pulse oximeter.",
     "descriptionEs": "Reloj inteligente multideporte para el deporte y la vida activa, con GPS y pulsioxímetro.",
-    "categoriesEn": [
-      "Electronics",
-      "Smartwatches",
-      "Sports"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Relojes inteligentes",
-      "Deportes"
-    ]
+    "categoriesEn": ["Electronics", "Smartwatches", "Sports"],
+    "categoriesEs": ["Electrónica", "Relojes inteligentes", "Deportes"]
   },
   "igrovaya-mysh-razer-deathadder": {
     "nameEn": "Razer DeathAdder gaming mouse",
     "nameEs": "Ratón para gaming Razer DeathAdder",
     "descriptionEn": "Ergonomic gaming mouse with a 20000 DPI optical sensor and RGB lighting.",
     "descriptionEs": "Ratón gaming ergonómico con sensor óptico de 20000 DPI e iluminación RGB.",
-    "categoriesEn": [
-      "Electronics",
-      "Gaming accessories"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Accesorios gaming"
-    ]
+    "categoriesEn": ["Electronics", "Gaming accessories"],
+    "categoriesEs": ["Electrónica", "Accesorios gaming"]
   },
   "klaviatura-mehanicheskaya-logitech": {
     "nameEn": "Logitech mechanical keyboard",
     "nameEs": "Teclado mecánico Logitech",
     "descriptionEn": "Mechanical keyboard with Romer-G switches and RGB lighting. For gamers and programmers.",
     "descriptionEs": "Teclado mecánico con interruptores Romer-G e iluminación RGB. Para gamers y programadores.",
-    "categoriesEn": [
-      "Electronics",
-      "Gaming accessories"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Accesorios gaming"
-    ]
+    "categoriesEn": ["Electronics", "Gaming accessories"],
+    "categoriesEs": ["Electrónica", "Accesorios gaming"]
   },
   "monitor-dell-27-4k": {
     "nameEn": "Dell 27\" 4K monitor",
     "nameEs": "Monitor Dell 27\" 4K",
     "descriptionEn": "Professional monitor with 4K resolution, 99% sRGB color gamut and an ergonomic stand.",
     "descriptionEs": "Monitor profesional con resolución 4K, cobertura de color sRGB del 99% y soporte ergonómico.",
-    "categoriesEn": [
-      "Electronics",
-      "Computers"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Computadoras"
-    ]
+    "categoriesEn": ["Electronics", "Computers"],
+    "categoriesEs": ["Electrónica", "Computadoras"]
   },
   "vneshniy-zhestkiy-disk-seagate-2tb": {
     "nameEn": "Seagate 2TB external hard drive",
     "nameEs": "Disco duro externo Seagate 2TB",
     "descriptionEn": "Portable hard drive with USB 3.0 for data storage. Compact and reliable.",
     "descriptionEs": "Disco duro portátil con USB 3.0 para almacenar datos. Compacto y confiable.",
-    "categoriesEn": [
-      "Electronics",
-      "Computers"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Computadoras"
-    ]
+    "categoriesEn": ["Electronics", "Computers"],
+    "categoriesEs": ["Electrónica", "Computadoras"]
   },
   "elektricheskiy-chaynik-bosch": {
     "nameEn": "Bosch electric kettle",
     "nameEs": "Hervidor eléctrico Bosch",
     "descriptionEn": "Glass electric kettle with illumination and a keep-warm function.",
     "descriptionEs": "Hervidor eléctrico de vidrio con iluminación y función de mantenimiento de temperatura.",
-    "categoriesEn": [
-      "For home",
-      "Kitchen"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Cocina"
-    ]
+    "categoriesEn": ["For home", "Kitchen"],
+    "categoriesEs": ["Para el hogar", "Cocina"]
   },
   "blender-pogruzhnoy-braun": {
     "nameEn": "Braun immersion blender",
     "nameEs": "Batidora de mano Braun",
     "descriptionEn": "Powerful immersion blender with several attachments for soups, smoothies and sauces.",
     "descriptionEs": "Batidora de mano potente con varios accesorios para preparar sopas, batidos y salsas.",
-    "categoriesEn": [
-      "For home",
-      "Kitchen"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Cocina"
-    ]
+    "categoriesEn": ["For home", "Kitchen"],
+    "categoriesEs": ["Para el hogar", "Cocina"]
   },
   "nabor-posudy-tefal": {
     "nameEn": "Tefal cookware set",
     "nameEs": "Juego de utensilios de cocina Tefal",
     "descriptionEn": "6-piece nonstick cookware set with ceramic coating. Suitable for all types of stoves.",
     "descriptionEs": "Juego de 6 piezas de cocina antiadherente con recubrimiento cerámico. Apto para todo tipo de cocinas.",
-    "categoriesEn": [
-      "For home",
-      "Kitchen"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Cocina"
-    ]
+    "categoriesEn": ["For home", "Kitchen"],
+    "categoriesEs": ["Para el hogar", "Cocina"]
   },
   "ofisnoe-kreslo-ergochair": {
     "nameEn": "ErgoChair office chair",
     "nameEs": "Silla de oficina ErgoChair",
     "descriptionEn": "Ergonomic office chair with lumbar support and adjustable height and armrests.",
     "descriptionEs": "Silla de oficina ergonómica con soporte lumbar y altura y reposabrazos ajustables.",
-    "categoriesEn": [
-      "For home",
-      "Office"
-    ],
-    "categoriesEs": [
-      "Para el hogar",
-      "Oficina"
-    ]
+    "categoriesEn": ["For home", "Office"],
+    "categoriesEs": ["Para el hogar", "Oficina"]
   },
   "besprovodnaya-kolonka-jbl-flip-6": {
     "nameEn": "JBL Flip 6 portable speaker",
     "nameEs": "Altavoz portátil JBL Flip 6",
     "descriptionEn": "Portable Bluetooth speaker, waterproof, with powerful sound. Up to 12 hours of playtime.",
     "descriptionEs": "Altavoz Bluetooth portátil, resistente al agua y con sonido potente. Hasta 12 horas de reproducción.",
-    "categoriesEn": [
-      "Electronics",
-      "Audio"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Audio"
-    ]
+    "categoriesEn": ["Electronics", "Audio"],
+    "categoriesEs": ["Electrónica", "Audio"]
   },
   "fitnes-treker-xiaomi-mi-band-8": {
     "nameEn": "Xiaomi Mi Band 8 fitness tracker",
     "nameEs": "Pulsera de actividad Xiaomi Mi Band 8",
     "descriptionEn": "Fitness band with sleep, heart-rate and activity tracking. Water resistance and long battery life.",
     "descriptionEs": "Pulsera de actividad con monitorización del sueño, el pulso y la actividad. Resistente al agua y de larga duración.",
-    "categoriesEn": [
-      "Electronics",
-      "Smartwatches",
-      "Sports"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Relojes inteligentes",
-      "Deportes"
-    ]
+    "categoriesEn": ["Electronics", "Smartwatches", "Sports"],
+    "categoriesEs": ["Electrónica", "Relojes inteligentes", "Deportes"]
   },
   "igrovaya-pristavka-nintendo-switch": {
     "nameEn": "Nintendo Switch game console",
     "nameEs": "Consola de videojuegos Nintendo Switch",
     "descriptionEn": "Hybrid gaming console for home and travel. Joy-Con controllers included.",
     "descriptionEs": "Consola de videojuegos híbrida para casa y viajes. Incluye mandos Joy-Con.",
-    "categoriesEn": [
-      "Electronics",
-      "Game consoles"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Consolas de videojuegos"
-    ]
+    "categoriesEn": ["Electronics", "Game consoles"],
+    "categoriesEs": ["Electrónica", "Consolas de videojuegos"]
   },
   "planshet-apple-ipad-air": {
     "nameEn": "Apple iPad Air tablet",
     "nameEs": "Tableta Apple iPad Air",
     "descriptionEn": "Powerful tablet with the M1 chip, Liquid Retina display and Apple Pencil support.",
     "descriptionEs": "Tableta potente con chip M1, pantalla Liquid Retina y compatibilidad con Apple Pencil.",
-    "categoriesEn": [
-      "Electronics",
-      "Tablets"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Tabletas"
-    ]
+    "categoriesEn": ["Electronics", "Tablets"],
+    "categoriesEs": ["Electrónica", "Tabletas"]
   },
   "elektrosamokat-xiaomi-pro-2": {
     "nameEn": "Xiaomi Pro 2 electric scooter",
     "nameEs": "Patinete eléctrico Xiaomi Pro 2",
     "descriptionEn": "Urban electric scooter with a 45 km range, 25 km/h top speed and a folding design.",
     "descriptionEs": "Patinete eléctrico urbano con una autonomía de 45 km, velocidad máxima de 25 km/h y diseño plegable.",
-    "categoriesEn": [
-      "Electronics",
-      "Transport"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Transporte"
-    ]
+    "categoriesEn": ["Electronics", "Transport"],
+    "categoriesEs": ["Electrónica", "Transporte"]
   },
   "umnaya-kolonka-yandeks-stantsiya": {
     "nameEn": "Yandex Station smart speaker",
     "nameEs": "Altavoz inteligente Yandex Station",
     "descriptionEn": "Smart speaker with the Alice voice assistant, streaming services and smart home control.",
     "descriptionEs": "Altavoz inteligente con el asistente de voz Alisa, servicios de streaming y control del hogar inteligente.",
-    "categoriesEn": [
-      "Electronics",
-      "Audio",
-      "Smart home"
-    ],
-    "categoriesEs": [
-      "Electrónica",
-      "Audio",
-      "Hogar inteligente"
-    ]
+    "categoriesEn": ["Electronics", "Audio", "Smart home"],
+    "categoriesEs": ["Electrónica", "Audio", "Hogar inteligente"]
   },
   "nintendo-svich-2": {
     "nameEn": "Nintendo Switch 2",
     "nameEs": "Nintendo Switch 2",
     "descriptionEn": "Compact and practical, this model is perfect for travel. All the buttons are easy to use, and the built-in memory card slot is located on the outside.",
     "descriptionEs": "Compacta y práctica, este modelo es perfecto para viajar. Todos los botones son fáciles de usar y la ranura para tarjeta de memoria integrada está en el exterior.",
-    "categoriesEn": [
-      "Game consoles"
-    ],
-    "categoriesEs": [
-      "Consolas de videojuegos"
-    ]
+    "categoriesEn": ["Game consoles"],
+    "categoriesEs": ["Consolas de videojuegos"]
   }
 }

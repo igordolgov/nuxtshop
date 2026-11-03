@@ -60,9 +60,9 @@ describe('normalizePromoInput — скидка и тип', () => {
     expect(normalizePromoInput({ code: 'A1', type: 'percent', value: 1 }).value).toBe(1);
     expect(normalizePromoInput({ code: 'A1', type: 'percent', value: 90 }).value).toBe(90);
     for (const bad of [0, 91, 15.5, 'много', NaN]) {
-      expect(() => normalizePromoInput({ code: 'A1', type: 'percent', value: bad as never })).toThrow(
-        PromoValidationError,
-      );
+      expect(() =>
+        normalizePromoInput({ code: 'A1', type: 'percent', value: bad as never }),
+      ).toThrow(PromoValidationError);
     }
   });
 
@@ -131,7 +131,10 @@ describe('normalizePromoInput — сроки, лимиты, прочее', () =>
   });
 
   it('при редактировании active=true сохраняется, если не передан', () => {
-    const promo = normalizePromoInput({ code: 'A1', type: 'percent', value: 10 }, makePromo({ active: true }));
+    const promo = normalizePromoInput(
+      { code: 'A1', type: 'percent', value: 10 },
+      makePromo({ active: true }),
+    );
     expect(promo.active).toBe(true);
   });
 });

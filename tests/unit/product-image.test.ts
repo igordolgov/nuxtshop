@@ -15,7 +15,9 @@ describe('productSrcset — 400w+800w для локальных фото кат�
     expect(productSrcset('data:image/webp;base64,AAAA')).toBeUndefined();
     expect(productSrcset('/api/images/products/product-123-abcd.webp')).toBeUndefined();
     expect(productSrcset('/images/placeholder.jpg')).toBeUndefined();
-    expect(productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500')).toBeUndefined();
+    expect(
+      productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500'),
+    ).toBeUndefined();
     expect(productSrcset('/images/products/evil-../../etc.webp')).toBeUndefined();
   });
 

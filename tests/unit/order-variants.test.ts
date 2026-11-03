@@ -6,9 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const kvStore = new Map<string, unknown>();
 
 vi.mock('../../server/lib/storage', () => ({
-  kvGetJSON: vi.fn(async (_event: unknown, key: string) =>
-    (kvStore.get(key) as unknown) ?? null,
-  ),
+  kvGetJSON: vi.fn(async (_event: unknown, key: string) => (kvStore.get(key) as unknown) ?? null),
   kvPutJSON: vi.fn(async (_event: unknown, key: string, value: unknown) => {
     kvStore.set(key, structuredClone(value));
   }),
@@ -17,10 +15,7 @@ vi.mock('../../server/lib/storage', () => ({
   }),
 }));
 
-import {
-  createOrder,
-  type CreateOrderInput,
-} from '../../server/lib/orderHelpers';
+import { createOrder, type CreateOrderInput } from '../../server/lib/orderHelpers';
 import { writeProducts, type Product } from '../../server/lib/productHelpers';
 
 const event = {} as never;
@@ -69,9 +64,12 @@ beforeEach(async () => {
 
 describe('заказ с вариантами', () => {
   it('вариантная позиция: цена и название варианта из KV', async () => {
-    const order = await createOrder(event, makeInput({
-      items: [{ id: '12::mbp-1tb', quantity: 2 }],
-    }));
+    const order = await createOrder(
+      event,
+      makeInput({
+        items: [{ id: '12::mbp-1tb', quantity: 2 }],
+      }),
+    );
     expect(order.items).toHaveLength(1);
     expect(order.items[0]).toMatchObject({
       id: '12',
@@ -95,7 +93,10 @@ describe('заказ с вариантами', () => {
 
   it('быстрый «+» из списков: первый вариант = базовая цена', async () => {
     // addToCart без варианта подставляет variants[0] → id «12::mbp-512»
-    const order = await createOrder(event, makeInput({ items: [{ id: '12::mbp-512', quantity: 1 }] }));
+    const order = await createOrder(
+      event,
+      makeInput({ items: [{ id: '12::mbp-512', quantity: 1 }] }),
+    );
     expect(order.items[0]).toMatchObject({
       variantId: 'mbp-512',
       variantName: '512 ГБ',
@@ -120,17 +121,23 @@ describe('заказ с вариантами', () => {
     delete (list[0].variants![2] as Record<string, unknown>).stockQuantity;
     await writeProducts(event, list);
     // 12::mbp-2tb без своего склада → склад товара 10 → 2 шт. проходит
-    const order = await createOrder(event, makeInput({ items: [{ id: '12::mbp-2tb', quantity: 2 }] }));
+    const order = await createOrder(
+      event,
+      makeInput({ items: [{ id: '12::mbp-2tb', quantity: 2 }] }),
+    );
     expect(order.items[0]!.price).toBe(319990);
   });
 
   it('два варианта одного товара — две позиции в заказе', async () => {
-    const order = await createOrder(event, makeInput({
-      items: [
-        { id: '12::mbp-512', quantity: 1 },
-        { id: '12::mbp-1tb', quantity: 1 },
-      ],
-    }));
+    const order = await createOrder(
+      event,
+      makeInput({
+        items: [
+          { id: '12::mbp-512', quantity: 1 },
+          { id: '12::mbp-1tb', quantity: 1 },
+        ],
+      }),
+    );
     expect(order.items).toHaveLength(2);
     expect(order.items.map((i) => i.variantId)).toEqual(['mbp-512', 'mbp-1tb']);
     expect(order.subtotal).toBe(249990 + 279990);

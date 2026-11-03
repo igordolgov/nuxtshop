@@ -41,7 +41,13 @@ let catalog: Product[];
 beforeEach(() => {
   catalog = [
     makeProduct({ id: '1', name: 'Кружка', categories: ['посуда'], stockQuantity: 3 }),
-    makeProduct({ id: '2', name: 'Кастрюля', categories: ['посуда', 'кухня'], stockQuantity: 0, inStock: false }),
+    makeProduct({
+      id: '2',
+      name: 'Кастрюля',
+      categories: ['посуда', 'кухня'],
+      stockQuantity: 0,
+      inStock: false,
+    }),
     makeProduct({ id: '3', name: 'Носки', categories: ['одежда'], stockQuantity: 10 }),
   ];
 });
@@ -85,7 +91,9 @@ describe('parseBulkPatch — валидация тела запроса', () => 
   it('stockQuantity: числовая строка превращается в целое, мусор и отрицательные — 400', () => {
     expect(parseBulkPatch({ inStock: true, stockQuantity: '7' }).stockQuantity).toBe(7);
     expect(parseBulkPatch({ inStock: true, stockQuantity: 2.9 }).stockQuantity).toBe(2);
-    expect(() => parseBulkPatch({ inStock: true, stockQuantity: 'abc' })).toThrow(/неотрицательным/);
+    expect(() => parseBulkPatch({ inStock: true, stockQuantity: 'abc' })).toThrow(
+      /неотрицательным/,
+    );
     expect(() => parseBulkPatch({ inStock: true, stockQuantity: -1 })).toThrow(/неотрицательным/);
   });
 
@@ -106,8 +114,12 @@ describe('parseBulkPatch — валидация тела запроса', () => 
   });
 
   it('два режима категорий одновременно отклоняются даже с пустыми списками', () => {
-    expect(() => parseBulkPatch({ setCategories: ['A'], addCategories: ['B'] })).toThrow(/один режим/);
-    expect(() => parseBulkPatch({ addCategories: ['B'], removeCategories: ['C'] })).toThrow(/один режим/);
+    expect(() => parseBulkPatch({ setCategories: ['A'], addCategories: ['B'] })).toThrow(
+      /один режим/,
+    );
+    expect(() => parseBulkPatch({ addCategories: ['B'], removeCategories: ['C'] })).toThrow(
+      /один режим/,
+    );
     expect(() => parseBulkPatch({ addCategories: [], removeCategories: [] })).toThrow(/один режим/);
   });
 
@@ -121,7 +133,11 @@ describe('parseBulkPatch — валидация тела запроса', () => 
 
 describe('applyBulkPatch — наличие и количество', () => {
   it('в наличие без количества: 0 → 1; уже в наличии — без изменений (не в updated)', () => {
-    const { updated } = applyBulkPatch(catalog, ['1', '2'], { inStock: true, stockQuantity: null, hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['1', '2'], {
+      inStock: true,
+      stockQuantity: null,
+      hasChanges: true,
+    });
     const byId = new Map(updated.map((p) => [p.id, p]));
     // Кружка уже в наличии с количеством 3 — фактических изменений нет
     expect(byId.has('1')).toBe(false);
@@ -130,7 +146,11 @@ describe('applyBulkPatch — наличие и количество', () => {
   });
 
   it('в наличие с явным количеством проставляется всем выбранным', () => {
-    const { updated } = applyBulkPatch(catalog, ['1', '2'], { inStock: true, stockQuantity: 7, hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['1', '2'], {
+      inStock: true,
+      stockQuantity: 7,
+      hasChanges: true,
+    });
     expect(updated.every((p) => p.stockQuantity === 7 && p.inStock)).toBe(true);
   });
 
@@ -141,43 +161,63 @@ describe('applyBulkPatch — наличие и количество', () => {
 
   it('значения совпали с текущими — товар не попадает в updated', () => {
     // Товар 1 уже в наличии с количеством 3
-    const { updated } = applyBulkPatch(catalog, ['1'], { inStock: true, stockQuantity: 3, hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['1'], {
+      inStock: true,
+      stockQuantity: 3,
+      hasChanges: true,
+    });
     expect(updated).toHaveLength(0);
   });
 });
 
 describe('applyBulkPatch — категории', () => {
   it('setCategories заменяет список целиком', () => {
-    const { updated } = applyBulkPatch(catalog, ['1'], { setCategories: ['новинки'], hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['1'], {
+      setCategories: ['новинки'],
+      hasChanges: true,
+    });
     expect(updated[0].categories).toEqual(['новинки']);
   });
 
   it('addCategories добавляет без дублей, порядок сохраняется', () => {
-    const { updated } = applyBulkPatch(catalog, ['2'], { addCategories: ['кухня', 'новинки'], hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['2'], {
+      addCategories: ['кухня', 'новинки'],
+      hasChanges: true,
+    });
     expect(updated[0].categories).toEqual(['посуда', 'кухня', 'новинки']);
   });
 
   it('removeCategories убирает перечисленные', () => {
-    const { updated } = applyBulkPatch(catalog, ['2'], { removeCategories: ['посуда'], hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['2'], {
+      removeCategories: ['посуда'],
+      hasChanges: true,
+    });
     expect(updated[0].categories).toEqual(['кухня']);
   });
 
   it('уборка до нуля категорий: товар в skipped, категории не тронуты, наличие применено', () => {
-    const { updated, skipped } = applyBulkPatch(
-      catalog,
-      ['1', '2'],
-      { inStock: false, removeCategories: ['посуда'], hasChanges: true },
-    );
+    const { updated, skipped } = applyBulkPatch(catalog, ['1', '2'], {
+      inStock: false,
+      removeCategories: ['посуда'],
+      hasChanges: true,
+    });
     expect(skipped.map((s) => s.id)).toEqual(['1']); // у Кружки одна категория «посуда»
     const byId = new Map(updated.map((p) => [p.id, p]));
     // Кружка: категории прежние, но «не в наличии» применено
-    expect(byId.get('1')).toMatchObject({ categories: ['посуда'], inStock: false, stockQuantity: 0 });
+    expect(byId.get('1')).toMatchObject({
+      categories: ['посуда'],
+      inStock: false,
+      stockQuantity: 0,
+    });
     // Кастрюля: осталась «кухня», убрана «посуда»
     expect(byId.get('2')).toMatchObject({ categories: ['кухня'], inStock: false });
   });
 
   it('неизменённые категории — товар не попадает в updated', () => {
-    const { updated } = applyBulkPatch(catalog, ['2'], { addCategories: ['посуда'], hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['2'], {
+      addCategories: ['посуда'],
+      hasChanges: true,
+    });
     expect(updated).toHaveLength(0);
   });
 });
@@ -199,7 +239,10 @@ describe('applyBulkPatch — выборка и общие инварианты',
   });
 
   it('дубликаты в ids не приводят к двойной обработке', () => {
-    const { updated } = applyBulkPatch(catalog, ['1', '1', '1'], { inStock: false, hasChanges: true });
+    const { updated } = applyBulkPatch(catalog, ['1', '1', '1'], {
+      inStock: false,
+      hasChanges: true,
+    });
     expect(updated).toHaveLength(1);
   });
 });

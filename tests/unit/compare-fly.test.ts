@@ -33,7 +33,10 @@ describe('getFlyOrigin', () => {
   it('без всего — (0, 0), без бросков', () => {
     expect(getFlyOrigin()).toEqual({ x: 0, y: 0 });
     expect(getFlyOrigin(null)).toEqual({ x: 0, y: 0 });
-    expect(getFlyOrigin({ rect: { left: NaN, top: 0, width: 1, height: 1 } })).toEqual({ x: 0, y: 0 });
+    expect(getFlyOrigin({ rect: { left: NaN, top: 0, width: 1, height: 1 } })).toEqual({
+      x: 0,
+      y: 0,
+    });
   });
 });
 

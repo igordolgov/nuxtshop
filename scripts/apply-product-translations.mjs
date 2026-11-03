@@ -66,12 +66,13 @@ function runWrangler(wranglerArgs) {
   });
   if (res.status !== 0) {
     const out = [res.stderr, res.stdout].filter(Boolean).join('\n').trim();
-    const hint = /CLOUDFLARE_API_TOKEN|not authenticated|wrangler login|Failed to fetch|OAuth/i.test(out)
-      ? '\n\n   Похоже, wrangler не авторизован на этой машине. Варианты:\n' +
-        '   1) `npx wrangler login` — откроется браузер, войдите в аккаунт Cloudflare;\n' +
-        '   2) переменная окружения CLOUDFLARE_API_TOKEN с токеном, у которого\n' +
-        '      есть права на Workers KV (те же права, что нужны `pnpm deploy`).'
-      : '';
+    const hint =
+      /CLOUDFLARE_API_TOKEN|not authenticated|wrangler login|Failed to fetch|OAuth/i.test(out)
+        ? '\n\n   Похоже, wrangler не авторизован на этой машине. Варианты:\n' +
+          '   1) `npx wrangler login` — откроется браузер, войдите в аккаунт Cloudflare;\n' +
+          '   2) переменная окружения CLOUDFLARE_API_TOKEN с токеном, у которого\n' +
+          '      есть права на Workers KV (те же права, что нужны `pnpm deploy`).'
+        : '';
     throw new Error(
       `wrangler ${wranglerArgs.slice(0, 3).join(' ')} упал` +
         ` (код выхода ${res.status ?? res.error?.code ?? '?'}):\n${out.slice(-800)}${hint}`,
@@ -82,9 +83,7 @@ function runWrangler(wranglerArgs) {
 
 // ── 1. Читаем текущий каталог с прода ───────────────────────────────────
 console.log('1) Читаю data:products из прод-KV (wrangler kv key get --remote)…');
-const raw = runWrangler([
-  'kv', 'key', 'get', 'data:products', '--binding', 'KV', '--remote',
-]);
+const raw = runWrangler(['kv', 'key', 'get', 'data:products', '--binding', 'KV', '--remote']);
 // Баннер wrangler уходит в stderr, но на всякий случай берём JSON от первой [/{.
 const candidates = ['[', '{'].map((ch) => raw.indexOf(ch)).filter((i) => i >= 0);
 if (candidates.length === 0) throw new Error('В выводе wrangler не найден JSON каталога');
@@ -167,7 +166,15 @@ writeFileSync(mergedPath, JSON.stringify(products), 'utf8');
 console.log('4) Пишу каталог в прод-KV (wrangler kv key put --remote)…');
 try {
   runWrangler([
-    'kv', 'key', 'put', 'data:products', '--path', mergedPath, '--binding', 'KV', '--remote',
+    'kv',
+    'key',
+    'put',
+    'data:products',
+    '--path',
+    mergedPath,
+    '--binding',
+    'KV',
+    '--remote',
   ]);
 } finally {
   try {

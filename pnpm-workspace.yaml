@@ -118,5 +118,5 @@ minimumReleaseAgeExclude:
   - '@nuxt/cli@4.0.3'
 peerDependencyRules:
   allowedVersions:
-    typescript: "6"
-    magicast: "0.5"
+    typescript: '6'
+    magicast: '0.5'

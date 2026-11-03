@@ -17,5 +17,5 @@ export default defineEventHandler((event) => {
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     'Content-Security-Policy':
       "script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'",
-  })
-})
+  });
+});

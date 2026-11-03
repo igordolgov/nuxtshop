@@ -77,7 +77,7 @@ describe('readNews / writeNews', () => {
   it('записи эпохи до i18n: readNews досаживает переводы сида и сохраняет в KV', async () => {
     // Live-запись без переводных полей (как в KV до i18n), база совпадает с сидом
     const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
-    await writeNews(EVENT, [structuredClone(base) as typeof newsSeed[0]]);
+    await writeNews(EVENT, [structuredClone(base) as (typeof newsSeed)[0]]);
     const news = await readNews(EVENT);
     expect(news[0].titleEn).toBe(titleEn);
     expect(news[0].titleEs).toBe(titleEs);
@@ -92,7 +92,15 @@ describe('readNews / writeNews', () => {
 
   it('отредактированная админом новость (русский текст отличен от сида) не досаживается', async () => {
     // Кастомная запись БЕЗ переводных полей (спред из сида тащит их — вырезаем)
-    const { titleEn: _titleEn, titleEs: _titleEs, excerptEn: _excerptEn, excerptEs: _excerptEs, bodyEn: _bodyEn, bodyEs: _bodyEs, ...base } = newsSeed[0];
+    const {
+      titleEn: _titleEn,
+      titleEs: _titleEs,
+      excerptEn: _excerptEn,
+      excerptEs: _excerptEs,
+      bodyEn: _bodyEn,
+      bodyEs: _bodyEs,
+      ...base
+    } = newsSeed[0];
     const custom = [{ ...base, title: 'Админ переписал заголовок' }];
     await writeNews(EVENT, custom);
     const news = await readNews(EVENT);
@@ -104,7 +112,7 @@ describe('readNews / writeNews', () => {
 describe('mergeSeedTranslations — досадка переводов из сида', () => {
   it('seed-идентичной записи без переводов добавляются все 6 полей', () => {
     const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = newsSeed[0];
-    const stored = [structuredClone(base) as typeof newsSeed[0]];
+    const stored = [structuredClone(base) as (typeof newsSeed)[0]];
     const { items, changed } = mergeSeedTranslations(stored);
     expect(changed).toBe(true);
     expect(items[0].titleEn).toBe(titleEn);
@@ -120,7 +128,17 @@ describe('mergeSeedTranslations — досадка переводов из си�
   it('идемпотентность: повторный вызов на досаженном — changed=false', () => {
     const first = mergeSeedTranslations(structuredClone(newsSeed));
     expect(first.changed).toBe(false); // сид уже с переводами
-    const stored = first.items.map(({ titleEn: _titleEn, titleEs: _titleEs, excerptEn: _excerptEn, excerptEs: _excerptEs, bodyEn: _bodyEn, bodyEs: _bodyEs, ...base }) => base) as typeof newsSeed;
+    const stored = first.items.map(
+      ({
+        titleEn: _titleEn,
+        titleEs: _titleEs,
+        excerptEn: _excerptEn,
+        excerptEs: _excerptEs,
+        bodyEn: _bodyEn,
+        bodyEs: _bodyEs,
+        ...base
+      }) => base,
+    ) as typeof newsSeed;
     const second = mergeSeedTranslations(stored);
     expect(second.changed).toBe(true);
     const third = mergeSeedTranslations(second.items);
@@ -196,7 +214,7 @@ describe('sanitizeNewsItem', () => {
 
   it('недопустимая рубрика — ошибка с перечнем', () => {
     expect(() => sanitizeNewsItem({ ...validPayload, category: 'Слухи' })).toThrow(
-      new RegExp(NEWS_CATEGORIES.join(', '))
+      new RegExp(NEWS_CATEGORIES.join(', ')),
     );
   });
 
@@ -208,11 +226,11 @@ describe('sanitizeNewsItem', () => {
   it('пустое изображение допустимо, мусорное — нет', () => {
     expect(sanitizeNewsItem({ ...validPayload, image: '' }).image).toBe('');
     expect(() => sanitizeNewsItem({ ...validPayload, image: 'javascript:alert(1)' })).toThrow(
-      /Изображение/
+      /Изображение/,
     );
-    expect(sanitizeNewsItem({ ...validPayload, image: 'https://cdn.example.ru/x.webp' }).image).toBe(
-      'https://cdn.example.ru/x.webp'
-    );
+    expect(
+      sanitizeNewsItem({ ...validPayload, image: 'https://cdn.example.ru/x.webp' }).image,
+    ).toBe('https://cdn.example.ru/x.webp');
   });
 
   it('excerpt длиннее 220 символов — ошибка', () => {
@@ -315,15 +333,26 @@ describe('autopickProductIds — автоподбор по рубрике', () =
 
 describe('attachProducts (перелинковка с каталогом)', () => {
   const products = [
-    { id: '1', slug: 'samsung', name: 'Samsung S23', price: 79990, image: '/i/1.webp', inStock: true },
-    { id: '2', slug: 'macbook', name: 'MacBook Pro 16', price: 249990, image: '/i/2.webp', inStock: false },
+    {
+      id: '1',
+      slug: 'samsung',
+      name: 'Samsung S23',
+      price: 79990,
+      image: '/i/1.webp',
+      inStock: true,
+    },
+    {
+      id: '2',
+      slug: 'macbook',
+      name: 'MacBook Pro 16',
+      price: 249990,
+      image: '/i/2.webp',
+      inStock: false,
+    },
   ];
 
   it('порядок productIds сохраняется, поля — мини-карточка NewsProductCard', () => {
-    const [item] = attachProducts(
-      [{ ...newsSeed[0], id: '1', productIds: ['2', '1'] }],
-      products,
-    );
+    const [item] = attachProducts([{ ...newsSeed[0], id: '1', productIds: ['2', '1'] }], products);
     expect(item.products.map((p) => p.id)).toEqual(['2', '1']);
     expect(item.products[0]).toEqual({
       id: '2',

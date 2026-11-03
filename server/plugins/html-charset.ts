@@ -14,19 +14,19 @@
 // и API (у них charset уже есть / это не HTML) не затрагиваются.
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('request', (event) => {
-    const res = event.node?.res
-    if (!res || res.__charsetPatched) return
-    res.__charsetPatched = true
-    const original = res.setHeader.bind(res)
+    const res = event.node?.res;
+    if (!res || res.__charsetPatched) return;
+    res.__charsetPatched = true;
+    const original = res.setHeader.bind(res);
     res.setHeader = (name: string, value: unknown) => {
       if (
         String(name).toLowerCase() === 'content-type' &&
         typeof value === 'string' &&
         value.trim() === 'text/html'
       ) {
-        value = 'text/html; charset=utf-8'
+        value = 'text/html; charset=utf-8';
       }
-      return original(name, value)
-    }
-  })
-})
+      return original(name, value);
+    };
+  });
+});

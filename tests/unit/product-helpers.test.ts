@@ -99,7 +99,10 @@ describe('generateUniqueSlug', () => {
   });
 
   it('заняты tovar и tovar-1 — берётся tovar-2', () => {
-    const taken = [makeProduct({ id: '1', slug: 'tovar' }), makeProduct({ id: '2', slug: 'tovar-1' })];
+    const taken = [
+      makeProduct({ id: '1', slug: 'tovar' }),
+      makeProduct({ id: '2', slug: 'tovar-1' }),
+    ];
     expect(generateUniqueSlug('tovar', taken)).toBe('tovar-2');
   });
 
@@ -197,7 +200,10 @@ describe('getSimilarProducts', () => {
       makeProduct({ id: '11', slug: 'b', categories: ['тест'] }),
       makeProduct({ id: '12', slug: 'c', categories: ['тест'] }),
     ]);
-    const similar = await getSimilarProducts(event, makeProduct({ id: '10', categories: ['тест'] }));
+    const similar = await getSimilarProducts(
+      event,
+      makeProduct({ id: '10', categories: ['тест'] }),
+    );
     expect(similar.map((p) => p.id)).toEqual(['11', '12']);
   });
 });
@@ -211,9 +217,9 @@ describe('normalizeCategories — форматы поля категорий', (
   });
 
   it('массив объектов { name } (формат мультиселектов)', () => {
-    expect(normalizeCategories({ categories: [{ name: 'Спорт' }, { name: ' Велосипеды ' }] })).toEqual(
-      ['Спорт', 'Велосипеды'],
-    );
+    expect(
+      normalizeCategories({ categories: [{ name: 'Спорт' }, { name: ' Велосипеды ' }] }),
+    ).toEqual(['Спорт', 'Велосипеды']);
   });
 
   it('смешанный массив: строки и объекты вперемешку', () => {
@@ -240,7 +246,11 @@ describe('normalizeCategories — форматы поля категорий', (
   });
 
   it('дубликаты схлопываются, порядок первого вхождения сохраняется', () => {
-    expect(normalizeCategories({ categories: ['A', ' B', 'A ', 'B', 'C'] })).toEqual(['A', 'B', 'C']);
+    expect(normalizeCategories({ categories: ['A', ' B', 'A ', 'B', 'C'] })).toEqual([
+      'A',
+      'B',
+      'C',
+    ]);
   });
 
   it('поле не пришло вовсе — null (для PUT: категории не трогаем)', () => {
@@ -295,7 +305,10 @@ describe('migrateProductImages / photoIdOf — локальные фото ка�
   it('migrateProductImages: удалённое с Unsplash фото заменяется живым аналогом', () => {
     const REPLACEMENT_ID = 'photo-1607853202273-797f1c22a38e'; // PS5, скачан
     const products = [
-      makeProduct({ id: '1', image: `https://images.unsplash.com/${DEAD_ID}?w=500&h=400&fit=crop` }),
+      makeProduct({
+        id: '1',
+        image: `https://images.unsplash.com/${DEAD_ID}?w=500&h=400&fit=crop`,
+      }),
       makeProduct({ id: '2', image: '/images/products/already-local.webp' }),
     ];
     migrateProductImages(products);
@@ -315,7 +328,11 @@ describe('migrateProductImages / photoIdOf — локальные фото ка�
     const RICE = 'photo-1586201375761-83865001e31c';
     const VACUUM = 'photo-920000100012-b59b25fbd2';
     const products = [
-      makeProduct({ id: '12', image: `/images/products/${RICE}.webp`, gallery: [`/images/products/${RICE}.webp`] }),
+      makeProduct({
+        id: '12',
+        image: `/images/products/${RICE}.webp`,
+        gallery: [`/images/products/${RICE}.webp`],
+      }),
       // тот же файл у другого товара — его замены не задевают
       makeProduct({ id: '23', image: `/images/products/${RICE}.webp` }),
     ];
