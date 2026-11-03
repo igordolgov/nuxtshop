@@ -221,6 +221,9 @@ importers:
       '@markuplint/vue-spec':
         specifier: ^5.4.0
         version: 5.4.0(supports-color@10.2.2)
+      '@nuxt/cli':
+        specifier: ^4.0.3
+        version: 4.0.3(@nuxt/schema@4.6.3)(jiti@2.7.0)(oxc-parser@0.141.0)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1794,8 +1797,8 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@nuxt/cli@4.0.1':
-    resolution: {integrity: sha512-vtB77CmkrYUMoIKwk+HUdNQX1vuMPpnu7ExNYB91WuIxzzGrGQLSxGUpXa360xsyUkZ4h9s+qElAQQW9ZQP4WA==}
+  '@nuxt/cli@4.0.3':
+    resolution: {integrity: sha512-ca3G9E8G3QT/uUoRUfiwxmu7ER8jEa3rc1SiSJ5EkfB2NRUhPFZpGENiUEBDwuUZsQWgYvh644pnkN80rPlvXA==}
     engines: {node: ^22.21.0 || ^24.11.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
@@ -4106,6 +4109,9 @@ packages:
   confbox@0.3.1:
     resolution: {integrity: sha512-cKUSoKa8YxFZZSmraVi7onONx3amu77ngK3kGpsYHDH7drPwCRkQE1RYMPlLRrMtnciRj274XNRxcHxnKmDSnA==}
 
+  confbox@0.3.2:
+    resolution: {integrity: sha512-ZUAKhKlkCOrIGKc8cj7zek9s9z1mveHif/25nUshI2BzCRzF7KH7KHa+Lnh2ubq+e1tIlaFuP763mzW4qVoehg==}
+
   consola@3.4.2:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
     engines: {node: ^14.18.0 || >=16.10.0}
@@ -4569,6 +4575,9 @@ packages:
 
   exsolve@1.1.3:
     resolution: {integrity: sha512-kuzL9zherLQoqDeQaS55AiiIg1kb4KYXaSusTtgZTPlvKP2gGCI82LNmBNh5RjDVUXIcmgx+/Mx7vPwRzBbhJA==}
+
+  exsolve@1.2.0:
+    resolution: {integrity: sha512-h1pQPR9XoeSMdntRNCjyTznaume4UpfXrULBnlkZ2CUM/G5eSa+pBByGldO5uR8dxbPC+OuJXsPPNf+JZ81ADg==}
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
@@ -9454,15 +9463,15 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@nuxt/cli@4.0.1(@nuxt/schema@4.6.3)(jiti@2.7.0)(oxc-parser@0.141.0)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))':
+  '@nuxt/cli@4.0.3(@nuxt/schema@4.6.3)(jiti@2.7.0)(oxc-parser@0.141.0)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@clack/prompts': 1.8.1
       args-tokenizer: 0.3.0
       clickable-path: 0.1.1
-      confbox: 0.3.1
+      confbox: 0.3.2
       consola: 3.4.2
       defu: 6.1.7
-      exsolve: 1.1.3
+      exsolve: 1.2.0
       fuzzysort: 4.0.2
       get-port-please: 3.2.0
       my-bad: 0.2.11(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))
@@ -9470,10 +9479,10 @@ snapshots:
       package-manager-detector: 1.9.0
       pathe: 2.0.3
       perfect-debounce: 2.1.0
-      pkg-types: 2.3.3
+      pkg-types: 2.4.0
       rc9: 3.1.0
       scule: 1.3.0
-      srvx: 1.0.5
+      srvx: 1.0.8
       std-env: 4.3.0
       tinyclip: 1.0.3
       tinyexec: 1.3.1
@@ -11785,6 +11794,8 @@ snapshots:
 
   confbox@0.3.1: {}
 
+  confbox@0.3.2: {}
+
   consola@3.4.2: {}
 
   constantinople@4.0.1:
@@ -12305,6 +12316,8 @@ snapshots:
   exsolve@1.1.1: {}
 
   exsolve@1.1.3: {}
+
+  exsolve@1.2.0: {}
 
   extend@3.0.2:
     optional: true
@@ -14066,7 +14079,7 @@ snapshots:
     dependencies:
       '@dxup/nuxt': 0.5.10(@nuxt/schema@4.6.3)(confbox@0.2.4)(dotenv@17.4.2)(esbuild@0.28.2)(giget@3.3.1)(jiti@2.7.0)(mlly@1.8.2)(oxc-parser@0.141.0)(rolldown@1.2.15)(rollup@4.66.0)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))
       '@jridgewell/trace-mapping': 0.3.31
-      '@nuxt/cli': 4.0.1(@nuxt/schema@4.6.3)(jiti@2.7.0)(oxc-parser@0.141.0)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))
+      '@nuxt/cli': 4.0.3(@nuxt/schema@4.6.3)(jiti@2.7.0)(oxc-parser@0.141.0)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))
       '@nuxt/devalue': 2.0.2
       '@nuxt/devtools': 3.4.4(@nuxt/schema@4.6.3)(confbox@0.2.4)(db0@0.3.4)(dotenv@17.4.2)(giget@3.3.1)(ioredis@5.11.1(supports-color@10.2.2))(jiti@2.7.0)(magic-string@1.4.3)(mlly@1.8.2)(oxc-parser@0.141.0)(rolldown@1.2.15)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.15)(rollup@4.66.0)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1)))(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1))(vue@3.5.44(typescript@7.0.2))
       '@nuxt/kit': 4.6.3(@nuxt/schema@4.6.3)(confbox@0.2.4)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.4.3)(mlly@1.8.2)(oxc-parser@0.141.0)(rolldown@1.2.15)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.15)(rollup@4.66.0)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.44.0)(yaml@2.8.1)))
@@ -15138,8 +15151,7 @@ snapshots:
 
   srvx@1.0.5: {}
 
-  srvx@1.0.8:
-    optional: true
+  srvx@1.0.8: {}
 
   standard-as-callback@2.1.0: {}
 

@@ -37,6 +37,7 @@
     "@markuplint/pug-parser": "^5.4.0",
     "@markuplint/vue-parser": "^5.4.0",
     "@markuplint/vue-spec": "^5.4.0",
+    "@nuxt/cli": "^4.0.3",
     "@types/node": "^26.6.6",
     "cross-env": "^10.1.0",
     "knip": "^6.44.1",
