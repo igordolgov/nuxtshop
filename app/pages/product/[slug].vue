@@ -9,7 +9,7 @@
   //- чем на телефоне (раньше sm:hidden прятал их от 640px — аудит F10).
   //- Категория — текстовая крошка (не ссылка): фильтры каталога живут
   //- в локальном состоянии панелей, честная ссылка на неё невозможна
-  .breadcrumbs-bar.sticky.z-10.bg-base-100.border-b.border-base-200.shadow-sm
+  .breadcrumbs-bar.sticky.z-100.bg-base-100.border-b.border-base-200.shadow-sm
     .container.min-h-10.mx-auto.px-2
       nav(:aria-label="$t('catalog.breadcrumbs')")
         .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
