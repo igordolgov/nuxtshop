@@ -80,6 +80,7 @@ jobs:
         # поэтому наличие секрета проверяем в shell.
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "Секрет CLOUDFLARE_API_TOKEN не задан — деплой пропущен (остаётся ручным)."
