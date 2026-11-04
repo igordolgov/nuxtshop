@@ -30,6 +30,10 @@
     // в Workers getRequestURL() отдаёт http://localhost, без этой
     // переменной seoHelpers.resolveSiteUrl ушёл бы в localhost-фолбэк.
     "NUXT_PUBLIC_SITE_URL": "https://nuxt-shop.igordolgov1972.workers.dev",
+    // Аварийный выключатель трансформатора /img (server/routes/img.ts):
+    // 'off' → роут отвечает 302 на оригинал, трансформации отключены
+    // (откат БЕЗ пересборки). Пусто — трансформации включены.
+    "NUXT_PUBLIC_IMG_TRANSFORM": "",
   },
   "kv_namespaces": [
     {

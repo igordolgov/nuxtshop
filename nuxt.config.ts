@@ -24,6 +24,10 @@ export default defineNuxtConfig({
     public: {
       apiBaseUrl: '',
       siteUrl: '',
+      // Аварийный выключатель трансформатора /img: 'off' → роут отвечает
+      // 302 на оригинал. Меняется vars в wrangler.jsonc / дашборде БЕЗ
+      // пересборки. Пусто — трансформации включены.
+      imgTransform: '',
     },
   },
 
@@ -241,7 +245,20 @@ export default defineNuxtConfig({
   },
 
   image: {
-    provider: 'none',
+    // Кастомный провайдер (app/providers/cfWorkersImage.ts): NuxtImg строит
+    // /img?src=...&w=... — server/routes/img.ts применяет Cloudflare Image
+    // Transformations методом fetch(url, { cf: { image } }), единственный
+    // работающий на *.workers.dev (встроенный `cloudflare` строит
+    // /cdn-cgi/image/* — только для собственной зоны). НЕ возвращать 'none'
+    // и не указывать встроенный 'cloudflare' — см. AGENTS.md §2.
+    provider: 'cfworkers',
+    providers: {
+      cfworkers: {
+        name: 'cfworkers',
+        provider: '~/providers/cfWorkersImage',
+        options: { baseURL: '/img' },
+      },
+    },
     format: ['webp'],
     screens: {
       xs: 320,

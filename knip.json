@@ -9,6 +9,7 @@
         "app/plugins/**/*.{ts,js}",
         "app/components/**/*.vue",
         "app/composables/**/*.{ts,js}",
+        "app/providers/**/*.{ts,js}",
         "server/**/*.{ts,js}"
       ],
       "project": ["app/**/*.{js,ts,vue,css}"],
