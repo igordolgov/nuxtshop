@@ -7,8 +7,8 @@
       .card-body.p-4
         .flex.items-start.gap-3
           .app-icon
-            img(
-              :src="'/pwa-192x192.png'"
+            NuxtImg(
+              src="/pwa-192x192.png"
               alt="App"
               width="48"
               height="48"

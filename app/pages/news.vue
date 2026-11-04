@@ -55,7 +55,7 @@
         @click="openNews(featuredNews)"
       )
         .featured-media
-          img(
+          NuxtImg(
             v-if="featuredNews.image"
             :src="featuredNews.image"
             :srcset="`${featuredNews.image.replace('/products/', '/products/small/')} 400w, ${featuredNews.image} 800w`"
@@ -85,7 +85,7 @@
           @click="openNews(item)"
         )
           .card-media
-            img(
+            NuxtImg(
               v-if="item.image"
               :src="item.image.replace('/products/', '/products/small/')"
               width="400" height="300"
@@ -121,7 +121,7 @@
     .modal(:class="{ 'modal-open': activeNews }" role="dialog" aria-modal="true" @click.self="closeNews")
       .modal-box.max-w-2xl.p-0.overflow-hidden
         figure(v-if="activeNews && activeNews.image")
-          img.w-full(
+          NuxtImg.w-full(
             :src="activeNews.image"
             width="800" height="600"
             :alt="activeNews.title"
@@ -149,7 +149,7 @@
                   :to="$localePath(`/product/${p.id}`)"
                 )
                   .np-media
-                    img(
+                    NuxtImg(
                       :src="productImgSmall(p.image)"
                       width="400" height="300"
                       :alt="p.name"

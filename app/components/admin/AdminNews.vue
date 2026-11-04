@@ -51,7 +51,7 @@
           span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date, locale) }}
           span.text-xs(class="text-base-content/55") · id {{ item.id }}
         .flex.gap-3.items-start
-          img.w-14.h-14.rounded-lg.object-cover.flex-shrink-0(
+          NuxtImg.w-14.h-14.rounded-lg.object-cover.flex-shrink-0(
             v-if="item.image"
             :src="item.image"
             :alt="item.title"
@@ -169,7 +169,7 @@
             )
               | {{ resizing ? $t('admin.news.processing') : $t('admin.news.photoBtn') }}
               input.hidden(type="file" accept="image/jpeg,image/png,image/webp" @change="onFilePicked")
-          img.mt-2.h-24.rounded-lg.object-cover(
+          NuxtImg.mt-2.h-24.rounded-lg.object-cover(
             v-if="form.image"
             :src="form.image"
             :alt="$t('admin.news.imagePreviewAlt')"
