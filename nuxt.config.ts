@@ -230,6 +230,17 @@ export default defineNuxtConfig({
             expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
           },
         },
+        // Трансформированные картинки роута /img (server/routes/img.ts):
+        // URL уникален параметрами, контент неизменяем — тот же CacheFirst,
+        // что у файлов по расширению (не «страницы»: путь ровно /img).
+        {
+          urlPattern: /\/img\?src=/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'images-cache',
+            expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+          },
+        },
       ],
     },
   },
