@@ -1,5 +1,7 @@
 NuxtShop
 
+[![CI](https://github.com/igordolgov/nuxtshop/actions/workflows/ci.yml/badge.svg)](https://github.com/igordolgov/nuxtshop/actions/workflows/ci.yml)
+
 Учебный интернет-магазин с фейковыми товарами. Демонстрационный проект на Nuxt 4с SSR, авторизацией, корзиной, избранным, заказами и админ-панелью.
 
     ⚠️ Учебный проект. Товары, пользователи и пароли — вымышленные.Не использовать в production без существенной доработки.
