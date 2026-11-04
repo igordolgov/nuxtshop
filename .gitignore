@@ -63,6 +63,8 @@ scripts/data-products-backup-*.json
 # File Tree
 *.md
 !README.md
+!AGENTS.md
+!CLAUDE.md
 test.svg
 
 # ===========================================
