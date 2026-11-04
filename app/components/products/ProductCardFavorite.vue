@@ -44,7 +44,7 @@
         .image-container.relative.h-32.w-full.rounded-xl.overflow-hidden.bg-base-200.flex.items-center.justify-center
           .skeleton.absolute.inset-0.animate-pulse(v-if="imageLoading")
           
-          img.product-image(
+          NuxtImg.product-image(
             :src="currentImage" 
             :alt="product.name"
             :class="imageLoading ? 'opacity-0' : 'opacity-100'"

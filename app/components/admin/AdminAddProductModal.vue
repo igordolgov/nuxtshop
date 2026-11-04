@@ -194,7 +194,7 @@
               class="sm:h-20"
             )
               template(v-if="form.image && isValidImage(form.image)")
-                img(
+                NuxtImg(
                   :src="form.image"
                   :alt="$t('admin.productForm.previewAlt')"
                   class="w-full h-full object-cover"
@@ -229,7 +229,7 @@
             :key="index"
           )
             .w-12.h-12.border.rounded.overflow-hidden(class="sm:w-14 sm:h-14")
-              img(
+              NuxtImg(
                 :src="image"
                 :alt="$t('admin.productForm.galleryImageAlt', { n: index + 1 })"
                 class="w-full h-full object-cover"

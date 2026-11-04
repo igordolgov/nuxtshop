@@ -125,7 +125,7 @@
             .w-12.h-12.border.rounded.overflow-hidden.bg-base-300(
               v-if="localProduct.image"
             )
-              img.w-full.h-full.object-cover(
+              NuxtImg.w-full.h-full.object-cover(
                 :src="localProduct.image"
                 @error="onImageError"
               )

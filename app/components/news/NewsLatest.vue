@@ -25,7 +25,7 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
       :aria-label="item.title"
     )
       .card-media
-        img(
+        NuxtImg(
           v-if="item.image"
           :src="item.image.replace('/products/', '/products/small/')"
           width="400" height="300"

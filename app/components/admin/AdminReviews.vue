@@ -68,7 +68,7 @@
         //- Фото покупателя: клик — открыть оригинал в новой вкладке
         .flex.gap-2.flex-wrap(v-if="r.photos?.length")
           a.review-photo(v-for="(p, i) in r.photos" :key="p" :href="p" target="_blank" rel="noopener")
-            img(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy" width="64" height="64")
+            NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy" width="64" height="64")
         .flex.gap-2.justify-end.flex-wrap
           button.btn.btn-success.btn-xs.rounded-lg(
             v-if="!r.approved"

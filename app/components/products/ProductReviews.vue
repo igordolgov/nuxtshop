@@ -59,7 +59,7 @@
               | 📁 {{ $t('reviews.photoBtn') }}
             .flex.gap-2.flex-wrap
               .photo-thumb.relative(v-for="(p, i) in form.photos" :key="p")
-                img(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })")
+                NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })")
                 button.photo-remove(type="button" :aria-label="$t('reviews.photoRemoveAria', { n: i + 1 })" @click="removePhoto(i)") ×
           span.text-xs(class="mt-1 inline-block text-base-content/50") {{ $t('reviews.photoHint') }}
         //- Honeypot: обычному покупателю не виден
@@ -84,7 +84,7 @@
           //- Фото отзыва: клик открывает лайтбокс
           .review-photos.flex.gap-2.flex-wrap(v-if="r.photos?.length")
             button.review-photo-thumb(type="button" v-for="(p, i) in r.photos" :key="p" :aria-label="$t('reviews.photoOpenAria', { n: i + 1 })" @click="lightbox = { photos: r.photos, index: i }")
-              img(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy")
+              NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy")
 
     //- Пусто: приглашение
     .text-center.py-6(v-else)
@@ -99,7 +99,7 @@
     @click="lightbox = null"
     class="z-[10001] bg-black/85 flex items-center justify-center p-4 cursor-zoom-out"
   )
-    img(:src="lightbox.photos[lightbox.index]" :alt="$t('reviews.photoAlt', { n: lightbox.index + 1 })" class="max-h-[90vh] max-w-[92vw] rounded-xl shadow-2xl")
+    NuxtImg(:src="lightbox.photos[lightbox.index]" :alt="$t('reviews.photoAlt', { n: lightbox.index + 1 })" class="max-h-[90vh] max-w-[92vw] rounded-xl shadow-2xl")
     button.lb-close.absolute(type="button" :aria-label="$t('common.close')" @click.stop="lightbox = null" class="top-4 right-4 btn btn-circle btn-sm border-0 text-white bg-white/15") ✕
 
   //- Тост «появится после модерации» показывается через $notify

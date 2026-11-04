@@ -46,7 +46,7 @@
                       @click="removeOne(p.id)"
                     ) ✕
                     NuxtLink.block(:to="productUrl(p)" prefetch)
-                      img.compare-img(:src="resolveImage(p.image)" :alt="p.name" loading="lazy" width="120" height="120")
+                      NuxtImg.compare-img(:src="resolveImage(p.image)" :alt="p.name" loading="lazy" width="120" height="120")
                   NuxtLink.name-link.text-sm.font-semibold.leading-snug(:to="productUrl(p)" prefetch)
                     | {{ p.name }}
           tbody

@@ -72,7 +72,7 @@ section.recently-viewed(
           //- Ссылка на товар
           NuxtLink.flex-1.flex.flex-col(:to="getProductUrl(item)" prefetch)
             figure.p-1.pt-0.flex.justify-center.items-center(class="lg:h-40")
-              img.rounded-box.w-full.object-cover.max-w-full(
+              NuxtImg.rounded-box.w-full.object-cover.max-w-full(
                 :src="getValidImageUrl(item.image)"
                 :srcset="productSrcset(getValidImageUrl(item.image))"
                 :sizes="productSrcset(getValidImageUrl(item.image)) ? '(max-width: 767px) 45vw, 280px' : undefined"

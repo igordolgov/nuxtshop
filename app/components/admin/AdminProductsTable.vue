@@ -56,7 +56,7 @@
               td
                 .avatar
                   .mask.mask-squircle.w-9.h-9.bg-base-200
-                    img(
+                    NuxtImg(
                       v-if="getSafeImage(product.image)"
                       :src="getSafeImage(product.image)"
                       :alt="loc(product).name"
@@ -120,7 +120,7 @@
               //- Фото
               .avatar.flex-shrink-0
                 .mask.mask-squircle.w-12.h-12.bg-base-300
-                  img(
+                  NuxtImg(
                     v-if="getSafeImage(product.image)"
                     :src="getSafeImage(product.image)"
                     :alt="loc(product).name"

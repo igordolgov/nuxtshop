@@ -68,7 +68,7 @@
             //- (sharp не работает на Workers), картинки уже webp — ресайз
             //- делается при загрузке в админке (useImageResize). Подмену битых
             //- картинок делает handleImageError → fallbackImage.
-            img(
+            NuxtImg(
               :src="getValidImageUrl(image)"
               :alt="$t('product.imageAlt', { name: productName || $t('product.nameFallback'), n: index + 1 })"
               class="z-10 relative product-main-image"
@@ -160,6 +160,9 @@
           //- Зум-модалка: открывается по клику (сдвиги после user input
           //- в CLS не учитываются), декодируем асинхронно. Мёртвые пропсы
           //- provider/placeholder/fallback удалены — см. комментарий выше.
+          //- Сырой img здесь ОСОЗНАННО: ref должен отдавать DOM-элемент для
+          //- зум-жестов (useImageZoom: getBoundingClientRect/transform);
+          //- ref на NuxtImg вернул бы инстанс компонента, а не <img>.
           //- Класс zoom-anim включает transition только ВНЕ активного
           //- жеста: во время пана/пинча трансформ следует за пальцем 1:1.
           img.modal-zoom-image(
