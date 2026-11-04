@@ -5,10 +5,12 @@
   :class="{ 'has-search-highlight': hasSearchHighlight }"
 )
   //- Дефицитный остаток: бейдж на фото при ≤ LOW_STOCK_THRESHOLD шт.
-  //- (срочность покупки; обилие на складе бейджем не подсвечиваем)
+  //- (срочность покупки; обилие на складе бейджем не подсвечиваем).
+  //- Фон — фиксированный насыщенный тёмно-жёлтый (yellow-600) + белый
+  //- текст на ОБЕИХ темах: семантика bg-warning «плавает» от темы к теме
   .stock-badge.absolute.z-10.rounded-full.shadow-sm(
     v-if="isLowStock",
-    class="top-1 right-1 px-2 py-0.5 text-xs font-medium bg-warning/95 text-warning-content",
+    class="top-1 right-1 px-2 py-0.5 text-xs font-semibold bg-yellow-600 text-white",
     role="status"
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 
@@ -100,8 +102,13 @@
           v-if="hasDiscount(product)",
           class="text-base-content/45"
         ) {{ formatPrice(product.oldPrice) }} ₽
-        span.badge.badge-sm.border-0.bg-error.text-error-content.font-semibold.shrink-0(
-          v-if="hasDiscount(product)"
+        //- Плашка скидки: умеренное скругление (не pill), насыщенный
+        //- тёмно-красный фон (одинаковый на всех темах — без
+        //- daisyUI-семантики), белый текст bold (не extrabold), компактные
+        //- паддинги — верхний чуть меньше нижнего
+        span.shrink-0(
+          v-if="hasDiscount(product)",
+          class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-sm leading-4 font-bold text-white"
         ) −{{ discountPercent(product) }}%
       .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>

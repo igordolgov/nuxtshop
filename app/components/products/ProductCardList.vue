@@ -57,8 +57,10 @@
               v-if="hasDiscount(product)",
               class="text-base-content/45"
             ) {{ formatPrice(product.oldPrice) }} ₽
-            span.badge.badge-sm.border-0.bg-error.text-error-content.font-semibold(
-              v-if="hasDiscount(product)"
+            //- Плашка скидки: единый вид с ProductCardGrid/ProductInfo
+            span.shrink-0(
+              v-if="hasDiscount(product)",
+              class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-sm leading-4 font-bold text-white"
             ) −{{ discountPercent(product) }}%
           .text-md.text-error.transition-all.duration-300(
             v-else

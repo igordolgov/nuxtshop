@@ -53,20 +53,27 @@
       //- Скидка (oldPrice) — только у базовой цены: у варианта со своей
       //- ценой соответствие oldPrice не гарантировано (baseDiscount).
       .flex.items-end.justify-between.gap-4.py-1
-        .price-section
+        //- min-w-0: секция цены может сжиматься, старая цена/бейдж
+        //- переносятся на следующую строку (flex-wrap внутри)
+        .price-section.min-w-0
           .flex.flex-wrap.items-baseline(class="gap-x-2 gap-y-0.5")
-            .text-3xl.font-bold.text-base-content {{ formatPrice(currentPrice) }} ₽
-            span.text-xl.line-through(
+            //- Цена на мобильном мельче (text-2xl), чтобы плашки наличия
+            //- и остатка справа гарантированно умещались в одну строку
+            .font-bold.text-base-content(class="text-2xl sm:text-3xl") {{ formatPrice(currentPrice) }} ₽
+            span.line-through(
               v-if="baseDiscount",
-              class="text-base-content/45"
+              class="text-lg sm:text-xl text-base-content/45"
             ) {{ formatPrice(product.oldPrice) }} ₽
-            span.badge.border-0.bg-error.text-error-content.font-semibold(
-              v-if="baseDiscount"
+            //- Плашка скидки: единый вид с ProductCardGrid/ProductCardList
+            span.shrink-0(
+              v-if="baseDiscount",
+              class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-base leading-5 font-bold text-white"
             ) −{{ discountPercent(product) }}%
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
-        .stock-section.text-right
-          .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.text-xs.font-medium(
+        //- shrink-0: плашка наличия не сжимается — текст всегда в одну строку
+        .stock-section.text-right.shrink-0
+          .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.text-xs.font-medium.whitespace-nowrap.shrink-0(
             :class="currentStock.inStock ? 'bg-success/10 text-success' : 'bg-error/10 text-error'"
           )
             span.size-2.rounded-full(:class="currentStock.inStock ? 'bg-success' : 'bg-error'")
