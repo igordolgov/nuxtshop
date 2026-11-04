@@ -101,8 +101,11 @@ describe('parseImageTransformQuery — лимиты и белый список �
 });
 
 describe('buildCfImageOptions', () => {
-  it('передаёт только заданное, quality всегда присутствует', () => {
-    expect(buildCfImageOptions({ src: '/a.webp', quality: 75 })).toEqual({ quality: 75 });
+  it('quality всегда задан, формат по умолчанию webp (иначе пайплайн отдаёт jpeg)', () => {
+    expect(buildCfImageOptions({ src: '/a.webp', quality: 75 })).toEqual({
+      quality: 75,
+      format: 'webp',
+    });
     expect(
       buildCfImageOptions({
         src: '/a.webp',

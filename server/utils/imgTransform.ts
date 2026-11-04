@@ -139,12 +139,19 @@ export function parseImageTransformQuery(query: RawQuery): ParsedImageTransformQ
   };
 }
 
-/** Опции cf.image для fetch(url, { cf }) из провалидированных параметров. */
+/**
+ * Опции cf.image для fetch(url, { cf }) из провалидированных параметров.
+ * Формат по умолчанию — webp: без явного format пайплайн Cloudflare
+ * кодирует результат в jpeg — теряется альфа-канал (у webp/png с
+ * прозрачностью) и файл выходит крупнее. Оба разрешённых источника
+ * (/images/products/*, /api/images/*) — уже webp, поэтому конвертация
+ * в webp безопасна для любого запроса.
+ */
 export function buildCfImageOptions(params: ImageTransformParams): Record<string, unknown> {
   const options: Record<string, unknown> = { quality: params.quality };
   if (params.width !== undefined) options.width = params.width;
   if (params.height !== undefined) options.height = params.height;
-  if (params.format !== undefined) options.format = params.format;
+  options.format = params.format ?? 'webp';
   if (params.fit !== undefined) options.fit = params.fit;
   return options;
 }
