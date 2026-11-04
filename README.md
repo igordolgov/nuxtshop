@@ -85,15 +85,15 @@ pnpm deploy    # = nuxt build && wrangler deploy
 
 ### Секреты и переменные воркера (Settings → Variables and Secrets)
 
-| Имя | Тип | Назначение |
-| --- | --- | --- |
-| KV | KV Namespace | хранилище (товары, пользователи, заказы, сессии) |
-| TELEGRAM_BOT_TOKEN | Secret | токен бота (BotFather) |
-| TELEGRAM_ADMIN_CHAT_ID | Secret | адресат карточек: id группы (-100...) и/или список через запятую |
-| TELEGRAM_ADMIN_USER_IDS | Secret | кто может жать кнопки/слать команды (id пользователей, через запятую) |
-| TELEGRAM_WEBHOOK_SECRET | Secret | проверка, что webhook зовёт Telegram |
-| NUXT_PUBLIC_API_BASE_URL | Text | пусто (API на том же домене) |
-| NUXT_PUBLIC_SITE_URL | Text | пусто — канонический адрес сайта для robots.txt/sitemap.xml/JSON-LD (см. раздел SEO); без него берётся домен запроса |
+| Имя                      | Тип          | Назначение                                                                                                           |
+| ------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| KV                       | KV Namespace | хранилище (товары, пользователи, заказы, сессии)                                                                     |
+| TELEGRAM_BOT_TOKEN       | Secret       | токен бота (BotFather)                                                                                               |
+| TELEGRAM_ADMIN_CHAT_ID   | Secret       | адресат карточек: id группы (-100...) и/или список через запятую                                                     |
+| TELEGRAM_ADMIN_USER_IDS  | Secret       | кто может жать кнопки/слать команды (id пользователей, через запятую)                                                |
+| TELEGRAM_WEBHOOK_SECRET  | Secret       | проверка, что webhook зовёт Telegram                                                                                 |
+| NUXT_PUBLIC_API_BASE_URL | Text         | пусто (API на том же домене)                                                                                         |
+| NUXT_PUBLIC_SITE_URL     | Text         | пусто — канонический адрес сайта для robots.txt/sitemap.xml/JSON-LD (см. раздел SEO); без него берётся домен запроса |
 
 ### Регистрация webhook
 
@@ -116,8 +116,8 @@ Invoke-RestMethod "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https
 
 Администратор задаётся сидом server/data/users.json: при первом обращении к хранилищу пользователей `readUsers()` (server/lib/userHelpers.ts) загружает сид в Workers KV. Отдельный скрипт инициализации не нужен.
 
-| Роль | Email | Пароль |
-| --- | --- | --- |
+| Роль          | Email         | Пароль   |
+| ------------- | ------------- | -------- |
 | Администратор | admin@shop.ru | admin123 |
 
 > ⚠️ Смените пароль после первого входа — через админ-панель.
@@ -154,13 +154,7 @@ npx wrangler kv key put "data:users" --path users-backup.json --binding=KV
   const ITER = 20000;
   const enc = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(pw),
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  );
+  const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
   const bits = new Uint8Array(
     await crypto.subtle.deriveBits(
       { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: ITER },
@@ -215,18 +209,18 @@ wrangler.jsonc       # Конфигурация Cloudflare Workers
 
 ## Скрипты
 
-| Команда | Что делает |
-| --- | --- |
-| pnpm dev | Запуск dev-сервера с hot-reload |
-| pnpm build | Продакшн-сборка |
-| pnpm preview | Локальная эмуляция Workers (wrangler dev; сначала pnpm build) |
-| pnpm deploy | Сборка + деплой на Cloudflare |
-| pnpm generate | Генерация статического сайта |
-| pnpm lint:markup | Проверка шаблонов markuplint |
-| pnpm test | Юнит-тесты серверной логики (vitest) |
-| pnpm fmt / pnpm fmt:check | Форматирование oxfmt |
-| pnpm knip | Поиск неиспользуемых файлов и экспортов |
-| pnpm cf:typegen | Генерация типов Cloudflare (wrangler types) |
+| Команда                   | Что делает                                                    |
+| ------------------------- | ------------------------------------------------------------- |
+| pnpm dev                  | Запуск dev-сервера с hot-reload                               |
+| pnpm build                | Продакшн-сборка                                               |
+| pnpm preview              | Локальная эмуляция Workers (wrangler dev; сначала pnpm build) |
+| pnpm deploy               | Сборка + деплой на Cloudflare                                 |
+| pnpm generate             | Генерация статического сайта                                  |
+| pnpm lint:markup          | Проверка шаблонов markuplint                                  |
+| pnpm test                 | Юнит-тесты серверной логики (vitest)                          |
+| pnpm fmt / pnpm fmt:check | Форматирование oxfmt                                          |
+| pnpm knip                 | Поиск неиспользуемых файлов и экспортов                       |
+| pnpm cf:typegen           | Генерация типов Cloudflare (wrangler types)                   |
 
 ## Работа с GitHub (шпаргалка)
 
