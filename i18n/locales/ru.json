@@ -225,7 +225,12 @@
     "photoAlt": "Фото из отзыва {n}",
     "photoOpenAria": "Открыть фото {n}",
     "photoLightboxAria": "Фото из отзыва",
-    "photoError": "Не удалось обработать фото"
+    "photoError": "Не удалось обработать фото",
+    "helpful": "Полезно",
+    "helpfulAria": "Отметить отзыв как полезный",
+    "helpfulLogin": "Войдите, чтобы отмечать отзывы полезными",
+    "helpfulError": "Не удалось учесть отметку",
+    "shopReply": "Ответ магазина"
   },
   "news": {
     "title": "Новости и акции",
@@ -586,6 +591,13 @@
     "itemsAddedToCart": "Товары добавлены в корзину",
     "addedPartial": "Добавлено {added} из {total} — остальное закончилось",
     "addedNone": "Не удалось добавить: товары закончились",
+    "cancelOrder": "Отменить заказ",
+    "cancelOrderConfirm": "Отменить заказ {id}? Это действие нельзя отменить.",
+    "cancelOrderYes": "Да, отменить",
+    "cancelOrderKeep": "Оставить заказ",
+    "cancelOrderTooLate": "Заказ уже передан в доставку — отменить нельзя",
+    "cancelOrderSuccess": "Заказ отменён",
+    "cancelOrderError": "Не удалось отменить заказ",
     "noFavorites": "Нет избранного",
     "findProducts": "Найти товары",
     "subtotal": "Подытог",
@@ -989,7 +1001,17 @@
       "tabsAria": "Разделы модерации",
       "tabProducts": "О товарах",
       "tabStore": "О магазине",
-      "tabAlerts": "О поступлении"
+      "tabAlerts": "О поступлении",
+      "helpfulLabel": "Полезно: {n}",
+      "replyBtn": "Ответить",
+      "replyEditBtn": "Изменить ответ",
+      "replyPlaceholder": "Ответ магазина — его увидят покупатели",
+      "replySave": "Сохранить ответ",
+      "replyDelete": "Удалить ответ",
+      "replyConfirmDelete": "Удалить ответ магазина на этот отзыв?",
+      "replySaved": "Ответ сохранён",
+      "replyDeleted": "Ответ удалён",
+      "replyError": "Не удалось сохранить ответ"
     },
     "users": {
       "title": "Пользователи",

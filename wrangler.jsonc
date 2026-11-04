@@ -34,6 +34,11 @@
     // 'off' → роут отвечает 302 на оригинал, трансформации отключены
     // (откат БЕЗ пересборки). Пусто — трансформации включены.
     "NUXT_PUBLIC_IMG_TRANSFORM": "",
+    // Токен Cloudflare Web Analytics (бикон без cookies, app.vue).
+    // Берётся из дашборда: Analytics & Logs → Web Analytics → сайт
+    // nuxt-shop.igordolgov1972.workers.dev → фрагмент data-cf-beacon.
+    // Сам токен публичен (виден в HTML). Пусто — бикон не подключается.
+    "NUXT_PUBLIC_CF_BEACON_TOKEN": "",
   },
   "kv_namespaces": [
     {

@@ -1,6 +1,12 @@
 // server/api/product/[slug].ts
 import { getProductBySlug, getSimilarProducts } from '../../lib/productHelpers';
-import { approvedReviews, ratingSummary, readReviews } from '../../lib/reviewHelpers';
+import {
+  approvedReviews,
+  publicReviewView,
+  ratingSummary,
+  readReviews,
+} from '../../lib/reviewHelpers';
+import { getSessionUser } from '../../utils/auth';
 import { buildProductJsonLd, resolveSiteUrl } from '../../lib/seoHelpers';
 import { localizedProduct } from '../../lib/localizedProduct';
 
@@ -33,8 +39,13 @@ export default defineEventHandler(async (event) => {
 
     // Одобренные отзывы товара: блок на карточке + aggregateRating в JSON-LD
     // (звёзды в выдаче поисковиков). Не прошедшие модерацию — не видны.
+    // publicReviewView скрывает helpfulBy (id пользователей): наружу — только
+    // счётчик «полезно» и факт отметки ТЕКУЩЕГО пользователя (null у гостей).
     const allReviews = await readReviews(event);
-    const reviews = approvedReviews(allReviews, String(product.id));
+    const sessionUser = await getSessionUser(event);
+    const reviews = approvedReviews(allReviews, String(product.id)).map((r) =>
+      publicReviewView(r, sessionUser?.id ?? null),
+    );
     const ratingSummaryValue = ratingSummary(reviews);
 
     // JSON-LD строится на сервере — страница и бот используют один источник;

@@ -142,6 +142,32 @@
               @click="repeatOrder(order)"
               v-else
             ) {{ $t('user.repeatOrder') }}
+            //- Отмена доступна только до передачи в доставку (new/confirmed)
+            button.btn.btn-outline.btn-sm.rounded-xl(
+              type="button"
+              v-if="canCancel(order)"
+              class="hover:bg-error hover:text-error-content hover:border-error"
+              :disabled="cancellingId === order.id"
+              @click="confirmCancelId = order.id"
+            ) {{ $t('user.cancelOrder') }}
+
+          //- Подтверждение отмены (инлайн вместо window.confirm — как в админке)
+          .flex.flex-col.gap-2.pt-1(v-if="confirmCancelId === order.id")
+            p.text-sm(class="text-base-content/70")
+              | {{ $t('user.cancelOrderConfirm', { id: order.id }) }}
+            .flex.gap-2
+              button.btn.btn-error.btn-sm.rounded-xl.flex-1(
+                type="button"
+                :disabled="cancellingId === order.id"
+                @click="cancelOrder(order)"
+              )
+                span.loading.loading-spinner.loading-xs(v-if="cancellingId === order.id")
+                | {{ $t('user.cancelOrderYes') }}
+              button.btn.btn-ghost.btn-sm.rounded-xl(
+                type="button"
+                :disabled="cancellingId === order.id"
+                @click="confirmCancelId = null"
+              ) {{ $t('user.cancelOrderKeep') }}
 
   MobileNavFooter
 </template>
@@ -231,6 +257,37 @@ const statusDotClass = (s) => ({
 
 const deliveryLabel = (m) =>
   m === 'courier' ? t('orders.deliveryCourier') : m === 'post' ? t('orders.deliveryPost') : t('orders.deliveryPickup')
+
+//- Отмена заказа: до передачи в доставку (new/confirmed) — зеркало
+//- CUSTOMER_CANCELLABLE_STATUSES на сервере; финальное решение — сервер
+const CANCELLABLE_STATUSES = ['new', 'confirmed']
+const confirmCancelId = ref(null)
+const cancellingId = ref(null)
+
+const canCancel = (order) => CANCELLABLE_STATUSES.includes(order.status)
+
+//- Отмена: POST /api/my/orders/:id/cancel → сервер проверит владение и
+//- статус, вернёт склад при необходимости. 409 — уже передан в доставку
+//- (например, админ подтвердил заказ, пока пользователь держал открытой страницу)
+const cancelOrder = async (order) => {
+  cancellingId.value = order.id
+  try {
+    await $fetch(`/api/my/orders/${order.id}/cancel`, { method: 'POST' })
+    $notify.success(t('user.cancelOrderSuccess'))
+    confirmCancelId.value = null
+    await loadOrders()
+  } catch (err) {
+    const tooLate = err?.data?.statusCode === 409
+    $notify.error(t(tooLate ? 'user.cancelOrderTooLate' : 'user.cancelOrderError'))
+    confirmCancelId.value = null
+    if (tooLate) {
+      // Статус устарел (админ уже подтвердил заказ) — обновим бейджи/кнопки
+      await loadOrders()
+    }
+  } finally {
+    cancellingId.value = null
+  }
+}
 
 //- «Повторить заказ»: кладём все позиции в корзину (что есть на складе).
 //- Уведомление подскажет, если что-то не добавилось

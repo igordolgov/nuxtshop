@@ -57,6 +57,7 @@
               path(stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z")
           span.font-medium.text-sm {{ r.author }}
           span.text-xs(class="text-base-content/50") {{ formatDate(r.createdAt) }}
+          span.badge.badge-ghost.badge-sm(v-if="r.helpfulCount > 0") {{ $t('admin.reviews.helpfulLabel', { n: r.helpfulCount }) }}
           span.badge.badge-sm(v-if="r.approved" class="badge-success") {{ $t('admin.reviews.published') }}
           span.badge.badge-sm.badge-warning(v-else) {{ $t('admin.reviews.pendingBadge') }}
         //- Товар: имя со ссылкой на карточку (или «товар удалён»)
@@ -69,7 +70,49 @@
         .flex.gap-2.flex-wrap(v-if="r.photos?.length")
           a.review-photo(v-for="(p, i) in r.photos" :key="p" :href="p" target="_blank" rel="noopener")
             NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy" width="64" height="64")
+        //- Существующий ответ магазина
+        .shop-reply.rounded-xl.p-3(
+          v-if="r.shopReply?.text && replyForId !== r.id"
+          class="bg-base-200 border-l-2 border-primary"
+        )
+          .flex.items-center.gap-2.mb-1.text-xs
+            span.font-medium {{ $t('reviews.shopReply') }}
+            span(class="text-base-content/50") {{ formatDate(r.shopReply.at) }}
+            button.reply-remove.btn.btn-ghost.btn-xs.ml-auto(
+              type="button"
+              class="hover:bg-error hover:text-error-content"
+              :aria-label="$t('admin.reviews.replyDelete')"
+              @click="removeReply(r)"
+            ) ✕
+          p.text-sm.leading-relaxed {{ r.shopReply.text }}
+        //- Форма ответа (открыта для текущего отзыва)
+        .reply-form.space-y-2(v-if="replyForId === r.id")
+          textarea.textarea.textarea-bordered.w-full.leading-relaxed(
+            v-model="replyText"
+            rows="3"
+            maxlength="600"
+            :placeholder="$t('admin.reviews.replyPlaceholder')"
+          )
+          .flex.gap-2.justify-end.flex-wrap
+            button.btn.btn-ghost.btn-xs.rounded-lg(
+              type="button"
+              :disabled="replyBusy"
+              @click="replyForId = null"
+            ) {{ $t('reviews.cancel') }}
+            button.btn.btn-primary.btn-xs.rounded-lg(
+              type="button"
+              :disabled="replyBusy || (replyText.trim().length < 2 && !(r.shopReply?.text))"
+              @click="saveReply(r)"
+            )
+              span.loading.loading-spinner.loading-xs(v-if="replyBusy")
+              | {{ replyText.trim() ? $t('admin.reviews.replySave') : $t('admin.reviews.replyDelete') }}
         .flex.gap-2.justify-end.flex-wrap
+          //- Кнопка ответа: скрыта, пока открыта форма этого отзыва
+          button.btn.btn-outline.btn-xs.rounded-lg(
+            v-if="replyForId !== r.id"
+            type="button"
+            @click="openReply(r)"
+          ) {{ r.shopReply?.text ? $t('admin.reviews.replyEditBtn') : $t('admin.reviews.replyBtn') }}
           button.btn.btn-success.btn-xs.rounded-lg(
             v-if="!r.approved"
             type="button"
@@ -138,6 +181,53 @@ const setApproved = async (review, approved) => {
     $notify.error(t('admin.reviews.saveError'))
   } finally {
     busyId.value = null
+  }
+}
+
+// ─── Ответ магазина на отзыв ───────────────────────────────────────
+// Открытая форма — одна (replyForId), текст редактируется в replyText.
+// Пустой текст при наличии ответа = удалить ответ (кнопка меняет подпись).
+const replyForId = ref(null)
+const replyText = ref('')
+const replyBusy = ref(false)
+
+const openReply = (review) => {
+  replyForId.value = review.id
+  replyText.value = review.shopReply?.text ?? ''
+}
+
+const saveReply = async (review) => {
+  replyBusy.value = true
+  try {
+    const resp = await $fetch(`/api/admin/reviews/${review.id}/reply`, {
+      method: 'PUT',
+      body: { text: replyText.value.trim() },
+    })
+    review.shopReply = resp?.review?.shopReply ?? null
+    $notify.success(resp?.message || (replyText.value.trim() ? t('admin.reviews.replySaved') : t('admin.reviews.replyDeleted')))
+    replyForId.value = null
+    replyText.value = ''
+  } catch (error) {
+    $notify.error(error?.data?.message || t('admin.reviews.replyError'))
+  } finally {
+    replyBusy.value = false
+  }
+}
+
+const removeReply = async (review) => {
+  if (!confirm(t('admin.reviews.replyConfirmDelete'))) return
+  replyBusy.value = true
+  try {
+    const resp = await $fetch(`/api/admin/reviews/${review.id}/reply`, {
+      method: 'PUT',
+      body: { text: '' },
+    })
+    review.shopReply = resp?.review?.shopReply ?? null
+    $notify.success(t('admin.reviews.replyDeleted'))
+  } catch (error) {
+    $notify.error(error?.data?.message || t('admin.reviews.replyError'))
+  } finally {
+    replyBusy.value = false
   }
 }
 

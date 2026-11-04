@@ -43,6 +43,24 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Отменён',
 };
 
+// ─── Отмена заказа покупателем (ЛК) ─────────────────────────────────
+
+/**
+ * Статусы, в которых покупатель может отменить заказ сам: до передачи
+ * в доставку. shipped/delivered — только через админку/поддержку.
+ * Зеркалится в app/pages/user/orders.vue (список CANCELLABLE).
+ */
+export const CUSTOMER_CANCELLABLE_STATUSES: OrderStatus[] = ['new', 'confirmed'];
+
+/**
+ * Может ли пользователь отменить этот заказ: только свой и только
+ * в статусе до отправки. Чистая функция — покрыта тестами.
+ */
+export function canCustomerCancel(order: Order, userId: string): boolean {
+  if (!order || order.customer?.userId !== userId) return false;
+  return CUSTOMER_CANCELLABLE_STATUSES.includes(order.status);
+}
+
 // ─── Правила ценообразования.
 // СЕРВЕР — единственный источник правды: клиентские суммы игнорируются,
 // цены/названия/наличие берутся из KV товаров.

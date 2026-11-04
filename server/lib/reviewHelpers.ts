@@ -26,6 +26,11 @@ export interface ReviewItem {
   approved: boolean;
   /** Фото покупателя: пути /api/images/reviews/… (или data-URI в dev). */
   photos?: string[];
+  /** Кто отметил отзыв «полезно» (id пользователей). Наружу НЕ отдаётся —
+   *  только счётчик и факт отметки текущего пользователя (publicReviewView). */
+  helpfulBy?: string[];
+  /** Ответ магазина на отзыв; пусто — ответа нет (или удалён). */
+  shopReply?: { text: string; at: string };
 }
 
 /** Сводка по товару для карточки и Schema.org aggregateRating. */
@@ -148,6 +153,86 @@ export function normalizeReviewPhotos(raw: unknown): string[] {
     if (!photos.includes(uri)) photos.push(uri);
   }
   return photos;
+}
+
+// ─── «Полезно» и ответ магазина ──────────────────────────────────────────
+
+/** Защита от раздутия KV-записи: максимум отметок «полезно» на отзыв. */
+export const MAX_HELPFUL_MARKS = 1000;
+
+/** Лимит ответа магазина (символов после тримминга). */
+export const SHOP_REPLY_MAX = 600;
+
+/** Число отметок «полезно» (helpfulBy может отсутствовать у старых отзывов). */
+export function helpfulCountOf(review: ReviewItem): number {
+  return Array.isArray(review.helpfulBy) ? review.helpfulBy.length : 0;
+}
+
+/**
+ * Переключает отметку «полезно»: возвращает 'added' | 'removed'.
+ * Мутирует review на месте (как updateOrderStatus мутирует order) —
+ * endpoint читает/пишет массив целиком, отдельной записи на отметку нет.
+ * Чистая логика — покрыта тестами.
+ */
+export function toggleHelpful(review: ReviewItem, userId: string): 'added' | 'removed' {
+  const id = String(userId ?? '').trim();
+  if (!id) throw new ReviewValidationError('Не указан пользователь');
+  const marks = Array.isArray(review.helpfulBy) ? review.helpfulBy : [];
+  if (marks.includes(id)) {
+    review.helpfulBy = marks.filter((m) => m !== id);
+    return 'removed';
+  }
+  if (marks.length >= MAX_HELPFUL_MARKS) {
+    throw new ReviewValidationError('У отзыва слишком много отметок');
+  }
+  review.helpfulBy = [...marks, id];
+  return 'added';
+}
+
+/**
+ * Валидирует текст ответа магазина: тримминг, 2..SHOP_REPLY_MAX символов.
+ * Пустая/пробельная строка — легитимное «удалить ответ», возвращается ''.
+ * Кидает ReviewValidationError → endpoint отдаёт 400.
+ */
+export function normalizeShopReplyText(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw.trim() : '';
+  if (!text) return '';
+  if (text.length < 2 || text.length > SHOP_REPLY_MAX) {
+    throw new ReviewValidationError(`Ответ магазина — от 2 до ${SHOP_REPLY_MAX} символов`);
+  }
+  return text;
+}
+
+/**
+ * Ставит/обновляет ответ магазина; text '' — удаляет существующий.
+ * Мутация на месте; момент выставляет сервер (не админ-клиент).
+ */
+export function applyShopReply(review: ReviewItem, text: string, now = new Date()): void {
+  if (!text) {
+    delete review.shopReply;
+    return;
+  }
+  review.shopReply = { text, at: now.toISOString() };
+}
+
+/**
+ * Витринный вид отзыва: helpfulBy (id пользователей) наружу не уходит —
+ * вместо него helpfulCount и likedByMe текущего пользователя (null → false).
+ * shopReply проходят как есть, персональных данных не содержат.
+ */
+export function publicReviewView(
+  review: ReviewItem,
+  userId?: string | null,
+): Omit<ReviewItem, 'helpfulBy'> & { helpfulCount: number; likedByMe: boolean } {
+  const { helpfulBy, ...rest } = review;
+  void helpfulBy;
+  return {
+    ...rest,
+    helpfulCount: helpfulCountOf(review),
+    likedByMe: Boolean(
+      userId && Array.isArray(review.helpfulBy) && review.helpfulBy.includes(String(userId)),
+    ),
+  };
 }
 
 // ─── Витринные выборки (чистые функции — покрыты тестами) ────────────────

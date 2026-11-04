@@ -225,7 +225,12 @@
     "photoAlt": "Foto de la reseña {n}",
     "photoOpenAria": "Abrir foto {n}",
     "photoLightboxAria": "Foto de la reseña",
-    "photoError": "No se pudo procesar la foto"
+    "photoError": "No se pudo procesar la foto",
+    "helpful": "Útil",
+    "helpfulAria": "Marcar la reseña como útil",
+    "helpfulLogin": "Inicia sesión para marcar reseñas como útiles",
+    "helpfulError": "No se pudo registrar tu voto",
+    "shopReply": "Respuesta de la tienda"
   },
   "news": {
     "title": "Noticias y ofertas",
@@ -586,6 +591,13 @@
     "itemsAddedToCart": "Artículos añadidos al carrito",
     "addedPartial": "Añadidos {added} de {total}: el resto se ha agotado",
     "addedNone": "No se pudo añadir: artículos agotados",
+    "cancelOrder": "Cancelar pedido",
+    "cancelOrderConfirm": "¿Cancelar el pedido {id}? Esta acción no se puede deshacer.",
+    "cancelOrderYes": "Sí, cancelar",
+    "cancelOrderKeep": "Conservar pedido",
+    "cancelOrderTooLate": "El pedido ya fue enviado y no se puede cancelar",
+    "cancelOrderSuccess": "Pedido cancelado",
+    "cancelOrderError": "No se pudo cancelar el pedido",
     "noFavorites": "Sin favoritos",
     "findProducts": "Buscar productos",
     "subtotal": "Subtotal",
@@ -989,7 +1001,17 @@
       "tabsAria": "Secciones de moderación",
       "tabProducts": "Productos",
       "tabStore": "Tienda",
-      "tabAlerts": "Avisos de stock"
+      "tabAlerts": "Avisos de stock",
+      "helpfulLabel": "Útil: {n}",
+      "replyBtn": "Responder",
+      "replyEditBtn": "Editar respuesta",
+      "replyPlaceholder": "Respuesta de la tienda — visible para los clientes",
+      "replySave": "Guardar respuesta",
+      "replyDelete": "Eliminar respuesta",
+      "replyConfirmDelete": "¿Eliminar la respuesta de la tienda a esta reseña?",
+      "replySaved": "Respuesta guardada",
+      "replyDeleted": "Respuesta eliminada",
+      "replyError": "No se pudo guardar la respuesta"
     },
     "users": {
       "title": "Usuarios",

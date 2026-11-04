@@ -27,10 +27,25 @@ const localeHead = useLocaleHead({ dir: true, lang: true, seo: true });
 // (в Workers origin запроса = http://localhost); в dev он пуст → origin.
 const { public: publicConfig } = useRuntimeConfig();
 const siteOrigin = publicConfig.siteUrl || useRequestURL().origin;
+// CF Web Analytics: бикон БЕЗ cookies (RUM). Токен — var
+// NUXT_PUBLIC_CF_BEACON_TOKEN → runtimeConfig.public.cfBeaconToken.
+// Пусто (dev / до создания сайта в дашборде) — скрипт не подключается:
+// без токена бикон всё равно молчал бы, а лишний запрос не нужен.
+// defer — не блокирует парсинг; бикон сам трекает SPA-переходы.
+const cfBeaconScript = publicConfig.cfBeaconToken
+  ? [
+      {
+        src: "https://static.cloudflareinsights.com/beacon.min.js",
+        defer: true,
+        "data-cf-beacon": JSON.stringify({ token: publicConfig.cfBeaconToken }),
+      },
+    ]
+  : [];
 const ogImageAlt = () => `${t("app.title")} — ${t("meta.description").slice(0, 80)}`;
 useHead(() => ({
   htmlAttrs: { lang: localeHead.value.htmlAttrs.lang },
   link: [...(localeHead.value.link || [])],
+  script: cfBeaconScript,
   meta: [
     ...(localeHead.value.meta || []),
     // Локализованные description/keywords для ВСЕХ страниц: без этого

@@ -85,6 +85,34 @@
           .review-photos.flex.gap-2.flex-wrap(v-if="r.photos?.length")
             button.review-photo-thumb(type="button" v-for="(p, i) in r.photos" :key="p" :aria-label="$t('reviews.photoOpenAria', { n: i + 1 })" @click="lightbox = { photos: r.photos, index: i }")
               NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })" loading="lazy")
+          //- Ответ магазина (пишется в /admin/reviews — вкладка «О товарах»)
+          .shop-reply.rounded-xl.p-3(
+            v-if="r.shopReply?.text"
+            class="bg-base-200 border-l-2 border-primary"
+          )
+            .flex.items-center.gap-2.mb-1.text-xs
+              span.font-medium {{ $t('reviews.shopReply') }}
+              span(class="text-base-content/50") {{ formatDate(r.shopReply.at) }}
+            p.text-sm.leading-relaxed {{ r.shopReply.text }}
+          //- «Полезно»: тумблер со счётчиком; голос — на сервере, у гостя — подсказка
+          .flex.items-center.mt-1
+            button.helpful-btn.btn.btn-ghost.btn-xs.rounded-lg.gap-1(
+              type="button"
+              :aria-pressed="r.likedByMe ? 'true' : 'false'"
+              :aria-label="$t('reviews.helpfulAria')"
+              :disabled="helpfulBusyId === r.id"
+              @click="toggleHelpful(r)"
+            )
+              svg(
+                :class="r.likedByMe ? 'w-3.5 h-3.5 fill-primary text-primary' : 'w-3.5 h-3.5 fill-none text-base-content/60'"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              )
+                path(stroke-linecap="round" stroke-linejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5")
+              | {{ $t('reviews.helpful') }}
+              span(v-if="r.helpfulCount > 0") · {{ r.helpfulCount }}
 
     //- Пусто: приглашение
     .text-center.py-6(v-else)
@@ -176,6 +204,30 @@ const toggleForm = () => {
 
 // Лайтбокс: { photos, index } — какой отзыв и какое фото показано
 const lightbox = ref(null)
+
+// ─── «Полезно» ─────────────────────────────────────────────────────────────
+// Отмечать может только авторизованный: голос хранится на сервере (helpfulBy),
+// повторный клик снимает отметку. Гостям — подсказка войти.
+const { isAuthenticated } = useUserStore()
+const helpfulBusyId = ref(null)
+
+const toggleHelpful = async (review) => {
+  if (!isAuthenticated.value) {
+    $notify.info(t('reviews.helpfulLogin'))
+    return
+  }
+  if (helpfulBusyId.value) return
+  helpfulBusyId.value = review.id
+  try {
+    const resp = await $fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST' })
+    review.helpfulCount = Number(resp?.helpfulCount) || 0
+    review.likedByMe = Boolean(resp?.liked)
+  } catch (error) {
+    $notify.error(error?.data?.message || t('reviews.helpfulError'))
+  } finally {
+    helpfulBusyId.value = null
+  }
+}
 
 const submit = async () => {
   formError.value = ''

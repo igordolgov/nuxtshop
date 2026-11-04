@@ -28,6 +28,11 @@ export default defineNuxtConfig({
       // 302 на оригинал. Меняется vars в wrangler.jsonc / дашборде БЕЗ
       // пересборки. Пусто — трансформации включены.
       imgTransform: '',
+      // Cloudflare Web Analytics — бикон БЕЗ cookies (RUM). Токен задаётся
+      // var NUXT_PUBLIC_CF_BEACON_TOKEN (wrangler.jsonc): сам токен публичен
+      // (виден в HTML любого сайта с CF Analytics). Пусто — скрипт
+      // не подключается (dev и до настройки сайта в дашборде). См. app.vue.
+      cfBeaconToken: '',
     },
   },
 

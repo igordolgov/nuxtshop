@@ -2,7 +2,7 @@
 // Все отзывы для модерации (GET /api/admin/reviews). Только админ.
 // Обогащаются именем/слагом товара (для ссылок и понятного списка);
 // удалённые из каталога товары дают null — отзыв остаётся удаляемым.
-import { sortReviewsDesc, readReviews } from '../../../lib/reviewHelpers';
+import { publicReviewView, sortReviewsDesc, readReviews } from '../../../lib/reviewHelpers';
 import { readProducts } from '../../../lib/productHelpers';
 import { requireAdmin } from '../../../utils/auth';
 
@@ -15,7 +15,9 @@ export default defineEventHandler(async (event) => {
   const enriched = sortReviewsDesc(reviews).map((r) => {
     const product = byId.get(String(r.productId));
     return {
-      ...r,
+      // publicReviewView: helpfulBy (id пользователей) не нужен админке —
+      // только счётчик «полезно»; ids пользователей остаются внутренним делом
+      ...publicReviewView(r),
       productName: product?.name ?? null,
       productSlug: product?.slug ?? null,
     };

@@ -225,7 +225,12 @@
     "photoAlt": "Review photo {n}",
     "photoOpenAria": "Open photo {n}",
     "photoLightboxAria": "Review photo",
-    "photoError": "Could not process the photo"
+    "photoError": "Could not process the photo",
+    "helpful": "Helpful",
+    "helpfulAria": "Mark review as helpful",
+    "helpfulLogin": "Log in to mark reviews as helpful",
+    "helpfulError": "Failed to record your vote",
+    "shopReply": "Store reply"
   },
   "news": {
     "title": "News & Deals",
@@ -586,6 +591,13 @@
     "itemsAddedToCart": "Items added to cart",
     "addedPartial": "Added {added} of {total} — the rest are out of stock",
     "addedNone": "Could not add: items are out of stock",
+    "cancelOrder": "Cancel order",
+    "cancelOrderConfirm": "Cancel order {id}? This cannot be undone.",
+    "cancelOrderYes": "Yes, cancel it",
+    "cancelOrderKeep": "Keep order",
+    "cancelOrderTooLate": "The order has already been shipped and can no longer be cancelled",
+    "cancelOrderSuccess": "Order cancelled",
+    "cancelOrderError": "Failed to cancel the order",
     "noFavorites": "No favorites yet",
     "findProducts": "Find products",
     "subtotal": "Subtotal",
@@ -989,7 +1001,17 @@
       "tabsAria": "Moderation sections",
       "tabProducts": "Products",
       "tabStore": "Store",
-      "tabAlerts": "Restock alerts"
+      "tabAlerts": "Restock alerts",
+      "helpfulLabel": "Helpful: {n}",
+      "replyBtn": "Reply",
+      "replyEditBtn": "Edit reply",
+      "replyPlaceholder": "Store reply — visible to customers",
+      "replySave": "Save reply",
+      "replyDelete": "Delete reply",
+      "replyConfirmDelete": "Delete the store reply to this review?",
+      "replySaved": "Reply saved",
+      "replyDeleted": "Reply deleted",
+      "replyError": "Failed to save the reply"
     },
     "users": {
       "title": "Users",
