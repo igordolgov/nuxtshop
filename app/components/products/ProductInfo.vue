@@ -49,10 +49,20 @@
       //- Описание
       p.text-sm.leading-relaxed(class="text-base-content/85") {{ product.description }}
 
-      //- Цена и наличие (у варианта — своя цена/склад, этап «варианты»)
+      //- Цена и наличие (у варианта — своя цена/склад, этап «варианты»).
+      //- Скидка (oldPrice) — только у базовой цены: у варианта со своей
+      //- ценой соответствие oldPrice не гарантировано (baseDiscount).
       .flex.items-end.justify-between.gap-4.py-1
         .price-section
-          .text-3xl.font-bold.text-base-content {{ formatPrice(currentPrice) }} ₽
+          .flex.flex-wrap.items-baseline(class="gap-x-2 gap-y-0.5")
+            .text-3xl.font-bold.text-base-content {{ formatPrice(currentPrice) }} ₽
+            span.text-xl.line-through(
+              v-if="baseDiscount",
+              class="text-base-content/45"
+            ) {{ formatPrice(product.oldPrice) }} ₽
+            span.badge.border-0.bg-error.text-error-content.font-semibold(
+              v-if="baseDiscount"
+            ) −{{ discountPercent(product) }}%
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
         .stock-section.text-right
@@ -202,6 +212,14 @@ const hasVariants = computed(() => hasVariantsOf(props.product))
 const selectedVariant = computed(() => findVariant(props.product, props.selectedVariantId))
 const currentPrice = computed(() => variantPrice(props.product, selectedVariant.value))
 const currentStock = computed(() => variantStock(props.product, selectedVariant.value))
+//- Скидка базовой цены: показываем только когда отображается база
+//- (без варианта или у варианта нет своей цены) — иначе сравнение
+//- с oldPrice было бы неверным
+const baseDiscount = computed(
+  () =>
+    hasDiscount(props.product) &&
+    variantPrice(props.product, selectedVariant.value) === props.product.price,
+)
 const variantLabel = computed(() => localizedVariantLabel(props.product, locale.value))
 const localizedVariantTitle = (v) => localizedVariantName(v, locale.value)
 /** Вариант доступен для покупки (свой склад/наследованный). */

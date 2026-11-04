@@ -44,12 +44,22 @@
             loading="lazy",
             decoding="async",
           )
-            //- Цена
+        //- Цена (при скидке — зачёркнутая oldPrice + бейдж −%)
         .pt-3
-          .text-lg.font-bold.text-primary.transition-all.duration-300(
+          .flex.flex-wrap.items-baseline(
+            class="gap-x-1.5",
             v-if="product.inStock"
-            class="text-base md:text-xl group-hover:scale-105"
-          ) {{ formatPrice(product.price) }} ₽
+          )
+            .text-lg.font-bold.text-primary.transition-all.duration-300(
+              class="text-base md:text-xl group-hover:scale-105"
+            ) {{ formatPrice(product.price) }} ₽
+            span.text-xs.line-through(
+              v-if="hasDiscount(product)",
+              class="text-base-content/45"
+            ) {{ formatPrice(product.oldPrice) }} ₽
+            span.badge.badge-sm.border-0.bg-error.text-error-content.font-semibold(
+              v-if="hasDiscount(product)"
+            ) −{{ discountPercent(product) }}%
           .text-md.text-error.transition-all.duration-300(
             v-else
             class="group-hover:scale-105"

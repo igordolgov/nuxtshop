@@ -120,6 +120,23 @@
           label.label.py-1(v-if="errors.price")
             span.label-text-alt.text-error {{ errors.price }}
 
+        //- Цена до скидки (необязательно; должна быть больше текущей цены)
+        .form-control(class="sm:col-span-1")
+          label.label.py-1
+            span.label-text.text-xs {{ $t('admin.productForm.oldPriceLabel') }}
+          input.input.input-bordered.input-sm.w-full(
+            type="number"
+            v-model.number="form.oldPrice"
+            placeholder="0"
+            min="0"
+            step="0.01"
+            :disabled="isSubmitting"
+            :class="{ 'input-error': errors.oldPrice }"
+            @blur="validateField('oldPrice')"
+          )
+          label.label.py-1(v-if="errors.oldPrice")
+            span.label-text-alt.text-error {{ errors.oldPrice }}
+
         //- Количество
         .form-control(class="sm:col-span-1")
           label.label.py-1
@@ -304,12 +321,14 @@ const galleryInput = ref(null)
 const formError = ref('')
 
 // Ошибки валидации полей (categories добавлена как обязательная)
-const errors = ref({ name: '', price: '', categories: '' })
+const errors = ref({ name: '', price: '', oldPrice: '', categories: '' })
 
 const form = ref({
   name: '',
   description: '',
   price: null,
+  // «Цена до скидки» для витринного бейджа −%; пусто — без скидки
+  oldPrice: null,
   categories: [],
   // Переводы (необязательные)
   nameEn: '',
@@ -334,12 +353,22 @@ watch(
   { deep: true },
 )
 
+//- Цена изменилась — перепроверяем уже показанную ошибку oldPrice
+//- (условие «oldPrice > price» могло стать выполненным/нарушенным)
+watch(
+  () => form.value.price,
+  () => {
+    if (errors.value.oldPrice) validateField('oldPrice')
+  },
+)
+
 const isFormValid = computed(() => {
   const hasName = form.value.name?.trim().length > 0
   const hasValidPrice =
     form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
   const hasCategories = form.value.categories.length > 0
-  const noErrors = !errors.value.name && !errors.value.price && !errors.value.categories
+  const noErrors =
+    !errors.value.name && !errors.value.price && !errors.value.oldPrice && !errors.value.categories
   return hasName && hasValidPrice && hasCategories && noErrors
 })
 
@@ -360,6 +389,21 @@ const validateField = (field) => {
         errors.value.price = t('admin.productForm.priceValidation.required')
       else if (form.value.price < 0) errors.value.price = t('admin.productForm.priceValidation.negative')
       else errors.value.price = ''
+      break
+    case 'oldPrice':
+      // Необязательное поле: пусто — ок; заполнено — положительное число
+      // и строго больше текущей цены (иначе бейдж −% не имеет смысла)
+      if (form.value.oldPrice === null || form.value.oldPrice === undefined || form.value.oldPrice === '')
+        errors.value.oldPrice = ''
+      else if (Number.isNaN(Number(form.value.oldPrice)) || form.value.oldPrice < 0)
+        errors.value.oldPrice = t('admin.productForm.priceValidation.negative')
+      else if (
+        form.value.price !== null &&
+        form.value.price !== undefined &&
+        form.value.oldPrice <= form.value.price
+      )
+        errors.value.oldPrice = t('admin.productForm.oldPriceValidation.belowPrice')
+      else errors.value.oldPrice = ''
       break
     case 'categories':
       if (form.value.categories.length === 0)
@@ -477,6 +521,7 @@ const handleCancel = () => {
 const handleSubmit = async () => {
   validateField('name')
   validateField('price')
+  validateField('oldPrice')
   validateField('categories')
 
   if (!isFormValid.value) return
@@ -498,6 +543,11 @@ const handleSubmit = async () => {
       name: form.value.name.trim(),
       description: form.value.description?.trim() || '',
       price: Number(form.value.price),
+      // «Цена до скидки»: пусто/мусор → null — сервер не сохранит поле
+      oldPrice:
+        form.value.oldPrice === null || form.value.oldPrice === undefined || form.value.oldPrice === ''
+          ? null
+          : Number(form.value.oldPrice),
       categories,
       image: form.value.image || '',
       gallery: form.value.gallery,

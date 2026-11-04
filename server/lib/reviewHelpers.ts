@@ -75,6 +75,7 @@ export function normalizeReviewInput(raw: Record<string, unknown>): {
   author: string;
   rating: number;
   text: string;
+  photos: string[];
 } {
   const productId =
     typeof raw?.productId === 'string' ? raw.productId.trim() : String(raw?.productId ?? '').trim();
@@ -141,7 +142,10 @@ export function normalizeReviewPhotos(raw: unknown): string[] {
       throw new ReviewValidationError('Фото должно быть изображением webp, jpeg или png');
     }
     // Размер ПОСЛЕ base64-декодирования: 4 символа base64 → 3 байта.
-    const bytes = Math.floor(match[2].length * 0.75);
+    // noUncheckedIndexedAccess: группа 2 гарантирована RegEx-ом, но тип —
+    // string | undefined → сужаем через ?? '' (пустая строка не пройдёт лимит).
+    const base64 = match[2] ?? '';
+    const bytes = Math.floor(base64.length * 0.75);
     if (bytes > MAX_REVIEW_PHOTO_BYTES) {
       throw new ReviewValidationError('Фото слишком большое (макс. 300 КБ после сжатия)');
     }

@@ -13,11 +13,11 @@ export default defineEventHandler(async (event) => {
 
   const users = await readUsers(event);
   const userIndex = users.findIndex((u) => u.id === userId);
-  if (userIndex === -1) {
+  // Сужение вместо проверки index (noUncheckedIndexedAccess)
+  const targetUser = users[userIndex];
+  if (!targetUser) {
     throw createError({ statusCode: 404, message: 'Пользователь не найден' });
   }
-
-  const targetUser = users[userIndex];
 
   if (targetUser.id === adminUser.id) {
     throw createError({ statusCode: 400, message: 'Нельзя удалить свою учётную запись' });

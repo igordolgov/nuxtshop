@@ -17,11 +17,11 @@ export default defineEventHandler(async (event) => {
 
   const users = await readUsers(event);
   const userIndex = users.findIndex((u) => u.id === userId);
-  if (userIndex === -1) {
+  // Сужение вместо проверки index (noUncheckedIndexedAccess)
+  const targetUser = users[userIndex];
+  if (!targetUser) {
     throw createError({ statusCode: 404, message: 'Пользователь не найден' });
   }
-
-  const targetUser = users[userIndex];
   if (targetUser.role === 'admin' && role !== 'admin') {
     const adminCount = users.filter((u) => u.role === 'admin').length;
     if (adminCount <= 1) {
@@ -33,7 +33,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const oldRole = targetUser.role;
-  users[userIndex] = { ...targetUser, role, updatedAt: new Date().toISOString() };
+  const updatedUser = { ...targetUser, role, updatedAt: new Date().toISOString() };
+  users[userIndex] = updatedUser;
   await writeUsers(event, users);
 
   adminActionLog.add({
@@ -43,5 +44,5 @@ export default defineEventHandler(async (event) => {
     roleChange: { from: oldRole, to: role },
   });
 
-  return { success: true, user: stripPassword(users[userIndex]), message: 'Роль обновлена' };
+  return { success: true, user: stripPassword(updatedUser), message: 'Роль обновлена' };
 });

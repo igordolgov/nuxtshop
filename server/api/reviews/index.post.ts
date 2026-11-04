@@ -11,6 +11,7 @@ import {
   normalizeReviewInput,
   readReviews,
   writeReviews,
+  type ReviewItem,
 } from '../../lib/reviewHelpers';
 import { getAdminChatIds, isTelegramConfigured, sendMessage } from '../../lib/telegram';
 
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
     const reviews = await readReviews(event);
     // photos кладём ниже отдельным полем — пустой массив в KV не пишем
     const { photos: rawPhotos, ...withoutPhotos } = clean;
-    const item = {
+    const item: ReviewItem = {
       id: nextReviewId(reviews),
       ...withoutPhotos,
       createdAt: new Date().toISOString(),

@@ -805,6 +805,10 @@
         "required": "Required",
         "negative": "Cannot be negative"
       },
+      "oldPriceLabel": "Price before discount",
+      "oldPriceValidation": {
+        "belowPrice": "Must be higher than the current price"
+      },
       "descriptionPlaceholder": "Product description"
     },
     "categoryPicker": {

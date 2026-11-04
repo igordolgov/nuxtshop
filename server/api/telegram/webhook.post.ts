@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
 
   // Разбор callback_data: order:confirm:ORD-xxx | order:cancel:ORD-xxx
   const [scope, action, orderId] = String(cq.data || '').split(':');
-  if (scope !== 'order' || !orderId || !['confirm', 'cancel'].includes(action)) {
+  if (scope !== 'order' || !action || !orderId || !['confirm', 'cancel'].includes(action)) {
     await answerCallbackQuery(env, cq.id, 'Неизвестная команда');
     return { ok: true };
   }

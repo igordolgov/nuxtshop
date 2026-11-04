@@ -321,9 +321,11 @@ export function normalizePhoneHref(phone: string): string {
  * витрине). Мутирует переданный объект — используется только при сборке
  * записи в sanitizeList.
  */
-function putTr(entry: Record<string, unknown>, key: string, raw: unknown, max: number): void {
+function putTr(entry: object, key: string, raw: unknown, max: number): void {
   const value = str(raw, max);
-  if (value) entry[key] = value;
+  // Записи — типизированные интерфейсы без index-сигнатуры (StorePoint и др.),
+  // запись вычисляемого ключа — только через Record-вид
+  if (value) (entry as Record<string, unknown>)[key] = value;
 }
 
 /**
@@ -543,10 +545,11 @@ const LOCALE_SUFFIX: Record<string, string> = {
  * (русское) значение. Записи списков типизированы интерфейсами — смотрим
  * через Record, чтобы читать поля с динамическим суффиксом.
  */
-function trField(entry: Record<string, unknown>, base: string, suffix: string): string {
-  const translated = entry[`${base}${suffix}`];
+function trField(entry: object, base: string, suffix: string): string {
+  const rec = entry as Record<string, unknown>;
+  const translated = rec[`${base}${suffix}`];
   if (typeof translated === 'string' && translated.trim()) return translated;
-  return typeof entry[base] === 'string' ? (entry[base] as string) : '';
+  return typeof rec[base] === 'string' ? (rec[base] as string) : '';
 }
 
 /**

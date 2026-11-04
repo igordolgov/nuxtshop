@@ -805,6 +805,10 @@
         "required": "Обязательно",
         "negative": "Не может быть отрицательной"
       },
+      "oldPriceLabel": "Цена до скидки",
+      "oldPriceValidation": {
+        "belowPrice": "Должна быть выше текущей цены"
+      },
       "descriptionPlaceholder": "Описание товара"
     },
     "categoryPicker": {

@@ -12,11 +12,13 @@ export default defineEventHandler(async (event) => {
 
   const promos = await readPromoCodes(event);
   const index = promos.findIndex((p) => String(p.id) === String(id));
-  if (index === -1) {
+  // Сужение вместо проверки index (noUncheckedIndexedAccess)
+  const removed = promos[index];
+  if (!removed) {
     throw createError({ statusCode: 404, message: 'Промокод не найден' });
   }
 
-  const [removed] = promos.splice(index, 1);
+  promos.splice(index, 1);
   await writePromoCodes(event, promos);
 
   return { success: true, message: `Промокод ${removed.code} удалён` };

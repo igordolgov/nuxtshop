@@ -87,12 +87,22 @@
           span.font-medium {{ ratingAverage }}
           span(class="text-base-content/50") · {{ ratingCountLabel }}
 
-    //- Цена и статус
-    .card-actions.flex.items-center.justify-between.px-3.pb-3.pt-1
-      .font-semibold.text-base-content(
-        v-if="product.inStock",
-        class="text-base lg:text-lg"
-      ) {{ formatPrice(product.price) }} ₽
+    //- Цена и статус (при скидке — зачёркнутая oldPrice + бейдж −%)
+    .card-actions.flex.items-center.justify-between.gap-2.px-3.pb-3.pt-1
+      .flex.flex-wrap.items-baseline.min-w-0(
+        class="gap-x-1.5 gap-y-0",
+        v-if="product.inStock"
+      )
+        span.font-semibold.text-base-content(
+          class="text-base lg:text-lg"
+        ) {{ formatPrice(product.price) }} ₽
+        span.text-xs.line-through.shrink-0(
+          v-if="hasDiscount(product)",
+          class="text-base-content/45"
+        ) {{ formatPrice(product.oldPrice) }} ₽
+        span.badge.badge-sm.border-0.bg-error.text-error-content.font-semibold.shrink-0(
+          v-if="hasDiscount(product)"
+        ) −{{ discountPercent(product) }}%
       .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>
 

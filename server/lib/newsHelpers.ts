@@ -12,6 +12,7 @@ import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import type { Product } from './productHelpers';
 import type { NewsItem } from './newsTypes';
+import type { NewsWithProducts } from './newsTypes';
 import { MAX_NEWS_PRODUCTS, NEWS_KEY } from './newsTypes';
 import { newsSeed } from './newsSeed';
 
@@ -101,7 +102,9 @@ export function mergeSeedTranslations(stored: NewsItem[]): { items: NewsItem[]; 
     const patch: Partial<Pick<NewsItem, (typeof SEED_TRANSLATION_FIELDS)[number]>> = {};
     for (const field of SEED_TRANSLATION_FIELDS) {
       if (item[field] === undefined && seed[field] !== undefined) {
-        patch[field] = structuredClone(seed[field]);
+        // Присваивание через union-ключ TS требует каста: значение из той же
+        // схемы NewsItem, согласованность обеспечивает сам перебор полей
+        (patch as Record<string, unknown>)[field] = structuredClone(seed[field]);
       }
     }
     if (Object.keys(patch).length === 0) return item;
