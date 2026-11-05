@@ -254,6 +254,39 @@
               type="button"
             ) ✕
 
+      //- Варианты (цвет/память/размер): ось + строки. Пусто — товар без
+      //- вариантов; первая строка = базовый вариант (contract variants[0])
+      details.border.border-base-300.rounded-lg.group
+        summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
+          span {{ $t('admin.variants.sectionTitle', { n: variantRows.length }) }}
+          svg.w-4.h-4.transition-transform(
+            class="text-base-content/75 group-open:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
+        .px-3.py-3.border-t.border-base-300
+          AdminVariantsEditor(
+            v-model:axis="variantAxis"
+            v-model:variants="variantRows"
+            :disabled="isSubmitting"
+          )
+
+      //- Характеристики (spec-лист карточки): чипы-пресеты по категориям
+      details.border.border-base-300.rounded-lg.mt-2.group
+        summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
+          span {{ $t('admin.characteristics.sectionTitle', { n: filledCharacteristicsCount }) }}
+          svg.w-4.h-4.transition-transform(
+            class="text-base-content/75 group-open:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
+        .px-3.py-3.border-t.border-base-300
+          AdminCharacteristicsEditor(
+            v-model="characteristicPairs"
+            :categories="form.categories"
+            :disabled="isSubmitting"
+          )
+
       //- Прогресс-бар
       .mt-2(v-if="uploadProgress > 0 && uploadProgress < 100")
         .w-full.bg-gray-200.rounded-full.h-1
@@ -315,6 +348,15 @@ const mainImageInput = ref(null)
 const galleryInput = ref(null)
 const form = ref(null)
 const formError = ref('')
+
+//- Варианты и характеристики (редакторы) — отдельные ref'ы, инициализируются
+//- из props.product в initializeForm; сабмит собирает их в payload
+const variantAxis = ref({ ru: '', en: '', es: '' })
+const variantRows = ref([])
+const characteristicPairs = ref([])
+const filledCharacteristicsCount = computed(
+  () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
+)
 
 const isFormValid = computed(() => {
   if (!form.value) return false
@@ -413,6 +455,39 @@ const handleCancel = () => {
   }
 }
 
+// ── Сборка вариантов/характеристик для payload ───────────────────
+// Пустые названия отбрасываются; '' в цене/остатке = наследование
+// (поле не уходит в тело); переводы добавляются только непустые.
+const buildVariantsPayload = () =>
+  variantRows.value
+    .filter((variant) => variant.name?.trim())
+    .map((variant) => {
+      const item = {
+        id: variant.id,
+        name: variant.name.trim(),
+        inStock: variant.inStock !== false,
+      }
+      if (variant.nameEn?.trim()) item.nameEn = variant.nameEn.trim()
+      if (variant.nameEs?.trim()) item.nameEs = variant.nameEs.trim()
+      if (variant.price !== '' && variant.price !== null && variant.price !== undefined) {
+        item.price = Number(variant.price)
+      }
+      if (variant.image) item.image = variant.image
+      if (
+        variant.stockQuantity !== '' &&
+        variant.stockQuantity !== null &&
+        variant.stockQuantity !== undefined
+      ) {
+        item.stockQuantity = Number(variant.stockQuantity)
+      }
+      return item
+    })
+
+const buildCharacteristicsPayload = () =>
+  characteristicPairs.value
+    .filter((pair) => pair?.label?.trim())
+    .map((pair) => ({ label: pair.label.trim(), value: (pair.value || '').trim() }))
+
 const handleSubmit = async () => {
   if (!form.value || !isFormValid.value) return
 
@@ -451,6 +526,13 @@ const handleSubmit = async () => {
       descriptionEs: form.value.descriptionEs?.trim() || '',
       categoriesEn: [...(form.value.categoriesEn || [])],
       categoriesEs: [...(form.value.categoriesEs || [])],
+      // Варианты: всегда полным списком (заменяют прежние; [] = без вариантов)
+      variants: buildVariantsPayload(),
+      variantName: variantAxis.value.ru.trim() || '',
+      variantNameEn: variantAxis.value.en.trim() || '',
+      variantNameEs: variantAxis.value.es.trim() || '',
+      // Характеристики: всегда полным списком (заменяют прежние; [] = очистить)
+      characteristics: buildCharacteristicsPayload(),
     }
 
     if (updatedProduct.name.length === 0) throw new Error(t('admin.productForm.nameRequired'))
@@ -522,6 +604,29 @@ const initializeForm = () => {
       categoriesEn: Array.isArray(props.product.categoriesEn) ? [...props.product.categoriesEn] : [],
       categoriesEs: Array.isArray(props.product.categoriesEs) ? [...props.product.categoriesEs] : [],
     }
+
+    //- Варианты: строки редактора + ось; price/stockQuantity — строки
+    //- ('' = наследовать от товара)
+    variantAxis.value = {
+      ru: props.product.variantName || '',
+      en: props.product.variantNameEn || '',
+      es: props.product.variantNameEs || '',
+    }
+    variantRows.value = (props.product.variants || []).map((variant, index) => ({
+      id: variant.id || `v-${index}`,
+      name: variant.name || '',
+      nameEn: variant.nameEn || '',
+      nameEs: variant.nameEs || '',
+      price: variant.price ?? '',
+      image: variant.image || '',
+      inStock: variant.inStock !== false,
+      stockQuantity: variant.stockQuantity ?? '',
+    }))
+
+    //- Характеристики: Record → массив пар для редактора (порядок — как в KV)
+    characteristicPairs.value = Object.entries(props.product.characteristics || {}).map(
+      ([label, value]) => ({ label, value: String(value) }),
+    )
   }
 }
 
@@ -536,6 +641,9 @@ watch(() => props.isOpen, (newVal) => {
     uploadProgress.value = 0
     isSubmitting.value = false
     langTab.value = 'ru'
+    variantAxis.value = { ru: '', en: '', es: '' }
+    variantRows.value = []
+    characteristicPairs.value = []
     if (mainImageInput.value) mainImageInput.value.value = ''
     if (galleryInput.value) galleryInput.value.value = ''
   } else {

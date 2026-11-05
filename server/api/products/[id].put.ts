@@ -10,6 +10,7 @@ import {
   sanitizeVariants,
   sanitizeVariantLabel,
   sanitizeOldPrice,
+  sanitizeCharacteristics,
 } from '../../lib/productHelpers';
 import { requireAdmin } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
@@ -96,7 +97,12 @@ export default defineEventHandler(async (event) => {
         categories: categories ?? existing.categories,
         inStock: stockQuantity > 0,
         stockQuantity,
-        characteristics: body.characteristics ?? existing.characteristics,
+        // Характеристики: не пришли — не трогаем; пришли — санитайзер
+        // ({} = очистить список; битые пары молча отбрасываются)
+        characteristics:
+          body.characteristics !== undefined
+            ? sanitizeCharacteristics(body.characteristics)
+            : existing.characteristics,
         // Варианты (цвет/память): не пришли — не трогаем; пришли —
         // санитайзер; [] — удалить (товар без вариантов)
         variants: body.variants !== undefined ? sanitizeVariants(body.variants) : existing.variants,

@@ -258,6 +258,39 @@
               :disabled="isSubmitting"
             ) ✕
 
+      //- Варианты (цвет/память/размер): ось + строки; пусто — товар без
+      //- вариантов; первая строка = базовый вариант (contract variants[0])
+      details.border.border-base-300.rounded-lg.group.mt-1
+        summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
+          span {{ $t('admin.variants.sectionTitle', { n: variantRows.length }) }}
+          svg.w-4.h-4.transition-transform(
+            class="text-base-content/75 group-open:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
+        .px-3.py-3.border-t.border-base-300
+          AdminVariantsEditor(
+            v-model:axis="variantAxis"
+            v-model:variants="variantRows"
+            :disabled="isSubmitting"
+          )
+
+      //- Характеристики (spec-лист карточки): чипы-пресеты по категориям
+      details.border.border-base-300.rounded-lg.mt-2.group
+        summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
+          span {{ $t('admin.characteristics.sectionTitle', { n: filledCharacteristicsCount }) }}
+          svg.w-4.h-4.transition-transform(
+            class="text-base-content/75 group-open:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
+        .px-3.py-3.border-t.border-base-300
+          AdminCharacteristicsEditor(
+            v-model="characteristicPairs"
+            :categories="form.categories"
+            :disabled="isSubmitting"
+          )
+
       //- Прогресс-бар
       .mt-2(v-if="uploadProgress > 0 && uploadProgress < 100")
         .w-full.bg-gray-200.rounded-full.h-1
@@ -319,6 +352,15 @@ const uploadProgress = ref(0)
 const mainImageInput = ref(null)
 const galleryInput = ref(null)
 const formError = ref('')
+
+//- Варианты и характеристики (редакторы) — в новой записи сохраняются
+//- как есть; сабмит собирает их в payload (buildVariants/CharacteristicsPayload)
+const variantAxis = ref({ ru: '', en: '', es: '' })
+const variantRows = ref([])
+const characteristicPairs = ref([])
+const filledCharacteristicsCount = computed(
+  () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
+)
 
 // Ошибки валидации полей (categories добавлена как обязательная)
 const errors = ref({ name: '', price: '', oldPrice: '', categories: '' })
@@ -518,6 +560,38 @@ const handleCancel = () => {
   }
 }
 
+// ── Сборка вариантов/характеристик для payload (как в Edit-модалке) ──
+// Пустые названия отбрасываются; '' в цене/остатке = наследование.
+const buildVariantsPayload = () =>
+  variantRows.value
+    .filter((variant) => variant.name?.trim())
+    .map((variant) => {
+      const item = {
+        id: variant.id,
+        name: variant.name.trim(),
+        inStock: variant.inStock !== false,
+      }
+      if (variant.nameEn?.trim()) item.nameEn = variant.nameEn.trim()
+      if (variant.nameEs?.trim()) item.nameEs = variant.nameEs.trim()
+      if (variant.price !== '' && variant.price !== null && variant.price !== undefined) {
+        item.price = Number(variant.price)
+      }
+      if (variant.image) item.image = variant.image
+      if (
+        variant.stockQuantity !== '' &&
+        variant.stockQuantity !== null &&
+        variant.stockQuantity !== undefined
+      ) {
+        item.stockQuantity = Number(variant.stockQuantity)
+      }
+      return item
+    })
+
+const buildCharacteristicsPayload = () =>
+  characteristicPairs.value
+    .filter((pair) => pair?.label?.trim())
+    .map((pair) => ({ label: pair.label.trim(), value: (pair.value || '').trim() }))
+
 const handleSubmit = async () => {
   validateField('name')
   validateField('price')
@@ -561,6 +635,12 @@ const handleSubmit = async () => {
       descriptionEs: form.value.descriptionEs?.trim() || '',
       categoriesEn: [...(form.value.categoriesEn || [])],
       categoriesEs: [...(form.value.categoriesEs || [])],
+      // Варианты и характеристики — полными списками ([] = без них)
+      variants: buildVariantsPayload(),
+      variantName: variantAxis.value.ru.trim() || '',
+      variantNameEn: variantAxis.value.en.trim() || '',
+      variantNameEs: variantAxis.value.es.trim() || '',
+      characteristics: buildCharacteristicsPayload(),
     }
 
     uploadProgress.value = 40
@@ -611,6 +691,9 @@ const resetForm = () => {
   if (galleryInput.value) galleryInput.value.value = ''
   uploadProgress.value = 0
   formError.value = ''
+  variantAxis.value = { ru: '', en: '', es: '' }
+  variantRows.value = []
+  characteristicPairs.value = []
 }
 
 watch(

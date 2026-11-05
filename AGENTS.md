@@ -67,7 +67,7 @@ public/              статика: images/products/, _headers (HTTP-кэш с�
 
 ```bash
 pnpm exec oxlint   # линтер (@baptistecrouzet/nuxt-oxlint; в CI — отдельный шаг)
-pnpm test          # vitest, tests/unit — ожидание 486 passed (36 файлов)
+pnpm test          # vitest, tests/unit — ожидание 502 passed (37 файлов)
 pnpm lint:markup   # markuplint по app/**/*.vue
 pnpm fmt:check     # oxfmt (исправление: pnpm fmt)
 pnpm knip          # неиспользуемые экспорты; «unused» для auto-import компонентов не верить — проверять rg по имени

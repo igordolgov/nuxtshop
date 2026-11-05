@@ -151,18 +151,34 @@
               span(v-else) {{ $t('product.soldOut') }}
             span.font-normal.opacity-80(v-if="!currentInCart && currentStock.inStock") · {{ formatPrice(currentPrice) }} ₽
 
-      //- Характеристики
+      //- Характеристики: spec-лист из админки + варианты + служебные строки.
+      //- Открыт по умолчанию, когда spec-лист заполнен (иначе раздел из 4
+      //- строк остаётся свёрнутым); в заголовке — число строк.
       .rounded-2xl.border.border-base-300.overflow-hidden
-        details.group
+        details.group(:open="hasCharacteristics")
           summary.cursor-pointer.list-none.px-4.py-3.text-sm.font-medium.flex.items-center.justify-between
-            span {{ $t('product.characteristics') }}
+            span
+              | {{ $t('product.characteristics') }}
+              span(v-if="specsRowCount > 0" class="text-base-content/50") · {{ specsRowCount }}
             svg.w-4.h-4.transition-transform(
               class="text-base-content/75 group-open:rotate-180"
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
             )
               path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
           .px-4.pb-4.pt-0.space-y-0.text-sm.border-t.border-base-300
-            .flex.justify-between.py-2
+            //- Характеристики товара (порядок — как задано в админке)
+            .flex.justify-between.gap-3.py-2(
+              v-for="([label, value], index) in characteristicEntries"
+              :key="label"
+              :class="index > 0 ? 'border-t border-base-200' : ''"
+            )
+              span.shrink-0(class="text-base-content/70") {{ label }}
+              span.font-medium.text-right.min-w-0 {{ value }}
+            //- Варианты: ось и доступные значения (как пилюли выше)
+            .flex.justify-between.gap-3.py-2.border-t.border-base-200(v-if="variantsRowValue")
+              span.shrink-0(class="text-base-content/70") {{ variantLabel }}
+              span.font-medium.text-right.min-w-0 {{ variantsRowValue }}
+            .flex.justify-between.py-2.border-t.border-base-200
               span(class="text-base-content/70") {{ $t('catalog.categories') }}
               span.font-medium.text-right {{ product.categories?.join(', ') }}
             .flex.justify-between.py-2.border-t.border-base-200
@@ -229,6 +245,25 @@ const baseDiscount = computed(
 )
 const variantLabel = computed(() => localizedVariantLabel(props.product, locale.value))
 const localizedVariantTitle = (v) => localizedVariantName(v, locale.value)
+
+//- ── Характеристики (spec-лист карточки) ─────────────────────────
+//- Record «название — значение» из админки; на en/es значения фолбэкаются
+//- на русский (контракт локализации товара — переводы опциональны)
+const characteristicEntries = computed(() =>
+  Object.entries(props.product?.characteristics || {}),
+)
+const hasCharacteristics = computed(() => characteristicEntries.value.length > 0)
+//- Строка «Варианты» в spec-листе: ось и все значения через запятую
+const variantsRowValue = computed(() => {
+  const variants = props.product?.variants
+  if (!variants?.length) return ''
+  return variants.map((v) => localizedVariantName(v, locale.value)).join(', ')
+})
+//- Всего строк в раскрытом списке (для счётчика в заголовке):
+//- характеристики + варианты + 4 служебные (категории/код/статус/дата)
+const specsRowCount = computed(
+  () => characteristicEntries.value.length + (variantsRowValue.value ? 1 : 0) + 4,
+)
 /** Вариант доступен для покупки (свой склад/наследованный). */
 const variantAvailable = (v) => variantStock(props.product, v).inStock
 /** Класс пилюли: выбранная — primary-заливка, остальные — нейтральные */

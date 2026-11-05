@@ -217,14 +217,17 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
   const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
   if (stored) {
     // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
-    // локальные пути; сидовые варианты доливаем товарам без них.
+    // локальные пути; сидовые варианты доливаем товарам без них;
+    // сидовые характеристики — товарам без spec-листа.
     // KV НЕ перезаписываем (гонка read-modify-write);
-    // в KV новые пути/варианты доезжают при следующей админ-правке (writeProducts).
+    // в KV новые пути/варианты/характеристики доезжают при следующей
+    // админ-правке (writeProducts).
     migrateProductImages(stored);
     migrateSeedVariants(stored);
+    migrateSeedCharacteristics(stored);
     return stored;
   }
-  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
   migrateProductImages(seed);
   await kvPutJSON(event, PRODUCTS_KEY, seed);
   return seed;
@@ -358,6 +361,79 @@ export function sanitizeVariantLabel(value: unknown): string | undefined {
   return variantString(value, 60);
 }
 
+// ── Характеристики товара (spec-лист карточки) ──────────────────────
+//
+// Хранение: Record<название, значение> — порядок вставки сохраняется
+// (JSON.stringify не сортирует строковые ключи), витрина рендерит
+// Object.entries как есть. Тело запроса — недоверенный ввод, принимает
+// ОБА формата редактора:
+//   [{ label: 'Цвет', value: 'Чёрный' }]  — массив пар (админка)
+//   { 'Цвет': 'Чёрный', ... }             — карта (старые клиенты/сиды)
+// Правила: label — непустая строка ≤ 60, value — строка ≤ 300 (пустое
+// значение = характеристика без значения — НЕ сохраняем: строка без
+// значения в spec-листе выглядит как баг); дубликаты названий схлопываются
+// (первое вхождение), максимум 40 пар — дальше отбрасываем.
+
+const CHARACTERISTICS_MAX_PAIRS = 40;
+
+export function sanitizeCharacteristics(input: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (Array.isArray(input)) {
+    for (const raw of input.slice(0, CHARACTERISTICS_MAX_PAIRS)) {
+      if (!raw || typeof raw !== 'object') continue;
+      const label = variantString((raw as Record<string, unknown>).label, 60);
+      const value = variantString((raw as Record<string, unknown>).value, 300);
+      if (!label || !value || label in out) continue;
+      out[label] = value;
+    }
+    return out;
+  }
+  if (input && typeof input === 'object') {
+    for (const [label, value] of Object.entries(input as Record<string, unknown>).slice(
+      0,
+      CHARACTERISTICS_MAX_PAIRS,
+    )) {
+      const cleanLabel = variantString(label, 60);
+      const cleanValue = variantString(value, 300);
+      if (!cleanLabel || !cleanValue || cleanLabel in out) continue;
+      out[cleanLabel] = cleanValue;
+    }
+  }
+  return out;
+}
+
+/** Есть ли у записи непустой spec-лист. */
+export function hasCharacteristics(
+  product: Pick<Product, 'characteristics'> | null | undefined,
+): boolean {
+  return Boolean(product?.characteristics && Object.keys(product.characteristics).length > 0);
+}
+
+/**
+ * Доливает сидовые характеристики товарам без них — ТОЛЬКО В ПАМЯТИ
+ * (тот же паттерн, что migrateProductImages/migrateSeedVariants: в KV
+ * при чтении не пишем — гонка read-modify-write; в KV данные доезжают
+ * при следующей админ-правке, а витрина работает с merged-видом сразу).
+ *
+ * Правила слияния:
+ *  · у товара уже есть непустой spec-лист → не трогаем (админские правки
+ *    главнее сид-дефолтов);
+ *  · в сиде характеристик нет → не трогаем;
+ *  · товар без характеристик получает СИДОВЫЙ Record целиком.
+ */
+export function migrateSeedCharacteristics(products: Product[]): void {
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
+  const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
+  for (const product of products) {
+    if (!product || typeof product !== 'object') continue;
+    if (hasCharacteristics(product)) continue;
+    const seedSpecs = seedBySlug.get(product.slug)?.characteristics;
+    if (seedSpecs && Object.keys(seedSpecs).length > 0) {
+      product.characteristics = { ...seedSpecs };
+    }
+  }
+}
+
 /**
  * Скидочная «цена до скидки» (oldPrice) из недоверенного ввода.
  * Правила (санитайзер, не валидатор — битое значение не ломает сохранение):
@@ -387,7 +463,7 @@ export function sanitizeOldPrice(input: unknown, price: number): number | undefi
  *    если админ менял цену — сидовые абсолюты не перебивают её).
  */
 export function migrateSeedVariants(products: Product[]): void {
-  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as Product[];
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
   const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
   for (const product of products) {
     if (product.variants?.length) continue;

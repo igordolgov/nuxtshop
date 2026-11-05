@@ -18,6 +18,7 @@ import {
   sanitizeVariants,
   sanitizeVariantLabel,
   sanitizeOldPrice,
+  sanitizeCharacteristics,
 } from '../../lib/productHelpers';
 import { requireAdmin } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
@@ -84,7 +85,9 @@ export default defineEventHandler(async (event) => {
         gallery,
         inStock: stockQuantity > 0,
         stockQuantity,
-        characteristics: body.characteristics || {},
+        // Характеристики: санитайзер (мусор/пустые названия отбрасываются,
+        // дубликаты схлопываются — битый ввод не ломает сохранение)
+        characteristics: sanitizeCharacteristics(body.characteristics),
         // Варианты: при создании опциональны; битый вход молча отбрасывается
         variants: sanitizeVariants(body.variants),
         variantName: sanitizeVariantLabel(body.variantName),
