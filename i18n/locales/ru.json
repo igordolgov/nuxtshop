@@ -1051,8 +1051,6 @@
       "loadErrorText": "Не удалось загрузить пользователей",
       "roleChanged": "Роль изменена на «{role}»",
       "roleUpdateError": "Ошибка обновления роли",
-      "editWipTitle": "В разработке",
-      "editWip": "Редактирование {name}",
       "deleteConfirm": "Удалить пользователя «{name}»?",
       "deleted": "Пользователь {name} удален",
       "deleteError": "Ошибка удаления",
@@ -1062,6 +1060,17 @@
       "viewProfileTitle": "Просмотр профиля",
       "viewProfileToast": "Просмотр профиля: {name}",
       "profileToastTitle": "Профиль пользователя"
+    },
+    "userForm": {
+      "editTitle": "Редактирование: {name}",
+      "nameLabel": "Имя",
+      "emailLabel": "Email",
+      "emailHint": "После смены email вход выполняется с новым адресом",
+      "phoneLabel": "Телефон",
+      "phonePlaceholder": "Не указан",
+      "addressLabel": "Адрес",
+      "addressPlaceholder": "Не указан",
+      "savedToast": "Профиль обновлён"
     },
     "content": {
       "title": "Контент сайта",

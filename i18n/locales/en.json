@@ -1051,8 +1051,6 @@
       "loadErrorText": "Failed to load users",
       "roleChanged": "Role changed to \"{role}\"",
       "roleUpdateError": "Failed to update the role",
-      "editWipTitle": "In development",
-      "editWip": "Editing {name}",
       "deleteConfirm": "Delete user \"{name}\"?",
       "deleted": "User {name} deleted",
       "deleteError": "Deletion error",
@@ -1062,6 +1060,17 @@
       "viewProfileTitle": "View profile",
       "viewProfileToast": "Viewing profile: {name}",
       "profileToastTitle": "User profile"
+    },
+    "userForm": {
+      "editTitle": "Edit user: {name}",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "emailHint": "After changing the email, sign in with the new address",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "Not provided",
+      "addressLabel": "Address",
+      "addressPlaceholder": "Not provided",
+      "savedToast": "Profile updated"
     },
     "content": {
       "title": "Site content",

@@ -1051,8 +1051,6 @@
       "loadErrorText": "No se pudieron cargar los usuarios",
       "roleChanged": "Rol cambiado a «{role}»",
       "roleUpdateError": "Error al actualizar el rol",
-      "editWipTitle": "En desarrollo",
-      "editWip": "Editando {name}",
       "deleteConfirm": "¿Eliminar al usuario «{name}»?",
       "deleted": "Usuario {name} eliminado",
       "deleteError": "Error al eliminar",
@@ -1062,6 +1060,17 @@
       "viewProfileTitle": "Ver perfil",
       "viewProfileToast": "Viendo el perfil: {name}",
       "profileToastTitle": "Perfil del usuario"
+    },
+    "userForm": {
+      "editTitle": "Editar usuario: {name}",
+      "nameLabel": "Nombre",
+      "emailLabel": "Email",
+      "emailHint": "Tras cambiar el email, inicie sesión con el nuevo correo",
+      "phoneLabel": "Teléfono",
+      "phonePlaceholder": "No especificado",
+      "addressLabel": "Dirección",
+      "addressPlaceholder": "No especificada",
+      "savedToast": "Perfil actualizado"
     },
     "content": {
       "title": "Contenido del sitio",

@@ -180,6 +180,13 @@
               .stat-title {{ $t('admin.users.statUsersD') }}
               .stat-value {{ userCount }}
 
+  //- Модалка редактирования профиля (name/email/phone/address)
+  AdminEditUserModal(
+    v-model:isOpen="isEditOpen"
+    :user="editingUser"
+    @userSaved="onUserSaved"
+  )
+
   //- Мобильная навигация: только < 768px (как на витрине;
   //- pb-14 на корне был неудачной компенсацией — 56px < 60px навигации)
   MobileNavFooter
@@ -187,6 +194,7 @@
 
 <script setup>
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
+import AdminEditUserModal from '~/components/admin/AdminEditUserModal.vue'
 
 const { isMobile } = useMobileDetection()
 
@@ -263,8 +271,22 @@ const updateUserRole = async (userId, newRole) => {
   }
 }
 
+// Редактирование профиля — модалка (name/email/phone/address);
+// роль меняется селектом в таблице, удаление — отдельной кнопкой
+const isEditOpen = ref(false)
+const editingUser = ref(null)
+
 const editUser = (user) => {
-  $notify.info(t('admin.users.editWip', { name: user.name }), t('admin.users.editWipTitle'))
+  editingUser.value = user
+  isEditOpen.value = true
+}
+
+// Подменяем строку без перезагрузки списка (запись приходит без пароля)
+const onUserSaved = (updatedUser) => {
+  const userIndex = users.value.findIndex((u) => u.id === updatedUser.id)
+  if (userIndex !== -1) {
+    users.value[userIndex] = updatedUser
+  }
 }
 
 const deleteUser = async (user) => {
