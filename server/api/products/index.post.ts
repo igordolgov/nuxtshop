@@ -1,5 +1,5 @@
 // server/api/products/index.post.ts
-// Создание товара (POST /api/products). Только админ.
+// Создание товара (POST /api/products). Менеджер или админ (staff).
 // Категории ОБЯЗАТЕЛЬНЫ, форматы нормализует normalizeCategories
 // (в productHelpers, общая с PUT):
 //   categories: ['Электроника']         — массив строк
@@ -20,8 +20,9 @@ import {
   sanitizeOldPrice,
   sanitizeCharacteristics,
 } from '../../lib/productHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
+import { adminActionLog } from '../../lib/logger';
 
 // Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
 // categories/gallery/variants в любом допустимом формате)
@@ -37,7 +38,7 @@ type ProductBody = Record<string, unknown> & {
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    const staff = await requireStaff(event);
 
     const body = await readBody<ProductBody>(event);
     if (!body?.name?.trim()) {
@@ -103,6 +104,12 @@ export default defineEventHandler(async (event) => {
 
     products.push(newProduct);
     await writeProducts(event, products);
+
+    adminActionLog.add({
+      action: 'PRODUCT_CREATED',
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      product: { id: newProduct.id, name: newProduct.name },
+    });
 
     return { success: true, product: newProduct, message: 'Товар успешно добавлен' };
   } catch (error) {

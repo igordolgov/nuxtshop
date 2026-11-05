@@ -40,7 +40,7 @@
 
 <script setup>
 definePageMeta({
-  middleware: 'admin-auth',
+  middleware: 'manager-auth',
 })
 
 import Header from '~/components/layout/Header.vue'

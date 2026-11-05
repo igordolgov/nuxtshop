@@ -1,10 +1,10 @@
 // server/api/admin/store-reviews/[id].delete.ts
-// Удаление отзыва о магазине (DELETE /api/admin/store-reviews/:id). Только админ.
+// Удаление отзыва о магазине (DELETE /api/admin/store-reviews/:id). Менеджер или админ (staff).
 import { readStoreReviews, writeStoreReviews } from '../../../lib/storeReviewHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const id = getRouterParam(event, 'id');
   const reviews = await readStoreReviews(event);

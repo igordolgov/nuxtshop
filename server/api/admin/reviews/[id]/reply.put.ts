@@ -10,11 +10,11 @@ import {
   readReviews,
   writeReviews,
 } from '../../../../lib/reviewHelpers';
-import { requireAdmin } from '../../../../utils/auth';
+import { requireStaff } from '../../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    await requireStaff(event);
 
     const id = getRouterParam(event, 'id');
     const body = await readBody(event);

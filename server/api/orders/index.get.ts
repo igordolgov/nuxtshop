@@ -1,12 +1,12 @@
 // server/api/orders/index.get.ts
-// Список заказов (GET /api/orders). Только админ.
+// Список заказов (GET /api/orders). Менеджер или админ (staff).
 // Query: ?status=new — фильтр по статусу; ?limit=50 — ограничение выборки.
 import { readOrders, ORDER_STATUSES, type OrderStatus } from '../../lib/orderHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    await requireStaff(event);
 
     const query = getQuery(event);
     let orders = await readOrders(event);

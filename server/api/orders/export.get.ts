@@ -1,5 +1,5 @@
 // server/api/orders/export.get.ts
-// CSV-выгрузка всех заказов (GET /api/orders/export). Только админ.
+// CSV-выгрузка всех заказов (GET /api/orders/export). Менеджер или админ (staff).
 //
 // Формат «Excel RU»: BOM + разделитель «;» + CRLF (см. server/lib/csvHelpers.ts) —
 // файл открывается двойным кликом в русском Excel без мастера импорта.
@@ -8,11 +8,11 @@
 // Дата/время в файле — UTC (детерминированно, колонка «Дата (UTC)»).
 import { readOrders } from '../../lib/orderHelpers';
 import { ordersToCsv } from '../../lib/csvHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    await requireStaff(event);
 
     const orders = await readOrders(event);
     const csv = ordersToCsv(orders);

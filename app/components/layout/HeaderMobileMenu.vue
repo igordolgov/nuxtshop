@@ -104,9 +104,10 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
           span {{ $t('nav.contacts') }}
 
   //- Раздел: Админка — компактная сетка в 2 колонки, без иконок;
-  //- видна только вошедшему администратору (v-if): гость не получает
-  //- её ни в SSR, ни после гидратации
-  template(v-if="isAdmin")
+  //- видна staff (manager ИЛИ admin, проп isStaff), но админ-only пункты
+  //- (новости, контент, промокоды, пользователи) — только админу.
+  //- Гость не получает её ни в SSR, ни после гидратации
+  template(v-if="isStaff")
     .px-3.pb-3
       ul.grid.grid-cols-2.gap-1
         li
@@ -133,7 +134,7 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
             @click="onMenuItemClick"
             prefetch
           ) {{ $t('nav.orders') }}
-        li
+        li(v-if="isAdmin")
           NuxtLink.mobile-menu-item.flex.items-center(
             class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
             :class="isExactActiveRoute('/admin/news') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
@@ -141,7 +142,7 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
             @click="onMenuItemClick"
             prefetch
           ) {{ $t('nav.news') }}
-        li
+        li(v-if="isAdmin")
           NuxtLink.mobile-menu-item.flex.items-center(
             class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
             :class="isExactActiveRoute('/admin/content') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
@@ -157,7 +158,7 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
             @click="onMenuItemClick"
             prefetch
           ) {{ $t('nav.reviews') }}
-        li
+        li(v-if="isAdmin")
           NuxtLink.mobile-menu-item.flex.items-center(
             class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
             :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
@@ -165,7 +166,7 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
             @click="onMenuItemClick"
             prefetch
           ) {{ $t('nav.promocodes') }}
-        li
+        li(v-if="isAdmin")
           NuxtLink.mobile-menu-item.flex.items-center(
             class="px-2.5 py-2 rounded-xl font-semibold text-sm transition-all"
             :class="isExactActiveRoute('/admin/users') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
@@ -201,7 +202,10 @@ const props = defineProps({
   open: { type: Boolean, default: false },
   userName: { type: String, default: '' },
   isAuthenticated: { type: Boolean, default: false },
+  // isStaff — manager ИЛИ admin (staff-семантика useAuth.isManager):
+  // раздел «Админка» виден менеджеру; isAdmin — только админ-only пункты
   isAdmin: { type: Boolean, default: false },
+  isStaff: { type: Boolean, default: false },
 })
 const emit = defineEmits(['itemClick'])
 

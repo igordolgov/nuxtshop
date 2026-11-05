@@ -1,11 +1,11 @@
 // server/api/admin/stock-alerts/index.get.ts
 // Список заявок «сообщить о поступлении» (GET /api/admin/stock-alerts).
-// Только админ; свежие сверху.
+// Менеджер или админ (staff); свежие сверху.
 import { readStockAlerts } from '../../../lib/stockAlertHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const alerts = await readStockAlerts(event);
   const sorted = [...alerts].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));

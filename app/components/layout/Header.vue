@@ -49,6 +49,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           :user-name="userName"
           :is-authenticated="isAuthenticated"
           :is-admin="isAdmin"
+          :is-staff="isManager"
           @item-click="onMenuItemClick"
         )
       //- Логотип (текст виден всегда — двухстрочной шапке хватает места)
@@ -102,7 +103,7 @@ header.app-header.sticky.top-0.z-50.border-b(
             span {{ $t('nav.compare') }}
             span.badge.badge-xs.badge-primary.rounded-full.count-pop(v-if="compareCount > 0" :key="compareCount")
               | {{ compareCount }}
-        li.relative(v-if="isAdmin" ref="adminMenuRef")
+        li.relative(v-if="isManager" ref="adminMenuRef")
           button.px-3.py-2.rounded-xl.font-semibold.text-sm.flex.items-center.gap-1.transition-colors(
             type="button"
             :aria-expanded="isAdminMenuOpen"
@@ -140,12 +141,14 @@ header.app-header.sticky.top-0.z-50.border-b(
                 prefetch
               ) {{ $t('nav.orders') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                v-if="isAdmin"
                 :to="localePath(\'/admin/news\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/news') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.news') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                v-if="isAdmin"
                 :to="localePath(\'/admin/content\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/content') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
@@ -158,12 +161,14 @@ header.app-header.sticky.top-0.z-50.border-b(
                 prefetch
               ) {{ $t('nav.reviews') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                v-if="isAdmin"
                 :to="localePath(\'/admin/promocodes\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/promocodes') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
                 prefetch
               ) {{ $t('nav.promocodes') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                v-if="isAdmin"
                 :to="localePath(\'/admin/users\')"
                 @click="closeAdminMenu"
                 :class="isExactActiveRoute('/admin/users') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
@@ -443,6 +448,10 @@ const isHomePage = computed(() => route.path === localePath('/'))
 const user = computed(() => appState.user?.value)
 const isAuthenticated = computed(() => appState.isAuthenticated?.value)
 const isAdmin = computed(() => appState.isAdmin?.value)
+//- isManager из useAuth — staff-семантика (manager ИЛИ admin): дропдаун
+//- «Админ» виден менеджеру, но админ--only пункты (новости, контент,
+//- промокоды, пользователи) остаются скрытыми (v-if="isAdmin")
+const isManager = computed(() => appState.isManager?.value)
 const cartItemsCount = computed(() => totalItems.value)
 const userName = computed(() => user.value?.name || t('header.defaultUserName'))
 //- Подсветка «Админ» в мобильном меню — тот же локализованный предикат,

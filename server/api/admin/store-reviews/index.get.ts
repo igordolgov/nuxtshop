@@ -1,10 +1,10 @@
 // server/api/admin/store-reviews/index.get.ts
-// Все отзывы о магазине для модерации (GET /api/admin/store-reviews). Только админ.
+// Все отзывы о магазине для модерации (GET /api/admin/store-reviews). Менеджер или админ (staff).
 import { readStoreReviews, storeRatingSummary } from '../../../lib/storeReviewHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const reviews = await readStoreReviews(event);
   const sorted = [...reviews].sort((a, b) =>

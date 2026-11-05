@@ -2,10 +2,10 @@
 // Модерация отзыва (PUT /api/admin/reviews/:id, body: { approved: boolean }).
 // true — опубликовать на витрине (и в aggregateRating), false — скрыть.
 import { readReviews, writeReviews } from '../../../lib/reviewHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const id = getRouterParam(event, 'id');
   const body = await readBody(event);

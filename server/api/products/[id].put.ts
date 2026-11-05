@@ -12,8 +12,9 @@ import {
   sanitizeOldPrice,
   sanitizeCharacteristics,
 } from '../../lib/productHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
+import { adminActionLog } from '../../lib/logger';
 
 // Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
 // categories/gallery/variants в любом допустимом формате)
@@ -29,7 +30,7 @@ type ProductBody = Record<string, unknown> & {
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    const staff = await requireStaff(event);
 
     const id = getRouterParam(event, 'id');
     if (!id) {
@@ -128,6 +129,12 @@ export default defineEventHandler(async (event) => {
 
     products[index] = updated;
     await writeProducts(event, products);
+
+    adminActionLog.add({
+      action: 'PRODUCT_UPDATED',
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      product: { id: updated.id, name: updated.name },
+    });
 
     return { success: true, product: updated, message: 'Товар обновлён' };
   } catch (error) {

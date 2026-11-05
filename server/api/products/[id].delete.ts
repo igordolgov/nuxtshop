@@ -1,10 +1,11 @@
 // server/api/products/[id].delete.ts
 import { readProducts, writeProducts } from '../../lib/productHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
+import { adminActionLog } from '../../lib/logger';
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    const staff = await requireStaff(event);
 
     const id = getRouterParam(event, 'id');
     if (!id) {
@@ -20,6 +21,13 @@ export default defineEventHandler(async (event) => {
     }
     products.splice(index, 1);
     await writeProducts(event, products);
+
+    // Удаление необратимо (корзины нет) — актёр обязателен в журнале
+    adminActionLog.add({
+      action: 'PRODUCT_DELETED',
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      product: { id: deleted.id, name: deleted.name },
+    });
 
     // Картинки data-URI живут внутри JSON товара — отдельная очистка файлов не нужна
     return { success: true, message: `Товар "${deleted.name}" удалён`, deletedId: deleted.id };

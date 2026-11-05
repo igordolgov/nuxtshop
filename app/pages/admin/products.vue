@@ -7,7 +7,7 @@
 <script setup>
 // Используем middleware для защиты админ-роута
 definePageMeta({
-  middleware: 'admin-auth'
+  middleware: 'manager-auth'
 })
 
 import AdminProducts from '../../components/admin/AdminProducts.vue'

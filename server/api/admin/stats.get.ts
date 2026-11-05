@@ -2,11 +2,11 @@
 import { readUsers, stripPassword } from '../../lib/userHelpers';
 import { readProducts } from '../../lib/productHelpers';
 import { cacheStats } from '../../lib/cache';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
 import { adminActionLog } from '../../lib/logger';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const users = await readUsers(event);
   const products = await readProducts(event);

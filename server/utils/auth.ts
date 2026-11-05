@@ -1,5 +1,8 @@
 // server/utils/auth.ts
+// h3-функции — явные импорты (а не auto-imports Nitro): модуль тестируется
+// в node-окружении vitest без сборки Nitro (tests/unit/auth-guards.test.ts).
 import type { H3Event } from 'h3';
+import { createError, deleteCookie, getCookie, getRequestURL, setCookie } from 'h3';
 import { kvGetJSON, kvPutJSON, kvDelete } from '../lib/storage';
 import { readUsers, type User } from '../lib/userHelpers';
 
@@ -60,6 +63,23 @@ export async function requireAdmin(event: H3Event) {
     throw createError({
       statusCode: 403,
       message: 'Доступ запрещён. Требуются права администратора',
+    });
+  }
+  return user;
+}
+
+/**
+ * staff = manager | admin: операционные разделы магазина (товары,
+ * заказы, отзывы, уведомления о наличии, статистика). Пользователи,
+ * роли, промокоды, контент и интеграции — только requireAdmin:
+ * у менеджера не должно быть путей к повышению собственных привилегий.
+ */
+export async function requireStaff(event: H3Event) {
+  const user = await requireUser(event);
+  if (user.role !== 'manager' && user.role !== 'admin') {
+    throw createError({
+      statusCode: 403,
+      message: 'Доступ запрещён. Требуются права менеджера или администратора',
     });
   }
   return user;

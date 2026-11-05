@@ -1,11 +1,11 @@
 // server/api/admin/reviews/[id].delete.ts
-// Удаление отзыва (DELETE /api/admin/reviews/:id). Только админ, необратимо.
+// Удаление отзыва (DELETE /api/admin/reviews/:id). Менеджер или админ (staff), необратимо.
 // Вместе с отзывом удаляем его фото из KV (img:reviews/…), чтобы в хранилище
 // не копились осиротевшие картинки, которые больше никто не отдаёт.
 import { IMAGE_KV_PREFIX } from '../../../lib/imageStorage';
 import { readReviews, writeReviews } from '../../../lib/reviewHelpers';
 import { kvDelete } from '../../../lib/storage';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 /** Путь фото из отзыва → ключ в KV («/api/images/reviews/x.webp» → «img:reviews/x.webp»). */
 function photoKVKey(url: string): string | null {
@@ -14,7 +14,7 @@ function photoKVKey(url: string): string | null {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const id = getRouterParam(event, 'id');
   const reviews = await readReviews(event);

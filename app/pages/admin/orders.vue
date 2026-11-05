@@ -227,7 +227,7 @@
 
 <script setup>
 definePageMeta({
-  middleware: 'admin-auth',
+  middleware: 'manager-auth',
 })
 
 const { isMobile } = useMobileDetection()

@@ -1,5 +1,5 @@
 // server/api/orders/[id].put.ts
-// Смена статуса заказа (PUT /api/orders/:id). Только админ.
+// Смена статуса заказа (PUT /api/orders/:id). Менеджер или админ (staff).
 // Body: { status: 'confirmed' | ..., comment?: string }
 // Идемпотентно: повторная установка того же статуса не дублирует историю —
 // критично для повторных вызовов из Telegram-вебхука (этап 1).
@@ -9,11 +9,12 @@ import {
   ORDER_STATUS_LABELS,
   type OrderStatus,
 } from '../../lib/orderHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
+import { adminActionLog } from '../../lib/logger';
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    const staff = await requireStaff(event);
 
     const id = getRouterParam(event, 'id');
     if (!id) {
@@ -29,6 +30,15 @@ export default defineEventHandler(async (event) => {
     }
 
     const order = await updateOrderStatus(event, id, body.status, body.comment);
+
+    // Кто и какой статус поставил — журнал действий staff (см. шапку logger.ts):
+    // без этого спорные заказы не разобрать (кто перевёл в «отменён» и когда)
+    adminActionLog.add({
+      action: 'ORDER_STATUS_CHANGED',
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      order: { id: order.id },
+      status: body.status,
+    });
 
     return {
       success: true,

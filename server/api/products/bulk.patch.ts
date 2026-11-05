@@ -1,14 +1,15 @@
 // server/api/products/bulk.patch.ts
 import { readProducts, writeProducts } from '../../lib/productHelpers';
 import { applyBulkPatch, normalizeIdList, parseBulkPatch } from '../../lib/bulkHelpers';
-import { requireAdmin } from '../../utils/auth';
+import { requireStaff } from '../../utils/auth';
+import { adminActionLog } from '../../lib/logger';
 
 // PATCH /api/products/bulk  { ids, inStock?, stockQuantity?, setCategories?/addCategories?/removeCategories? }
 // Массовое изменение: один запрос и одна запись KV на весь список
 // выбранных товаров (вместо N последовательных PUT).
 export default defineEventHandler(async (event) => {
   try {
-    await requireAdmin(event);
+    const staff = await requireStaff(event);
 
     const body = await readBody<Record<string, unknown>>(event);
 
@@ -33,6 +34,14 @@ export default defineEventHandler(async (event) => {
         products.map((p) => byId.get(p.id) ?? p),
       );
     }
+
+    // Массовая правка — действие с широким радиусом, логируем размах
+    adminActionLog.add({
+      action: 'PRODUCTS_BULK_PATCHED',
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      updatedCount: updated.length,
+      fields: Object.keys(patch).filter((k) => k !== 'hasChanges'),
+    });
 
     return {
       success: true,

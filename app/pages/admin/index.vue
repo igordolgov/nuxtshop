@@ -61,7 +61,8 @@
               .row-sub {{ order.date }}
             span.badge.badge-sm(:class="getOrderStatusClass(order.status)") {{ statusLabel(order.status) }}
 
-      .panel
+      //- Пользователи — админ-only: менеджеру не показываем ни список, ни ссылку
+      .panel(v-if="isAdmin")
         .panel-head
           h2.panel-title {{ $t('admin.dashboard.recentUsers') }}
           NuxtLink.panel-link(:to="localePath('/admin/users')" prefetch) {{ $t('admin.dashboard.allUsers') }}
@@ -388,7 +389,7 @@
 
 <script setup>
 definePageMeta({
-  middleware: 'admin-auth'
+  middleware: 'manager-auth'
 })
 
 const { isMobile } = useMobileDetection()
@@ -400,6 +401,9 @@ const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const appState = useAppState()
+//- Админ-only плитки и панель пользователей скрываются для менеджера;
+//- useAuth.isManager — staff-семантика (manager ИЛИ admin)
+const { isAdmin } = useAuth()
 
 // Реальная статистика: сводка с /api/admin/stats + последние заказы
 // с /api/orders. Всё, что отображается, приходит с сервера.
@@ -454,15 +458,17 @@ const kpis = computed(() => [
   }
 ])
 
-// Плитки быстрых действий (to — через localePath, чтобы не сбрасывать язык)
-const quickLinks = computed(() => [
-  { to: localePath('/admin/products'), title: t('admin.dashboard.quickProductsTitle'), sub: t('admin.dashboard.quickProductsSub'), icon: 'heroicons:cube' },
-  { to: localePath('/admin/orders'), title: t('admin.dashboard.quickOrdersTitle'), sub: t('admin.dashboard.quickOrdersSub'), icon: 'heroicons:shopping-bag' },
-  { to: localePath('/admin/news'), title: t('admin.dashboard.quickNewsTitle'), sub: t('admin.dashboard.quickNewsSub'), icon: 'heroicons:newspaper' },
-  { to: localePath('/admin/content'), title: t('admin.dashboard.quickContentTitle'), sub: t('admin.dashboard.quickContentSub'), icon: 'heroicons:pencil-square' },
-  { to: localePath('/admin/reviews'), title: t('admin.dashboard.quickReviewsTitle'), sub: t('admin.dashboard.quickReviewsSub'), icon: 'heroicons:star' },
-  { to: localePath('/admin/users'), title: t('admin.dashboard.quickUsersTitle'), sub: t('admin.dashboard.quickUsersSub'), icon: 'heroicons:users' }
-])
+// Плитки быстрых действий (to — через localePath, чтобы не сбрасывать язык).
+// adminOnly — новости/контент/пользователи: не операционка менеджера
+const quickLinks = computed(() =>
+  [
+    { to: localePath('/admin/products'), title: t('admin.dashboard.quickProductsTitle'), sub: t('admin.dashboard.quickProductsSub'), icon: 'heroicons:cube' },
+    { to: localePath('/admin/orders'), title: t('admin.dashboard.quickOrdersTitle'), sub: t('admin.dashboard.quickOrdersSub'), icon: 'heroicons:shopping-bag' },
+    { to: localePath('/admin/news'), title: t('admin.dashboard.quickNewsTitle'), sub: t('admin.dashboard.quickNewsSub'), icon: 'heroicons:newspaper', adminOnly: true },
+    { to: localePath('/admin/content'), title: t('admin.dashboard.quickContentTitle'), sub: t('admin.dashboard.quickContentSub'), icon: 'heroicons:pencil-square', adminOnly: true },
+    { to: localePath('/admin/reviews'), title: t('admin.dashboard.quickReviewsTitle'), sub: t('admin.dashboard.quickReviewsSub'), icon: 'heroicons:star' },
+    { to: localePath('/admin/users'), title: t('admin.dashboard.quickUsersTitle'), sub: t('admin.dashboard.quickUsersSub'), icon: 'heroicons:users', adminOnly: true },
+  ]).filter((q) => !q.adminOnly || isAdmin.value)
 
 // Заполненность склада: доля товаров в наличии
 const stockPercent = computed(() => {

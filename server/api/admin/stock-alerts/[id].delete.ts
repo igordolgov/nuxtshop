@@ -1,10 +1,10 @@
 // server/api/admin/stock-alerts/[id].delete.ts
-// Удаление заявки о поступлении (DELETE /api/admin/stock-alerts/:id). Только админ.
+// Удаление заявки о поступлении (DELETE /api/admin/stock-alerts/:id). Менеджер или админ (staff).
 import { readStockAlerts, writeStockAlerts } from '../../../lib/stockAlertHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const id = getRouterParam(event, 'id');
   const alerts = await readStockAlerts(event);

@@ -2,10 +2,10 @@
 // Модерация отзыва о магазине (PUT /api/admin/store-reviews/:id, body { approved }).
 // true — показать в блоке на /about, false — скрыть.
 import { readStoreReviews, writeStoreReviews } from '../../../lib/storeReviewHelpers';
-import { requireAdmin } from '../../../utils/auth';
+import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireStaff(event);
 
   const id = getRouterParam(event, 'id');
   const body = await readBody(event);
