@@ -16,8 +16,10 @@
               @click="onCompareClick"
             )
               icon(name="heroicons:arrows-right-left" size="20")
+            //- bg-heart (токен main.css): одинаковый глубокий красный на обеих
+            //- темах — как на светлой; bg-error на тёмной лососевый (WCAG-текст)
             button.shrink-0.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="[isFavorite ? 'bg-error text-white border-error' : 'border-base-300 text-base-content/70 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
+              :class="[isFavorite ? 'bg-heart text-white border-heart' : 'border-base-300 text-base-content/70 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
               @click="$emit('toggle-favorite')"
               :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
             )

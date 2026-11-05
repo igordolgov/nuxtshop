@@ -16,12 +16,15 @@
     )
       icon(name="heroicons:x-mark" class="w-4 h-4")
 
-  //- Фильтры статуса
+  //- Фильтры статуса: активный — заливка, неактивный — outline.
+  //- text-white/opacity-70 сняты: белый на светлом btn-secondary
+  //- проваливал контраст, полупрозрачность выглядела «выключенной»
   .flex.gap-1.flex-wrap
-    button.btn.btn-xs.text-white(
+    button.btn.btn-xs(
       v-for="filter in statusFilters"
       :key="filter.value"
-      :class="currentFilter === filter.value ? 'btn-primary' : 'btn-secondary opacity-70'"
+      :class="currentFilter === filter.value ? 'btn-primary' : 'btn-outline'"
+      :aria-pressed="currentFilter === filter.value"
       @click="$emit('update:currentFilter', filter.value)"
       type="button"
     ) {{ filter.label }}

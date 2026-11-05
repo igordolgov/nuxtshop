@@ -94,17 +94,24 @@
                   | {{ product.inStock ? String(product.stockQuantity || 0) : $t('admin.products.outOfStockShort') }}
 
               td
-                .flex.gap-4
-                  button.text-info.cursor-pointer(
+                //- Действия: ghost-круги — как в мобильных карточках
+                //- (голые иконки 16px были без ховера и тач-цели);
+                //- aria-label: иконка без текста нечитаема скринридером
+                .flex.gap-1
+                  button.btn.btn-ghost.btn-sm.btn-circle.text-info(
                     @click="$emit('edit', product)"
+                    :aria-label="$t('admin.common.edit')"
+                    :title="$t('admin.common.edit')"
                     type="button"
                   )
-                    icon(name="heroicons:pencil-square" size="16")
-                  button.text-error.cursor-pointer(
+                    icon(name="heroicons:pencil-square" size="18")
+                  button.btn.btn-ghost.btn-sm.btn-circle.text-error(
                     @click="$emit('delete', product)"
+                    :aria-label="$t('admin.common.delete')"
+                    :title="$t('admin.common.delete')"
                     type="button"
                   )
-                    icon(name="heroicons:trash" size="16")
+                    icon(name="heroicons:trash" size="18")
 
       //- Мобильный список карточек.
       //- pb-40: карточки прокручиваются выше кнопки «Наверх»
@@ -153,11 +160,13 @@
                 )
                 button.btn.btn-circle.btn-ghost.text-info(
                   @click="$emit('edit', product)"
+                  :aria-label="$t('admin.common.edit')"
                   type="button"
                 )
                   icon(name="heroicons:pencil-square" size="20")
                 button.btn.btn-circle.btn-ghost.text-error(
                   @click="$emit('delete', product)"
+                  :aria-label="$t('admin.common.delete')"
                   type="button"
                 )
                   icon(name="heroicons:trash" size="20")

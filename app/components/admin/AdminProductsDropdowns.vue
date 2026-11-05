@@ -1,12 +1,15 @@
 <!-- app/components/admin/AdminProductsDropdowns.vue -->
 <template lang="pug">
 .flex.items-center.gap-2.flex-wrap
-  //- Категории
+  //- Категории: btn-primary, а не bg-primary — пара «фон ↔ текст»
+  //- берётся из --color-primary-content (белый), а не дефолтный
+  //- base-content кнопки; бейдж-счётчик — белый полупрозрачный,
+  //- badge-primary на синем был невидим
   .dropdown.dropdown-bottom(:class="{'dropdown-open': showCategories}")
-    label.btn.btn-xs.bg-primary.gap-0(@click="showCategories = !showCategories" type="button")
+    label.btn.btn-xs.btn-primary.gap-0(@click="showCategories = !showCategories" type="button")
       | {{ $t('admin.products.categoriesLabel') }}
-      span.badge.badge-sm.-pl-0.badge-primary(v-if="selectedCount") {{ $t('admin.products.categoriesSelected', { n: selectedCount }) }}
-      span.badge.badge-sm.-pl-0.badge-primary(v-else) {{ $t('admin.products.categoriesAll') }}
+      span.badge.badge-sm(class="bg-white/25 text-white border-transparent" v-if="selectedCount") {{ $t('admin.products.categoriesSelected', { n: selectedCount }) }}
+      span.badge.badge-sm(class="bg-white/25 text-white border-transparent" v-else) {{ $t('admin.products.categoriesAll') }}
       icon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
       .max-h-60.overflow-y-auto
@@ -25,13 +28,16 @@
       .divider.my-1(v-if="selectedCount")
       button.btn.btn-xs.btn-ghost.w-full(v-if="selectedCount" @click="clearAndClose" type="button") {{ $t('admin.products.resetFilter') }}
 
-  //- Сортировка - кнопки (скрываются на мобильных, показывается dropdown)
+  //- Сортировка - кнопки (скрываются на мобильных, показывается dropdown).
+  //- Неактивные — btn-outline: как у фильтров статуса; btn-secondary
+  //- на светлом фоне давал белый текст на сером (контраст)
   .hidden(class="sm:flex sm:items-center sm:gap-1")
     span.text-xs.opacity-60 {{ $t('admin.products.sortLabel') }}
     button.btn.btn-xs.gap-1(
       v-for="opt in sortOptions"
       :key="opt.field"
-      :class="sortField === opt.field ? 'btn-primary' : 'btn-secondary'"
+      :class="sortField === opt.field ? 'btn-primary' : 'btn-outline'"
+      :aria-pressed="sortField === opt.field"
       @click="$emit('sort', opt.field)"
       type="button"
     )

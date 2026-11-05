@@ -20,9 +20,10 @@
                                         .absolute.top-1.left-2.z-10
                                                 //- text-white, а не text-error-content: в business
                                                 //- error-content тёмный — сердече «чёрное на красном»
-                                                //- (паттерн ProductInfo/ProductCardGrid — белый)
+                                                //- (паттерн ProductInfo/ProductCardGrid — белый).
+                                                //- bg-heart (токен main.css): глубокий красный на обеих темах
                                                 button.size-10.rounded-full.flex.items-center.justify-center.backdrop-blur.transition-colors(
-                                                        :class="item.isFavorite ? 'bg-error text-white' : 'bg-base-100/80 text-base-content'"
+                                                        :class="item.isFavorite ? 'bg-heart text-white' : 'bg-base-100/80 text-base-content'"
                                                         @click.stop="$emit('toggle-favorite', item.id)"
                                                         :title="item.isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
                                                 )

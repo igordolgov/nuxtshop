@@ -10,9 +10,12 @@
 
       //- Правая часть
       .flex.items-center.gap-3
-        button.btn-sm.btn-square.cursor-pointer(
+        //- Обновить: базовый .btn обязателен — без него btn-sm/btn-square
+        //- не работают (иконка без рамки и ховера, не как соседняя кнопка)
+        button.btn.btn-sm.btn-square.btn-ghost(
           @click="$emit('refresh')"
           :title="$t('admin.products.refreshTitle')"
+          :aria-label="$t('admin.products.refreshTitle')"
           type="button"
         )
           icon(name="heroicons:arrow-path" size="20")

@@ -9,6 +9,15 @@
     business --prefersdark;
 }
 
+/* ─── Сердечко «в избранном» ──────────────────────────────────────
+   Один и тот же глубокий красный на ОБЕИХ темах (выбор пользователя —
+   как на светлой). Отдельный токен, а не bg-error: на тёмной теме
+   --color-error осветлён по аудиту WCAG для ТЕКСТА ошибок (bg-error
+   там лососевый), а заливка сердца должна совпадать со светлой темой. */
+@theme {
+  --color-heart: oklch(59% 0.191 22.216); /* #d73c46 */
+}
+
 /* ─── Карта z-index (НЕ вводить магические значения мимо карты) ──
   10001  лайтбокс отзывов
   1000   тосты (useNotifyQueue)
@@ -103,6 +112,35 @@ html[data-theme='business'] {
   --color-error-content: oklch(28.5% 0.05 25); /* #40201d: 4.6:1 на error */
   --color-base-content: oklch(95% 0 0); /* /50 = 4.54:1 (стоково 3.6:1) */
 
+  /* Кнопки-заливки: сатурация и пары «фон ↔ надпись» светлой темы
+     (пользовательский выбор — на светлой так). Только ЗАЛИВКИ: селектор
+     исключает outline/ghost/dash/soft/link — там --btn-color работает
+     как ЦВЕТ ТЕКСТА/рамки, и насыщенные значения провалили бы контраст
+     на тёмном фоне. Сами --color-primary/error/success не трогаем —
+     они тоже цвета текста (цены, ошибки, статусы) и осветлены/подобраны
+     по аудиту WCAG. Контраст пар светлой темы: белый на #007bc7 4.51:1,
+     чёрный на #d73c46 3.84:1 (как в corporate — стоковая пара daisyUI),
+     белый на #008a1f 4.51:1. */
+  .btn-primary:not(.btn-outline):not(.btn-ghost):not(.btn-dash):not(.btn-soft):not(.btn-link) {
+    --btn-color: oklch(55.9% 0.158 241.966); /* #007bc7, как corporate */
+    --btn-fg: oklch(100% 0 0); /* белый, как corporate primary-content */
+  }
+
+  .btn-error:not(.btn-outline):not(.btn-ghost):not(.btn-dash):not(.btn-soft):not(.btn-link) {
+    --btn-color: oklch(59% 0.191 22.216); /* #d73c46, как corporate */
+    --btn-fg: oklch(0% 0 0); /* чёрный, как corporate error-content */
+  }
+
+  .btn-success:not(.btn-outline):not(.btn-ghost):not(.btn-dash):not(.btn-soft):not(.btn-link) {
+    --btn-color: oklch(53.9% 0.194 149.214); /* #008a1f, как corporate */
+    --btn-fg: oklch(100% 0 0); /* белый, как corporate success-content */
+  }
+
+  .btn-warning:not(.btn-outline):not(.btn-ghost):not(.btn-dash):not(.btn-soft):not(.btn-link) {
+    --btn-color: oklch(56.6% 0.199 91.936); /* #a06c00, как corporate */
+    --btn-fg: oklch(0% 0 0); /* чёрный, как corporate warning-content */
+  }
+
   /* Кнопки/поля — как в corporate (см. комментарий там) */
   --radius-field: 0.625rem;
 }
@@ -126,10 +164,14 @@ html[data-theme='business'] {
    и из современного вида. Правило вне @layer — побеждает слой
    компонентов daisyUI при равной специфичности; элементные классы
    rounded-* (напр. rounded-sm) всё ещё перекрывают его — не вешать
-   их на .badge. */
+   их на .badge.
+   white-space: nowrap: у .badge фиксированная высота — длинный текст
+   («Техника для уборки» в таблице товаров) переносился и вылезал за
+   бейдж, налаживаясь на соседние плашки. */
 .badge {
   font-weight: 600;
   border-radius: 9999px;
+  white-space: nowrap;
 }
 
 /* ─── Alert-полосы — скругление (админка, UI-полиш 2026-11) ────────

@@ -17,10 +17,11 @@
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 
   //- Кнопка избранного (fav-pop — упругий «поп» при добавлении, main.css).
-  //- 40px (size-10) — тач-минимум, раньше 32px (аудит F7)
+  //- 40px (size-10) — тач-минимум, раньше 32px (аудит F7).
+  //- bg-heart (токен main.css): глубокий красный на обеих темах
   button.favorite-btn(
     class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
-    :class="[isFavorite ? 'bg-error text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
+    :class="[isFavorite ? 'bg-heart text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
     @click="toggleFavorite",
     :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
     :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
