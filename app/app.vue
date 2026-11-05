@@ -31,21 +31,37 @@ const siteOrigin = publicConfig.siteUrl || useRequestURL().origin;
 // NUXT_PUBLIC_CF_BEACON_TOKEN → runtimeConfig.public.cfBeaconToken.
 // Пусто (dev / до создания сайта в дашборде) — скрипт не подключается:
 // без токена бикон всё равно молчал бы, а лишний запрос не нужен.
-// defer — не блокирует парсинг; бикон сам трекает SPA-переходы.
-const cfBeaconScript = publicConfig.cfBeaconToken
-  ? [
-      {
-        src: "https://static.cloudflareinsights.com/beacon.min.js",
-        defer: true,
-        "data-cf-beacon": JSON.stringify({ token: publicConfig.cfBeaconToken }),
-      },
-    ]
-  : [];
+// Инъекция НЕ через useHead, а на idle ПОСЛЕ window load: так задачи
+// бикона (~200 мс TBT в мобильном Lighthouse) не конкурируют с гидрацией
+// и не попадают в окно Total Blocking Time; сам бикон трекает SPA-переходы
+// самостоятельно (патчит history API), стартовая страница пишется при
+// инъекции. Задержка ~1 с на данные RUM не влияет.
+if (import.meta.client && publicConfig.cfBeaconToken) {
+  const injectBeacon = () => {
+    if (document.querySelector("script[src*='cloudflareinsights.com']")) return;
+    const s = document.createElement("script");
+    s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+    s.defer = true;
+    s.dataset.cfBeacon = JSON.stringify({ token: publicConfig.cfBeaconToken });
+    document.head.appendChild(s);
+  };
+  const queueBeacon = () => {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(injectBeacon, { timeout: 3000 });
+    } else {
+      setTimeout(injectBeacon, 300);
+    }
+  };
+  if (document.readyState === "complete") {
+    queueBeacon();
+  } else {
+    window.addEventListener("load", queueBeacon, { once: true });
+  }
+}
 const ogImageAlt = () => `${t("app.title")} — ${t("meta.description").slice(0, 80)}`;
 useHead(() => ({
   htmlAttrs: { lang: localeHead.value.htmlAttrs.lang },
   link: [...(localeHead.value.link || [])],
-  script: cfBeaconScript,
   meta: [
     ...(localeHead.value.meta || []),
     // Локализованные description/keywords для ВСЕХ страниц: без этого
