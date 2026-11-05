@@ -75,6 +75,13 @@ html[data-theme='corporate'] {
   --color-success: oklch(53.9% 0.194 149.214); /* #008a1f, было 62% #00a43b */
   --color-info: oklch(55% 0.126 221.723); /* #0080a5, было 60% #0090b5 */
 
+  /* Кнопки/поля: стоковый --radius-field 0.25rem выглядит квадратным.
+    0.625rem (10px) — «современно, но не пилюля»; токен общий для
+    .btn/.input/.select/.textarea/.tab, поэтому группы .join (поиск
+    в шапке, пагинация) скругляются согласованно — внешние углы
+    берут ту же переменную, внутренние daisyUI обнуляет сам. */
+  --radius-field: 0.625rem;
+
   .my-btn:hover {
     background-color: #1c96e1;
     border-color: #1c96e1;
@@ -95,6 +102,9 @@ html[data-theme='business'] {
   --color-error: oklch(67.44% 0.17 25); /* #ed645f: 5.1:1 на base-100 */
   --color-error-content: oklch(28.5% 0.05 25); /* #40201d: 4.6:1 на error */
   --color-base-content: oklch(95% 0 0); /* /50 = 4.54:1 (стоково 3.6:1) */
+
+  /* Кнопки/поля — как в corporate (см. комментарий там) */
+  --radius-field: 0.625rem;
 }
 
 /* ─── Читаемость кнопок и подписей (UI-полиш, 2026-11) ───────────
