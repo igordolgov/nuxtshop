@@ -44,8 +44,8 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.85.0 || 1.86.0 || 1.88.0 || 1.91.0'
   - oxfmt@0.70.0 || 0.71.0 || 0.73.0 || 0.76.0
   - oxlint@1.85.0 || 1.86.0 || 1.88.0 || 1.91.0
-  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0 || 4.155.0 || 4.156.0 || 4.156.1 || 4.157.0
-  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta || 5.20261023.2-beta || 5.20261023.3-beta || 5.20261101.0-beta || 5.20261103.0-beta
+  - wrangler@4.143.0 || 4.143.1 || 4.144.0 || 4.148.0 || 4.149.0 || 4.150.0 || 4.155.0 || 4.156.0 || 4.156.1 || 4.157.0 || 4.158.0
+  - miniflare@5.20260926.1-alpha || 5.20261006.0-alpha || 5.20261006.1-alpha || 5.20261006.2-beta || 5.20261023.2-beta || 5.20261023.3-beta || 5.20261101.0-beta || 5.20261103.0-beta || 5.20261104.0-beta
   - daisyui@5.7.47 || 5.7.50
   - knip@6.40.0 || 6.41.0 || 6.42.0 || 6.44.0 || 6.44.1
   - '@markuplint/astro-parser@5.1.0 || 5.2.0 || 5.4.0'
@@ -76,16 +76,16 @@ minimumReleaseAgeExclude:
   - '@nuxt/vite-builder@4.6.1 || 4.6.2'
   - '@nuxt/vite-server@4.6.1 || 4.6.2'
   - nuxt@4.6.1 || 4.6.2
-  - '@vue/compiler-core@3.5.44'
-  - '@vue/compiler-dom@3.5.44'
-  - '@vue/compiler-sfc@3.5.44'
-  - '@vue/compiler-ssr@3.5.44'
-  - '@vue/reactivity@3.5.44'
-  - '@vue/runtime-core@3.5.44'
-  - '@vue/runtime-dom@3.5.44'
-  - '@vue/server-renderer@3.5.44'
-  - '@vue/shared@3.5.44'
-  - vue@3.5.44
+  - '@vue/compiler-core@3.5.44 || 3.5.45'
+  - '@vue/compiler-dom@3.5.44 || 3.5.45'
+  - '@vue/compiler-sfc@3.5.44 || 3.5.45'
+  - '@vue/compiler-ssr@3.5.44 || 3.5.45'
+  - '@vue/reactivity@3.5.44 || 3.5.45'
+  - '@vue/runtime-core@3.5.44 || 3.5.45'
+  - '@vue/runtime-dom@3.5.44 || 3.5.45'
+  - '@vue/server-renderer@3.5.44 || 3.5.45'
+  - '@vue/shared@3.5.44 || 3.5.45'
+  - vue@3.5.44 || 3.5.45
   - '@nuxt/icon@2.6.2'
   - '@types/node@26.6.6'
   - '@markuplint/jsx-parser@5.4.0'

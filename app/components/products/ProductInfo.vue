@@ -64,12 +64,12 @@
             .font-bold.text-base-content(class="text-2xl sm:text-3xl") {{ formatPrice(currentPrice) }} ₽
             span.line-through(
               v-if="baseDiscount",
-              class="text-lg sm:text-xl text-base-content/45"
+              class="text-base-content/45 text-lg sm:text-xl"
             ) {{ formatPrice(product.oldPrice) }} ₽
             //- Плашка скидки: единый вид с ProductCardGrid/ProductCardList
             span.shrink-0(
               v-if="baseDiscount",
-              class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-base leading-5 font-bold text-white"
+              class="inline-flex items-center bg-red-700 px-1.5 pt-px pb-0.5 rounded-md font-bold text-white text-base leading-5"
             ) −{{ discountPercent(product) }}%
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
 
@@ -167,9 +167,9 @@
               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
             )
               path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
-          .px-4.pb-4.pt-0.space-y-0.text-sm.border-t.border-base-300
+          .px-4.pb-4.pt-0.space-y-0.text-sm.border-t.border-base-300.grid(class="lg:gap-x-10 lg:grid-cols-2")
             //- Характеристики товара (порядок — как задано в админке)
-            .flex.justify-between.gap-3.py-2(
+            .flex.justify-between.gap-3.py-1(
               v-for="([label, value], index) in characteristicEntries"
               :key="label"
               :class="index > 0 ? 'border-t border-base-200' : ''"
@@ -191,9 +191,9 @@
               span.font-medium(
                 :class="currentStock.inStock ? 'text-success' : 'text-error'"
               ) {{ currentStock.inStock ? $t('product.statusAvailable') : $t('product.statusUnavailable') }}
-            .flex.justify-between.py-2.border-t.border-base-200
-              span(class="text-base-content/70") {{ $t('product.dateAdded') }}
-              span.font-medium {{ formatDate(product.createdAt) }}
+            //- .flex.justify-between.py-2.border-t.border-base-200
+            //-   span(class="text-base-content/70") {{ $t('product.dateAdded') }}
+            //-   span.font-medium {{ formatDate(product.createdAt) }}
 </template>
 
 <script setup>
@@ -384,8 +384,8 @@ details > summary::-webkit-details-marker {
 }
 
 /* Стрелка-раскрывашка: поворот делает утилита group-open:rotate-180 на svg
-   (индивидуальное свойство rotate). Здесь transform: rotate() НЕ дублируем —
-   rotate + transform складываются (360°), стрелка переставала крутиться. */
+  (индивидуальное свойство rotate). Здесь transform: rotate() НЕ дублируем —
+  rotate + transform складываются (360°), стрелка переставала крутиться. */
 
 /* ─── Сообщить о поступлении ──────────────────────────────── */
 .stock-alert {

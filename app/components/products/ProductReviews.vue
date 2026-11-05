@@ -1,10 +1,10 @@
 <!-- app/components/products/ProductReviews.vue — отзывы на карточке товара.
-     Данные приходят с /api/product/[slug] (approved-отзывы + summary).
-     Отправка: POST /api/reviews → уходит на модерацию (approved:false),
-     на витрине появится после публикации в /admin/reviews. -->
+    Данные приходят с /api/product/[slug] (approved-отзывы + summary).
+    Отправка: POST /api/reviews → уходит на модерацию (approved:false),
+    на витрине появится после публикации в /admin/reviews. -->
 <template lang="pug">
 //- id="reviews": якорь для ссылки-сводки рейтинга из ProductInfo
-.product-reviews.px-2.pb-15(class="lg:pb-3 lg:mt-2", id="reviews")
+.product-reviews.px-2.pb-15(class="lg:mt-2 lg:pb-3", id="reviews")
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.gap-2.flex-wrap.mb-2
       .flex.items-center.gap-2.flex-wrap
@@ -49,7 +49,7 @@
             :placeholder="$t('reviews.reviewPlaceholder')"
             maxlength="600"
           )
-          span.text-xs(class="mt-1 inline-block text-base-content/50") {{ (form.text || '').length }}/600
+          span.text-xs(class="inline-block mt-1 text-base-content/50") {{ (form.text || '').length }}/600
         //- Фото: до 3 снимков, сжимаются в webp на клиенте (useImageResize)
         div
           span.review-label {{ $t('reviews.photoLabel') }}
@@ -61,7 +61,7 @@
               .photo-thumb.relative(v-for="(p, i) in form.photos" :key="p")
                 NuxtImg(:src="p" :alt="$t('reviews.photoAlt', { n: i + 1 })")
                 button.photo-remove(type="button" :aria-label="$t('reviews.photoRemoveAria', { n: i + 1 })" @click="removePhoto(i)") ×
-          span.text-xs(class="mt-1 inline-block text-base-content/50") {{ $t('reviews.photoHint') }}
+          span.text-xs(class="inline-block mt-1 text-base-content/50") {{ $t('reviews.photoHint') }}
         //- Honeypot: обычному покупателю не виден
         input.hidden(type="text" tabindex="-1" autocomplete="off" v-model="form.website" aria-hidden="true")
         p.form-error(v-if="formError" role="alert") {{ formError }}
@@ -88,7 +88,7 @@
           //- Ответ магазина (пишется в /admin/reviews — вкладка «О товарах»)
           .shop-reply.rounded-xl.p-3(
             v-if="r.shopReply?.text"
-            class="bg-base-200 border-l-2 border-primary"
+            class="bg-base-200 border-primary border-l-2"
           )
             .flex.items-center.gap-2.mb-1.text-xs
               span.font-medium {{ $t('reviews.shopReply') }}
@@ -116,7 +116,7 @@
 
     //- Пусто: приглашение
     .text-center.py-6(v-else)
-      p(class="text-base-content/50 text-sm mb-3") {{ $t('reviews.empty') }}
+      p(class="mb-3 text-sm text-base-content/50") {{ $t('reviews.empty') }}
 
   //- Лайтбокс фото отзыва (клик мимо картинки или ✕ — закрывает)
   .review-lightbox.fixed.inset-0(
@@ -125,10 +125,10 @@
     aria-modal="true"
     :aria-label="$t('reviews.photoLightboxAria')"
     @click="lightbox = null"
-    class="z-[10001] bg-black/85 flex items-center justify-center p-4 cursor-zoom-out"
+    class="z-10001 flex justify-center items-center bg-black/85 p-4 cursor-zoom-out"
   )
-    NuxtImg(:src="lightbox.photos[lightbox.index]" :alt="$t('reviews.photoAlt', { n: lightbox.index + 1 })" class="max-h-[90vh] max-w-[92vw] rounded-xl shadow-2xl")
-    button.lb-close.absolute(type="button" :aria-label="$t('common.close')" @click.stop="lightbox = null" class="top-4 right-4 btn btn-circle btn-sm border-0 text-white bg-white/15") ✕
+    NuxtImg(:src="lightbox.photos[lightbox.index]" :alt="$t('reviews.photoAlt', { n: lightbox.index + 1 })" class="shadow-2xl rounded-xl max-w-[92vw] max-h-[90vh]")
+    button.lb-close.absolute(type="button" :aria-label="$t('common.close')" @click.stop="lightbox = null" class="top-4 right-4 bg-white/15 border-0 text-white btn btn-circle btn-sm") ✕
 
   //- Тост «появится после модерации» показывается через $notify
 </template>
