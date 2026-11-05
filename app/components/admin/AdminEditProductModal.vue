@@ -169,9 +169,10 @@
           :disabled="isSubmitting"
         )
 
-      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке.
-      //- Пусто → сервер удаляет поле, витрина фолбэкится на русский список
-      //- (известные лейблы переводятся словарём specLabels.*)
+      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке,
+      //- при первом открытии вкладки предзаполняется русским списком.
+      //- «Очистить»/пусто → сервер удалит поле, витрина фолбэкится на русский
+      //- список (известные лейблы переводятся словарём specLabels.*)
       .form-control.mb-2(v-if="langTab === 'en'")
         label.label.py-1
           span.label-text.text-xs {{ $t('admin.characteristics.enTitle') }}
@@ -179,6 +180,7 @@
           v-model="characteristicPairsEn"
           :categories="form.categories"
           lang="en"
+          :show-clear="true"
           :disabled="isSubmitting"
         )
         p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
@@ -189,6 +191,7 @@
           v-model="characteristicPairsEs"
           :categories="form.categories"
           lang="es"
+          :show-clear="true"
           :disabled="isSubmitting"
         )
         p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
@@ -348,6 +351,8 @@
 // молча сохранял прежние категории.
 // Изображения ресайзятся на клиенте в WebP (useImageResize).
 // ============================================
+import { mergeSpecRows, toSpecPairs } from '~/utils/specTranslations'
+
 const { updateProduct } = useProducts()
 const { resizeToWebp } = useImageResize()
 const notify = useNotifyQueue()
@@ -381,9 +386,23 @@ const variantAxis = ref({ ru: '', en: '', es: '' })
 const variantRows = ref([])
 const characteristicPairs = ref([])
 //- Переводные spec-листы (вкладки EN/ES): массив пар, как базовый список;
-//- пустой список в payload = сервер удаляет поле (фолбэк на русский)
+//- пустой список в payload = сервер удаляет поле (фолбэк на русский).
+//- При инициализации здесь ТОЛЬКО сохранённый перевод: вкладку могли не
+//- открывать — нетронутый список не должен переписывать запись в KV
 const characteristicPairsEn = ref([])
 const characteristicPairsEs = ref([])
+//- Первое переключение на вкладку перевода предзаполняет её русским
+//- списком (переводить на месте легче, чем набирать заново; сохранённый
+//- перевод приоритетен по позициям, новые русские строки достраиваются).
+//- Флаги — чтобы повторные переключения НЕ затирали правки админа
+const specPrefilled = ref({ en: false, es: false })
+watch(langTab, (tab) => {
+  if (tab !== 'en' && tab !== 'es') return
+  if (specPrefilled.value[tab]) return
+  specPrefilled.value[tab] = true
+  const target = tab === 'en' ? characteristicPairsEn : characteristicPairsEs
+  target.value = mergeSpecRows(target.value, characteristicPairs.value)
+})
 const filledCharacteristicsCount = computed(
   () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
 )
@@ -658,15 +677,13 @@ const initializeForm = () => {
     }))
 
     //- Характеристики: Record → массив пар для редактора (порядок — как в KV)
-    characteristicPairs.value = Object.entries(props.product.characteristics || {}).map(
-      ([label, value]) => ({ label, value: String(value) }),
-    )
-    characteristicPairsEn.value = Object.entries(props.product.characteristicsEn || {}).map(
-      ([label, value]) => ({ label, value: String(value) }),
-    )
-    characteristicPairsEs.value = Object.entries(props.product.characteristicsEs || {}).map(
-      ([label, value]) => ({ label, value: String(value) }),
-    )
+    characteristicPairs.value = toSpecPairs(props.product.characteristics)
+    //- Переводные списки — только сохранённый перевод; предзаполнение
+    //- русскими строками происходит при первом переключении на вкладку
+    //- (watch langTab выше) — нетронутые вкладки не переписывают KV
+    characteristicPairsEn.value = toSpecPairs(props.product.characteristicsEn)
+    characteristicPairsEs.value = toSpecPairs(props.product.characteristicsEs)
+    specPrefilled.value = { en: false, es: false }
   }
 }
 
@@ -686,6 +703,7 @@ watch(() => props.isOpen, (newVal) => {
     characteristicPairs.value = []
     characteristicPairsEn.value = []
     characteristicPairsEs.value = []
+    specPrefilled.value = { en: false, es: false }
     if (mainImageInput.value) mainImageInput.value.value = ''
     if (galleryInput.value) galleryInput.value.value = ''
   } else {

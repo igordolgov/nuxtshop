@@ -177,9 +177,10 @@
           :disabled="isSubmitting"
         )
 
-      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке.
-      //- Пусто → сервер не сохранит поле, витрина фолбэкится на русский список
-      //- (известные лейблы переводятся словарём specLabels.*)
+      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке,
+      //- при первом открытии вкладки предзаполняется русским списком.
+      //- «Очистить»/пусто → сервер не сохранит поле, витрина фолбэкится на
+      //- русский список (известные лейблы переводятся словарём specLabels.*)
       .form-control.mb-2(v-if="langTab === 'en'")
         label.label.py-1
           span.label-text.text-xs {{ $t('admin.characteristics.enTitle') }}
@@ -187,6 +188,7 @@
           v-model="characteristicPairsEn"
           :categories="form.categories"
           lang="en"
+          :show-clear="true"
           :disabled="isSubmitting"
         )
         p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
@@ -197,6 +199,7 @@
           v-model="characteristicPairsEs"
           :categories="form.categories"
           lang="es"
+          :show-clear="true"
           :disabled="isSubmitting"
         )
         p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
@@ -388,6 +391,21 @@ const characteristicPairs = ref([])
 //- сервер не сохранит поле (фолбэк на русский)
 const characteristicPairsEn = ref([])
 const characteristicPairsEs = ref([])
+//- Первое переключение на вкладку перевода предзаполняет список текущими
+//- русскими характеристиками (переводить на месте легче, чем набирать
+//- заново); флаги — чтобы повторные переключения НЕ затирали правки админа
+const specPrefilled = ref({ en: false, es: false })
+watch(langTab, (tab) => {
+  if (tab !== 'en' && tab !== 'es') return
+  if (specPrefilled.value[tab]) return
+  specPrefilled.value[tab] = true
+  const target = tab === 'en' ? characteristicPairsEn : characteristicPairsEs
+  if (target.value.length === 0 && characteristicPairs.value.length > 0) {
+    //- копия пар (не по Record: черновики с пустыми/одинаковыми
+    //- названиями в Record-путь схлопнулись бы)
+    target.value = characteristicPairs.value.map((pair) => ({ ...pair }))
+  }
+})
 const filledCharacteristicsCount = computed(
   () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
 )
@@ -729,6 +747,7 @@ const resetForm = () => {
   characteristicPairs.value = []
   characteristicPairsEn.value = []
   characteristicPairsEs.value = []
+  specPrefilled.value = { en: false, es: false }
 }
 
 watch(

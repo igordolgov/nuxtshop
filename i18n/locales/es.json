@@ -1108,7 +1108,8 @@
       "maxReached": "Máximo — {n}",
       "enTitle": "Características (English)",
       "esTitle": "Características (Español)",
-      "fallbackHint": "Déjalo vacío y la tienda mostrará la lista rusa: los nombres conocidos se traducen automáticamente, los valores se muestran tal cual"
+      "fallbackHint": "Lista precargada en ruso — traduce nombres y valores. «Vaciar» devuelve a la tienda la lista rusa: los nombres conocidos se traducen automáticamente, los valores se muestran tal cual",
+      "clearBtn": "Vaciar"
     },
     "content": {
       "title": "Contenido del sitio",

@@ -6,7 +6,10 @@
      (characteristicPresets); клик добавляет строку с готовым названием.
      lang='en'/'es' — вкладка переводного spec-листа: чипы показываются
      и вставляются ПЕРЕВЕДЁННЫМИ названиями (словарь specLabels.*), чтобы
-     в переводной список не попадали русские лейблы.
+     в переводной список не попадали русские лейблы. showClear — кнопка
+     «Очистить»: предзаполненный русскими строками список можно сбросить
+     в пустой (витрина вернётся к фолбэку — русскому списку с автопереводом
+     названий).
      Пустые пары на сервер отбрасываются — можно оставлять черновики. -->
 <template lang="pug">
 .characteristics-editor
@@ -55,6 +58,10 @@
   .flex.items-center.gap-2.mt-2
     button.btn.btn-outline.btn-xs(type="button" :disabled="disabled || modelValue.length >= MAX_PAIRS" @click="addCustom")
       | + {{ $t('admin.characteristics.addBtn') }}
+    //- «Очистить» — только у переводных списков (showClear): сбросить
+    //- предзаполненный/переведённый список в пустой (фолбэк на русский)
+    button.btn.btn-ghost.btn-xs(type="button" v-if="showClear && modelValue.length > 0" :disabled="disabled" @click="emitPairs([])")
+      | {{ $t('admin.characteristics.clearBtn') }}
     span.text-xs(v-if="modelValue.length >= MAX_PAIRS" class="text-warning")
       | {{ $t('admin.characteristics.maxReached', { n: MAX_PAIRS }) }}
 </template>
@@ -82,6 +89,8 @@ const props = defineProps({
   categories: { type: Array, default: () => [] },
   // Язык редактируемого списка: 'ru' (базовый) | 'en' | 'es'
   lang: { type: String, default: 'ru' },
+  // Кнопка «Очистить» (сброс списка в пустой) — только у переводных вкладок
+  showClear: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
 })
 

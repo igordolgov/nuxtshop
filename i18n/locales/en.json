@@ -1108,7 +1108,8 @@
       "maxReached": "Maximum — {n}",
       "enTitle": "Characteristics (English)",
       "esTitle": "Characteristics (Spanish)",
-      "fallbackHint": "Leave empty to fall back to the Russian list: known labels are translated automatically, values are shown as entered"
+      "fallbackHint": "Prefilled with the Russian list — translate the labels and values. «Clear» restores the Russian list on the storefront: known labels are translated automatically, values are shown as entered",
+      "clearBtn": "Clear"
     },
     "content": {
       "title": "Site content",
