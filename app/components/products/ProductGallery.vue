@@ -1,7 +1,7 @@
 <!-- app/components/products/ProductGallery.vue -->
 <!-- ============================================
   Компонент: ProductGallery
-  Назначение: галерея изображений товара с зумом
+  Назначение: галерея изображений товара с зумом и автоскроллом
   Props: product, gallery, productName
   Emits: image-load, image-error
   Ориентация экрана не используется: свайп работает
@@ -11,6 +11,7 @@
 <template lang="pug">
 .product-gallery
   .main-image-container(
+    ref="galleryRoot"
     :class="{ 'swiping': isSwiping || isDragging }"
     @touchstart="handleTouchStart"
     @touchmove="handleTouchMove"
@@ -183,7 +184,8 @@
 // Компонент: ProductGallery
 // Галерея товара с зумом. Разбивка (этап 6): логика слайдера (свайп,
 // драг, точки, прыжок на картинку варианта) — useGallerySlider.ts,
-// жестовая зум-модалка (пан/пинч/двойной тап/колесо) — useImageZoom.ts.
+// жестовая зум-модалка (пан/пинч/двойной тап/колесо) — useImageZoom.ts,
+// автоскролл с прерыванием по касанию/скроллу — useGalleryAutoscroll.ts.
 // Ориентация экрана не используется: свайп работает в обеих ориентациях;
 // пересчёт позиции слайда при повороте покрывает useResizeObserver.
 // ============================================
@@ -210,6 +212,17 @@ const {
   handleTouchStart, handleTouchMove, handleTouchEnd,
   handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave,
 } = useGallerySlider({ gallery: () => props.gallery, jumpToImage: () => props.jumpToImage, emit })
+
+// Автоскролл: раз в 4 с следующий слайд; НАВСЕГДА останавливается при
+// касании/клике/скролле со стороны пользователя, выборе варианта и при
+// prefers-reduced-motion (детали — useGalleryAutoscroll.ts)
+const galleryRoot = ref(null)
+useGalleryAutoscroll({
+  container: galleryRoot,
+  gallery: () => props.gallery,
+  advance: nextImage,
+  jumpToImage: () => props.jumpToImage,
+})
 
 // Зум-модалка: тот же currentIndex и та же галерея, свои жесты
 const {
