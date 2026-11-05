@@ -60,9 +60,7 @@ export default defineNuxtConfig({
     // `@tailwind utilities;` из tailwindcss/index.css:949, и Lightning CSS-трансформер
     // падает на ней: «Invalid empty selector» → 500 на каждый запрос (страницы без CSS).
     // Минификация прод-CSS всё равно идёт через build.cssMinify: 'lightningcss'.
-    css: isProd
-  ? { devSourcemap: false, transformer: 'lightningcss' }
-  : { devSourcemap: false },
+    css: isProd ? { devSourcemap: false, transformer: 'lightningcss' } : { devSourcemap: false },
     // Условное spread вместо [.filter(Boolean) as any]: типы точные, any не нужен
     plugins: [tailwindcss(), ...(isProd ? [removeConsole({ includes: ['log', 'debug'] })] : [])],
     // Список чистый: только реально используемые пакеты (pinia снята —
