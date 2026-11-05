@@ -32,7 +32,9 @@
 
     //- Ошибка загрузки
     .text-center.py-16.flex.flex-col.items-center(v-else-if="error")
-      p.text-base-content/50.mb-4 {{ $t('news.loadError') }}
+      //- Класс с «/50» — только через атрибут: в pug-шортхенде слэш
+      //- означает self-closing, компилировался мусорный текст-узел
+      p(class="text-base-content/50 mb-4") {{ $t('news.loadError') }}
       button.btn.btn-primary.rounded-xl(type="button" @click="refresh()") {{ $t('news.retry') }}
 
     template(v-else)

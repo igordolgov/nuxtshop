@@ -142,6 +142,26 @@ html[data-theme='business'] {
   border-radius: 0.75rem;
 }
 
+/* ─── modal-box-fit: модалка, вмещающаяся в экран телефона ────────
+   Стоковый max-h-screen (100vh) на мобильных БОЛЬШЕ видимой области
+   (тулбар браузера), а .modal не скроллится (overflow: clip) — края
+   модалки уходили под панели: заголовок и кнопки «Сохранить» пропадали.
+   Ограничиваем по dvh (fallback vh для старых браузеров) с полем
+   0.75rem сверху/снизу; на телефоне ширина с боковым полем, на
+   desktop (≥640px) — авто, как раньше. Внутренний скролл даёт
+   стоковый overflow-y:auto самого .modal-box. */
+.modal-box.modal-box-fit {
+  width: calc(100% - 1.5rem);
+  max-height: calc(100vh - 1.5rem);
+  max-height: calc(100dvh - 1.5rem);
+}
+
+@media (min-width: 640px) {
+  .modal-box.modal-box-fit {
+    width: auto;
+  }
+}
+
 /* ─── «Товар уже в корзине» (btn-success + :disabled) ─────────────
    daisyUI глушит .btn:is(:disabled,…): обнуляет --btn-bg/--btn-border,
    подменяет подложку на 10% ghost и топит текст до 20% base-content —

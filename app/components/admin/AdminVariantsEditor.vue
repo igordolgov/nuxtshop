@@ -99,7 +99,9 @@
       .flex.items-center.gap-2.mt-1
         .size-9.border.rounded.overflow-hidden.bg-base-200.flex.items-center.justify-center.shrink-0
           img(v-if="variant.image" :src="variant.image" :alt="$t('admin.variants.imageAlt', { n: index + 1 })" class="w-full h-full object-cover")
-          span.text-base-content/30.text-xs(v-else) —
+          //- Класс с «/30» — только через атрибут: в pug-шортхенде слэш
+          //- означает self-closing, компилировался мусорный текст-узел
+          span(class="text-base-content/30 text-xs" v-else) —
         input.hidden(type="file" accept="image/jpeg,image/png,image/webp" :ref="(el) => (fileInputs[index] = el)" @change="handleImageUpload($event, index)")
         button.btn.btn-ghost.btn-xs(type="button" :disabled="disabled" @click="fileInputs[index]?.click()")
           | {{ $t('admin.variants.imageBtn') }}

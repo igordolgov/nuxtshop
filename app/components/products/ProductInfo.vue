@@ -381,13 +381,9 @@ details > summary::-webkit-details-marker {
   display: none;
 }
 
-details[open] summary svg {
-  transform: rotate(180deg);
-}
-
-details summary svg {
-  transition: transform var(--transition-base, 0.25s);
-}
+/* Стрелка-раскрывашка: поворот делает утилита group-open:rotate-180 на svg
+   (индивидуальное свойство rotate). Здесь transform: rotate() НЕ дублируем —
+   rotate + transform складываются (360°), стрелка переставала крутиться. */
 
 /* ─── Сообщить о поступлении ──────────────────────────────── */
 .stock-alert {

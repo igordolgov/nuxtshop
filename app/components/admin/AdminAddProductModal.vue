@@ -7,7 +7,9 @@
     мегабайт base64. -->
 <template lang="pug">
 .modal(v-if="isOpen" class="modal-open")
-  .modal-box.max-w-2xl.relative.w-full.max-h-screen.p-3(class="sm:p-6 sm:w-auto")
+  //- modal-box-fit (main.css): вмещается в экран телефона (dvh-высота
+  //- с полем + внутренний скролл), на desktop — авто-ширина как раньше
+  .modal-box.modal-box-fit.max-w-2xl.relative.p-3(class="sm:p-6")
     //- Кнопка закрытия
     button.btn.btn-xs.btn-circle.btn-error.absolute.right-2.top-2(
       type="button"
