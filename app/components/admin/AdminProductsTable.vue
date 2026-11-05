@@ -82,13 +82,13 @@
 
               td
                 .flex.flex-wrap(class="gap-0.5")
-                  span.badge.badge-xs.badge-secondary.rounded-sm(
+                  span.badge.badge-xs.badge-secondary(
                     v-for="cat in getCategories(loc(product).categories)"
                     :key="cat"
                   ) {{ cat }}
 
               td
-                .badge.badge-sm.min-w-10.rounded-sm(
+                .badge.badge-sm.min-w-10(
                   :class="product.inStock ? 'badge-success' : 'badge-error'"
                 )
                   | {{ product.inStock ? String(product.stockQuantity || 0) : $t('admin.products.outOfStockShort') }}
@@ -138,7 +138,7 @@
                 )
                 .flex.items-center.gap-2.mt-1
                   span.font-bold.text-sm {{ formatPrice(product.price) }}₽
-                  .badge.badge-sm.font-medium.rounded-sm(
+                  .badge.badge-sm.font-medium(
                     :class="product.inStock ? 'badge-success' : 'badge-error'"
                   )
                     | {{ product.inStock ? $t('admin.products.qtyShort', { n: product.stockQuantity || 0 }) : $t('admin.products.outOfStockShort') }}
