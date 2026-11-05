@@ -4,6 +4,9 @@
      в Record через sanitizeCharacteristics).
      Чипы-пресеты: специфичные для выбранных категорий + универсальные
      (characteristicPresets); клик добавляет строку с готовым названием.
+     lang='en'/'es' — вкладка переводного spec-листа: чипы показываются
+     и вставляются ПЕРЕВЕДЁННЫМИ названиями (словарь specLabels.*), чтобы
+     в переводной список не попадали русские лейблы.
      Пустые пары на сервер отбрасываются — можно оставлять черновики. -->
 <template lang="pug">
 .characteristics-editor
@@ -64,12 +67,21 @@
 // для одежды; использованные названия чипы дизейблятся.
 // ============================================
 import { presetLabelsForCategories } from '~/utils/characteristicPresets'
+// Перевод чипов на вкладках en/es: статические словари (локали i18n
+// грузятся лениво — в админке t() с чужой локалью вернул бы ключ)
+import {
+  CHARACTERISTIC_LABEL_KEYS,
+  SPEC_LABELS_EN,
+  SPEC_LABELS_ES,
+} from '~/utils/characteristicLabels'
 
 const props = defineProps({
   // [{ label: 'Цвет', value: 'Чёрный' }, ...]
   modelValue: { type: Array, default: () => [] },
   // Выбранные категории товара — источник чипов-пресетов
   categories: { type: Array, default: () => [] },
+  // Язык редактируемого списка: 'ru' (базовый) | 'en' | 'es'
+  lang: { type: String, default: 'ru' },
   disabled: { type: Boolean, default: false },
 })
 
@@ -78,7 +90,24 @@ const emit = defineEmits(['update:modelValue'])
 // Лимит пар согласован с CHARACTERISTICS_MAX_PAIRS в server/lib/productHelpers
 const MAX_PAIRS = 40
 
-const presetChips = computed(() => presetLabelsForCategories(props.categories))
+const SPEC_DICTS = { en: SPEC_LABELS_EN, es: SPEC_LABELS_ES }
+
+// Чипы вкладки: на ru — сырые русские лейблы пресетов; на en/es — их
+// переводы из статических словарей specLabels (лейбл без ключа — как есть,
+// но такой сценарий ловит гард characteristic-labels.test.ts).
+// Дедупликация — на случай коллизии переводов разных русских лейблов.
+const presetChips = computed(() => {
+  const labels = presetLabelsForCategories(props.categories)
+  if (props.lang === 'ru') return labels
+  const dict = SPEC_DICTS[props.lang]
+  const out = []
+  for (const label of labels) {
+    const key = CHARACTERISTIC_LABEL_KEYS[label]
+    const translated = (key && dict?.[key]) || label
+    if (!out.includes(translated)) out.push(translated)
+  }
+  return out
+})
 
 const isLabelUsed = (label) => props.modelValue.some((pair) => pair?.label === label)
 

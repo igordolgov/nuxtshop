@@ -23,6 +23,15 @@ function nonEmpty(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Непустой Record характеристик → как есть; пустой/не объект/массив → null
+ *  (сигнал фолбэка на русский spec-лист). */
+function nonEmptySpecRecord(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return Object.keys(value as Record<string, unknown>).length > 0
+    ? (value as Record<string, string>)
+    : null;
+}
+
 /** Суффиксы переводных полей; ru отсутствует (русский текст в базовых полях). */
 const LOCALE_FIELD_SUFFIX: Record<string, string> = {
   en: 'En',
@@ -30,9 +39,11 @@ const LOCALE_FIELD_SUFFIX: Record<string, string> = {
 };
 
 /**
- * Локализованная копия товара: en/es → переводы с поэлементным фолбэком
- * на русский; ru → объект как есть. Исходные категории — в categoriesRaw.
- * Контракт данных и поведение — см. app/utils/localizedProduct.ts.
+ * Локализованная копия товара: en/es → переводы с фолбэком на русский;
+ * ru → объект как есть. Исходные категории — в categoriesRaw. Переводной
+ * spec-лист (characteristicsEn/Es) цельный: есть и непуст → показывается
+ * целиком; нет → русский characteristics (контракт и поведение —
+ * см. app/utils/localizedProduct.ts).
  */
 export function localizedProduct<T extends object>(
   product: T | null | undefined,
@@ -65,11 +76,17 @@ export function localizedProduct<T extends object>(
     }
   }
 
+  // Spec-лист: цельный переводной Record (characteristicsEn/Es) или
+  // фолбэк на русский characteristics — см. app/utils/localizedProduct.ts
+  const localizedSpecs = nonEmptySpecRecord(rec[`characteristics${suffix}`]);
+  const characteristics = localizedSpecs ?? rec.characteristics;
+
   return {
     ...product,
     name,
     description,
     categories,
+    characteristics,
     categoriesRaw: rawCategories ?? [],
   } as T;
 }

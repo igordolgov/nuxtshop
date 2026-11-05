@@ -177,6 +177,30 @@
           :disabled="isSubmitting"
         )
 
+      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке.
+      //- Пусто → сервер не сохранит поле, витрина фолбэкится на русский список
+      //- (известные лейблы переводятся словарём specLabels.*)
+      .form-control.mb-2(v-if="langTab === 'en'")
+        label.label.py-1
+          span.label-text.text-xs {{ $t('admin.characteristics.enTitle') }}
+        AdminCharacteristicsEditor(
+          v-model="characteristicPairsEn"
+          :categories="form.categories"
+          lang="en"
+          :disabled="isSubmitting"
+        )
+        p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
+      .form-control.mb-2(v-else-if="langTab === 'es'")
+        label.label.py-1
+          span.label-text.text-xs {{ $t('admin.characteristics.esTitle') }}
+        AdminCharacteristicsEditor(
+          v-model="characteristicPairsEs"
+          :categories="form.categories"
+          lang="es"
+          :disabled="isSubmitting"
+        )
+        p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
+
       //- Изображения
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-4")
         //- Основное изображение
@@ -360,6 +384,10 @@ const formError = ref('')
 const variantAxis = ref({ ru: '', en: '', es: '' })
 const variantRows = ref([])
 const characteristicPairs = ref([])
+//- Переводные spec-листы (вкладки EN/ES); пустой список в payload —
+//- сервер не сохранит поле (фолбэк на русский)
+const characteristicPairsEn = ref([])
+const characteristicPairsEs = ref([])
 const filledCharacteristicsCount = computed(
   () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
 )
@@ -589,8 +617,8 @@ const buildVariantsPayload = () =>
       return item
     })
 
-const buildCharacteristicsPayload = () =>
-  characteristicPairs.value
+const buildCharacteristicsPayload = (pairs = characteristicPairs.value) =>
+  pairs
     .filter((pair) => pair?.label?.trim())
     .map((pair) => ({ label: pair.label.trim(), value: (pair.value || '').trim() }))
 
@@ -643,6 +671,9 @@ const handleSubmit = async () => {
       variantNameEn: variantAxis.value.en.trim() || '',
       variantNameEs: variantAxis.value.es.trim() || '',
       characteristics: buildCharacteristicsPayload(),
+      // Переводные spec-листы: пустой список сервер не сохранит (фолбэк)
+      characteristicsEn: buildCharacteristicsPayload(characteristicPairsEn.value),
+      characteristicsEs: buildCharacteristicsPayload(characteristicPairsEs.value),
     }
 
     uploadProgress.value = 40
@@ -696,6 +727,8 @@ const resetForm = () => {
   variantAxis.value = { ru: '', en: '', es: '' }
   variantRows.value = []
   characteristicPairs.value = []
+  characteristicPairsEn.value = []
+  characteristicPairsEs.value = []
 }
 
 watch(

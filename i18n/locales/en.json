@@ -1105,7 +1105,10 @@
       "removeAria": "Remove specification",
       "emptyHint": "Empty — add via preset chip or your own row",
       "addBtn": "Add",
-      "maxReached": "Maximum — {n}"
+      "maxReached": "Maximum — {n}",
+      "enTitle": "Characteristics (English)",
+      "esTitle": "Characteristics (Spanish)",
+      "fallbackHint": "Leave empty to fall back to the Russian list: known labels are translated automatically, values are shown as entered"
     },
     "content": {
       "title": "Site content",

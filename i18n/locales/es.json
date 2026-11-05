@@ -1105,7 +1105,10 @@
       "removeAria": "Eliminar característica",
       "emptyHint": "Vacío — añada mediante chip predefinido o su propia fila",
       "addBtn": "Añadir",
-      "maxReached": "Máximo — {n}"
+      "maxReached": "Máximo — {n}",
+      "enTitle": "Características (English)",
+      "esTitle": "Características (Español)",
+      "fallbackHint": "Déjalo vacío y la tienda mostrará la lista rusa: los nombres conocidos se traducen automáticamente, los valores se muestran tal cual"
     },
     "content": {
       "title": "Contenido del sitio",

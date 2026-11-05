@@ -8,7 +8,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { CHARACTERISTIC_LABEL_KEYS } from '../../app/utils/characteristicLabels';
+import {
+  CHARACTERISTIC_LABEL_KEYS,
+  SPEC_LABELS_EN,
+  SPEC_LABELS_ES,
+} from '../../app/utils/characteristicLabels';
 import { presetLabelsForCategories } from '../../app/utils/characteristicPresets';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -66,5 +70,24 @@ describe('перевод характеристик: карта лейблов �
       expect(locales.en.specLabels[key], `en: ${label}`).not.toBe(label);
       expect(locales.es.specLabels[key], `es: ${label}`).not.toBe(label);
     }
+  });
+});
+
+describe('статические словари чипов редактора синхронны со specLabels', () => {
+  // Чипы вкладок EN/ES берут переводы из SPEC_LABELS_EN/ES (ленивые локали
+  // в админке не загружены). Дрейф статических копий с i18n-словарями
+  // роняет тест — править надо ОБА источника или только i18n-словарь
+  // (статические перегенерируются из него).
+  it('SPEC_LABELS_EN/ES = specLabels.* для каждого ключа карты', () => {
+    for (const key of Object.values(CHARACTERISTIC_LABEL_KEYS)) {
+      expect(SPEC_LABELS_EN[key], `EN ${key}`).toBe(locales.en.specLabels[key]);
+      expect(SPEC_LABELS_ES[key], `ES ${key}`).toBe(locales.es.specLabels[key]);
+    }
+  });
+
+  it('статические словари не содержат лишних ключей', () => {
+    const expected = Object.values(CHARACTERISTIC_LABEL_KEYS).sort();
+    expect(Object.keys(SPEC_LABELS_EN).sort()).toEqual(expected);
+    expect(Object.keys(SPEC_LABELS_ES).sort()).toEqual(expected);
   });
 });

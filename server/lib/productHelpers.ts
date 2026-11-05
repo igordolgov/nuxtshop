@@ -117,6 +117,13 @@ export interface Product {
   // Параллельные массивы к categories: элемент i переводит categories[i]
   categoriesEn?: string[];
   categoriesEs?: string[];
+  // Локализованный spec-лист: ПОЛНЫЙ перевод характеристик для en/es
+  // (свои названия И значения). Запись есть и непуста → витрина в этой
+  // локали показывает её целиком; нет/пуста → фолбэк на русский
+  // characteristics (известные лейблы дополнительно переводятся
+  // словарём specLabels.* — см. app/utils/characteristicLabels.ts).
+  characteristicsEn?: Record<string, string>;
+  characteristicsEs?: Record<string, string>;
   // ── Варианты (цвет/память/размер, этап variants) ────────────────────
   // Контракт: variants[0].price === price (базовая цена = «от», карточки
   // каталога и быстрый «+» работают с первым вариантом); остаток варианта
@@ -504,6 +511,8 @@ const LOCALIZED_TEXT_LIMITS: Record<(typeof LOCALIZED_TEXT_FIELDS)[number], numb
 
 const LOCALIZED_CATEGORY_FIELDS = ['categoriesEn', 'categoriesEs'] as const;
 
+const LOCALIZED_CHARACTERISTICS_FIELDS = ['characteristicsEn', 'characteristicsEs'] as const;
+
 function normalizeLocalizedText(
   body: Record<string, unknown> | null | undefined,
   field: (typeof LOCALIZED_TEXT_FIELDS)[number],
@@ -552,6 +561,20 @@ function normalizeLocalizedCategories(
   return result.length > 0 ? result : null;
 }
 
+/** Нормализация переводного spec-листа: те же форматы, что sanitizeCharacteristics
+ *  (массив пар редактора / Record). Пустой список = очистка перевода (null) —
+ *  витрина фолбэкится на русский characteristics, как у прочих переводов. */
+function normalizeLocalizedCharacteristics(
+  body: Record<string, unknown> | null | undefined,
+  field: (typeof LOCALIZED_CHARACTERISTICS_FIELDS)[number],
+): Record<string, string> | null | undefined {
+  const raw = body?.[field];
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+  const sanitized = sanitizeCharacteristics(raw);
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
 /**
  * Патч локализованных полей из тела запроса. Ключи со значением null
  * означают «удалить перевод из записи» — раскрывает applyLocalizedPatch.
@@ -559,14 +582,18 @@ function normalizeLocalizedCategories(
  */
 export function extractLocalizedPatch(
   body: Record<string, unknown> | null | undefined,
-): Record<string, string | string[] | null> {
-  const patch: Record<string, string | string[] | null> = {};
+): Record<string, string | string[] | Record<string, string> | null> {
+  const patch: Record<string, string | string[] | Record<string, string> | null> = {};
   for (const field of LOCALIZED_TEXT_FIELDS) {
     const value = normalizeLocalizedText(body, field);
     if (value !== undefined) patch[field] = value;
   }
   for (const field of LOCALIZED_CATEGORY_FIELDS) {
     const value = normalizeLocalizedCategories(body, field);
+    if (value !== undefined) patch[field] = value;
+  }
+  for (const field of LOCALIZED_CHARACTERISTICS_FIELDS) {
+    const value = normalizeLocalizedCharacteristics(body, field);
     if (value !== undefined) patch[field] = value;
   }
   return patch;
@@ -579,7 +606,7 @@ export function extractLocalizedPatch(
  *  через Record-вид. */
 export function applyLocalizedPatch<ProductType extends object>(
   product: ProductType,
-  patch: Record<string, string | string[] | null>,
+  patch: Record<string, string | string[] | Record<string, string> | null>,
 ): ProductType {
   // Спред дженерика не имеет index-сигнатуры — приводим к Record-виду явно
   const result = { ...product } as Record<string, unknown>;

@@ -36,12 +36,25 @@ function nonEmpty(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Непустой Record характеристик → как есть; пустой/не объект/массив → null
+ *  (сигнал фолбэка на русский spec-лист). */
+function nonEmptySpecRecord(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return Object.keys(value as Record<string, unknown>).length > 0
+    ? (value as Record<string, string>)
+    : null;
+}
+
 /**
  * Локализованная копия товара для витрины.
  * - ru → объект как есть (нулевые накладные расходы на русский каталог);
- * - en/es → { ...product, name, description, categories } из переводных
- *   полей с поэлементным фолбэком на русский; исходный список категорий
+ * - en/es → { ...product, name, description, categories, characteristics }
+ *   из переводных полей с фолбэком на русский; исходный список категорий
  *   сохраняется в categoriesRaw (фильтры матчят сырые значения).
+ * Переводной spec-лист (characteristicsEn/Es) цельный: есть и непуст →
+ * показывается целиком (админ сам перевёл названия и значения); нет →
+ * русский список (известные лейблы дополнительно переводит витрина
+ * словарём specLabels.*).
  * Объект не мутируется: карточки/списки получают поверхностную копию.
  */
 export function localizedProduct<T extends Record<string, unknown>>(
@@ -73,11 +86,16 @@ export function localizedProduct<T extends Record<string, unknown>>(
     }
   }
 
+  // Spec-лист: цельный переводной Record или фолбэк на русский
+  const localizedSpecs = nonEmptySpecRecord(product[`characteristics${suffix}`]);
+  const characteristics = localizedSpecs ?? (product.characteristics as T['characteristics']);
+
   return {
     ...product,
     name,
     description,
     categories,
+    characteristics,
     categoriesRaw: rawCategories ?? [],
   } as T;
 }

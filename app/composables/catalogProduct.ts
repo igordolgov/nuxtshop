@@ -19,6 +19,9 @@ export type CatalogProduct = {
   inStock: boolean;
   stockQuantity: number;
   characteristics?: Record<string, string>;
+  // Локализованный spec-лист (полный перевод списка; пусто → фолбэк на ru)
+  characteristicsEn?: Record<string, string> | null;
+  characteristicsEs?: Record<string, string> | null;
   variants?: Array<{
     id: string | number;
     name?: string | null;

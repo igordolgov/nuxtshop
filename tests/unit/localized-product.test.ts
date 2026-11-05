@@ -68,6 +68,46 @@ describe('localizedProduct', () => {
     expect(view.categoriesRaw).toEqual([]);
   });
 
+  it('en: непустой characteristicsEn — spec-лист показывается целиком', () => {
+    const view = localizedProduct(
+      {
+        ...baseProduct,
+        characteristics: { Экран: 'AMOLED', Цвет: 'Чёрный' },
+        characteristicsEn: { Screen: 'AMOLED', Color: 'Black' },
+      },
+      'en',
+    );
+    expect(view.characteristics).toEqual({ Screen: 'AMOLED', Color: 'Black' });
+  });
+
+  it('en: пустой/битый characteristicsEn — фолбэк на русский список', () => {
+    const ru = { Экран: 'AMOLED' };
+    expect(
+      localizedProduct({ ...baseProduct, characteristics: ru, characteristicsEn: {} }, 'en')
+        .characteristics,
+    ).toEqual(ru);
+    expect(
+      localizedProduct({ ...baseProduct, characteristics: ru, characteristicsEn: [] }, 'en')
+        .characteristics,
+    ).toEqual(ru);
+    expect(localizedProduct({ ...baseProduct, characteristics: ru }, 'en').characteristics).toEqual(
+      ru,
+    );
+  });
+
+  it('es: characteristicsEs приоритетнее базового списка', () => {
+    const view = localizedProduct(
+      {
+        ...baseProduct,
+        characteristics: { Экран: 'AMOLED' },
+        characteristicsEn: { Screen: 'AMOLED' },
+        characteristicsEs: { Pantalla: 'AMOLED' },
+      },
+      'es',
+    );
+    expect(view.characteristics).toEqual({ Pantalla: 'AMOLED' });
+  });
+
   it('неизвестная локаль и null — без изменений', () => {
     expect(localizedProduct(baseProduct, 'fr')).toBe(baseProduct);
     expect(localizedProduct(null, 'en')).toBe(null);
@@ -144,6 +184,29 @@ describe('extractLocalizedPatch', () => {
     expect(patch.nameEn).toHaveLength(200);
     expect(patch.descriptionEn).toHaveLength(5000);
   });
+
+  it('characteristicsEn/Es: массив пар → Record, санитайзер как у базового поля', () => {
+    expect(
+      extractLocalizedPatch({ characteristicsEn: [{ label: ' Screen ', value: 'AMOLED' }] }),
+    ).toEqual({ characteristicsEn: { Screen: 'AMOLED' } });
+    // Record тоже принимается: триммятся, пустые лейблы/значения отбрасываются
+    // (дубликаты ключей в Record-формате недостижимы: JSON.parse схлопывает их)
+    expect(
+      extractLocalizedPatch({ characteristicsEs: { ' Pantalla ': 'AMOLED', '': 'x', Solo: '' } }),
+    ).toEqual({ characteristicsEs: { Pantalla: 'AMOLED' } });
+  });
+
+  it('characteristicsEn/Es: пустой список/null — очистка перевода (null)', () => {
+    expect(extractLocalizedPatch({ characteristicsEn: [] })).toEqual({ characteristicsEn: null });
+    expect(extractLocalizedPatch({ characteristicsEn: null })).toEqual({ characteristicsEn: null });
+    expect(extractLocalizedPatch({ characteristicsEn: [{ label: 'Экран', value: '  ' }] })).toEqual(
+      { characteristicsEn: null },
+    );
+    // Поле не пришло — в патче отсутствует (PUT не трогает)
+    expect(extractLocalizedPatch({ characteristicsEs: [{ label: 'A', value: 'B' }] })).toEqual({
+      characteristicsEs: { A: 'B' },
+    });
+  });
 });
 
 describe('applyLocalizedPatch', () => {
@@ -153,6 +216,8 @@ describe('applyLocalizedPatch', () => {
     nameEn: 'Old',
     categories: ['Электроника'],
     categoriesEn: ['Electronics'],
+    characteristics: { Экран: 'AMOLED' },
+    characteristicsEn: { Screen: 'Old' },
   };
 
   it('значение — присваивает, null — удаляет поле из записи', () => {
@@ -160,13 +225,18 @@ describe('applyLocalizedPatch', () => {
       nameEn: 'Smartphone',
       categoriesEn: null,
       nameEs: 'Teléfono',
+      characteristicsEn: { Screen: 'AMOLED' },
+      characteristicsEs: null,
     });
     expect(updated.nameEn).toBe('Smartphone');
     expect(updated.nameEs).toBe('Teléfono');
+    expect(updated.characteristicsEn).toEqual({ Screen: 'AMOLED' });
     expect('categoriesEn' in updated).toBe(false);
+    expect('characteristicsEs' in updated).toBe(false);
     // Исходная запись не мутирована
     expect(product.nameEn).toBe('Old');
     expect(product.categoriesEn).toEqual(['Electronics']);
+    expect(product.characteristicsEn).toEqual({ Screen: 'Old' });
   });
 
   it('пустой патч — копия без изменений', () => {
@@ -193,6 +263,26 @@ describe('server/app copies are in sync', () => {
     [{ id: '2', categoriesEn: ['A', ''] }, 'en'],
     [null, 'en'],
     [{ id: '3' }, 'es'],
+    // Переводной spec-лист: приоритет, пустой Record, битые форматы
+    [
+      {
+        ...baseProduct,
+        characteristics: { Экран: 'AMOLED' },
+        characteristicsEn: { Screen: 'AMOLED' },
+        characteristicsEs: { Pantalla: 'AMOLED' },
+      },
+      'en',
+    ],
+    [
+      {
+        ...baseProduct,
+        characteristics: { Экран: 'AMOLED' },
+        characteristicsEn: {},
+        characteristicsEs: [],
+      },
+      'es',
+    ],
+    [{ ...baseProduct, characteristics: { Цвет: 'Чёрный' } }, 'en'],
   ];
 
   it.each(cases)('совпадение вывода для %j, локаль %s', (input, locale) => {
