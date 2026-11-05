@@ -55,6 +55,11 @@ export default defineNuxtConfig({
       modulePreload: { polyfill: false },
       chunkSizeWarningLimit: 1000,
     },
+    // ⚠️ transformer: 'lightningcss' — только в prod-сборке. В dev @tailwindcss/vite
+    // начиная с 4.3.4 на SSR-стороне (server environment) не раскрывает директиву
+    // `@tailwind utilities;` из tailwindcss/index.css:949, и Lightning CSS-трансформер
+    // падает на ней: «Invalid empty selector» → 500 на каждый запрос (страницы без CSS).
+    // Минификация прод-CSS всё равно идёт через build.cssMinify: 'lightningcss'.
     css: isProd
   ? { devSourcemap: false, transformer: 'lightningcss' }
   : { devSourcemap: false },
