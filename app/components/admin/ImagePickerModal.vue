@@ -3,7 +3,7 @@
 dialog.modal(:class="{ 'modal-open': isOpen }")
   .modal-box.bg-base-200.border.border-base-300.max-w-md(class="w-11/12")
     .flex.justify-between.items-center.mb-4
-      h3.text-lg.font-bold.text-base-content Выбор изображения
+      h3.text-lg.font-bold.text-base-content {{ $t('admin.imagePicker.title') }}
       button.btn.btn-ghost.btn-sm(@click="closeModal") ✕
 
     .space-y-3
@@ -28,7 +28,7 @@ dialog.modal(:class="{ 'modal-open': isOpen }")
       
       //- Поле для ввода своего URL
       .form-control
-        label.label.label-text.py-1 Или введите свой URL:
+        label.label.label-text.py-1 {{ $t('admin.imagePicker.customUrlLabel') }}
         .flex.gap-2
           input.input.input-bordered.input-sm.flex-1(
             type="url"
@@ -38,10 +38,10 @@ dialog.modal(:class="{ 'modal-open': isOpen }")
           button.btn.btn-primary.btn-sm(
             @click="selectCustomImage"
             :disabled="!isValidUrl(customImageUrl)"
-          ) Выбрать
+          ) {{ $t('admin.imagePicker.selectBtn') }}
 
     .modal-action.mt-4
-      button.btn.btn-ghost.btn-sm(@click="closeModal") Отмена
+      button.btn.btn-ghost.btn-sm(@click="closeModal") {{ $t('admin.imagePicker.cancelBtn') }}
 </template>
 
 <script setup lang="ts">

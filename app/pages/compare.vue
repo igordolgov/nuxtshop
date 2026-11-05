@@ -73,7 +73,7 @@
               td.cell(v-for="p in compareProducts" :key="p.id")
                 span.text-xs(class="text-base-content/70") {{ (p.categories || []).join(', ') || '—' }}
             tr(v-for="key in characteristicKeys" :key="key")
-              th(scope="row") {{ key }}
+              th(scope="row") {{ localizedSpecLabel(key) }}
               td.cell(v-for="p in compareProducts" :key="p.id")
                 | {{ p.characteristics?.[key] || '—' }}
 
@@ -103,6 +103,10 @@
 </template>
 
 <script setup>
+// Лейблы характеристик в шапках строк: перевод известных (пресеты/сиды)
+// на en/es, кастомные — как есть
+import { CHARACTERISTIC_LABEL_KEYS } from '~/utils/characteristicLabels'
+
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const { $notify } = useNuxtApp()
@@ -113,6 +117,11 @@ const productUrl = (p) => (p?.slug ? localePath(`/product/${p.slug}`) : localePa
 
 /* Объединение характеристик: все ключи, что встречаются хотя бы у одного
    товара, в порядке первого появления. Пустые значения рисуем «—». */
+const localizedSpecLabel = (label) => {
+  const key = CHARACTERISTIC_LABEL_KEYS[label]
+  return key ? t(`specLabels.${key}`) : label
+}
+
 const characteristicKeys = computed(() => {
   const keys = []
   for (const p of compareProducts.value) {

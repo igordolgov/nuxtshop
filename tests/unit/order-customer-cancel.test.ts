@@ -81,7 +81,7 @@ beforeEach(async () => {
 
 describe('canCustomerCancel', () => {
   it('владелец может отменить заказ в статусах до отправки', async () => {
-    const created = await createOrder(event, makeInput());
+    await createOrder(event, makeInput());
     const order = await firstOrder();
     expect(order.status).toBe('new');
     expect(canCustomerCancel(order, 'u1')).toBe(true);

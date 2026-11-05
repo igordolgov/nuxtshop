@@ -174,7 +174,7 @@
               :key="label"
               :class="index > 0 ? 'border-t border-base-200' : ''"
             )
-              span.shrink-0(class="text-base-content/70") {{ label }}
+              span.shrink-0(class="text-base-content/70") {{ localizedSpecLabel(label) }}
               span.font-medium.text-right.min-w-0 {{ value }}
             //- Варианты: ось и доступные значения (как пилюли выше)
             .flex.justify-between.gap-3.py-2.border-t.border-base-200(v-if="variantsRowValue")
@@ -207,6 +207,8 @@ import {
   localizedVariantName,
   localizedVariantLabel,
 } from '~/utils/productVariants'
+// Лейблы характеристик: известные (пресеты/сиды) переводятся на en/es
+import { CHARACTERISTIC_LABEL_KEYS } from '~/utils/characteristicLabels'
 
 const { t, locale } = useI18n()
 const props = defineProps({
@@ -254,6 +256,12 @@ const localizedVariantTitle = (v) => localizedVariantName(v, locale.value)
 const characteristicEntries = computed(() =>
   Object.entries(props.product?.characteristics || {}),
 )
+//- Лейбл на витрине: известный (пресет/сид) — словарь specLabels.* на en/es,
+//- кастомный — как есть (фолбэк-контракт локализации товара)
+const localizedSpecLabel = (label) => {
+  const key = CHARACTERISTIC_LABEL_KEYS[label]
+  return key ? t(`specLabels.${key}`) : label
+}
 const hasCharacteristics = computed(() => characteristicEntries.value.length > 0)
 //- Строка «Варианты» в spec-листе: ось и все значения через запятую
 const variantsRowValue = computed(() => {
