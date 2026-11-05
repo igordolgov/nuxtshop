@@ -3,7 +3,10 @@
 // (nextImage слайдера уже зациклен, переход анимирует
 // transition-transform на .image-slides-container).
 //
-// Прерывание НАВСЕГДА (не пауза) при любом пользовательском действии:
+// Пользовательское действие — ПАУЗА с возобновлением через resumeMs
+// (по умолчанию 5 с) бездействия; каждое новое действие сдвигает
+// возобновление. Первый слайд после возобновления — через intervalMs,
+// мгновенного прыжка нет. Пауза при:
 // · касание/клик/драг внутри галереи — touchstart/pointerdown/wheel/keydown
 //   на контейнере в CAPTURE-фазе: события кнопок со .stop (стрелки, зум,
 //   точки) тоже доходят — .stop срабатывает позже, в bubble-фазе таргета;
@@ -17,15 +20,18 @@
 //   Диплинк с предвыбранным вариантом прыжка при монтировании не считается
 //   выбором — автоскролл от него продолжает работать.
 //
-// Не запускается: при единственном изображении и при
+// Совсем не запускается: при единственном изображении и при
 // prefers-reduced-motion: reduce (автолистание — движение, а глобальный
 // CSS проекта его глушит — не оставляем рассинхрона).
-// В фоновой вкладке (document.hidden) тик пропускается с перепланированием:
-// слайды не «листаются» невидимыми пачками, цикл продолжается по возвращении.
+// Таймерная логика (тик/пауза/возобновление) — в чистой фабрике
+// createAutoscrollClock (app/utils/autoscrollClock.ts), покрытой
+// юнит-тестами; этот композабл — тонкая DOM-обвязка: слушатели паузы,
+// matchMedia, жизненный цикл.
 import { onMounted, onUnmounted, watch, type Ref } from 'vue';
+import { createAutoscrollClock, type AutoscrollClock } from '../utils/autoscrollClock';
 
 export interface GalleryAutoscrollOptions {
-  /** Ref корневого контейнера галереи (capture-слушатели прерывания). */
+  /** Ref корневого контейнера галереи (capture-слушатели паузы). */
   container: Ref<HTMLElement | null>;
   /** Геттер массива картинок галереи. */
   gallery: () => unknown[];
@@ -35,56 +41,42 @@ export interface GalleryAutoscrollOptions {
   jumpToImage?: () => string | null | undefined;
   /** Пауза между слайдами, мс. */
   intervalMs?: number;
+  /** Бездействие до возобновления после действия пользователя, мс. */
+  resumeMs?: number;
 }
 
 /** Стандарт каруселей: 4 с на слайд. */
 const DEFAULT_INTERVAL_MS = 4000;
 
+/** Бездействие до возобновления автоскролла. */
+const DEFAULT_RESUME_MS = 5000;
+
 /** Окно игнорирования scroll-сигналов после старта (см. шапку). */
 const SETTLE_MS = 1000;
 
 export function useGalleryAutoscroll(options: GalleryAutoscrollOptions) {
-  const { container, gallery, advance, jumpToImage, intervalMs = DEFAULT_INTERVAL_MS } = options;
+  const {
+    container,
+    gallery,
+    advance,
+    jumpToImage,
+    intervalMs = DEFAULT_INTERVAL_MS,
+    resumeMs = DEFAULT_RESUME_MS,
+  } = options;
 
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  let stopped = false;
-  let startedAt = 0;
-
-  // Снятие ровно того, что навесили: stop() и onUnmounted.
+  // Снятие ровно того, что навесили: teardown() и onUnmounted.
   const detachFns: Array<() => void> = [];
+  let clock: AutoscrollClock | null = null;
+  let startedAt = 0;
+  let disposed = false;
 
-  const stop = () => {
-    if (stopped) return;
-    stopped = true;
-    if (timer !== null) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    for (const detach of detachFns) detach();
-    detachFns.length = 0;
-  };
+  const pause = () => clock?.pause();
 
-  const schedule = () => {
-    if (stopped || gallery().length <= 1) return;
-    timer = setTimeout(tick, intervalMs);
-  };
-
-  const tick = () => {
-    timer = null;
-    if (stopped) return;
-    if (document.hidden) {
-      schedule();
-      return;
-    }
-    advance();
-    schedule();
-  };
-
-  const stopOnScroll = () => {
+  const pauseOnScroll = () => {
     // Восстановление позиции скролла после клиентской навигации —
     // не пользовательский скролл (см. шапку файла).
     if (Date.now() - startedAt <= SETTLE_MS) return;
-    stop();
+    pause();
   };
 
   const attachInterrupts = () => {
@@ -93,36 +85,51 @@ export function useGalleryAutoscroll(options: GalleryAutoscrollOptions) {
     // capture + passive: только наблюдаем, ничего не перехватываем.
     const opts: AddEventListenerOptions = { capture: true, passive: true };
     const removeOpts: EventListenerOptions = { capture: true };
-    el.addEventListener('touchstart', stop, opts);
-    el.addEventListener('pointerdown', stop, opts);
-    el.addEventListener('wheel', stop, opts);
+    el.addEventListener('touchstart', pause, opts);
+    el.addEventListener('pointerdown', pause, opts);
+    el.addEventListener('wheel', pause, opts);
     // Клавиатурная навигация, пока фокус внутри галереи (Enter/стрелки
     // на стрелках-кнопках и точках).
-    el.addEventListener('keydown', stop, opts);
-    window.addEventListener('scroll', stopOnScroll, { passive: true });
+    el.addEventListener('keydown', pause, opts);
+    window.addEventListener('scroll', pauseOnScroll, { passive: true });
     detachFns.push(
-      () => el.removeEventListener('touchstart', stop, removeOpts),
-      () => el.removeEventListener('pointerdown', stop, removeOpts),
-      () => el.removeEventListener('wheel', stop, removeOpts),
-      () => el.removeEventListener('keydown', stop, removeOpts),
-      () => window.removeEventListener('scroll', stopOnScroll),
+      () => el.removeEventListener('touchstart', pause, removeOpts),
+      () => el.removeEventListener('pointerdown', pause, removeOpts),
+      () => el.removeEventListener('wheel', pause, removeOpts),
+      () => el.removeEventListener('keydown', pause, removeOpts),
+      () => window.removeEventListener('scroll', pauseOnScroll),
     );
+  };
+
+  const teardown = () => {
+    if (disposed) return;
+    disposed = true;
+    clock?.dispose();
+    for (const detach of detachFns) detach();
+    detachFns.length = 0;
   };
 
   onMounted(() => {
     if (gallery().length <= 1) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     startedAt = Date.now();
+    clock = createAutoscrollClock({
+      intervalMs,
+      resumeMs,
+      isHidden: () => document.hidden,
+      canTick: () => gallery().length > 1,
+      onTick: advance,
+    });
     attachInterrupts();
-    schedule();
+    clock.start();
   });
 
-  onUnmounted(stop);
+  onUnmounted(teardown);
 
-  //- Выбор варианта после монтирования — пользовательское действие.
+  // Выбор варианта после монтирования — пользовательское действие.
   if (jumpToImage) {
     watch(jumpToImage, (url) => {
-      if (url) stop();
+      if (url) pause();
     });
   }
 }

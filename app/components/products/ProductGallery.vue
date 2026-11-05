@@ -185,7 +185,7 @@
 // Галерея товара с зумом. Разбивка (этап 6): логика слайдера (свайп,
 // драг, точки, прыжок на картинку варианта) — useGallerySlider.ts,
 // жестовая зум-модалка (пан/пинч/двойной тап/колесо) — useImageZoom.ts,
-// автоскролл с прерыванием по касанию/скроллу — useGalleryAutoscroll.ts.
+// автоскролл с паузой по касанию/скроллу — useGalleryAutoscroll.ts.
 // Ориентация экрана не используется: свайп работает в обеих ориентациях;
 // пересчёт позиции слайда при повороте покрывает useResizeObserver.
 // ============================================
@@ -213,9 +213,10 @@ const {
   handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave,
 } = useGallerySlider({ gallery: () => props.gallery, jumpToImage: () => props.jumpToImage, emit })
 
-// Автоскролл: раз в 4 с следующий слайд; НАВСЕГДА останавливается при
-// касании/клике/скролле со стороны пользователя, выборе варианта и при
-// prefers-reduced-motion (детали — useGalleryAutoscroll.ts)
+// Автоскролл: раз в 4 с следующий слайд; при касании/клике/скролле со
+// стороны пользователя или выборе варианта — пауза, возобновление через
+// 5 с бездействия; при prefers-reduced-motion не запускается вовсе
+// (детали — useGalleryAutoscroll.ts)
 const galleryRoot = ref(null)
 useGalleryAutoscroll({
   container: galleryRoot,
