@@ -92,6 +92,11 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  // Зачёркнутая «цена до скидки» для бейджа −% на витрине.
+  // Должна быть БОЛЬШЕ price: цена корзины/заказов всегда считается от
+  // price (скидка уже внутри), поэтому поле — чисто витринное.
+  // Отсутствует/undefined → товар без скидки.
+  oldPrice?: number;
   image: string;
   gallery: string[];
   categories: string[];
@@ -354,6 +359,21 @@ export function sanitizeVariantLabel(value: unknown): string | undefined {
 }
 
 /**
+ * Скидочная «цена до скидки» (oldPrice) из недоверенного ввода.
+ * Правила (санитайзер, не валидатор — битое значение не ломает сохранение):
+ *   конечное число > 0 и > price → число (скидка имеет смысл);
+ *   всё прочее (null, '', мусор, 0, <= price) → undefined (без скидки).
+ * Целочисленность не требуем: копейки возможны, витрина округлит форматом.
+ * Верхний предел — как у price (1e9).
+ */
+export function sanitizeOldPrice(input: unknown, price: number): number | undefined {
+  const value = typeof input === 'string' && input.trim() !== '' ? Number(input) : input;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  if (value <= 0 || value <= price || value > 1e9) return undefined;
+  return value;
+}
+
+/**
  * Доливает сидовые варианты товарам без них — ТОЛЬКО В ПАМЯТИ (тот же
  * паттерн, что migrateProductImages: readProducts нельзя писать в KV —
  * гонка read-modify-write; в KV данные доезжают при следующей админ-правке,
@@ -477,17 +497,21 @@ export function extractLocalizedPatch(
 }
 
 /** Применяет патч к записи товара: null удаляет поле, остальное — присваивает.
- *  Возвращает НОВЫЙ объект (записи каталога не мутируются на месте). */
-export function applyLocalizedPatch<ProductType extends Record<string, unknown>>(
+ *  Возвращает НОВЫЙ объект (записи каталога не мутируются на месте).
+ *  Ограничение object, а не Record<string, unknown>: интерфейсы (Product и
+ *  контентные записи siteContent) не имеют index-сигнатуры; доступ к полям —
+ *  через Record-вид. */
+export function applyLocalizedPatch<ProductType extends object>(
   product: ProductType,
   patch: Record<string, string | string[] | null>,
 ): ProductType {
-  const result = { ...product };
+  // Спред дженерика не имеет index-сигнатуры — приводим к Record-виду явно
+  const result = { ...product } as Record<string, unknown>;
   for (const [field, value] of Object.entries(patch)) {
     if (value === null) delete result[field];
     else result[field] = value;
   }
-  return result;
+  return result as ProductType;
 }
 
 export async function getProductBySlug(event: H3Event, slugOrId: string): Promise<Product | null> {

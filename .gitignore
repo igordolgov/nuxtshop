@@ -93,3 +93,4 @@ options.vitepackage-lock.json
 package-lock.json
 .screens/
 reports/
+*.patch

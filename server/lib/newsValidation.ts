@@ -75,8 +75,15 @@ export type NewsTranslations = {
   bodyEs: string[] | null;
 };
 
-/** Результат sanitizeNewsItem: базовые поля + переводы (null = удалить). */
-export type SanitizedNewsData = Omit<NewsItem, 'id'> & NewsTranslations;
+/** Результат sanitizeNewsItem: базовые поля + переводы (null = удалить).
+ *  Переводные поля переопределяются из NewsTranslations (string | null):
+ *  пересечение с NewsItem (string | undefined) сузило бы тип обратно до
+ *  string и запретило бы null — поэтому эти поля вынуты из Omit. */
+export type SanitizedNewsData = Omit<
+  NewsItem,
+  'id' | 'titleEn' | 'titleEs' | 'excerptEn' | 'excerptEs' | 'bodyEn' | 'bodyEs'
+> &
+  NewsTranslations;
 
 const LOCALIZED_TEXT_FIELDS = ['titleEn', 'titleEs', 'excerptEn', 'excerptEs'] as const;
 const LOCALIZED_TEXT_LIMITS: Record<(typeof LOCALIZED_TEXT_FIELDS)[number], number> = {

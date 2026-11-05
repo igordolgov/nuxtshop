@@ -30,7 +30,13 @@ import { defineProvider } from '@nuxt/image/runtime';
 const ABSOLUTE_URL_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 
 export default defineProvider({
-  getImage: (src, { modifiers = {}, baseURL = '/img' }) => {
+  getImage: (src, ctx) => {
+    // Контекст провайдера типизирован @nuxt/image только базовыми полями —
+    // наш baseURL из nuxt.config (image.providers.cfworkers.options) читаем
+    // через локальный вид. Дефолт — тот же путь роута-трансформатора.
+    const options = ctx as { modifiers?: Record<string, unknown>; baseURL?: string } | undefined;
+    const modifiers = options?.modifiers ?? {};
+    const baseURL = options?.baseURL ?? '/img';
     // Внешние URL (Unsplash — уже оптимизированы на их CDN), blob:, data:
     // и прочие абсолютные адреса трансформировать не нужно и нельзя:
     // роут /img принимает только внутренние пути (SSRF-защита).

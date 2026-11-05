@@ -107,6 +107,19 @@
             :disabled="isSubmitting"
           )
 
+        //- Цена до скидки (необязательно; должна быть больше текущей цены)
+        .form-control(class="sm:col-span-1")
+          label.label.py-1
+            span.label-text.text-xs {{ $t('admin.productForm.oldPriceLabel') }}
+          input.input.input-bordered.input-sm.w-full(
+            type="number"
+            v-model.number="form.oldPrice"
+            placeholder="0"
+            min="0"
+            step="0.01"
+            :disabled="isSubmitting"
+          )
+
         //- Количество на складе
         .form-control(class="sm:col-span-1")
           label.label.py-1
@@ -419,6 +432,12 @@ const handleSubmit = async () => {
       name: form.value.name.trim(),
       description: form.value.description?.trim() || '',
       price: Number(form.value.price),
+      // «Цена до скидки»: пусто/мусор → null — сервер удалит поле
+      // (null в PUT трактуется как «убрать скидку»)
+      oldPrice:
+        form.value.oldPrice === null || form.value.oldPrice === undefined || form.value.oldPrice === ''
+          ? null
+          : Number(form.value.oldPrice),
       categories,
       image: form.value.image || '',
       gallery: form.value.gallery || [],
@@ -436,6 +455,14 @@ const handleSubmit = async () => {
 
     if (updatedProduct.name.length === 0) throw new Error(t('admin.productForm.nameRequired'))
     if (updatedProduct.price < 0) throw new Error(t('admin.productForm.priceNegative'))
+    if (
+      updatedProduct.oldPrice !== null &&
+      (Number.isNaN(updatedProduct.oldPrice) ||
+        updatedProduct.oldPrice < 0 ||
+        updatedProduct.oldPrice <= updatedProduct.price)
+    ) {
+      throw new Error(t('admin.productForm.oldPriceValidation.belowPrice'))
+    }
 
     uploadProgress.value = 60
     const product = await updateProduct(props.product.id, updatedProduct)
@@ -480,6 +507,8 @@ const initializeForm = () => {
       name: props.product.name || '',
       description: props.product.description || '',
       price: props.product.price || 0,
+      // «Цена до скидки» (нет в записи → пусто = без скидки)
+      oldPrice: props.product.oldPrice ?? null,
       categories: Array.isArray(props.product.categories) ? [...props.product.categories] : [],
       image: props.product.image || '',
       gallery: Array.isArray(props.product.gallery) ? [...props.product.gallery] : [],

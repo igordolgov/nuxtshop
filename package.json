@@ -12,6 +12,7 @@
     "postinstall": "nuxt prepare",
     "lint:markup": "markuplint \"app/**/*.vue\"",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .nuxt/tsconfig.server.json && tsc --noEmit -p .nuxt/tsconfig.shared.json",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "knip": "cross-env KNIP_DISABLE_RAW_TRANSFER=1 knip"

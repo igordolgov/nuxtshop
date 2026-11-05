@@ -47,7 +47,8 @@ export function messengerLink(name: string, handle: string): string | null {
   // Telegram: @username, username, t.me/username, telegram.me/username
   if (has('telegram', 'tg')) {
     const tme = link.match(/^(?:www\.)?(?:t\.me|telegram\.me)\/(.+)$/i);
-    if (tme) return `https://t.me/${tme[1].replace(/^@/, '')}`;
+    const captured = tme?.[1];
+    if (captured !== undefined) return `https://t.me/${captured.replace(/^@/, '')}`;
     const nick = link.replace(/^@/, '');
     if (TG_USERNAME_RE.test(nick)) return `https://t.me/${nick}`;
     return null;
@@ -68,7 +69,8 @@ export function messengerLink(name: string, handle: string): string | null {
   // VK: vk.com/xxx, @xxx, «xxx»
   if (has('vk', 'вконтакт', 'вк')) {
     const path = link.match(/^(?:www\.)?(?:vk\.com|m\.vk\.com|vk\.ru)\/(.+)$/i);
-    const nick = path ? path[1] : link.replace(/^@/, '');
+    const captured = path?.[1];
+    const nick = captured ?? link.replace(/^@/, '');
     return VK_USERNAME_RE.test(nick) ? `https://vk.com/${nick}` : null;
   }
 

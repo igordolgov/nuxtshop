@@ -17,6 +17,7 @@ import {
   extractLocalizedPatch,
   sanitizeVariants,
   sanitizeVariantLabel,
+  sanitizeOldPrice,
 } from '../../lib/productHelpers';
 import { requireAdmin } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
@@ -68,13 +69,16 @@ export default defineEventHandler(async (event) => {
     const stockQuantity = parseInt(String(body.stockQuantity)) || 0;
 
     const now = new Date().toISOString();
+    const price = parseFloat(String(body.price));
     const newProduct = applyLocalizedPatch(
       {
         id: String(newId),
         slug,
         name: body.name.trim(),
         description: body.description || '',
-        price: parseFloat(String(body.price)),
+        price,
+        // Скидка опциональна: мусор/<= price молча не попадает в запись
+        oldPrice: sanitizeOldPrice(body.oldPrice, price),
         image: imageUrl,
         categories,
         gallery,

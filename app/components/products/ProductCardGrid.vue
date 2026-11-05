@@ -5,10 +5,12 @@
   :class="{ 'has-search-highlight': hasSearchHighlight }"
 )
   //- Дефицитный остаток: бейдж на фото при ≤ LOW_STOCK_THRESHOLD шт.
-  //- (срочность покупки; обилие на складе бейджем не подсвечиваем)
+  //- (срочность покупки; обилие на складе бейджем не подсвечиваем).
+  //- Фон — фиксированный насыщенный тёмно-жёлтый (yellow-600) + белый
+  //- текст на ОБЕИХ темах: семантика bg-warning «плавает» от темы к теме
   .stock-badge.absolute.z-10.rounded-full.shadow-sm(
     v-if="isLowStock",
-    class="top-1 right-1 px-2 py-0.5 text-xs font-medium bg-warning/95 text-warning-content",
+    class="top-1 right-1 px-2 py-0.5 text-xs font-semibold bg-yellow-600 text-white",
     role="status"
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 
@@ -87,12 +89,27 @@
           span.font-medium {{ ratingAverage }}
           span(class="text-base-content/50") · {{ ratingCountLabel }}
 
-    //- Цена и статус
-    .card-actions.flex.items-center.justify-between.px-3.pb-3.pt-1
-      .font-semibold.text-base-content(
-        v-if="product.inStock",
-        class="text-base lg:text-lg"
-      ) {{ formatPrice(product.price) }} ₽
+    //- Цена и статус (при скидке — зачёркнутая oldPrice + бейдж −%)
+    .card-actions.flex.items-center.justify-between.gap-2.px-3.pb-3.pt-1
+      .flex.flex-wrap.items-baseline.min-w-0(
+        class="gap-x-1.5 gap-y-0",
+        v-if="product.inStock"
+      )
+        span.font-semibold.text-base-content(
+          class="text-base lg:text-lg"
+        ) {{ formatPrice(product.price) }} ₽
+        span.text-xs.line-through.shrink-0(
+          v-if="hasDiscount(product)",
+          class="text-base-content/45"
+        ) {{ formatPrice(product.oldPrice) }} ₽
+        //- Плашка скидки: умеренное скругление (не pill), насыщенный
+        //- тёмно-красный фон (одинаковый на всех темах — без
+        //- daisyUI-семантики), белый текст bold (не extrabold), компактные
+        //- паддинги — верхний чуть меньше нижнего
+        span.shrink-0(
+          v-if="hasDiscount(product)",
+          class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-sm leading-4 font-bold text-white"
+        ) −{{ discountPercent(product) }}%
       .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>
 

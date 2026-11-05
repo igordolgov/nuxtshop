@@ -38,7 +38,7 @@
     // Берётся из дашборда: Analytics & Logs → Web Analytics → сайт
     // nuxt-shop.igordolgov1972.workers.dev → фрагмент data-cf-beacon.
     // Сам токен публичен (виден в HTML). Пусто — бикон не подключается.
-    "NUXT_PUBLIC_CF_BEACON_TOKEN": "",
+    "NUXT_PUBLIC_CF_BEACON_TOKEN": "1298daaa1bfd4c10b2354d053a3d2a85",
   },
   "kv_namespaces": [
     {

@@ -9,6 +9,7 @@ import {
   applyLocalizedPatch,
   sanitizeVariants,
   sanitizeVariantLabel,
+  sanitizeOldPrice,
 } from '../../lib/productHelpers';
 import { requireAdmin } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
@@ -38,11 +39,12 @@ export default defineEventHandler(async (event) => {
 
     const products = await readProducts(event);
     const index = products.findIndex((p) => String(p.id) === String(id));
-    if (index === -1) {
+    // Сужение вместо проверки index (noUncheckedIndexedAccess:
+    // products[index] — Product | undefined)
+    const existing = products[index];
+    if (!existing) {
       throw createError({ statusCode: 404, message: 'Товар не найден' });
     }
-
-    const existing = products[index];
 
     // Slug: если изменилось имя — генерируем заново, иначе оставляем
     let slug = existing.slug;
@@ -74,12 +76,21 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' });
     }
 
+    // Эффективная цена: нужна и для записи, и для проверки oldPrice —
+    // скидка имеет смысл только когда «цена до скидки» больше текущей.
+    const price = body.price !== undefined ? parseFloat(String(body.price)) : existing.price;
+
     const updated = applyLocalizedPatch(
       {
         ...existing,
         name: body.name?.trim() ?? existing.name,
         description: body.description ?? existing.description,
-        price: body.price !== undefined ? parseFloat(String(body.price)) : existing.price,
+        price,
+        // Скидка (oldPrice): не пришло в теле — не трогаем; пришло —
+        // санитайзер (мусор/<= price → undefined = «без скидки»);
+        // undefined в записи — поле не попадёт в KV при JSON.stringify.
+        oldPrice:
+          body.oldPrice !== undefined ? sanitizeOldPrice(body.oldPrice, price) : existing.oldPrice,
         image: imageUrl,
         gallery,
         categories: categories ?? existing.categories,

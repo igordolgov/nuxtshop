@@ -8,7 +8,7 @@ import { kvDelete } from '../../../lib/storage';
 import { requireAdmin } from '../../../utils/auth';
 
 /** Путь фото из отзыва → ключ в KV («/api/images/reviews/x.webp» → «img:reviews/x.webp»). */
-function photoKVKey(url) {
+function photoKVKey(url: string): string | null {
   const prefix = '/api/images/';
   return url?.startsWith(prefix) ? IMAGE_KV_PREFIX + url.slice(prefix.length) : null;
 }

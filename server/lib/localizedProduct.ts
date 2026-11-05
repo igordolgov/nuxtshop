@@ -34,23 +34,26 @@ const LOCALE_FIELD_SUFFIX: Record<string, string> = {
  * на русский; ru → объект как есть. Исходные категории — в categoriesRaw.
  * Контракт данных и поведение — см. app/utils/localizedProduct.ts.
  */
-export function localizedProduct<T extends Record<string, unknown>>(
+export function localizedProduct<T extends object>(
   product: T | null | undefined,
   locale: string,
 ): T {
-  if (!product || typeof product !== 'object') return product as T;
+  if (product === null || product === undefined || typeof product !== 'object') {
+    // Runtime-договорённость: битый вход возвращаем как есть;
+    // тип T непустой, поэтому двойной каст.
+    return product as unknown as T;
+  }
+  // Индексный доступ по вычисляемому ключу — только через Record-вид
+  const rec = product as Record<string, unknown>;
 
   const suffix = LOCALE_FIELD_SUFFIX[locale];
   if (!suffix) return product;
 
-  const name = nonEmpty(product[`name${suffix}`]) ?? (product.name as T['name']);
-  const description =
-    nonEmpty(product[`description${suffix}`]) ?? (product.description as T['description']);
+  const name = nonEmpty(rec[`name${suffix}`]) ?? rec.name;
+  const description = nonEmpty(rec[`description${suffix}`]) ?? rec.description;
 
-  const rawCategories = Array.isArray(product.categories)
-    ? (product.categories as string[])
-    : undefined;
-  const translated = product[`categories${suffix}`];
+  const rawCategories = Array.isArray(rec.categories) ? (rec.categories as string[]) : undefined;
+  const translated = rec[`categories${suffix}`];
 
   let categories = rawCategories;
   if (Array.isArray(translated) && translated.length > 0) {

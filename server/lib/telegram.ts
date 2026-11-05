@@ -24,7 +24,7 @@ export interface TelegramEnv {
 }
 
 /** Конфигурация бота присутствует? */
-export function isTelegramConfigured(env: TelegramEnv | null | undefined): boolean {
+export function isTelegramConfigured(env: TelegramEnv | null | undefined): env is TelegramEnv {
   return Boolean(env?.TELEGRAM_BOT_TOKEN && env?.TELEGRAM_ADMIN_CHAT_ID);
 }
 
@@ -257,6 +257,7 @@ export async function sendNewsPost(
   siteUrl: string,
 ): Promise<boolean> {
   if (!isTelegramConfigured(env)) return false;
+  // После guard env сужен до TelegramEnv (isTelegramConfigured — type guard)
   const text = formatNewsCard(news, siteUrl);
   const results = await Promise.allSettled(
     getAdminChatIds(env).map((chatId) => sendMessage(env, chatId, text)),
@@ -303,7 +304,8 @@ export function formatOrderCard(
     deliveryMethod: string;
     paymentMethod: string;
     comment: string;
-    items: Array<{ name: string; quantity: number; price: number }>;
+    // variantName: null у товаров без вариантов (OrderItem.variantName)
+    items: Array<{ name: string; quantity: number; price: number; variantName?: string | null }>;
     customer: { name: string; phone: string; email: string; city?: string; address?: string };
   },
   statusLine?: string,

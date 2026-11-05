@@ -13,11 +13,11 @@ export default defineEventHandler(async (event) => {
 
     const products = await readProducts(event);
     const index = products.findIndex((p) => String(p.id) === String(id));
-    if (index === -1) {
+    // Сужение вместо проверки index (noUncheckedIndexedAccess)
+    const deleted = products[index];
+    if (!deleted) {
       throw createError({ statusCode: 404, message: 'Товар не найден' });
     }
-
-    const deleted = products[index];
     products.splice(index, 1);
     await writeProducts(event, products);
 
