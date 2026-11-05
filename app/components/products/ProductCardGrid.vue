@@ -6,11 +6,13 @@
 )
   //- Дефицитный остаток: бейдж на фото при ≤ LOW_STOCK_THRESHOLD шт.
   //- (срочность покупки; обилие на складе бейджем не подсвечиваем).
-  //- Фон — фиксированный насыщенный тёмно-жёлтый (yellow-600) + белый
-  //- текст на ОБЕИХ темах: семантика bg-warning «плавает» от темы к теме
+  //- Фон — фиксированный насыщенный тёмно-жёлтый (yellow-700) + белый
+  //- текст на ОБЕИХ темах: семантика bg-warning «плавает» от темы к теме.
+  //- yellow-700 (не 600): белый текст требует контраста 4.5:1 (AA),
+  //- у yellow-600 он 2.98 — замечание Lighthouse accessibility.
   .stock-badge.absolute.z-10.rounded-full.shadow-sm(
     v-if="isLowStock",
-    class="top-1 right-1 px-2 py-0.5 text-xs font-semibold bg-yellow-600 text-white",
+    class="top-1 right-1 px-2 py-0.5 text-xs font-semibold bg-yellow-700 text-white",
     role="status"
   ) {{ $t('product.leftShort', product.stockQuantity) }}
 

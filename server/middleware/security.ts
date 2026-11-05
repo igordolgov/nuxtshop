@@ -16,6 +16,9 @@ export default defineEventHandler((event) => {
     'Referrer-Policy': 'no-referrer',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     'Content-Security-Policy':
-      "script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'",
+      // static.cloudflareinsights.com — Cloudflare Web Analytics (бикон
+      // в app.vue); без этого браузер блокирует скрипт аналитики
+      // (Best Practices в Lighthouse = 0, данные RUM не собираются).
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; object-src 'none'; base-uri 'self'",
   });
 });
