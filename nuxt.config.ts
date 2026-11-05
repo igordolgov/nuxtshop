@@ -55,10 +55,9 @@ export default defineNuxtConfig({
       modulePreload: { polyfill: false },
       chunkSizeWarningLimit: 1000,
     },
-    css: {
-      devSourcemap: false,
-      transformer: 'lightningcss',
-    },
+    css: isProd
+  ? { devSourcemap: false, transformer: 'lightningcss' }
+  : { devSourcemap: false },
     // Условное spread вместо [.filter(Boolean) as any]: типы точные, any не нужен
     plugins: [tailwindcss(), ...(isProd ? [removeConsole({ includes: ['log', 'debug'] })] : [])],
     // Список чистый: только реально используемые пакеты (pinia снята —

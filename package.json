@@ -23,13 +23,13 @@
     "@nuxt/icon": "^2.6.2",
     "@nuxt/image": "^2.2.1",
     "@nuxtjs/i18n": "^10.6.0",
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.4",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^15.0.0",
     "daisyui": "^5.7.50",
     "h3": "^1.15.11",
     "idb": "^8.0.4",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.4"
   },
   "devDependencies": {
     "@baptistecrouzet/nuxt-oxlint": "^1.1.5",
@@ -41,7 +41,7 @@
     "cross-env": "^10.1.0",
     "knip": "^6.44.1",
     "markuplint": "^5.4.0",
-    "nuxt": "4.6.3",
+    "nuxt": "4.6.4",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
     "pug": "^3.0.4",
