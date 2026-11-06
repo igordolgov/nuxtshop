@@ -374,7 +374,9 @@
     "qtyProblems": "Hay problemas con las cantidades",
     "checkoutBtn": "Realizar pedido",
     "checkoutBtnPrice": "Realizar pedido · {price}",
-    "unnamedProduct": "Producto sin nombre"
+    "unnamedProduct": "Producto sin nombre",
+    "transfer": "Transferencia",
+    "transferNote": "Enviamos los datos con la confirmación del pedido"
   },
   "checkout": {
     "itemsInOrder": "Artículos del pedido",

@@ -374,7 +374,9 @@
     "qtyProblems": "Есть проблемы с количеством",
     "checkoutBtn": "Оформить заказ",
     "checkoutBtnPrice": "Оформить заказ · {price}",
-    "unnamedProduct": "Без названия"
+    "unnamedProduct": "Без названия",
+    "transfer": "Перевод (Transfermóvil/EnZona)",
+    "transferNote": "Реквизиты пришлём с подтверждением заказа"
   },
   "checkout": {
     "itemsInOrder": "Товары в заказе",

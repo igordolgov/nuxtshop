@@ -46,7 +46,7 @@
     .news-row.card.bg-base-100.shadow-sm(v-for="item in sorted" :key="item.id")
       .card-body.p-4.gap-2
         .flex.items-center.gap-2.flex-wrap
-          span.badge.badge-sm(:class="badgeClass(item.category)") {{ item.category }}
+          span.badge.badge-sm(:class="badgeClass(item.category)") {{ newsCategoryLabel(item.category, t) }}
           span.badge.badge-sm.badge-warning(v-if="item.published === false") {{ $t('admin.news.draft') }}
           span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date, locale) }}
           span.text-xs(class="text-base-content/55") · id {{ item.id }}
@@ -54,12 +54,12 @@
           NuxtImg.w-14.h-14.rounded-lg.object-cover.flex-shrink-0(
             v-if="item.image"
             :src="item.image"
-            :alt="item.title"
+            :alt="view(item).title"
             loading="lazy"
           )
           .min-w-0.flex-1
-            h3.font-medium.text-sm(class="line-clamp-1") {{ item.title }}
-            p.text-xs(class="mt-0.5 text-base-content/50 line-clamp-1") {{ item.excerpt || $t('admin.news.noExcerpt') }}
+            h3.font-medium.text-sm(class="line-clamp-1") {{ view(item).title }}
+            p.text-xs(class="mt-0.5 text-base-content/50 line-clamp-1") {{ view(item).excerpt || $t('admin.news.noExcerpt') }}
             span.text-xs(class="mt-0.5 inline-block text-base-content/50")
               | {{ $t('admin.news.productsInNews', { n: item.products?.length ?? 0 }) }}
         .flex.gap-2.justify-end.flex-wrap
@@ -237,11 +237,19 @@
 </template>
 
 <script setup>
-import { NEWS_CATEGORIES, formatNewsDate, newsTone } from '~/utils/news'
+import { NEWS_CATEGORIES, formatNewsDate, newsTone, localizedNews, newsCategoryLabel } from '~/utils/news'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
+
+//- Локализованное ОТОБРАЖЕНИЕ строки списка (заголовок/лид на языке админа:
+//- есть перевод — он, нет — русский фолбэк), рубрика — словарём news.categories.*
+//- (сырая рубрика в KV — русские данные). Данные для РЕДАКТИРОВАНИЯ остаются
+//- сырыми: openEdit/remove получают оригинал из sorted — русская вкладка формы
+//- не получает испанский/английский текст. Раньше список показывал русские
+//- заголовки на любой локали — на копии ES админка выглядела «частично русской».
+const view = (item) => localizedNews(item, locale.value)
 const { formatMoney, formatPrice } = useProductUtils()
 const { resizeToWebp } = useImageResize()
 
@@ -470,7 +478,7 @@ const save = async () => {
 }
 
 const remove = async (item) => {
-  if (!confirm(t('admin.news.deleteConfirm', { title: item.title }))) return
+  if (!confirm(t('admin.news.deleteConfirm', { title: view(item).title }))) return
   try {
     const resp = await $fetch(`/api/news/${item.id}`, { method: 'DELETE' })
     $notify.success(resp?.message || t('admin.news.deleted'))

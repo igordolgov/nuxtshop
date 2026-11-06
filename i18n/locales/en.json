@@ -374,7 +374,9 @@
     "qtyProblems": "Quantity issues",
     "checkoutBtn": "Checkout",
     "checkoutBtnPrice": "Checkout · {price}",
-    "unnamedProduct": "Unnamed product"
+    "unnamedProduct": "Unnamed product",
+    "transfer": "Bank transfer",
+    "transferNote": "Details sent with the order confirmation"
   },
   "checkout": {
     "itemsInOrder": "Items in the order",

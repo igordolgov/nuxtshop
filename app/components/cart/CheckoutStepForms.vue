@@ -238,13 +238,13 @@ div(v-if="currentStep === 4")
       .space-y-1
         p.font-medium.text-sm {{ orderForm.city || '—' }}, {{ orderForm.address || '—' }}
         p.text-sm(class="text-base-content/70" v-if="orderForm.postalCode") {{ $t('checkout.zipLine', { code: orderForm.postalCode }) }}
-        p.text-sm(class="text-base-content/70") {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.name }}
+        p.text-sm(class="text-base-content/70") {{ deliveryName }}
 
     .card.bg-base-200.p-3(v-else-if="orderForm.deliveryMethod === 'pickup'")
       h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.deliveryMethodTitle') }}
       .space-y-1
-        p.font-medium.text-sm {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.name }}
-        p.text-sm(class="text-base-content/70") {{ deliveryMethods.find(m => m.id === orderForm.deliveryMethod)?.description }}
+        p.font-medium.text-sm {{ deliveryName }}
+        p.text-sm(class="text-base-content/70") {{ pickedDelivery ? $t(pickedDelivery.descriptionKey) : '' }}
 
     .card.bg-base-200.p-3(class="lg:col-span-2")
       h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.paymentMethodTitle') }}
@@ -252,8 +252,8 @@ div(v-if="currentStep === 4")
         .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-300
           span.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.icon }}
         div
-          .font-medium.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.name }}
-          p.text-sm(class="text-base-content/70") {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.description }}
+          .font-medium.text-sm {{ pickedPayment ? $t(pickedPayment.nameKey) : '' }}
+          p.text-sm(class="text-base-content/70") {{ pickedPayment ? $t(pickedPayment.descriptionKey) : '' }}
 </template>
 
 <script setup>
@@ -274,6 +274,7 @@ import { STORE_PAYMENT_METHODS } from '../../../store.config'
 
 const { formatPrice } = useProductUtils()
 const { subtotal } = useCart()
+const { t } = useI18n()
 
 //- Методы доставки. Цен НЕ храним: она считается по единому модулю
 //- app/utils/deliveryPrice.ts (зеркало server/lib/orderHelpers.ts) от
@@ -297,4 +298,17 @@ const PAYMENT_META = {
   transfer: { icon: '📲', nameKey: 'checkout.payTransfer', descriptionKey: 'checkout.payTransferDesc' },
 }
 const paymentMethods = STORE_PAYMENT_METHODS.map((id) => ({ id, ...PAYMENT_META[id] }))
+
+//- Выбранные способ доставки/оплаты для шага «Подтверждение». Раньше шаблон
+//- читал .name/.description — полей нет (есть nameKey/descriptionKey), строки
+//- рендерились пустыми. Подписи берём словарём по nameKey.
+const pickedDelivery = computed(() =>
+  deliveryMethods.find((m) => m.id === orderForm.value.deliveryMethod),
+)
+const pickedPayment = computed(() =>
+  paymentMethods.find((m) => m.id === orderForm.value.paymentMethod),
+)
+const deliveryName = computed(() =>
+  pickedDelivery.value ? t(pickedDelivery.value.nameKey) : '',
+)
 </script>

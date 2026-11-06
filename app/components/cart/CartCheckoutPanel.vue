@@ -81,30 +81,19 @@
           span.label-text.font-medium.text-sm {{ $t('cart.paymentMethod') }}
         .grid.grid-cols-2.gap-2
           label.option-tile(
-            :class="{ 'option-tile-active': selectedPayment === 'card' }"
+            v-for="method in paymentOptions"
+            :key="method.id"
+            :class="{ 'option-tile-active': selectedPayment === method.id }"
           )
             input.radio.radio-sm(
               type="radio"
               name="payment"
-              value="card"
+              :value="method.id"
               v-model="selectedPayment"
             )
             .flex-grow
-              .font-medium.text-sm {{ $t('cart.card') }}
-              .text-xs(class="text-base-content/65") {{ $t('cart.cardNote') }}
-
-          label.option-tile(
-            :class="{ 'option-tile-active': selectedPayment === 'cash' }"
-          )
-            input.radio.radio-sm(
-              type="radio"
-              name="payment"
-              value="cash"
-              v-model="selectedPayment"
-            )
-            .flex-grow
-              .font-medium.text-sm {{ $t('cart.cash') }}
-              .text-xs(class="text-base-content/65") {{ $t('cart.cashNote') }}
+              .font-medium.text-sm {{ $t(method.nameKey) }}
+              .text-xs(class="text-base-content/65") {{ $t(method.noteKey) }}
 
     .card-actions.px-4.py-3.mt-6.border-t.border-base-300(v-if="!isMobile")
       button.btn.btn-primary.btn-lg.w-full.rounded-xl(
@@ -125,6 +114,8 @@
 // applyPromo/checkout); промокод — v-model: страница чистит поле
 // только при успехе, при ошибке текст остаётся для повтора.
 import { getDeliveryPrice } from '@/utils/deliveryPrice'
+// Способы оплаты — из конфига витрины (см. store.config.ts)
+import { STORE_PAYMENT_METHODS } from '../../../store.config'
 
 defineProps({
   isProcessing: { type: Boolean, default: false },
@@ -156,7 +147,16 @@ const selectedDelivery = computed({
   get: () => deliveryMethod.value,
   set: (methodId) => setDeliveryMethod(methodId),
 })
-const selectedPayment = ref('card')
+//- Способы оплаты — тот же список store.config (STORE_PAYMENT_METHODS),
+//- что и в чекауте (CheckoutStepForms): раньше в корзине были захардкожены
+//- card/cash — на копии с transfer/cash плитки расходились с чекаутом
+const PAYMENT_META = {
+  card: { nameKey: 'cart.card', noteKey: 'cart.cardNote' },
+  cash: { nameKey: 'cart.cash', noteKey: 'cart.cashNote' },
+  transfer: { nameKey: 'cart.transfer', noteKey: 'cart.transferNote' },
+}
+const paymentOptions = STORE_PAYMENT_METHODS.map((id) => ({ id, ...PAYMENT_META[id] }))
+const selectedPayment = ref(paymentOptions[0]?.id ?? 'card')
 
 //- Цена курьера для плитки: считается именно по способу «курьер»,
 //- а не по текущему выбору (раньше при самовывозе плитка курьера
