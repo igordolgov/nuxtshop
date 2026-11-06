@@ -67,9 +67,11 @@
           button.btn.btn-outline.btn-xs.rounded-lg(type="button" @click="openEdit(item)") {{ $t('admin.common.edit') }}
           button.btn.btn-outline.btn-xs.rounded-lg(type="button" class="hover:bg-error hover:text-error-content hover:border-error" @click="remove(item)") {{ $t('admin.common.delete') }}
 
-  //- Форма: создание / редактирование
+  //- Форма: создание / редактирование.
+  //- modal-box-fit (main.css): форма длинная — вмещается в экран
+  //- телефона (dvh-высота), скролл даёт стоковый overflow-y:auto
   .modal(:class="{ 'modal-open': showForm }" role="dialog" aria-modal="true" @click.self="closeForm")
-    .modal-box.max-w-2xl
+    .modal-box.modal-box-fit.max-w-2xl
       h3.font-semibold.text-lg.mb-4 {{ isNew ? $t('admin.news.formNew') : $t('admin.news.formEdit') }}
 
       form(@submit.prevent="save" novalidate)

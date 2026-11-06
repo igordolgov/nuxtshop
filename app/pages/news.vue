@@ -119,10 +119,14 @@
             p.text-sm.mt-1(class="text-base-content/60") {{ $t('news.ctaText') }}
           NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/contacts')" prefetch) {{ $t('news.ctaButton') }}
 
-    //- Модальное окно с полным текстом новости
+    //- Модальное окно с полным текстом новости.
+    //- modal-box-fit (main.css): вмещается в экран телефона (dvh-высота).
+    //- overflow-hidden НЕ ставим: он гасит стоковый overflow-y:auto
+    //- modal-box — длинная новость обрезалась и не прокручивалась.
+    //- Вместо него фото обрезает figure (скругление только сверху).
     .modal(:class="{ 'modal-open': activeNews }" role="dialog" aria-modal="true" @click.self="closeNews")
-      .modal-box.max-w-2xl.p-0.overflow-hidden
-        figure(v-if="activeNews && activeNews.image")
+      .modal-box.modal-box-fit.max-w-2xl.p-0
+        figure.news-modal-media(v-if="activeNews && activeNews.image")
           NuxtImg.w-full(
             :src="activeNews.image"
             width="800" height="600"
@@ -294,6 +298,16 @@ useSeoMeta({
   background: color-mix(in oklab, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
   font-weight: 600;
+}
+
+/* ─── Модалка новости: фото вплотную к краям ────────────────
+   modal-box без padding и без overflow-hidden (иначе гаснет
+   стоковый overflow-y:auto — длинная новость не скроллится).
+   Верхние углы фото повторяют радиус modal-box (--radius-box
+   темы), низ обрезается самим modal-box при внутреннем скролле. */
+.news-modal-media {
+  overflow: hidden;
+  border-radius: var(--radius-box) var(--radius-box) 0 0;
 }
 
 /* ─── Категорийные бейджи (тонкие тинты, согласованы с темой) ── */
