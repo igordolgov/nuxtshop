@@ -9,8 +9,9 @@
 // Избранное: единственный источник правды — useFavorites.
 // Здесь только делегация под старым API (favorites.*) для совместимости.
 // ============================================
-// Валюта витрины — из конфига (см. store.config.ts)
-import { CURRENCY_NUMBER_LOCALE, STORE_CURRENCY } from '../../store.config';
+// Валюта витрины — из конфига (см. store.config.ts); фолбэк локали для
+// поиска (путь без префикса) — тоже: у кубинской копии дефолт 'es'
+import { CURRENCY_NUMBER_LOCALE, STORE_CURRENCY, STORE_DEFAULT_LOCALE } from '../../store.config';
 
 import { useProducts } from './useProducts';
 import type { CatalogProduct } from './catalogProduct';
@@ -130,7 +131,7 @@ function createAppState() {
     // находят товар и по переводу («smartphone» на /en), и по русскому
     // оригиналу. ru-каталог проходит без копий (см. localizedProduct).
     const localeMatch = /^\/(en|es)(\/|$)/.exec(searchRoute?.path ?? '');
-    const locale = localeMatch ? localeMatch[1] : 'ru';
+    const locale = localeMatch ? localeMatch[1] : STORE_DEFAULT_LOCALE;
     const localizedItems = items.map(
       (item) => localizedProduct(item, locale) as LocalizedCatalogProduct,
     );

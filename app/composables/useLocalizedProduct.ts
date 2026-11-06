@@ -19,10 +19,17 @@
 
 import { computed } from 'vue';
 import { localizedProduct, buildCategoryLabelMap } from '../utils/localizedProduct';
+// Дефолтная локаль витрины (без URL-префикса) — из store.config: у кубинской
+// копии это 'es' (а 'ru' — с префиксом /ru). Хардкод 'ru' здесь ломал копию:
+// весь переводной контент (новости, «О нас», категории, товары) откатывался
+// на русский при испанском интерфейсе.
+import { STORE_DEFAULT_LOCALE } from '../../store.config';
 
 /**
- * Реактивная локаль витрины из URL: /en/… → 'en', /es/… → 'es', иначе 'ru'.
- * Вне Nuxt-контекста (юнит-тесты на node) — константа 'ru'.
+ * Реактивная локаль витрины из URL: /en/… → 'en', /es/… → 'es',
+ * путь без префикса — дефолтная локаль магазина (store.config: RU-магазин
+ * 'ru', кубинская копия 'es'). Вне Nuxt-контекста (юнит-тесты на node) —
+ * та же константа из store.config.
  */
 export function useStoreLocale() {
   let route: ReturnType<typeof useRoute> | null = null;
@@ -33,7 +40,7 @@ export function useStoreLocale() {
   }
   return computed<'ru' | 'en' | 'es'>(() => {
     const match = /^\/(en|es)(\/|$)/.exec(route?.path ?? '');
-    return match ? (match[1] as 'ru' | 'en' | 'es') : 'ru';
+    return match ? (match[1] as 'ru' | 'en' | 'es') : STORE_DEFAULT_LOCALE;
   });
 }
 

@@ -11,6 +11,10 @@
 // ─── Идентичность магазина ──────────────────────────────────────────────
 // PWA-манифест (nuxt.config) и apple-mobile-web-app-title.
 export const STORE_NAME = 'Магазин';
+// Подпись магазина для PWA-манифеста (description в manifest.webmanifest —
+// видна в диалоге установки PWA). Страницы перекрывают head-мету из i18n
+// (app.vue), а манифест собирается на билде — отсюда. ⚙️ Куба: на испанском.
+export const STORE_TAGLINE = 'Интернет-магазин с оффлайн поддержкой';
 // Канонический origin для hreflang/sitemap (i18n.baseUrl). ⚙️ Копия: заменить
 // на домен своего воркера/кастомный домен.
 export const STORE_SITE_URL = 'https://nuxt-shop.igordolgov1972.workers.dev';
@@ -73,3 +77,10 @@ export const STORE_PAYMENT_METHODS: StorePaymentMethod[] = ['card', 'cash'];
 export const FREE_DELIVERY_FROM = 2000;
 export const DELIVERY_PRICE_COURIER = 300;
 export const DELIVERY_PRICE_POST = 200;
+
+// ─── «О магазине»: витрина категорий ─────────────────────────────────────
+// Подписи «от X» у плиток категорий на /about — демо-цифры в валюте
+// STORE_CURRENCY (символ добавляет formatMoney, в цифры он не входит).
+// Порядок: телефоны, ноутбуки, аудио, фототехника, часы, консоли.
+// ⚙️ Куба: свои цифры в USD.
+export const ABOUT_FROM_PRICES = [19990, 54990, 4990, 39990, 14990, 44990];

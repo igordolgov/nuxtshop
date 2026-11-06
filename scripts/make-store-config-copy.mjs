@@ -12,6 +12,10 @@ const REPLACES = [
   // ─── Идентичность ────────────────────────────────────────────────────
   ["export const STORE_NAME = 'Магазин';", "export const STORE_NAME = 'Tienda Habana';"],
   [
+    "export const STORE_TAGLINE = 'Интернет-магазин с оффлайн поддержкой';",
+    "export const STORE_TAGLINE = 'Tienda online con soporte offline';",
+  ],
+  [
     "export const STORE_SITE_URL = 'https://nuxt-shop.igordolgov1972.workers.dev';",
     "export const STORE_SITE_URL = 'https://nuxt-shop-cu.igordolgov1972.workers.dev';",
   ],
@@ -34,6 +38,11 @@ const REPLACES = [
   ['export const FREE_DELIVERY_FROM = 2000;', 'export const FREE_DELIVERY_FROM = 50;'],
   ['export const DELIVERY_PRICE_COURIER = 300;', 'export const DELIVERY_PRICE_COURIER = 5;'],
   ['export const DELIVERY_PRICE_POST = 200;', 'export const DELIVERY_PRICE_POST = 3;'],
+  // ─── «О магазине»: цены витрины категорий в валюте копии (USD) ─────
+  [
+    'export const ABOUT_FROM_PRICES = [19990, 54990, 4990, 39990, 14990, 44990];',
+    'export const ABOUT_FROM_PRICES = [199, 549, 49, 399, 149, 449];',
+  ],
 ];
 
 let src = readFileSync('store.config.ts', 'utf8');

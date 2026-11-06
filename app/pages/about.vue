@@ -106,6 +106,10 @@ const { t } = useI18n()
        Локализация — по локали URL (переводы полей из админки,
        нет перевода → русский; localizedSiteContent). ── */
 import { DEFAULT_SITE_CONTENT, localizedSiteContent } from '#shared/siteContent'
+// Цены «от X» витрины категорий — из конфига (формат выводит formatMoney):
+// захардкоженные «19 990 ₽» на кубинской копии показывали бы рубли при
+// долларовой витрине.
+import { ABOUT_FROM_PRICES, formatMoney } from '../../store.config'
 
 const { data: contentResp } = await useAsyncData(
   'site-content',
@@ -177,12 +181,12 @@ const steps = [
 ]
 
 const showcase = [
-  { name: t('about.catPhones'), count: t('about.from', { price: '19 990 ₽' }), icon: iconWrap('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') },
-  { name: t('about.catLaptops'), count: t('about.from', { price: '54 990 ₽' }), icon: iconWrap('<path d="M4 5h16v11H4z"/><path d="M2 19h20"/>') },
-  { name: t('about.catAudio'), count: t('about.from', { price: '4 990 ₽' }), icon: iconWrap('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="2" y="14" width="5" height="7" rx="1.5"/><rect x="17" y="14" width="5" height="7" rx="1.5"/>') },
-  { name: t('about.catPhoto'), count: t('about.from', { price: '39 990 ₽' }), icon: iconWrap('<path d="M3 8a2 2 0 012-2h2l2-2h6l2 2h2a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="4"/>') },
-  { name: t('about.catWatches'), count: t('about.from', { price: '14 990 ₽' }), icon: iconWrap('<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/>') },
-  { name: t('about.catConsoles'), count: t('about.from', { price: '44 990 ₽' }), icon: iconWrap('<path d="M6 9h4m-2-2v4m7 0h.01M17 11h.01M7.5 17h9a4.5 4.5 0 000-9h-9a4.5 4.5 0 000 9z"/>') },
+  { name: t('about.catPhones'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[0]) }), icon: iconWrap('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') },
+  { name: t('about.catLaptops'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[1]) }), icon: iconWrap('<path d="M4 5h16v11H4z"/><path d="M2 19h20"/>') },
+  { name: t('about.catAudio'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[2]) }), icon: iconWrap('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="2" y="14" width="5" height="7" rx="1.5"/><rect x="17" y="14" width="5" height="7" rx="1.5"/>') },
+  { name: t('about.catPhoto'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[3]) }), icon: iconWrap('<path d="M3 8a2 2 0 012-2h2l2-2h6l2 2h2a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="13" r="4"/>') },
+  { name: t('about.catWatches'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[4]) }), icon: iconWrap('<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/>') },
+  { name: t('about.catConsoles'), count: t('about.from', { price: formatMoney(ABOUT_FROM_PRICES[5]) }), icon: iconWrap('<path d="M6 9h4m-2-2v4m7 0h.01M17 11h.01M7.5 17h9a4.5 4.5 0 000-9h-9a4.5 4.5 0 000 9z"/>') },
 ]
 
 useHead(() => ({ title: t('about.title') }))

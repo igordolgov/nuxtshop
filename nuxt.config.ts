@@ -7,7 +7,13 @@ import tailwindcss from '@tailwindcss/vite';
 import removeConsole from 'vite-plugin-remove-console';
 // Конфигурация витрины (валюта, локали, имя магазина, домен) — один файл на
 // обе инсталляции (RU / кубинская копия), см. store.config.ts
-import { STORE_DEFAULT_LOCALE, STORE_LOCALES, STORE_NAME, STORE_SITE_URL } from './store.config';
+import {
+  STORE_DEFAULT_LOCALE,
+  STORE_LOCALES,
+  STORE_NAME,
+  STORE_SITE_URL,
+  STORE_TAGLINE,
+} from './store.config';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -206,7 +212,7 @@ export default defineNuxtConfig({
     manifest: {
       name: STORE_NAME,
       short_name: STORE_NAME,
-      description: 'Интернет-магазин с оффлайн поддержкой',
+      description: STORE_TAGLINE,
       theme_color: '#ffffff',
       background_color: '#ffffff',
       display: 'standalone',
@@ -316,7 +322,8 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Интернет-магазин',
+      // Дефолт из конфига (приложение перекрывает его t('app.title') в app.vue)
+      title: STORE_NAME,
       // lang на <html> выставляет @nuxtjs/i18n (useLocaleHead в app.vue)
       // по текущей локали маршрута — статический 'ru' убран.
       meta: [
