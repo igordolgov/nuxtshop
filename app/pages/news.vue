@@ -14,7 +14,7 @@
     nav.breadcrumbs.text-sm.mb-3(:aria-label="$t('catalog.breadcrumbs')")
       ul
         li
-          NuxtLink(class="text-base-content/60 hover:text-primary" :to="$localePath('/')" prefetch) {{ $t('nav.home') }}
+          NuxtLink(class="hover:text-primary text-base-content/60" :to="$localePath('/')" prefetch) {{ $t('nav.home') }}
         li {{ $t('news.title') }}
 
     //- Заголовок
@@ -27,19 +27,19 @@
     template(v-if="pending && !items.length")
       .skeleton.h-8.w-72.mb-5.round-lg
       .skeleton.h-56.rounded-2xl.mb-4
-      .grid.grid-cols-1.gap-4(class="sm:grid-cols-2 lg:grid-cols-3 lg:gap-6")
+      .grid.grid-cols-1.gap-4(class="lg:gap-6 sm:grid-cols-2 lg:grid-cols-3")
         .skeleton.h-72.rounded-2xl(v-for="i in 3" :key="i")
 
     //- Ошибка загрузки
     .text-center.py-16.flex.flex-col.items-center(v-else-if="error")
       //- Класс с «/50» — только через атрибут: в pug-шортхенде слэш
       //- означает self-closing, компилировался мусорный текст-узел
-      p(class="text-base-content/50 mb-4") {{ $t('news.loadError') }}
+      p(class="mb-4 text-base-content/50") {{ $t('news.loadError') }}
       button.btn.btn-primary.rounded-xl(type="button" @click="refresh()") {{ $t('news.retry') }}
 
     template(v-else)
       //- Фильтр по категориям
-      .flex.gap-2.overflow-x-auto.pb-1.mb-5(class="lg:mb-6 lg:flex-wrap" role="tablist" :aria-label="$t('news.filterAria')")
+      .flex.gap-2.overflow-x-auto.pb-1.mb-5(class="lg:flex-wrap lg:mb-6" role="tablist" :aria-label="$t('news.filterAria')")
         button.chip(
           v-for="cat in categories"
           :key="cat"
@@ -80,7 +80,7 @@
               path(d="M5 12h14m-6-6l6 6-6 6")
 
       //- Сетка остальных новостей
-      .grid.grid-cols-1.gap-4(class="sm:grid-cols-2 lg:grid-cols-3 lg:gap-6")
+      .grid.grid-cols-1.gap-4(class="lg:gap-6 sm:grid-cols-2 lg:grid-cols-3")
         article.news-card(
           v-for="item in restNews"
           :key="item.id"
@@ -167,7 +167,7 @@
                     .np-meta
                       span.np-price {{ formatPrice(p.price) }} ₽
                       span.np-stock(v-if="!p.inStock") {{ $t('product.outOfStock') }}
-                  span.np-link {{ $t('news.go') }}
+                  span.np-link.pl-3.pb-2 {{ $t('news.go') }}
                     svg(width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
                       path(d="M5 12h14m-6-6l6 6-6 6")
 

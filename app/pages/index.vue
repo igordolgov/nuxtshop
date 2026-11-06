@@ -3,10 +3,7 @@
     блок «Последние новости», нижняя мобильная навигация. -->
 <template lang="pug">
 .grid-container
-  //- Шапка в SSR-HTML: бургер-меню внутри Header переключается по CSS
-  //- (lg:hidden), а не по v-if="isMobile" — сервер и клиент рендерят
-  //- одинаково, навигация видна в HTML до гидратации (аудит «Часть
-  //- контента») и раскладка не прыгает после загрузки JS
+  //- Шапка в SSR-HTML
   Header.header-area(
     :activeFiltersCount="activeFiltersCount"
     :displayedProductsCount="displayedProducts.length"
@@ -41,8 +38,6 @@
     .content-area
       //- Скелетон вместо белого экрана: данные каталога клиентские,
       //- до первой загрузки показываем структуру страницы.
-      //- Раньше весь контент прятал v-if="isMounted" — посетитель видел
-      //- пустоту, пока не загрузится и не выполнится JS
       .skeleton-area(v-if="showSkeleton")
         .skeleton.skeleton-title
         .skeleton-grid
@@ -74,9 +69,7 @@
               @reset-all="resetFilters"
               @update:sort="handleSortUpdate"
             )
-            //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу
-            //- гидратации (аудит «Структура DOM», «Время работы ЦП»);
-            //- дальне подгружает infinite scroll
+            //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу гидратации
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
@@ -99,15 +92,10 @@
               @toggle-favorite="toggleFavorite"
               @add-to-cart="addToCart"
             )
-            //- Блок «Последние новости»: данные из KV через /api/news,
-            //- сам скрывает себя при пустой выдаче/ошибке API.
-            //- Стоит ПОСЛЕ списка товаров — карточки каталога остаются
-            //- LCP-блоком, тизеры новостей его не сдвигают
+            //- Блок «Последние новости»: данные из KV через /api/news
             NewsLatest
 
             //- Десктопный футер (аудит F16). Внутри скроллящегося контейнера:
-            //- .products-container прокручивается сам, футер вне него
-            //- был бы недостижим на планшетах/мобиле
             SiteFooter
 
   //- Футер сам управляет ориентацией и навигацией — ни props, ни событий.
@@ -125,10 +113,6 @@ import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
 //- Composables.
-//- isMobile — из единого композабла. isHorizontal удалён вместе с
-//- боковой навигацией: landscape ничем не отличается от portrait
-//- (4-колоночная сетка в landscape отключена; при желании вернётся
-//- чистым CSS через media (orientation: landscape))
 const { isMobile } = useMobileDetection()
 //- ============================================
 
@@ -140,10 +124,6 @@ const appState = useAppState()
 
 //- ============================================
 //- SSR-каталог: товары должны быть в серверном HTML (LCP главной).
-//- loadProducts на сервере пишет в useState('catalog-products') →
-//- Nuxt кладёт их в payload → гидратация рендерит карточки сразу,
-//- без повторного /api/products и без скелетона.
-//- Хендлер возвращает true, чтобы массив не дублировался в payload.
 //- ============================================
 await useAsyncData('catalog-load', async () => {
   await appState.loadProducts()
@@ -159,10 +139,6 @@ const productsContainerRef = ref(null)
 
 //- ============================================
 //- Чтение состояния (SSR + клиент).
-//- Раньше на сервере возвращался defaultValue: каталог был CSR и на SSR
-//- данных всё равно не было. Теперь каталог приходит из payload —
-//- читаем состояние и на сервере. Все читаемые поля — useState/computed
-//- из useProducts/useFilters и существуют в обоих окружениях.
 //- ============================================
 const getState = (path, defaultValue = null) => {
   const keys = path.split('.')
@@ -193,11 +169,7 @@ const displayedProducts = computed(() => getState('displayedProducts', []))
 const products = computed(() => getState('products', []))
 const totalProductsCount = computed(() => products.value?.length ?? 0)
 
-//- Скелетон: только пока каталог пуст и его нечего показать —
-//- при SSR-загрузке (данные в payload) карточки рендерятся сразу,
-//- а скелетон остаётся фолбэком для ошибки/офлайна/чистого CSR.
-//- Важно: ProductsSection с пустым списком показал бы empty-state
-//- «ничего не найдено» — не пускаем его до появления данных
+//- Скелетон: только пока каталог пуст и его нечего показать
 const showSkeleton = computed(
   () => products.value.length === 0 && (!isMounted.value || isLoading.value),
 )
@@ -363,9 +335,7 @@ const updateBodyScroll = (locked) => {
 }
 
 //- ============================================
-//- Lifecycle.
-//- Слушатели resize/orientationchange больше не нужны здесь —
-//- их держит useMobileDetection (один набор на всё приложение)
+//- Lifecycle
 //- ============================================
 onMounted(() => {
   isMounted.value = true
@@ -489,8 +459,8 @@ watch(showMobileFilters, updateBodyScroll)
   -webkit-overflow-scrolling: touch;
   width: 100%;
   /* Без content-visibility: auto — контейнер каталога содержит
-     LCP-элементы первого экрана; Chrome откладывал их отрисовку
-     (PageSpeed: element render delay 2 090 мс, см. ProductCardGrid). */
+    LCP-элементы первого экрана; Chrome откладывал их отрисовку
+    (PageSpeed: element render delay 2 090 мс, см. ProductCardGrid). */
   contain: layout style;
 
   /* Нижний «воздух» под фиксированной навигацией: без него последний
@@ -500,9 +470,9 @@ watch(showMobileFilters, updateBodyScroll)
   }
 
   /* Внутренний скроллбар каталога (наблюдение аудита: ползунок у
-     колонки, а не у края окна — так устроен контейнер). Делаем его
-     тонким и приглушённым, чтобы поведение читалось как намеренное.
-     Только для точных указателей: на таче скроллбары оверлейные. */
+    колонки, а не у края окна — так устроен контейнер). Делаем его
+    тонким и приглушённым, чтобы поведение читалось как намеренное.
+    Только для точных указателей: на таче скроллбары оверлейные. */
   @media (hover: hover) and (pointer: fine) {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklab, var(--color-base-content) 20%, transparent)
