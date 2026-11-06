@@ -225,14 +225,14 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
   if (stored) {
     // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
     // локальные пути; сидовые варианты доливаем товарам без них;
-    // сидовые характеристики и их ES-переводы — товарам без них.
+    // сидовые характеристики и их переводы en/es — товарам без них.
     // KV НЕ перезаписываем (гонка read-modify-write);
     // в KV новые пути/варианты/характеристики доезжают при следующей
     // админ-правке (writeProducts).
     migrateProductImages(stored);
     migrateSeedVariants(stored);
     migrateSeedCharacteristics(stored);
-    migrateSeedCharacteristicsEs(stored);
+    migrateSeedCharacteristicLocales(stored);
     return stored;
   }
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
@@ -443,34 +443,41 @@ export function migrateSeedCharacteristics(products: Product[]): void {
 }
 
 /**
- * Доливает сидовой ES-перевод spec-листа товарам без него — ТОЛЬКО В
- * ПАМЯТИ (тот же паттерн, что migrateSeedVariants/migrateSeedCharacteristics:
- * в KV при чтении не пишем — гонка read-modify-write; в KV данные доезжают
- * при следующей админ-правке, а витрина работает с merged-видом сразу).
+ * Доливает сидовые переводы spec-листа (characteristicsEn/Es) товарам без
+ * них — ТОЛЬКО В ПАМЯТИ (тот же паттерн, что migrateSeedVariants/
+ * migrateSeedCharacteristics: в KV при чтении не пишем — гонка
+ * read-modify-write; в KV данные доезжают при следующей админ-правке,
+ * а витрина работает с merged-видом сразу).
  *
  * Зачем: каталог живёт в KV и был засеян ДО появления заполненных
- * characteristicsEs (переводы ЗНАЧЕНИЙ характеристик; названия строк и так
- * переводятся словарём specLabels.*) — обновление сида само по себе живой
- * каталог не видит, и испанская витрина показывала русский фолбэк значений.
- * Правила слияния:
- *  · у товара уже есть непустой characteristicsEs → не трогаем (админские
- *    правки главнее сид-дефолтов);
+ * характеристик-переводов (ЗНАЧЕНИЯ строк; названия строк и так
+ * переводятся словарём specLabels.*) — обновление сида само по себе
+ * живой каталог не видит, и витрина en/es показывала русский фолбэк
+ * значений. Правила слияния (для каждой локали отдельно):
+ *  · у товара уже есть непустой перевод → не трогаем (админские правки
+ *    главнее сид-дефолтов);
  *  · в сиде перевода нет → не трогаем;
  *  · товар без перевода получает СИДОВЫЙ Record целиком.
- * Нюанс: «Очистить» в es-вкладке редактора для сидового товара не липнет —
- * пустой список снова долится из сида; своё собственное заполненное
- * предупреждение админ вносит как непустой список (он главнее).
+ * Нюанс: «Очистить» в en/es-вкладке редактора для сидового товара не
+ * липнет — пустой список снова долится из сида; своё собственное
+ * заполненное предупреждение админ вносит как непустой список (он главнее).
  */
-export function migrateSeedCharacteristicsEs(products: Product[]): void {
+export function migrateSeedCharacteristicLocales(products: Product[]): void {
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
   const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
   for (const product of products) {
     if (!product || typeof product !== 'object') continue;
-    const existing = product.characteristicsEs;
-    if (existing && Object.keys(existing).length > 0) continue;
-    const seedEs = seedBySlug.get(product.slug)?.characteristicsEs;
-    if (seedEs && Object.keys(seedEs).length > 0) {
-      product.characteristicsEs = { ...seedEs };
+    const seedTwin = seedBySlug.get(product.slug);
+    if (!seedTwin) continue;
+    const existingEn = product.characteristicsEn;
+    if ((!existingEn || Object.keys(existingEn).length === 0) && seedTwin.characteristicsEn) {
+      const seedEn = seedTwin.characteristicsEn;
+      if (Object.keys(seedEn).length > 0) product.characteristicsEn = { ...seedEn };
+    }
+    const existingEs = product.characteristicsEs;
+    if ((!existingEs || Object.keys(existingEs).length === 0) && seedTwin.characteristicsEs) {
+      const seedEs = seedTwin.characteristicsEs;
+      if (Object.keys(seedEs).length > 0) product.characteristicsEs = { ...seedEs };
     }
   }
 }

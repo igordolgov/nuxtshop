@@ -369,7 +369,9 @@ const ratingCountLabel = computed(() => t('reviews.count', props.rating?.count ?
 
 const formatDate = (dateString) => {
   if (!dateString) return t('product.unknown')
-  return new Date(dateString).toLocaleDateString('ru-RU')
+  return new Date(dateString).toLocaleDateString(
+    locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU',
+  )
 }
 </script>
 

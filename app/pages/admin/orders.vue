@@ -139,7 +139,7 @@
               :key="item.id"
             )
               .min-w-0
-                .truncate {{ item.name }}
+                .truncate {{ itemName(item) }}
                 .text-xs(class="text-base-content/50")
                   | {{ item.quantity }} × {{ formatPrice(item.price) }}
               .font-medium.shrink-0 {{ formatPrice(item.price * item.quantity) }}
@@ -226,6 +226,9 @@
 </template>
 
 <script setup>
+//- Валюта — единый formatMoney из store.config (₽ / $ по конфигу витрины)
+import { formatMoney } from '../../../store.config'
+
 definePageMeta({
   middleware: 'manager-auth',
 })
@@ -349,12 +352,11 @@ const toggleExpand = (id) => {
 
 const historyDesc = (order) => [...(order.statusHistory ?? [])].reverse()
 
-const formatPrice = (price) =>
-  new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(price ?? 0)
+const formatPrice = (price) => formatMoney(price)
+
+//- Название позиции — снапшот заказа локализуется по контракту
+//- nameEn/nameEs с фолбэком на русское name (app/utils/localizedOrderItem)
+const itemName = (item) => localizedOrderItemName(item, locale.value)
 
 const formatDateTime = (iso) =>
   iso

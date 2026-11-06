@@ -89,6 +89,22 @@
       "Protección contra el agua": "IP68",
       "Peso": "168 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Samsung",
+      "Screen": "6.1\" AMOLED, 120 Hz",
+      "Display resolution": "2340×1080 (FHD+)",
+      "Processor": "Snapdragon 8 Gen 2 for Galaxy",
+      "RAM": "8 GB",
+      "Storage": "256 GB",
+      "Main camera": "50 + 12 + 10 MP",
+      "Front camera": "12 MP",
+      "Battery capacity": "3900 mAh",
+      "Operating system": "Android 13 / One UI 5.1",
+      "NFC": "Yes",
+      "Water protection": "IP68",
+      "Weight": "168 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -171,6 +187,19 @@
       "Duración de la batería": "hasta 22 h",
       "Peso": "2,14 kg",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Apple",
+      "Screen": "16.2\" Liquid Retina XDR",
+      "Display resolution": "3456×2234",
+      "Processor": "Apple M2 Pro",
+      "RAM": "16 GB",
+      "Storage": "512GB SSD",
+      "Graphics": "Integrated, 19-core GPU",
+      "Operating system": "macOS",
+      "Battery life": "up to 22 h",
+      "Weight": "2.14 kg",
+      "Warranty": "12 months"
     }
   },
   {
@@ -244,6 +273,18 @@
       "Protección contra el agua": "No",
       "Peso": "254 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Sony",
+      "Type": "Over-ear, closed-back, wireless",
+      "Frequency range": "4 Hz – 40 kHz",
+      "Bluetooth version": "5.0",
+      "Codecs": "SBC, AAC, LDAC",
+      "Active noise cancelling": "Yes",
+      "Operating time": "up to 30 h (with noise canceling)",
+      "Water protection": "No",
+      "Weight": "254 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -293,6 +334,19 @@
       "Ranuras para tarjetas": "2 × SD UHS-II",
       "Peso": "680 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Canon",
+      "Type": "Mirrorless with interchangeable lens",
+      "Image sensor": "Full-frame CMOS, 20 MP",
+      "Resolution": "5472×3648",
+      "Video": "4K 60p",
+      "Stabilization": "5-axis, up to 8 stops",
+      "Viewfinder": "OLED, 3.69M dots",
+      "Screen": "3\" touchscreen, rotatable",
+      "Card slots": "2 × SD UHS-II",
+      "Weight": "680 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -362,6 +416,17 @@
       "Material de la correa": "Silicona",
       "Peso": "31,9 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Apple",
+      "Screen": "1.9\" Always-On Retina",
+      "Compatibility": "iPhone (iOS 17+)",
+      "Sensors": "Heart rate, ECG, SpO2, temperature sensor",
+      "Operating time": "up to 18 h",
+      "Water protection": "50 m (WR50)",
+      "Strap material": "Silicone",
+      "Weight": "31.9 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -407,6 +472,17 @@
       "Wi-Fi": "Wi-Fi 6",
       "Peso": "4,5 kg",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Sony",
+      "Platform": "PlayStation 5",
+      "Storage": "825GB SSD",
+      "Resolution": "up to 4K 120 Hz",
+      "Ports": "HDMI 2.1, USB-C, 2 × USB-A",
+      "Optical drive": "Yes (UDHD-BD)",
+      "Wi-Fi": "Wi-Fi 6",
+      "Weight": "4.5 kg",
+      "Warranty": "12 months"
     }
   },
   {
@@ -450,6 +526,16 @@
       "Bolsillos": "5 bolsillos",
       "País de origen": "Bangladesh",
       "Instrucciones de cuidado": "Lavado a 30 °C, del revés"
+    },
+    "characteristicsEn": {
+      "Material": "Denim",
+      "Fabric composition": "98% cotton, 2% elastane",
+      "Size": "32/32",
+      "Fit": "Regular",
+      "Length": "Full (L32)",
+      "Pockets": "5 pockets",
+      "Country of origin": "Bangladesh",
+      "Care instructions": "Machine wash 30°C, inside out"
     }
   },
   {
@@ -490,6 +576,14 @@
       "Temporada": "Entretiempo",
       "País de origen": "Vietnam",
       "Peso (por zapato)": "320 g"
+    },
+    "characteristicsEn": {
+      "Upper material": "Textile, mesh",
+      "Sole material": "Air Max air-cushion foam, rubber",
+      "Size": "42 (EU)",
+      "Season": "Mid-season",
+      "Country of origin": "Vietnam",
+      "Weight (per shoe)": "320 g"
     }
   },
   {
@@ -531,6 +625,15 @@
       "Corte": "Recto",
       "País de origen": "Rusia",
       "Instrucciones de cuidado": "Lavado a 40 °C"
+    },
+    "characteristicsEn": {
+      "Material": "Cotton",
+      "Fabric composition": "100% combed cotton",
+      "Fabric density": "180 g/m²",
+      "Size": "M",
+      "Cut": "Straight",
+      "Country of origin": "Russia",
+      "Care instructions": "Machine wash 40°C"
     }
   },
   {
@@ -576,6 +679,17 @@
       "Temporada": "Invierno",
       "Capucha": "Acolchado y desmontable",
       "País de origen": "Rusia"
+    },
+    "characteristicsEn": {
+      "Material": "Nylon",
+      "Fabric composition": "100% polyamide",
+      "Insulation": "Natural down 90/10",
+      "Temperature range": "down to −25 °C",
+      "Water resistance": "DWR coating",
+      "Size": "L",
+      "Season": "Winter",
+      "Hood": "Insulated, removable",
+      "Country of origin": "Russia"
     }
   },
   {
@@ -624,6 +738,18 @@
       "Alimentación": "Red 220 V",
       "Apto para lavavajillas": "No",
       "Garantía": "24 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "De'Longhi",
+      "Type": "Automatic coffee machine",
+      "Pressure": "15 bar",
+      "Power": "1450 W",
+      "Water tank capacity": "1.8 L",
+      "Coffee type": "Whole bean",
+      "Milk frother": "Automatic",
+      "Power supply": "220 V mains",
+      "Dishwasher safe": "No",
+      "Warranty": "24 months"
     }
   },
   {
@@ -668,6 +794,18 @@
       "Navegación": "Lídar LDS",
       "Control": "App Mi Home, asistente de voz",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Xiaomi",
+      "Type": "Robot vacuum",
+      "Cleaning type": "Dry and wet",
+      "Suction power": "4000 Pa",
+      "Dust bin capacity": "0.6 L",
+      "Operating time": "up to 130 min",
+      "Noise level": "65 dB",
+      "Navigation": "LDS lidar",
+      "Controls": "Mi Home app, voice assistant",
+      "Warranty": "12 months"
     }
   },
   {
@@ -707,6 +845,16 @@
       "Material": "Metal, plástico",
       "Control de brillo": "Sí, continua",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Lamp type": "LED",
+      "Power": "8 W",
+      "Luminous flux": "500 lm",
+      "Color temperature": "3000–6000 K, adjustable",
+      "Power supply": "USB / 220 V mains",
+      "Material": "Metal, plastic",
+      "Brightness control": "Yes, stepless",
+      "Warranty": "12 months"
     }
   },
   {
@@ -751,6 +899,16 @@
       "Género": "Programación",
       "Idioma": "Ruso",
       "Clasificación por edad": "12+"
+    },
+    "characteristicsEn": {
+      "Author": "Donald Knuth",
+      "Publisher": "Williams",
+      "Publication year": "2019",
+      "Number of pages": "608",
+      "Binding": "Hardcover",
+      "Genre": "Programming",
+      "Language": "Russian",
+      "Age rating": "12+"
     }
   },
   {
@@ -792,6 +950,15 @@
       "Horquilla": "Muelle-elastómero, recorrido de 100 mm",
       "Peso": "14,5 kg",
       "Garantía": "12 meses en el cuadro"
+    },
+    "characteristicsEn": {
+      "Frame": "6061 aluminum",
+      "Wheel diameter": "27.5\"",
+      "Number of gears": "21",
+      "Brake type": "Mechanical disc",
+      "Fork": "Spring-elastomer, 100 mm travel",
+      "Weight": "14.5 kg",
+      "Warranty": "12 months on the frame"
     }
   },
   {
@@ -838,6 +1005,18 @@
       "GPS": "Multibanda",
       "Peso": "73 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Garmin",
+      "Screen": "1.3\" transflective, sunlight-readable",
+      "Compatibility": "Android / iOS",
+      "Operating time": "up to 18 days (watch mode)",
+      "Water protection": "10 ATM",
+      "Body material": "Stainless steel",
+      "Strap material": "Silicone",
+      "GPS": "Multi-band",
+      "Weight": "73 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -885,6 +1064,17 @@
       "Longitud del cable": "2,1 m",
       "Peso": "82 g",
       "Garantía": "24 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Razer",
+      "Type": "Gaming mouse",
+      "Sensor": "Optical, 6400 dpi",
+      "Number of buttons": "5",
+      "Backlight": "Razer Chroma RGB",
+      "Connection": "Wired USB",
+      "Cable length": "2.1 m",
+      "Weight": "82 g",
+      "Warranty": "24 months"
     }
   },
   {
@@ -931,6 +1121,17 @@
       "Conexión": "USB por cable",
       "Longitud del cable": "1,8 m",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Logitech",
+      "Type": "Mechanical keyboard",
+      "Switch type": "Tactile",
+      "Form factor": "Full-size",
+      "Layout": "US",
+      "Backlight": "RGB, adjustable",
+      "Connection": "Wired USB",
+      "Cable length": "1.8 m",
+      "Warranty": "12 months"
     }
   },
   {
@@ -979,6 +1180,18 @@
       "Puertos": "2 × HDMI, DisplayPort, hub USB",
       "Ajuste": "Altura, inclinación, giro",
       "Garantía": "36 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Dell",
+      "Screen size": "27\"",
+      "Display resolution": "3840×2160 (4K UHD)",
+      "Sensor type": "IPS",
+      "Refresh rate": "60 Hz",
+      "Response time": "5 ms",
+      "Brightness": "350 cd/m²",
+      "Ports": "2 × HDMI, DisplayPort, USB hub",
+      "Adjustment": "Height, tilt, swivel",
+      "Warranty": "36 months"
     }
   },
   {
@@ -1028,6 +1241,18 @@
       "Dimensiones": "117×80×14,8 mm",
       "Peso": "200 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Seagate",
+      "Type": "External hard drive (HDD)",
+      "Capacity": "2 TB",
+      "Interface": "USB 3.0",
+      "Transfer speed": "up to 120 MB/s",
+      "Power supply": "USB port",
+      "Body material": "Plastic",
+      "Dimensions": "117×80×14.8 mm",
+      "Weight": "200 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1071,6 +1296,16 @@
       "Apagado automático": "Sí",
       "Indicador de encendido": "Sí",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Bosch",
+      "Capacity": "1.7 L",
+      "Power": "2400 W",
+      "Body material": "Stainless steel",
+      "Limescale filter": "Removable",
+      "Auto-off": "Yes",
+      "Power indicator": "Yes",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1112,6 +1347,15 @@
       "Boquillas": "Batidoras, picadora y vaso picador",
       "Material de la parte sumergible": "Acero inoxidable",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Braun",
+      "Type": "Immersion (handheld)",
+      "Power": "1000 W",
+      "Number of gears": "2 + turbo mode",
+      "Attachments": "Whisk, chopper, chopper bowl",
+      "Immersion part material": "Stainless steel",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1152,6 +1396,16 @@
       "Compatible con inducción": "Sí",
       "Apto para lavavajillas": "Sí",
       "Color": "Negro"
+    },
+    "characteristicsEn": {
+      "Brand": "Tefal",
+      "Type": "Cookware set",
+      "Items included": "8",
+      "Material": "Non-stick coated aluminum",
+      "Lids": "Glass with temperature sensor",
+      "Induction compatible": "Yes",
+      "Dishwasher safe": "Yes",
+      "Color": "Black"
     }
   },
   {
@@ -1195,6 +1449,16 @@
       "Dimensiones (Al×An×Pr)": "125–135 × 68 × 70 cm",
       "Ruedas": "Para cualquier tipo de suelo",
       "Garantía": "24 meses"
+    },
+    "characteristicsEn": {
+      "Material": "Breathable mesh, fabric",
+      "Max load": "120 kg",
+      "Adjustments": "Height, backrest tilt, headrest, lumbar support",
+      "Armrests": "3D adjustment",
+      "Base": "Metal",
+      "Dimensions (H×W×D)": "125–135 × 68 × 70 cm",
+      "Casters": "For all floor types",
+      "Warranty": "24 months"
     }
   },
   {
@@ -1243,6 +1507,18 @@
       "Formato 2.1": "Sí (tweeter + woofer)",
       "Peso": "550 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "JBL",
+      "Type": "Portable speaker",
+      "Power": "30 W",
+      "Frequency range": "63 Hz – 20 kHz",
+      "Bluetooth version": "5.1",
+      "Operating time": "up to 12 h",
+      "Water protection": "IP67",
+      "2.1 format": "Yes (tweeter + woofer)",
+      "Weight": "550 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1290,6 +1566,18 @@
       "Material de la correa": "Silicona",
       "Peso": "27 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Xiaomi",
+      "Screen": "1.62\" AMOLED",
+      "Compatibility": "Android / iOS",
+      "Operating time": "up to 16 days",
+      "Water protection": "5 ATM",
+      "Sensors": "Heart rate, SpO2, accelerometer",
+      "Workout modes": "150+",
+      "Strap material": "Silicone",
+      "Weight": "27 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1335,6 +1623,17 @@
       "Modos": "TV / sobremesa / portátil",
       "Peso": "398 g (con los mandos Joy-Con)",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Nintendo",
+      "Platform": "Nintendo Switch",
+      "Storage": "32 GB",
+      "Resolution": "720p (handheld) / 1080p (TV)",
+      "Screen": "6.2\" LCD, touchscreen",
+      "Ports": "USB-C, HDMI",
+      "Modes": "TV / tabletop / handheld",
+      "Weight": "398 g (with Joy-Con controllers)",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1383,6 +1682,18 @@
       "Sistema operativo": "iPadOS",
       "Peso": "461 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Apple",
+      "Screen": "10.9\" Liquid Retina",
+      "Display resolution": "2360×1640",
+      "Processor": "Apple M1",
+      "RAM": "8 GB",
+      "Storage": "64 GB",
+      "Battery capacity": "28.93 Wh",
+      "Operating system": "iPadOS",
+      "Weight": "461 g",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1429,6 +1740,18 @@
       "Frenos": "E-ABS + trasero de disco",
       "Peso": "14,2 kg",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Xiaomi",
+      "Power": "600 W (peak)",
+      "Max speed": "25 km/h",
+      "Range": "up to 45 km",
+      "Charging time": "~8.5 h",
+      "Load capacity": "120 kg",
+      "Wheel diameter": "8.5\"",
+      "Brakes": "E-ABS + rear disc",
+      "Weight": "14.2 kg",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1474,6 +1797,17 @@
       "Alimentación": "Red 220 V",
       "Material": "Tela, plástico",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Yandex",
+      "Type": "Smart speaker",
+      "Power": "50 W",
+      "Controls": "Alisa voice assistant",
+      "Protocols": "Wi-Fi, Bluetooth",
+      "Ports": "HDMI (TV mode), AUX",
+      "Power supply": "220 V mains",
+      "Material": "Fabric, plastic",
+      "Warranty": "12 months"
     }
   },
   {
@@ -1519,6 +1853,17 @@
       "Compatibilidad con versiones anteriores": "Juegos de Nintendo Switch",
       "Peso": "534 g",
       "Garantía": "12 meses"
+    },
+    "characteristicsEn": {
+      "Brand": "Nintendo",
+      "Platform": "Nintendo Switch 2",
+      "Screen": "7.9\" LCD 1080p, 120 Hz",
+      "Resolution": "up to 4K 60 Hz (docked)",
+      "Storage": "256 GB",
+      "Ports": "USB-C, HDMI 2.1",
+      "Backward compatibility": "Nintendo Switch games",
+      "Weight": "534 g",
+      "Warranty": "12 months"
     }
   }
 ]

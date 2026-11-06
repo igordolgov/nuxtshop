@@ -66,7 +66,7 @@
         )
           .flex-1.min-w-0
             .text-sm.font-medium
-              | {{ order.items[0]?.name }}
+              | {{ itemName(order.items[0]) }}
               span(v-if="order.items.length > 1" class="text-base-content/50")
                 | {{ $t('user.andMore', { n: order.items.length - 1 }) }}
             .text-xs.mt-1(class="text-base-content/50")
@@ -93,14 +93,14 @@
                 //- width/height = 48px (w-12 h-12) + decoding=async
                 NuxtImg.w-full.h-full.object-cover(
                   :src="item.image || '/images/placeholder.jpg'"
-                  :alt="item.name"
+                  :alt="itemName(item)"
                   width="48"
                   height="48"
                   loading="lazy"
                   decoding="async"
                 )
               .flex-1.min-w-0
-                .text-sm.font-medium.truncate {{ item.name }}
+                .text-sm.font-medium.truncate {{ itemName(item) }}
                 .text-xs(class="text-base-content/50") {{ item.quantity }} × {{ formatPrice(item.price) }}
               .text-sm.font-semibold {{ formatPrice(item.price * item.quantity) }}
 
@@ -173,6 +173,10 @@
 </template>
 
 <script setup>
+//- Валюта — единый formatMoney из store.config (₽ / $ по конфигу витрины);
+//- хардкод RUB здесь показывал «₽» на копии с USD (см. RecentlyViewed)
+import { formatMoney } from '../../../store.config'
+
 const { t, locale } = useI18n()
 //- Страница «Мои заказы». Header/MobileNavFooter/композаблы — автоимпорт Nuxt
 const localePath = useLocalePath()
@@ -215,12 +219,11 @@ const toggleExpand = (id) => {
   expanded.value = next
 }
 
-const formatPrice = (price) =>
-  new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(price ?? 0)
+const formatPrice = (price) => formatMoney(price)
+
+//- Название позиции — снапшот заказа локализуется по контракту
+//- nameEn/nameEs с фолбэком на русское name (app/utils/localizedOrderItem)
+const itemName = (item) => localizedOrderItemName(item, locale.value)
 
 // Локаль из URL — SSR и клиент согласованы, Intl безопасен
 const DATE_LOCALES = { ru: 'ru-RU', en: 'en-US', es: 'es-ES' }

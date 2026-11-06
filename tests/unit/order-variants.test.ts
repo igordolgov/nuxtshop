@@ -28,6 +28,8 @@ const product: Product = {
   id: '12',
   slug: 'noutbuk-test',
   name: 'Ноутбук Тест',
+  nameEn: 'Test Laptop',
+  nameEs: 'Laptop de prueba',
   description: 'Описание',
   price: 249990,
   image: '/images/noutbuk.png',
@@ -39,10 +41,33 @@ const product: Product = {
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   variantName: 'Память',
+  variantNameEn: 'Memory',
+  variantNameEs: 'Memoria',
   variants: [
-    { id: 'mbp-512', name: '512 ГБ', price: 249990, stockQuantity: 10 },
-    { id: 'mbp-1tb', name: '1 ТБ', price: 279990, stockQuantity: 4 },
-    { id: 'mbp-2tb', name: '2 ТБ', price: 319990, stockQuantity: 1 },
+    {
+      id: 'mbp-512',
+      name: '512 ГБ',
+      nameEn: '512GB SSD',
+      nameEs: '512 GB SSD',
+      price: 249990,
+      stockQuantity: 10,
+    },
+    {
+      id: 'mbp-1tb',
+      name: '1 ТБ',
+      nameEn: '1TB SSD',
+      nameEs: '1 TB SSD',
+      price: 279990,
+      stockQuantity: 4,
+    },
+    {
+      id: 'mbp-2tb',
+      name: '2 ТБ',
+      nameEn: '2TB SSD',
+      nameEs: '2 TB SSD',
+      price: 319990,
+      stockQuantity: 1,
+    },
   ],
 };
 
@@ -91,6 +116,30 @@ describe('заказ с вариантами', () => {
       price: 249990,
       variantId: null,
       variantName: null,
+    });
+  });
+
+  it('снапшот переводов: nameEn/nameEs и вариантные name*En/Es в позиции', async () => {
+    const order = await createOrder(
+      event,
+      makeInput({ items: [{ id: '12::mbp-1tb', quantity: 1 }] }),
+    );
+    expect(order.items[0]).toMatchObject({
+      name: 'Ноутбук Тест',
+      nameEn: 'Test Laptop',
+      nameEs: 'Laptop de prueba',
+      variantName: '1 ТБ',
+      variantNameEn: '1TB SSD',
+      variantNameEs: '1 TB SSD',
+    });
+    // позиция без варианта — переводы метки варианта null
+    const plain = await createOrder(event, makeInput({ items: [{ id: '12', quantity: 1 }] }));
+    expect(plain.items[0]).toMatchObject({
+      nameEn: 'Test Laptop',
+      nameEs: 'Laptop de prueba',
+      variantName: null,
+      variantNameEn: null,
+      variantNameEs: null,
     });
   });
 

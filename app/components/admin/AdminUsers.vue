@@ -136,7 +136,7 @@ definePageMeta({
 })
 
 const { $notify } = useNuxtApp()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { user: currentUser } = useAuth()
 
 // Данные
@@ -203,7 +203,9 @@ const getUserInitials = (user) => {
 }
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('ru-RU')
+  return new Date(date).toLocaleDateString(
+    locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU',
+  )
 }
 
 const updateUserRole = async (userId, newRole) => {

@@ -192,7 +192,11 @@ const roleText = computed(
   () => ({ admin: t('header.roleAdmin'), manager: t('header.roleManager') })[userRole.value] || t('header.roleUser'),
 )
 const memberSince = computed(() =>
-  currentUser.value?.createdAt ? new Date(currentUser.value.createdAt).toLocaleDateString('ru-RU') : '—',
+  currentUser.value?.createdAt
+    ? new Date(currentUser.value.createdAt).toLocaleDateString(
+        locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU',
+      )
+    : '—',
 )
 
 //- ─── Оформление: та же пара тем, что и в шапке (corporate / business) ───

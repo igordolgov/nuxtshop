@@ -388,6 +388,9 @@
 </style>
 
 <script setup>
+//- Валюта — единый formatMoney из store.config (₽ / $ по конфигу витрины)
+import { formatMoney } from '../../../store.config'
+
 definePageMeta({
   middleware: 'manager-auth'
 })
@@ -598,13 +601,7 @@ const relativeTime = (iso) => {
   })
 }
 
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    minimumFractionDigits: 0
-  }).format(price)
-}
+const formatPrice = (price) => formatMoney(price)
 
 // «31 октября, 14:05» — только на клиенте (после загрузки данных),
 // чтобы сервер и браузер гарантированно не разошлись в тексте

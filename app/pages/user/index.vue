@@ -278,6 +278,9 @@
 </template>
 
 <script setup>
+//- Валюта — единый formatMoney из store.config (₽ / $ по конфигу витрины)
+import { formatMoney } from '../../../store.config'
+
 const { t, locale } = useI18n()
 // Ссылки и переходы страницы сохраняют префикс локали
 const localePath = useLocalePath()
@@ -501,9 +504,7 @@ const completedOrdersCount = computed(() =>
 const favoriteProducts = computed(() => localFavoriteProducts.value)
 const favoritesCount = computed(() => localFavoriteProducts.value.length)
 
-const formatDate = (date) => new Date(date).toLocaleDateString('ru-RU')
-const formatPrice = (price) =>
-  new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(
-    price || 0,
-  )
+const formatDate = (date) =>
+  new Date(date).toLocaleDateString(locale.value === 'en' ? 'en-US' : locale.value === 'es' ? 'es-ES' : 'ru-RU')
+const formatPrice = (price) => formatMoney(price || 0)
 </script>

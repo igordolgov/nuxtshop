@@ -89,6 +89,10 @@ export interface OrderItem {
   id: string;
   slug: string | null;
   name: string;
+  /** Снапшоты переводов названия на момент заказа (i18n): нет поля —
+   *  витрина фолбэчит на русский name (контракт как у товаров). */
+  nameEn?: string;
+  nameEs?: string;
   price: number; // цена за штуку на момент заказа (из KV; у варианта — его цена)
   quantity: number;
   image: string | null;
@@ -98,6 +102,9 @@ export interface OrderItem {
   // клиентского id, отдельного поля вариант-товара в каталоге нет.
   variantId: string | null;
   variantName: string | null;
+  /** Снапшоты переводов метки варианта (тоже могут отсутствовать). */
+  variantNameEn?: string | null;
+  variantNameEs?: string | null;
 }
 
 export interface OrderCustomer {
@@ -271,6 +278,8 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     let price = product.price;
     let stock = product.stockQuantity ?? 0;
     let variantName: string | null = null;
+    let variantNameEn: string | null = null;
+    let variantNameEs: string | null = null;
     let variantImage: string | null = null;
     if (variantId !== null) {
       const variant = product.variants?.find((v) => v.id === variantId);
@@ -283,6 +292,8 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
       price = variant.price ?? product.price;
       stock = variant.stockQuantity ?? product.stockQuantity ?? 0;
       variantName = variant.name;
+      variantNameEn = variant.nameEn ?? null;
+      variantNameEs = variant.nameEs ?? null;
       variantImage = variant.image ?? null;
     }
     if (quantity > stock) {
@@ -295,12 +306,16 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
       id: product.id,
       slug: product.slug ?? null,
       name: product.name,
+      nameEn: product.nameEn,
+      nameEs: product.nameEs,
       price,
       quantity,
       image: variantImage ?? product.image ?? null,
       category: product.categories?.[0] ?? null,
       variantId,
       variantName,
+      variantNameEn,
+      variantNameEs,
     });
   }
 

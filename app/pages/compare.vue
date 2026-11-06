@@ -139,7 +139,10 @@ const hasCategories = computed(() =>
   compareProducts.value.some((p) => Array.isArray(p?.categories) && p.categories.length > 0),
 )
 
-const formatPrice = (price) => new Intl.NumberFormat('ru-RU').format(price || 0)
+// Цена с валютой — единый formatMoney из store.config (₽ / $ по конфигу витрины);
+// раньше тут было голое число в ru-RU группировке без символа валюты
+import { formatMoney } from '../../store.config'
+const formatPrice = (price) => formatMoney(price || 0)
 const formatAverage = (avg) =>
   new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(avg || 0)
 
