@@ -225,13 +225,14 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
   if (stored) {
     // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
     // локальные пути; сидовые варианты доливаем товарам без них;
-    // сидовые характеристики — товарам без spec-листа.
+    // сидовые характеристики и их ES-переводы — товарам без них.
     // KV НЕ перезаписываем (гонка read-modify-write);
     // в KV новые пути/варианты/характеристики доезжают при следующей
     // админ-правке (writeProducts).
     migrateProductImages(stored);
     migrateSeedVariants(stored);
     migrateSeedCharacteristics(stored);
+    migrateSeedCharacteristicsEs(stored);
     return stored;
   }
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
@@ -437,6 +438,39 @@ export function migrateSeedCharacteristics(products: Product[]): void {
     const seedSpecs = seedBySlug.get(product.slug)?.characteristics;
     if (seedSpecs && Object.keys(seedSpecs).length > 0) {
       product.characteristics = { ...seedSpecs };
+    }
+  }
+}
+
+/**
+ * Доливает сидовой ES-перевод spec-листа товарам без него — ТОЛЬКО В
+ * ПАМЯТИ (тот же паттерн, что migrateSeedVariants/migrateSeedCharacteristics:
+ * в KV при чтении не пишем — гонка read-modify-write; в KV данные доезжают
+ * при следующей админ-правке, а витрина работает с merged-видом сразу).
+ *
+ * Зачем: каталог живёт в KV и был засеян ДО появления заполненных
+ * characteristicsEs (переводы ЗНАЧЕНИЙ характеристик; названия строк и так
+ * переводятся словарём specLabels.*) — обновление сида само по себе живой
+ * каталог не видит, и испанская витрина показывала русский фолбэк значений.
+ * Правила слияния:
+ *  · у товара уже есть непустой characteristicsEs → не трогаем (админские
+ *    правки главнее сид-дефолтов);
+ *  · в сиде перевода нет → не трогаем;
+ *  · товар без перевода получает СИДОВЫЙ Record целиком.
+ * Нюанс: «Очистить» в es-вкладке редактора для сидового товара не липнет —
+ * пустой список снова долится из сида; своё собственное заполненное
+ * предупреждение админ вносит как непустой список (он главнее).
+ */
+export function migrateSeedCharacteristicsEs(products: Product[]): void {
+  const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
+  const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
+  for (const product of products) {
+    if (!product || typeof product !== 'object') continue;
+    const existing = product.characteristicsEs;
+    if (existing && Object.keys(existing).length > 0) continue;
+    const seedEs = seedBySlug.get(product.slug)?.characteristicsEs;
+    if (seedEs && Object.keys(seedEs).length > 0) {
+      product.characteristicsEs = { ...seedEs };
     }
   }
 }

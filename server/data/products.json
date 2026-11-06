@@ -73,6 +73,22 @@
       "Защита от воды": "IP68",
       "Вес": "168 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Samsung",
+      "Pantalla": "6,1\" AMOLED, 120 Hz",
+      "Resolución de pantalla": "2340×1080 (FHD+)",
+      "Procesador": "Snapdragon 8 Gen 2 for Galaxy",
+      "Memoria RAM": "8 GB",
+      "Almacenamiento": "256 GB",
+      "Cámara principal": "50 + 12 + 10 MP",
+      "Cámara frontal": "12 MP",
+      "Capacidad de la batería": "3900 mAh",
+      "Sistema operativo": "Android 13 / One UI 5.1",
+      "NFC": "Sí",
+      "Protección contra el agua": "IP68",
+      "Peso": "168 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -142,6 +158,19 @@
       "Время работы от батареи": "до 22 ч",
       "Вес": "2,14 кг",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Apple",
+      "Pantalla": "16,2\" Liquid Retina XDR",
+      "Resolución de pantalla": "3456×2234",
+      "Procesador": "Apple M2 Pro",
+      "Memoria RAM": "16 GB",
+      "Almacenamiento": "512 GB SSD",
+      "Tarjeta gráfica": "Integrada, 19 núcleos de GPU",
+      "Sistema operativo": "macOS",
+      "Duración de la batería": "hasta 22 h",
+      "Peso": "2,14 kg",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -203,6 +232,18 @@
       "Защита от воды": "Нет",
       "Вес": "254 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Sony",
+      "Tipo": "Supraaurales, cerrados, inalámbricos",
+      "Rango de frecuencias": "4 Hz – 40 kHz",
+      "Versión de Bluetooth": "5.0",
+      "Códecs": "SBC, AAC, LDAC",
+      "Cancelación activa de ruido": "Sí",
+      "Tiempo de funcionamiento": "hasta 30 h (con cancelación de ruido)",
+      "Protección contra el agua": "No",
+      "Peso": "254 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -239,6 +280,19 @@
       "Слоты карт": "2 × SD UHS-II",
       "Вес": "680 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Canon",
+      "Tipo": "Cámara mirrorless con óptica intercambiable",
+      "Sensor de imagen": "Full Frame CMOS, 20 MP",
+      "Resolución": "5472×3648",
+      "Vídeo": "4K 60p",
+      "Estabilización": "De 5 ejes, hasta 8 pasos",
+      "Visor": "OLED, 3,69 millones de puntos",
+      "Pantalla": "3\" táctil, orientable",
+      "Ranuras para tarjetas": "2 × SD UHS-II",
+      "Peso": "680 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -297,6 +351,17 @@
       "Материал ремешка": "Силикон",
       "Вес": "31,9 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Apple",
+      "Pantalla": "1,9\" Always-On Retina",
+      "Compatibilidad": "iPhone (iOS 17+)",
+      "Sensores": "Pulso, ECG, SpO2, sensor de temperatura",
+      "Tiempo de funcionamiento": "hasta 18 h",
+      "Protección contra el agua": "50 m (WR50)",
+      "Material de la correa": "Silicona",
+      "Peso": "31,9 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -331,6 +396,17 @@
       "Wi-Fi": "Wi-Fi 6",
       "Вес": "4,5 кг",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Sony",
+      "Plataforma": "PlayStation 5",
+      "Almacenamiento": "825 GB SSD",
+      "Resolución": "hasta 4K 120 Hz",
+      "Puertos": "HDMI 2.1, USB-C, 2 × USB-A",
+      "Unidad óptica": "Sí (UDHD-BD)",
+      "Wi-Fi": "Wi-Fi 6",
+      "Peso": "4,5 kg",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -364,6 +440,16 @@
       "Карманы": "5 карманов",
       "Страна производства": "Бангладеш",
       "Уход за вещью": "Стирка 30°C, вывернуть наизнанку"
+    },
+    "characteristicsEs": {
+      "Material": "Denim",
+      "Composición de la tela": "98 % algodón, 2 % elastano",
+      "Talla": "32/32",
+      "Ajuste": "Media",
+      "Largo": "Completa (L32)",
+      "Bolsillos": "5 bolsillos",
+      "País de origen": "Bangladesh",
+      "Instrucciones de cuidado": "Lavado a 30 °C, del revés"
     }
   },
   {
@@ -396,6 +482,14 @@
       "Сезон": "Демисезон",
       "Страна производства": "Вьетнам",
       "Вес (одного кроссовка)": "320 г"
+    },
+    "characteristicsEs": {
+      "Material del exterior": "Textil, malla",
+      "Material de la suela": "Espuma con cámara de aire Air Max, goma",
+      "Talla": "42 (EU)",
+      "Temporada": "Entretiempo",
+      "País de origen": "Vietnam",
+      "Peso (por zapato)": "320 g"
     }
   },
   {
@@ -428,6 +522,15 @@
       "Крой": "Прямой",
       "Страна производства": "Россия",
       "Уход за вещью": "Стирка 40°C"
+    },
+    "characteristicsEs": {
+      "Material": "Algodón",
+      "Composición de la tela": "100 % algodón peinado",
+      "Densidad de la tela": "180 g/m²",
+      "Talla": "M",
+      "Corte": "Recto",
+      "País de origen": "Rusia",
+      "Instrucciones de cuidado": "Lavado a 40 °C"
     }
   },
   {
@@ -462,6 +565,17 @@
       "Сезон": "Зима",
       "Капюшон": "Утеплённый, съёмный",
       "Страна производства": "Россия"
+    },
+    "characteristicsEs": {
+      "Material": "Nailon",
+      "Composición de la tela": "100 % poliamida",
+      "Relleno": "Plumón natural 90/10",
+      "Rango de temperaturas": "hasta −25 °C",
+      "Resistencia al agua": "Acabado DWR",
+      "Talla": "L",
+      "Temporada": "Invierno",
+      "Capucha": "Acolchado y desmontable",
+      "País de origen": "Rusia"
     }
   },
   {
@@ -498,6 +612,18 @@
       "Питание": "Сеть 220 В",
       "Мытьё в посудомоечной машине": "Нет",
       "Гарантия": "24 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "De'Longhi",
+      "Tipo": "Cafetera automática",
+      "Presión": "15 bares",
+      "Potencia": "1450 W",
+      "Capacidad del depósito de agua": "1,8 l",
+      "Tipo de café": "En grano",
+      "Espumador de leche": "Automático",
+      "Alimentación": "Red 220 V",
+      "Apto para lavavajillas": "No",
+      "Garantía": "24 meses"
     }
   },
   {
@@ -530,6 +656,18 @@
       "Навигация": "LDS-лидар",
       "Управление": "Приложение Mi Home, голосовой помощник",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Xiaomi",
+      "Tipo": "Robot aspirador",
+      "Tipo de limpieza": "En seco y húmedo",
+      "Potencia de succión": "4000 Pa",
+      "Capacidad del depósito de polvo": "0,6 l",
+      "Tiempo de funcionamiento": "hasta 130 min",
+      "Nivel de ruido": "65 dB",
+      "Navegación": "Lídar LDS",
+      "Control": "App Mi Home, asistente de voz",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -559,6 +697,16 @@
       "Материал": "Металл, пластик",
       "Регулировка яркости": "Да, безступенчатая",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Tipo de lámpara": "LED",
+      "Potencia": "8 W",
+      "Flujo luminoso": "500 lm",
+      "Temperatura de color": "3000–6000 K, regulable",
+      "Alimentación": "USB / red 220 V",
+      "Material": "Metal, plástico",
+      "Control de brillo": "Sí, continua",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -593,6 +741,16 @@
       "Жанр": "Программирование",
       "Язык": "Русский",
       "Возрастной рейтинг": "12+"
+    },
+    "characteristicsEs": {
+      "Autor": "Donald Knuth",
+      "Editorial": "Williams",
+      "Año de publicación": "2019",
+      "Número de páginas": "608",
+      "Encuadernación": "Tapa dura",
+      "Género": "Programación",
+      "Idioma": "Ruso",
+      "Clasificación por edad": "12+"
     }
   },
   {
@@ -625,6 +783,15 @@
       "Вилка": "Пружинно-эластомерная, ход 100 мм",
       "Вес": "14,5 кг",
       "Гарантия": "12 мес. на раму"
+    },
+    "characteristicsEs": {
+      "Cuadro": "Aluminio 6061",
+      "Diámetro de las ruedas": "27,5\"",
+      "Número de marchas": "21",
+      "Tipo de frenos": "De disco, mecánicos",
+      "Horquilla": "Muelle-elastómero, recorrido de 100 mm",
+      "Peso": "14,5 kg",
+      "Garantía": "12 meses en el cuadro"
     }
   },
   {
@@ -659,6 +826,18 @@
       "GPS": "Мультидиапазонный",
       "Вес": "73 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Garmin",
+      "Pantalla": "1,3\" transflectiva, legible al sol",
+      "Compatibilidad": "Android / iOS",
+      "Tiempo de funcionamiento": "hasta 18 días (modo reloj)",
+      "Protección contra el agua": "10 ATM",
+      "Material del cuerpo": "Acero inoxidable",
+      "Material de la correa": "Silicona",
+      "GPS": "Multibanda",
+      "Peso": "73 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -695,6 +874,17 @@
       "Длина кабеля": "2,1 м",
       "Вес": "82 г",
       "Гарантия": "24 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Razer",
+      "Tipo": "Ratón gaming",
+      "Sensor": "Óptico, 6400 dpi",
+      "Número de botones": "5",
+      "Retroiluminación": "Razer Chroma RGB",
+      "Conexión": "USB por cable",
+      "Longitud del cable": "2,1 m",
+      "Peso": "82 g",
+      "Garantía": "24 meses"
     }
   },
   {
@@ -730,6 +920,17 @@
       "Подключение": "Проводное USB",
       "Длина кабеля": "1,8 м",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Logitech",
+      "Tipo": "Teclado mecánico",
+      "Tipo de interruptores": "Táctiles",
+      "Factor de forma": "De tamaño completo",
+      "Distribución": "US",
+      "Retroiluminación": "RGB, regulable",
+      "Conexión": "USB por cable",
+      "Longitud del cable": "1,8 m",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -766,6 +967,18 @@
       "Порты": "2 × HDMI, DisplayPort, USB-хаб",
       "Регулировка": "Высота, наклон, поворот",
       "Гарантия": "36 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Dell",
+      "Diagonal de pantalla": "27\"",
+      "Resolución de pantalla": "3840×2160 (4K UHD)",
+      "Tipo de sensor": "IPS",
+      "Frecuencia de actualización": "60 Hz",
+      "Tiempo de respuesta": "5 ms",
+      "Brillo": "350 cd/m²",
+      "Puertos": "2 × HDMI, DisplayPort, hub USB",
+      "Ajuste": "Altura, inclinación, giro",
+      "Garantía": "36 meses"
     }
   },
   {
@@ -803,6 +1016,18 @@
       "Размеры": "117×80×14,8 мм",
       "Вес": "200 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Seagate",
+      "Tipo": "Disco duro externo (HDD)",
+      "Capacidad": "2 TB",
+      "Interfaz": "USB 3.0",
+      "Velocidad de transferencia": "hasta 120 MB/s",
+      "Alimentación": "Puerto USB",
+      "Material del cuerpo": "Plástico",
+      "Dimensiones": "117×80×14,8 mm",
+      "Peso": "200 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -836,6 +1061,16 @@
       "Автоотключение": "Да",
       "Индикация включения": "Да",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Bosch",
+      "Capacidad": "1,7 l",
+      "Potencia": "2400 W",
+      "Material del cuerpo": "Acero inoxidable",
+      "Filtro antical": "Extraíble",
+      "Apagado automático": "Sí",
+      "Indicador de encendido": "Sí",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -868,6 +1103,15 @@
       "Насадки": "Венчик, измельчитель, чаша-измельчитель",
       "Материал погружной части": "Нержавеющая сталь",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Braun",
+      "Tipo": "De inmersión",
+      "Potencia": "1000 W",
+      "Número de marchas": "2 + modo turbo",
+      "Boquillas": "Batidoras, picadora y vaso picador",
+      "Material de la parte sumergible": "Acero inoxidable",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -898,6 +1142,16 @@
       "Совместимость с индукцией": "Да",
       "Мытьё в посудомоечной машине": "Да",
       "Цвет": "Чёрный"
+    },
+    "characteristicsEs": {
+      "Marca": "Tefal",
+      "Tipo": "Set de ollas",
+      "Elementos incluidos": "8",
+      "Material": "Aluminio con recubrimiento antiadherente",
+      "Tapas": "Vidrio con sensor de temperatura",
+      "Compatible con inducción": "Sí",
+      "Apto para lavavajillas": "Sí",
+      "Color": "Negro"
     }
   },
   {
@@ -931,6 +1185,16 @@
       "Размеры (В×Ш×Г)": "125–135 × 68 × 70 см",
       "Ролики": "Для любых покрытий",
       "Гарантия": "24 мес."
+    },
+    "characteristicsEs": {
+      "Material": "Malla transpirable, tela",
+      "Carga máxima": "120 kg",
+      "Ajustes": "Altura, inclinación del respaldo, reposacabezas y soporte lumbar",
+      "Reposabrazos": "Ajuste 3D",
+      "Cruz": "Metal",
+      "Dimensiones (Al×An×Pr)": "125–135 × 68 × 70 cm",
+      "Ruedas": "Para cualquier tipo de suelo",
+      "Garantía": "24 meses"
     }
   },
   {
@@ -967,6 +1231,18 @@
       "Формат 2.1": "Да (твитер + вуфер)",
       "Вес": "550 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "JBL",
+      "Tipo": "Altavoz portátil",
+      "Potencia": "30 W",
+      "Rango de frecuencias": "63 Hz – 20 kHz",
+      "Versión de Bluetooth": "5.1",
+      "Tiempo de funcionamiento": "hasta 12 h",
+      "Protección contra el agua": "IP67",
+      "Formato 2.1": "Sí (tweeter + woofer)",
+      "Peso": "550 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1002,6 +1278,18 @@
       "Материал ремешка": "Силикон",
       "Вес": "27 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Xiaomi",
+      "Pantalla": "1,62\" AMOLED",
+      "Compatibilidad": "Android / iOS",
+      "Tiempo de funcionamiento": "hasta 16 días",
+      "Protección contra el agua": "5 ATM",
+      "Sensores": "Pulso, SpO2, acelerómetro",
+      "Modos de entrenamiento": "150+",
+      "Material de la correa": "Silicona",
+      "Peso": "27 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1036,6 +1324,17 @@
       "Режимы": "ТВ / настольный / портативный",
       "Вес": "398 г (с контроллерами Joy-Con)",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Nintendo",
+      "Plataforma": "Nintendo Switch",
+      "Almacenamiento": "32 GB",
+      "Resolución": "720p (portátil) / 1080p (TV)",
+      "Pantalla": "6,2\" LCD, táctil",
+      "Puertos": "USB-C, HDMI",
+      "Modos": "TV / sobremesa / portátil",
+      "Peso": "398 g (con los mandos Joy-Con)",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1072,6 +1371,18 @@
       "Операционная система": "iPadOS",
       "Вес": "461 г",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Apple",
+      "Pantalla": "10,9\" Liquid Retina",
+      "Resolución de pantalla": "2360×1640",
+      "Procesador": "Apple M1",
+      "Memoria RAM": "8 GB",
+      "Almacenamiento": "64 GB",
+      "Capacidad de la batería": "28,93 Wh",
+      "Sistema operativo": "iPadOS",
+      "Peso": "461 g",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1106,6 +1417,18 @@
       "Тормоза": "E-ABS + дисковый задний",
       "Вес": "14,2 кг",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Xiaomi",
+      "Potencia": "600 W (pico)",
+      "Velocidad máxima": "25 km/h",
+      "Autonomía": "hasta 45 km",
+      "Tiempo de carga": "~8,5 h",
+      "Carga máxima": "120 kg",
+      "Diámetro de las ruedas": "8,5\"",
+      "Frenos": "E-ABS + trasero de disco",
+      "Peso": "14,2 kg",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1140,6 +1463,17 @@
       "Питание": "Сеть 220 В",
       "Материал": "Ткань, пластик",
       "Гарантия": "12 мес."
+    },
+    "characteristicsEs": {
+      "Marca": "Yandex",
+      "Tipo": "Altavoz inteligente",
+      "Potencia": "50 W",
+      "Control": "Asistente de voz Alisa",
+      "Protocolos": "Wi-Fi, Bluetooth",
+      "Puertos": "HDMI (modo TV), AUX",
+      "Alimentación": "Red 220 V",
+      "Material": "Tela, plástico",
+      "Garantía": "12 meses"
     }
   },
   {
@@ -1174,6 +1508,17 @@
     "inStock": true,
     "stockQuantity": 50,
     "createdAt": "2026-10-14T18:35:16.591Z",
-    "updatedAt": "2026-10-15T20:30:00.803Z"
+    "updatedAt": "2026-10-15T20:30:00.803Z",
+    "characteristicsEs": {
+      "Marca": "Nintendo",
+      "Plataforma": "Nintendo Switch 2",
+      "Pantalla": "7,9\" LCD 1080p, 120 Hz",
+      "Resolución": "hasta 4K 60 Hz (en la base)",
+      "Almacenamiento": "256 GB",
+      "Puertos": "USB-C, HDMI 2.1",
+      "Compatibilidad con versiones anteriores": "Juegos de Nintendo Switch",
+      "Peso": "534 g",
+      "Garantía": "12 meses"
+    }
   }
 ]
