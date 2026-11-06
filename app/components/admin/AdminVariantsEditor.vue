@@ -65,7 +65,7 @@
           :value="variant.price"
           min="0"
           step="0.01"
-          :placeholder="$t('admin.variants.pricePlaceholder')"
+          :placeholder="$t('admin.variants.pricePlaceholder', { cur: currencySymbol() })"
           :aria-label="$t('admin.variants.priceAria', { n: index + 1 })"
           :disabled="disabled"
           @input="updateVariant(index, 'price', $event.target.value)"
@@ -150,6 +150,8 @@
 // в число делает модалка при сабмите (как с базовой ценой товара).
 // ============================================
 const { resizeToWebp } = useImageResize()
+// Валюта витрины — для плейсхолдеров цен (₽ / $ из store.config)
+const { currencySymbol } = useProductUtils()
 const props = defineProps({
   // Название оси: { ru: 'Цвет', en: 'Color', es: 'Color' }
   axis: { type: Object, default: () => ({ ru: '', en: '', es: '' }) },

@@ -12,19 +12,19 @@
       .space-y-2
         .flex.justify-between.text-sm
           span(class="text-base-content/65") {{ $t('cart.items', { n: totalItems }) }}
-          span.font-medium {{ formatPrice(subtotal) }} ₽
+          span.font-medium {{ formatMoney(subtotal) }}
 
         .flex.justify-between.text-sm
           span(class="text-base-content/65") {{ $t('cart.delivery') }}
-          span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) + ' ₽' }}
+          span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatMoney(deliveryPrice) }}
 
         .flex.justify-between.text-sm(v-if="discount > 0")
           span(class="text-base-content/65") {{ $t('cart.discount') }}
-          span.font-medium.text-error -{{ formatPrice(discount) }} ₽
+          span.font-medium.text-error -{{ formatMoney(discount) }}
 
         .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
           span.text-base.font-semibold {{ $t('cart.total') }}
-          span.text-2xl.font-bold.text-base-content {{ formatPrice(total) }} ₽
+          span.text-2xl.font-bold.text-base-content {{ formatMoney(total) }}
 
       .form-control
         .join.w-full
@@ -61,7 +61,7 @@
             )
             .flex-grow
               .font-medium.text-sm {{ $t('cart.courier') }}
-              .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: courierPrice === 0 ? $t('cart.free').toLowerCase() : formatPrice(courierPrice) + ' ₽' }) }}
+              .text-xs(class="text-base-content/65") {{ $t('cart.courierEta', { price: courierPrice === 0 ? $t('cart.free').toLowerCase() : formatMoney(courierPrice) }) }}
 
           label.option-tile(
             :class="{ 'option-tile-active': selectedDelivery === 'pickup' }"
@@ -141,7 +141,7 @@ const {
   deliveryMethod,
   setDeliveryMethod,
 } = useCart()
-const { formatPrice } = useProductUtils()
+const { formatMoney, formatPrice } = useProductUtils()
 
 // Локальный ввод промокода (применение — на странице)
 const promoCode = defineModel('promoCode', { type: String, default: '' })

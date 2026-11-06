@@ -92,7 +92,7 @@
       template(v-if="!isProcessing")
         span.text-base
           template(v-if="hasOutOfStockItems") {{ $t('cart.qtyProblems') }}
-          template(v-else) {{ $t('cart.checkoutBtnPrice', { price: formatPrice(total) + ' ₽' }) }}
+          template(v-else) {{ $t('cart.checkoutBtnPrice', { price: formatMoney(total) }) }}
       span.loading.loading-spinner(v-else)
 
   //- Десктопный футер (аудит F16); на мобиле — плавающая кнопка оформления
@@ -254,7 +254,7 @@ const {
   hasOutOfStockItems,
   proceedToCheckout: cartCheckout,
 } = useCart()
-const { formatPrice } = useProductUtils()
+const { formatMoney, formatPrice } = useProductUtils()
 
 //- ============================================
 //- Состояние
@@ -265,8 +265,8 @@ const isProcessing = ref(false)
 //- применение и уведомления
 const promoCode = ref('')
 
-// formatPrice — единый из useProductUtils (без валюты; ₽ добавляется
-// в шаблоне — аудит F13)
+// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
+// formatMoney — аудит F13)
 
 const goCatalog = () => navigateTo(localePath('/'))
 

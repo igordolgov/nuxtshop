@@ -140,7 +140,7 @@
           path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
         span
           span(v-if="isInCart(product.id, selectedVariantId)") {{ $t('product.alreadyInCart') }}
-          span(v-else-if="selectedStock.inStock") {{ $t('product.addWithPrice', { price: formatPrice(variantPrice(product, selectedVariant)) + ' ₽' }) }}
+          span(v-else-if="selectedStock.inStock") {{ $t('product.addWithPrice', { price: formatMoney(variantPrice(product, selectedVariant)) }) }}
           span(v-else) {{ $t('product.soldOut') }}
 
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
@@ -313,7 +313,7 @@ const isInCart = (productId, variantId = null) => {
 
 // formatPrice — единый из useProductUtils; в строку кнопки «В корзину»
 // валюта добавляется рядом с параметром локали (аудит F13)
-const { formatPrice } = useProductUtils()
+const { formatMoney, formatPrice } = useProductUtils()
 
 const toggleFavorite = () => {
   if (!product.value) return

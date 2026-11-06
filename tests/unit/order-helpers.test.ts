@@ -2,6 +2,9 @@
 // storage мокируется на Map в памяти: заказы и каталог живут как в KV,
 // но безWorkers-окружения. Серверная логика — реальная.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+// Способы оплаты — из конфига витрины (тест не ломается при смене
+// набора методов: кубинская копия включает transfer вместо card)
+import { STORE_PAYMENT_METHODS, type StorePaymentMethod } from '../../store.config';
 
 // ─── Мок KV: data:orders / data:products в обычной Map ──────────────
 const kvStore = new Map<string, unknown>();
@@ -51,7 +54,7 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
   return {
     items: [{ id: '1', quantity: 1 }],
     deliveryMethod: 'courier',
-    paymentMethod: 'card',
+    paymentMethod: STORE_PAYMENT_METHODS[0] as StorePaymentMethod,
     customer: {
       name: 'Иван Петров',
       email: 'ivan@example.com',
@@ -222,6 +225,17 @@ describe('createOrder — корзина и склад', () => {
       statusCode: 400,
     });
     await expect(createOrder(event, makeInput({ paymentMethod: 'крипта' }))).rejects.toMatchObject({
+      statusCode: 400,
+    });
+  });
+
+  it('валидный идентификатор способа оплаты вне store.config — 400', async () => {
+    // Сервер валидирует по STORE_PAYMENT_METHODS: известный метод, выключенный
+    // в конфиге (card в кубинской копии, transfer в российской), тоже 400
+    const ALL: StorePaymentMethod[] = ['card', 'cash', 'transfer'];
+    const disabled = ALL.find((m) => !STORE_PAYMENT_METHODS.includes(m));
+    if (!disabled) return; // в конфиге включены все — проверять нечего
+    await expect(createOrder(event, makeInput({ paymentMethod: disabled }))).rejects.toMatchObject({
       statusCode: 400,
     });
   });

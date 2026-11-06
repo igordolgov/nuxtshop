@@ -71,7 +71,7 @@
         )
     
     .text-sm.text-center.mt-3(class="text-base-content/60")
-      | {{ $t('catalog.rangeLine', { min: formatPrice(minPrice), max: formatPrice(maxPrice) }) }}
+      | {{ $t('catalog.rangeLine', { min: formatMoney(minPrice), max: formatMoney(maxPrice) }) }}
 
   .price-slider.px-3(v-else)
     .slider-wrapper.relative.pt-4.pb-6.px-1(
@@ -106,14 +106,16 @@
     .slider-values.flex.justify-between.text-sm.mt-1.mb-1
       .min-value.text-base-content
         span.mr-1(class="text-base-content/70") {{ $t('catalog.from') }}
-        span {{ formatPrice(roundToHundredForDisplay(sliderMin)) }} ₽
+        span {{ formatMoney(roundToHundredForDisplay(sliderMin)) }}
       .max-value.text-base-content
         span.mr-1(class="text-base-content/70") {{ $t('catalog.to') }}
-        span {{ formatPrice(roundToHundredForDisplay(sliderMax)) }} ₽
+        span {{ formatMoney(roundToHundredForDisplay(sliderMax)) }}
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+// Валюта витрины — из store.config (₽ / $, числовой формат)
+import { CURRENCY_NUMBER_LOCALE, STORE_CURRENCY, formatMoney as formatMoneyFromConfig } from '../../../store.config'
 
 const props = defineProps({
   minPrice: { 
@@ -362,11 +364,14 @@ const handleInputMax = (e) => {
   inputMaxValue.value = e.target.value
 }
 
-// Форматирование цены
+// Форматирование цены (валюта из store.config — ₽ / $)
 const formatPrice = (val) => {
   if (!Number.isFinite(val)) return '—'
-  return new Intl.NumberFormat('ru-RU').format(val)
+  return new Intl.NumberFormat(CURRENCY_NUMBER_LOCALE[STORE_CURRENCY] ?? 'ru-RU').format(val)
 }
+
+// Цена с валютой (₽ после суммы / $ перед — единый формат store.config)
+const formatMoney = (val) => (Number.isFinite(val) ? formatMoneyFromConfig(val) : '—')
 
 // Применение изменений из инпутов
 const applyInputs = () => {

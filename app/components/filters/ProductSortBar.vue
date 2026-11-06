@@ -68,8 +68,8 @@ const emit = defineEmits(['toggle-filters', 'remove-filter', 'reset-all', 'updat
 // Локализованные подписи категорийных чипов (значения фильтров — сырые)
 const { categoryLabel } = useCategoryLabels()
 
-const formatRub = (n) =>
-  new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n ?? 0)
+// Цена с валютой — единый формат из useProductUtils/store.config
+const { formatMoney } = useProductUtils()
 
 //- Нормализация: поддерживаем и {field, order}, и legacy {sortBy, sortOrder}
 const normalizedSort = computed(() => {
@@ -119,11 +119,11 @@ const activeChips = computed(() => {
   const min = f.priceRange?.min
   const max = f.priceRange?.max
   if (min !== null && min !== undefined && max !== null && max !== undefined) {
-    chips.push({ key: 'price', label: `${formatRub(min)} – ${formatRub(max)} ₽` })
+    chips.push({ key: 'price', label: `${formatMoney(min)} – ${formatMoney(max)}` })
   } else if (min !== null && min !== undefined) {
-    chips.push({ key: 'price', label: `${t('catalog.from')} ${formatRub(min)} ₽` })
+    chips.push({ key: 'price', label: `${t('catalog.from')} ${formatMoney(min)}` })
   } else if (max !== null && max !== undefined) {
-    chips.push({ key: 'price', label: `${t('catalog.to')} ${formatRub(max)} ₽` })
+    chips.push({ key: 'price', label: `${t('catalog.to')} ${formatMoney(max)}` })
   }
 
   if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: t('product.inStock') })

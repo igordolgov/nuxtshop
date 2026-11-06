@@ -61,11 +61,11 @@
           .flex.flex-wrap.items-baseline(class="gap-x-2 gap-y-0.5")
             //- Цена на мобильном мельче (text-2xl), чтобы плашки наличия
             //- и остатка справа гарантированно умещались в одну строку
-            .font-bold.text-base-content(class="text-2xl sm:text-3xl") {{ formatPrice(currentPrice) }} ₽
+            .font-bold.text-base-content(class="text-2xl sm:text-3xl") {{ formatMoney(currentPrice) }}
             span.line-through(
               v-if="baseDiscount",
               class="text-base-content/45 text-lg sm:text-xl"
-            ) {{ formatPrice(product.oldPrice) }} ₽
+            ) {{ formatMoney(product.oldPrice) }}
             //- Плашка скидки: единый вид с ProductCardGrid/ProductCardList
             span.shrink-0(
               v-if="baseDiscount",
@@ -151,7 +151,7 @@
               span(v-if="currentInCart") {{ $t('product.alreadyInCart') }}
               span(v-else-if="currentStock.inStock") {{ $t('product.addToCart') }}
               span(v-else) {{ $t('product.soldOut') }}
-            span.font-normal.opacity-80(v-if="!currentInCart && currentStock.inStock") · {{ formatPrice(currentPrice) }} ₽
+            span.font-normal.opacity-80(v-if="!currentInCart && currentStock.inStock") · {{ formatMoney(currentPrice) }}
 
       //- Характеристики: spec-лист из админки + варианты + служебные строки.
       //- Открыт по умолчанию, когда spec-лист заполнен (иначе раздел из 4
@@ -226,8 +226,8 @@ const emit = defineEmits(['toggle-favorite', 'add-to-cart', 'update:selectedVari
 void emit
 
 const { $notify } = useNuxtApp()
-// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне, аудит F13)
-const { formatPrice } = useProductUtils()
+// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет formatMoney, аудит F13)
+const { formatMoney, formatPrice } = useProductUtils()
 
 //- ── Варианты (цвет/память/размер) ─────────────────────────────────────
 // Чистые хелперы из utils/productVariants.js; cartItems — прямой доступ

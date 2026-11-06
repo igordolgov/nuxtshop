@@ -100,11 +100,11 @@
       )
         span.font-semibold.text-base-content(
           class="text-base lg:text-lg"
-        ) {{ formatPrice(product.price) }} ₽
+        ) {{ formatMoney(product.price) }}
         span.text-xs.line-through.shrink-0(
           v-if="hasDiscount(product)",
           class="text-base-content/45"
-        ) {{ formatPrice(product.oldPrice) }} ₽
+        ) {{ formatMoney(product.oldPrice) }}
         //- Плашка скидки: умеренное скругление (не pill), насыщенный
         //- тёмно-красный фон (одинаковый на всех темах — без
         //- daisyUI-семантики), белый текст bold (не extrabold), компактные
@@ -283,10 +283,9 @@ const hasSearchHighlight = computed(() => {
 //- ============================================
 //- Методы
 //- ============================================
-// formatPrice — единый из useProductUtils (без валюты, шаблон сам
-// добавляет «₽» — раньше здесь была вторая реализация, риск «₽ ₽»,
-// аудит F13)
-const { formatPrice } = useProductUtils()
+// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
+// formatMoney — раньше здесь была вторая реализация, риск «₽ ₽», аудит F13)
+const { formatMoney, formatPrice } = useProductUtils()
 
 const highlightText = (text, query) => {
   if (!text || !query) return text

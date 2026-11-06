@@ -78,7 +78,7 @@
                   | {{ truncate(loc(product).description, 50) }}
 
               td.text-right
-                .font-semibold {{ formatPrice(product.price) }}₽
+                .font-semibold {{ formatMoney(product.price) }}
 
               td
                 .flex.flex-wrap(class="gap-0.5")
@@ -144,7 +144,7 @@
                   prefetch
                 )
                 .flex.items-center.gap-2.mt-1
-                  span.font-bold.text-sm {{ formatPrice(product.price) }}₽
+                  span.font-bold.text-sm {{ formatMoney(product.price) }}
                   .badge.badge-sm.font-medium(
                     :class="product.inStock ? 'badge-success' : 'badge-error'"
                   )
@@ -204,9 +204,8 @@ const someSelected = computed(() =>
   props.products.some((p) => selectedSet.value.has(String(p.id)))
 )
 
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('ru-RU').format(price || 0)
-}
+// Цена с валютой — единый formatMoney из store.config (₽ / $ по конфигу витрины)
+import { formatMoney } from '../../../store.config'
 
 const getProductUrl = (product) => localePath(`/product/${product.slug || product.id}`)
 

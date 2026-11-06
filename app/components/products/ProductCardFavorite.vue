@@ -74,7 +74,7 @@
       .text-base.font-bold.text-base-content.transition-all.duration-300(
         v-if="product.inStock"
         class="lg:text-lg group-hover:scale-105"
-      ) {{ formatPrice(product.price) }} ₽
+      ) {{ formatMoney(product.price) }}
       .text-md.text-error.transition-all.duration-300(
         v-else
         class="group-hover:scale-105"
@@ -97,9 +97,9 @@ defineEmits(['remove-favorite', 'add-to-cart'])
 const currentImage = ref('')
 const imageLoading = ref(true)
 
-// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне,
-// раньше здесь была своя реализация с валютой — риск «₽ ₽», аудит F13)
-const { formatPrice } = useProductUtils()
+// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
+// formatMoney — раньше здесь была своя реализация, риск «₽ ₽», аудит F13)
+const { formatMoney, formatPrice } = useProductUtils()
 
 const getValidImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined') return '/images/placeholder.jpg'

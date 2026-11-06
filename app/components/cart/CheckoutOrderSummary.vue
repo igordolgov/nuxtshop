@@ -26,25 +26,25 @@
             .font-medium.truncate(:class="compact ? 'text-xs' : 'text-sm lg:text-md'") {{ displayName(item) }}
             .text-xs.truncate(class="text-base-content/60" v-if="!compact && item?.variantName") {{ item.variantName }}
             .flex.items-center.justify-between.mt-1
-              span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatPrice(item?.currentPrice) }} ₽ × {{ item?.quantity }}
-              .font-bold.text-xs {{ formatPrice(item?.currentPrice * item?.quantity) }} ₽
+              span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatMoney(item?.currentPrice) }} × {{ item?.quantity }}
+              .font-bold.text-xs {{ formatMoney(item?.currentPrice * item?.quantity) }}
     .text-xs.text-center.py-4(v-else class="text-base-content/70") {{ $t('cart.empty') }}
 
     .mt-2.pt-2.border-t.border-base-300
       .space-y-1
         .flex.justify-between.text-xs
           span {{ $t('cart.items', { n: totalItems || 0 }) }}
-          span.font-medium {{ formatPrice(subtotal || 0) }} ₽
+          span.font-medium {{ formatMoney(subtotal || 0) }}
         .flex.justify-between.text-xs(v-if="discount > 0")
           span {{ $t('cart.discount') }}
-          span.text-error.font-medium -{{ formatPrice(discount) }} ₽
+          span.text-error.font-medium -{{ formatMoney(discount) }}
         .flex.justify-between.text-xs
           span {{ $t('cart.delivery') }}
-          span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatPrice(deliveryPrice) + ' ₽' }}
+          span.font-medium {{ deliveryPrice === 0 ? $t('cart.free') : formatMoney(deliveryPrice) }}
         .divider.my-1
         .flex.justify-between.font-bold.text-primary(:class="compact ? 'text-sm' : 'text-base'")
           span {{ $t('cart.total') }}
-          span {{ formatPrice(finalTotal) }} ₽
+          span {{ formatMoney(finalTotal) }}
 </template>
 
 <script setup>
@@ -58,7 +58,7 @@ import { parseCartLineId } from '@/utils/productVariants'
 // useCart/useAppState/useProductUtils/useLocalizedProduct — автоимпорт Nuxt;
 // состояние корзины общее со страницей, поэтому сводка живёт сама
 const { cartItems, subtotal, discount, totalItems, deliveryPrice } = useCart()
-const { getSafeImage, formatPrice } = useProductUtils()
+const { formatMoney, getSafeImage, formatPrice } = useProductUtils()
 
 // Локализация названий в оформлении заказа: показываем актуальное имя
 // из каталога в текущей локали (снапшот корзины хранит имя на языке

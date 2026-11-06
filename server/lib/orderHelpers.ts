@@ -18,6 +18,14 @@ import {
   calcDiscount,
   type PromoCode,
 } from './promoHelpers';
+// Конфиг витрины: способы оплаты и цифры доставки — один источник на клиент
+// (app/utils/deliveryPrice.ts) и сервер (см. store.config.ts)
+import {
+  DELIVERY_PRICE_COURIER,
+  DELIVERY_PRICE_POST,
+  FREE_DELIVERY_FROM,
+  STORE_PAYMENT_METHODS,
+} from '../../store.config';
 
 const ORDERS_KEY = 'data:orders';
 
@@ -66,16 +74,16 @@ export function canCustomerCancel(order: Order, userId: string): boolean {
 // цены/названия/наличие берутся из KV товаров.
 // Промокоды живут в KV data:promocodes (админка /admin/promocodes);
 // скидка валидируется и считается сервером, клиентский subtotal — только превью.
-// ⚙️ НАСТРОЙКА: стоимость доставки. Курьер — бесплатно от порога,
-// почта — всегда платно, самовывоз — всегда 0 (согласовано с формой checkout)
-const FREE_DELIVERY_FROM = 2000;
-const DELIVERY_PRICE_COURIER = 300;
-const DELIVERY_PRICE_POST = 200;
+// ⚙️ НАСТРОЙКА: цифры доставки — в store.config.ts (FREE_DELIVERY_FROM /
+// DELIVERY_PRICE_*; символ валюты в цифры НЕ входит — выводит formatMoney).
+// Курьер — бесплатно от порога, почта — всегда платно, самовывоз — всегда 0
+// (согласовано с формой checkout через app/utils/deliveryPrice.ts)
 
 // ─── Типы ────────────────────────────────────────────────────────────
 
 export type DeliveryMethod = 'courier' | 'pickup' | 'post';
-export type PaymentMethod = 'card' | 'cash';
+// Способы оплаты: список активных задаётся в store.config.ts (STORE_PAYMENT_METHODS)
+export type PaymentMethod = 'card' | 'cash' | 'transfer';
 
 export interface OrderItem {
   id: string;
@@ -237,8 +245,9 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   if (!deliveryMethod) {
     throw createError({ statusCode: 400, message: 'Выберите способ доставки' });
   }
-  const paymentMethod: PaymentMethod | null = (['card', 'cash'] as const).includes(
-    input.paymentMethod as PaymentMethod,
+  // Способы оплаты — только включённые в store.config (STORE_PAYMENT_METHODS)
+  const paymentMethod: PaymentMethod | null = (STORE_PAYMENT_METHODS as readonly string[]).includes(
+    input.paymentMethod as string,
   )
     ? (input.paymentMethod as PaymentMethod)
     : null;

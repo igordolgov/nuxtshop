@@ -2,6 +2,9 @@
 // Файл самодостаточный: свой мок KV и свои фикстуры — не зависит от структуры
 // других тест-файлов, применяется отдельным патчем без привязки к их строкам.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+// Способы оплаты — из конфига витрины (тест не ломается при смене
+// набора методов: кубинская копия включает transfer вместо card)
+import { STORE_PAYMENT_METHODS, type StorePaymentMethod } from '../../store.config';
 
 // ─── Мок KV: data:orders / data:products в обычной Map ──────────────
 const kvStore = new Map<string, unknown>();
@@ -48,7 +51,7 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
   return {
     items: [{ id: '1', quantity: 1 }],
     deliveryMethod: 'courier',
-    paymentMethod: 'card',
+    paymentMethod: STORE_PAYMENT_METHODS[0] as StorePaymentMethod,
     customer: {
       name: 'Иван Петров',
       email: 'ivan@example.com',

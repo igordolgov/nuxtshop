@@ -5,8 +5,27 @@
 
 import tailwindcss from '@tailwindcss/vite';
 import removeConsole from 'vite-plugin-remove-console';
+// Конфигурация витрины (валюта, локали, имя магазина, домен) — один файл на
+// обе инсталляции (RU / кубинская копия), см. store.config.ts
+import { STORE_DEFAULT_LOCALE, STORE_LOCALES, STORE_NAME, STORE_SITE_URL } from './store.config';
 
 const isProd = process.env.NODE_ENV === 'production';
+
+// Префиксные routeRules для не-дефолтных локалей: routeRules матчятся по
+// литеральному префиксу пути, '/product/**' НЕ покрывает '/es/product/**' —
+// нужны дубли. Генерация из store.config вместо хардкода /en и /es:
+// при смене STORE_DEFAULT_LOCALE (кубинская копия → 'es') набор префиксов
+// переворачивается сам, без правки этого файла.
+const HTML_CACHE_RULE = { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } } as const;
+const localeRouteRules = Object.fromEntries(
+  STORE_LOCALES.filter((code) => code !== STORE_DEFAULT_LOCALE).flatMap((code) => [
+    [`/${code}`, HTML_CACHE_RULE],
+    [`/${code}/news`, HTML_CACHE_RULE],
+    [`/${code}/about`, HTML_CACHE_RULE],
+    [`/${code}/contacts`, HTML_CACHE_RULE],
+    [`/${code}/product/**`, HTML_CACHE_RULE],
+  ]),
+);
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -123,19 +142,9 @@ export default defineNuxtConfig({
       // обновлением: robots — сутки, sitemap — час
       '/robots.txt': { swr: 86400 },
       '/sitemap.xml': { swr: 3600 },
-      // Локализованные префиксы /en и /es повторяют правила исходных
-      // маршрутов: routeRules матчятся по литеральному префиксу пути,
-      // '/product/**' НЕ покрывает '/en/product/**' — нужны дубли.
-      '/en': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/es': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/en/news': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/es/news': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/en/about': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/es/about': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/en/contacts': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/es/contacts': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/en/product/**': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
-      '/es/product/**': { headers: { 'Cache-Control': 'max-age=0, must-revalidate' } },
+      // Локализованные префиксы повторяют правила исходных маршрутов —
+      // генерируются из store.config (см. localeRouteRules выше)
+      ...localeRouteRules,
     },
   },
 
@@ -151,7 +160,8 @@ export default defineNuxtConfig({
   ],
 
   // Локализация витрины: ru (по умолчанию, без префикса), en (/en), es (/es).
-  // Стратегия prefix_except_default: язык ВСЕГДА виден в URL (кроме ru) —
+  // Дефолт — из store.config (кубинская копия ставит 'es' там, не здесь).
+  // Стратегия prefix_except_default: язык ВСЕГДА виден в URL (кроме дефолтного) —
   // детерминированный SSR без hydration mismatch (в отличие от cookie-детекта).
   // detectBrowserLanguage отключён сознательно: авто-редирект по языку браузера
   // ломал бы swr-кэш главной и SEO (один URL — один язык).
@@ -159,10 +169,10 @@ export default defineNuxtConfig({
   // RU-версия без префикса, EN/ES — через переключатель в шапке. Персонал
   // может работать на любом из трёх языков витрины.
   i18n: {
-    defaultLocale: 'ru',
+    defaultLocale: STORE_DEFAULT_LOCALE,
     strategy: 'prefix_except_default',
-    // baseUrl для абсолютных hreflang/alternate-ссылок (SEO)
-    baseUrl: 'https://nuxt-shop.igordolgov1972.workers.dev',
+    // baseUrl для абсолютных hreflang/alternate-ссылок (SEO) — из store.config
+    baseUrl: STORE_SITE_URL,
     locales: [
       { code: 'ru', language: 'ru-RU', name: 'Русский', file: 'ru.json' },
       { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
@@ -194,8 +204,8 @@ export default defineNuxtConfig({
     client: { installPrompt: true, registerPlugin: true },
     strategies: 'generateSW',
     manifest: {
-      name: 'Магазин',
-      short_name: 'Магазин',
+      name: STORE_NAME,
+      short_name: STORE_NAME,
       description: 'Интернет-магазин с оффлайн поддержкой',
       theme_color: '#ffffff',
       background_color: '#ffffff',
@@ -322,7 +332,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#1e293b' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Магазин' },
+        { name: 'apple-mobile-web-app-title', content: STORE_NAME },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },

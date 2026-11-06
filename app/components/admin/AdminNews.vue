@@ -212,7 +212,7 @@
           .flex.flex-col.gap-2(class="sm:flex-row")
             select.select.select-bordered.rounded-xl.w-full(v-model="pickedProductId")
               option(value="" disabled) {{ $t('admin.news.selectProduct') }}
-              option(v-for="p in availableProducts" :key="p.id" :value="p.id") {{ p.name }} · {{ formatPrice(p.price) }} ₽
+              option(v-for="p in availableProducts" :key="p.id" :value="p.id") {{ p.name }} · {{ formatMoney(p.price) }}
             button.btn.btn-outline.btn-sm.rounded-xl(
               type="button"
               :disabled="!pickedProductId"
@@ -242,7 +242,7 @@ import { NEWS_CATEGORIES, formatNewsDate, newsTone } from '~/utils/news'
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
-const { formatPrice } = useProductUtils()
+const { formatMoney, formatPrice } = useProductUtils()
 const { resizeToWebp } = useImageResize()
 
 // Лимит товаров в новости — зеркало MAX_NEWS_PRODUCTS (server/lib/newsHelpers)

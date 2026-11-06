@@ -96,7 +96,7 @@
         p(class="lg:mb-2 lg:text-xl") {{ $t('checkout.successNumber', { n: orderNumber }) }}
         p.mb-2(class="lg:mb-4 lg:text-xl") {{ $t('checkout.successAccepted') }}
         p.mb-4(class="lg:mb-8 lg:text-xl")
-          | {{ $t('checkout.successTotal', { sum: formatPrice(orderTotal) }) }}
+          | {{ $t('checkout.successTotal', { sum: formatMoney(orderTotal) }) }}
           br
           | {{ $t('checkout.successContact') }}
         .modal-action.justify-center
@@ -108,6 +108,9 @@
 </template>
 
 <script setup>
+// Конфиг витрины: дефолтный способ оплаты — первый включённый в
+// STORE_PAYMENT_METHODS (кубинская копия: ['transfer','cash'] → transfer)
+import { STORE_PAYMENT_METHODS } from '../../../store.config'
 // Отключаем SSR для этой страницы: корзина и форма живут в localStorage/клиенте
 definePageMeta({
   ssr: false,
@@ -126,7 +129,7 @@ const {
   deliveryMethod,
   setDeliveryMethod,
 } = useCart()
-const { formatPrice } = useProductUtils()
+const { formatPrice, formatMoney } = useProductUtils()
 
 const { createOrder } = useOrders()
 
@@ -156,7 +159,8 @@ const orderForm = ref({
   address: '',
   city: '',
   postalCode: '',
-  paymentMethod: 'card',
+  // Дефолт — первый включённый способ из store.config (RU: card, Куба: transfer)
+  paymentMethod: STORE_PAYMENT_METHODS[0],
 })
 
 //- Данные карты — ВИЗУАЛЬНАЯ ЗАГЛУШКА: никуда не отправляются

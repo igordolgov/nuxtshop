@@ -83,7 +83,7 @@
                                                                 p.text-xs.text-base-content.opacity-70.line-clamp-2.max-h-10(class="lg:text-xs") {{ item.description }}
                                                         
                                                 .flex.items-center.justify-between.-mt-1.border-t.border-base-200
-                                                                .text-md.font-bold.text-primary {{ formatPrice(item.price) }} ₽
+                                                                .text-md.font-bold.text-primary {{ formatMoney(item.price) }}
                                                                 .text-xs(
                                                                         :class="item.inStock ? 'text-success' : 'text-error'"
                                                                 ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
@@ -115,9 +115,9 @@ const getValidImageUrl = (url) => {
         return fallbackImage
 }
 
-// formatPrice — единый из useProductUtils (₽ добавляется в шаблоне,
-// раньше здесь была своя реализация с валютой — аудит F13)
-const { formatPrice } = useProductUtils()
+// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
+// formatMoney — раньше здесь была своя реализация, аудит F13)
+const { formatMoney, formatPrice } = useProductUtils()
 
 const handleImageError = (event) => {
         if (event?.target) event.target.src = fallbackImage

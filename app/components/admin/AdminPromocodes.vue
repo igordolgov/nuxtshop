@@ -46,7 +46,7 @@
         .flex.items-center.gap-2.flex-wrap
           span.font-bold.text-base.tracking-wide {{ p.code }}
           span.badge.badge-sm(:class="p.type === 'percent' ? 'badge-info' : 'badge-secondary'")
-            | {{ p.type === 'percent' ? `${p.value}%` : `${p.value} ₽` }}
+            | {{ p.type === 'percent' ? `${p.value}%` : formatMoney(p.value) }}
           span.badge.badge-sm(v-if="p.active" class="badge-success") {{ $t('admin.promocodes.active') }}
           span.badge.badge-sm.badge-warning(v-else) {{ $t('admin.promocodes.inactive') }}
           span.badge.badge-sm.badge-error(
@@ -93,7 +93,7 @@
             span.form-label {{ $t('admin.promocodes.typeLabel') }}
             select.select.select-bordered.rounded-xl.w-full(v-model="form.type")
               option(value="percent") {{ $t('admin.promocodes.typePercent') }}
-              option(value="fixed") {{ $t('admin.promocodes.typeFixed') }}
+              option(value="fixed") {{ $t('admin.promocodes.typeFixed', { cur: currencySymbol() }) }}
 
           label.block
             span.form-label {{ form.type === 'percent' ? $t('admin.promocodes.valuePercentLabel') : $t('admin.promocodes.valueFixedLabel') }}
@@ -144,6 +144,8 @@
 <script setup>
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Валюта витрины — единые formatMoney/currencySymbol (₽ / $ из store.config)
+const { formatMoney, currencySymbol } = useProductUtils()
 
 const items = ref([])
 const isLoading = ref(false)
@@ -238,7 +240,7 @@ const save = async () => {
     return
   }
   if (!form.value.value || form.value.value < 1) {
-    formError.value = form.value.type === 'percent' ? t('admin.promocodes.percentMin') : t('admin.promocodes.fixedMin')
+    formError.value = form.value.type === 'percent' ? t('admin.promocodes.percentMin') : t('admin.promocodes.fixedMin', { cur: currencySymbol() })
     return
   }
 

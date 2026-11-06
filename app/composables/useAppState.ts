@@ -9,6 +9,8 @@
 // Избранное: единственный источник правды — useFavorites.
 // Здесь только делегация под старым API (favorites.*) для совместимости.
 // ============================================
+// Валюта витрины — из конфига (см. store.config.ts)
+import { CURRENCY_NUMBER_LOCALE, STORE_CURRENCY } from '../../store.config';
 
 import { useProducts } from './useProducts';
 import type { CatalogProduct } from './catalogProduct';
@@ -242,9 +244,10 @@ function createAppState() {
   }
 
   function formatPrice(price: number): string {
-    return new Intl.NumberFormat('ru-RU', {
+    // Валюта витрины — из store.config (₽ / $, кубинская копия ставит USD там)
+    return new Intl.NumberFormat(CURRENCY_NUMBER_LOCALE[STORE_CURRENCY] ?? 'ru-RU', {
       style: 'currency',
-      currency: 'RUB',
+      currency: STORE_CURRENCY,
       minimumFractionDigits: 0,
     }).format(price);
   }

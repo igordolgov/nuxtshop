@@ -59,7 +59,7 @@
         //- Цена
         .form-control
           label.label
-            span.label-text.font-medium Цена (₽)
+            span.label-text.font-medium Цена ({{ currencySymbol() }})
           input.input.input-bordered.input-sm.w-full(
             v-model.number="localProduct.price"
             type="number"
@@ -166,6 +166,8 @@ const emit = defineEmits(['update', 'delete', 'toggle-stock'])
 const { updateProduct } = useProducts()
 const notify = useNotifyQueue()
 const { t } = useI18n()
+// Валюта витрины — для подписи поля цены (₽ / $ из store.config)
+const { currencySymbol } = useProductUtils()
 
 // State
 const isSaving = ref(false)

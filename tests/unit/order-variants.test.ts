@@ -2,6 +2,9 @@
 // серверная цена/склад варианта, ошибки неизвестного варианта и нехватки.
 // Файл самодостаточный (свой мок KV и фикстуры) — по образцу order-stock.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+// Способы оплаты — из конфига витрины (тест не ломается при смене
+// набора методов: кубинская копия включает transfer вместо card)
+import { STORE_PAYMENT_METHODS, type StorePaymentMethod } from '../../store.config';
 
 const kvStore = new Map<string, unknown>();
 
@@ -47,7 +50,7 @@ function makeInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput 
   return {
     items: [{ id: '12::mbp-512', quantity: 1 }],
     deliveryMethod: 'pickup',
-    paymentMethod: 'card',
+    paymentMethod: STORE_PAYMENT_METHODS[0] as StorePaymentMethod,
     customer: {
       name: 'Иван Петров',
       email: 'ivan@example.com',

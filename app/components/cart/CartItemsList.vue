@@ -28,8 +28,8 @@
                 @error="handleImageError"
               )
             .price-info.mt-2
-              .text-base.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
-              .text-xs(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
+              .text-base.font-semibold.text-base-content {{ formatMoney(item.currentPrice * item.quantity) }}
+              .text-xs(class="text-base-content/65") {{ formatMoney(item.currentPrice) }}{{ $t('cart.perUnit') }}
           .flex-grow.min-w-0
             h3.item-name.font-medium.text-sm.mb-1.transition-colors.cursor-pointer.line-clamp-2.pr-9(
               class="hover:text-primary"
@@ -131,9 +131,9 @@
               @click="updateQuantity(item.id, item.quantity + 1)"
             ) +
       .col-span-2.text-right
-        .text-sm(class="text-base-content/65") {{ formatPrice(item.currentPrice) }} ₽{{ $t('cart.perUnit') }}
+        .text-sm(class="text-base-content/65") {{ formatMoney(item.currentPrice) }}{{ $t('cart.perUnit') }}
       .col-span-2.text-right
-        .text-sm.font-semibold.text-base-content {{ formatPrice(item.currentPrice * item.quantity) }} ₽
+        .text-sm.font-semibold.text-base-content {{ formatMoney(item.currentPrice * item.quantity) }}
       .col-span-1.text-center
         button.remove-btn-inline(
           type="button"
@@ -176,7 +176,7 @@ const {
   getMaxQuantity,
   getProductUrl,
 } = useCart()
-const { formatPrice } = useProductUtils()
+const { formatMoney, formatPrice } = useProductUtils()
 
 const handleImageError = (event) => {
   event.target.src = '/images/placeholder.jpg'

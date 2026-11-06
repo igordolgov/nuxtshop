@@ -382,7 +382,7 @@ const getStatusBadgeClass = (status) => STATUS_BADGE[status] ?? 'badge-neutral'
 const getDeliveryText = (method) =>
   ({ courier: t('orders.methodCourier'), pickup: t('orders.methodPickup'), post: t('orders.methodPost') }[method] || method)
 const getPaymentText = (method) =>
-  ({ card: t('orders.payCard'), cash: t('orders.payCash') }[method] || method)
+  ({ card: t('orders.payCard'), cash: t('orders.payCash'), transfer: t('orders.payTransfer') }[method] || method)
 
 const goToProduct = (product) => {
   if (product.slug) return navigateTo(localePath(`/product/${product.slug}`))

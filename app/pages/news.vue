@@ -165,7 +165,7 @@
                   .np-body
                     .np-name {{ p.name }}
                     .np-meta
-                      span.np-price {{ formatPrice(p.price) }} ₽
+                      span.np-price {{ formatMoney(p.price) }}
                       span.np-stock(v-if="!p.inStock") {{ $t('product.outOfStock') }}
                   span.np-link.pl-3.pb-2 {{ $t('news.go') }}
                     svg(width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true")
@@ -192,7 +192,7 @@ const { t } = useI18n()
 const locale = useStoreLocale()
 const route = useRoute()
 const router = useRouter()
-const { formatPrice, getSafeImage } = useProductUtils()
+const { formatMoney, formatPrice, getSafeImage } = useProductUtils()
 
 // ─── Данные: сервер (KV) вместо статичного массива ───────────────────────
 // SSR: useAsyncData выполняется на сервере (внутренний вызов роута),

@@ -158,8 +158,7 @@ div(v-if="currentStep === 3")
         )
         .flex.items-center.gap-2.mb-1
           .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-200
-            span.text-sm(v-if="method.id === 'card'") 💳
-            span.text-sm(v-else) 💵
+            span.text-sm {{ method.icon }}
           .flex-1
             .font-bold.text-sm {{ $t(method.nameKey) }}
             span.text-base-content(class="opacity-70 text-[0.65rem]") {{ $t(method.descriptionKey) }}
@@ -215,6 +214,15 @@ div(v-if="currentStep === 3")
               class="lg:input-md"
             )
 
+  //- Перевод (Куба: Transfermóvil/EnZona): у каждого магазина свои
+  //- номер/QR — реквизиты менеджер отправит после подтверждения заказа
+  .mt-4(v-if="orderForm.paymentMethod === 'transfer'")
+    .card.bg-base-200.border.border-base-300
+      .card-body.p-4
+        h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.payTransfer') }}
+        p.text-xs(class="text-base-content/60")
+          | {{ $t('checkout.transferNote') }}
+
 //- Шаг 4: Подтверждение
 div(v-if="currentStep === 4")
   .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
@@ -242,8 +250,7 @@ div(v-if="currentStep === 4")
       h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.paymentMethodTitle') }}
       .flex.items-center.gap-2
         .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-300
-          span.text-sm(v-if="orderForm.paymentMethod === 'card'") 💳
-          span.text-sm(v-else) 💵
+          span.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.icon }}
         div
           .font-medium.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.name }}
           p.text-sm(class="text-base-content/70") {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.description }}
@@ -262,6 +269,8 @@ const orderForm = defineModel('orderForm', { type: Object, required: true })
 const paymentData = defineModel('paymentData', { type: Object, required: true })
 
 import { getDeliveryPrice } from '@/utils/deliveryPrice'
+// Способы оплаты — из конфига витрины (см. store.config.ts)
+import { STORE_PAYMENT_METHODS } from '../../../store.config'
 
 const { formatPrice } = useProductUtils()
 const { subtotal } = useCart()
@@ -280,9 +289,12 @@ const deliveryMethods = [
 //- Цена конкретного способа для плиток шага «Доставка»
 const methodPrice = (methodId) => getDeliveryPrice(methodId, subtotal.value)
 
-//- Методы оплаты (только поддерживаемые сервером; способ 'online' убран)
-const paymentMethods = [
-  { id: 'card', nameKey: 'checkout.payCard', descriptionKey: 'checkout.payCardDesc' },
-  { id: 'cash', nameKey: 'checkout.payCash', descriptionKey: 'checkout.payCashDesc' },
-]
+//- Способы оплаты — список из store.config (STORE_PAYMENT_METHODS):
+//- что видит покупатель И что валидирует сервер. Подписи/иконки — META по id.
+const PAYMENT_META = {
+  card: { icon: '💳', nameKey: 'checkout.payCard', descriptionKey: 'checkout.payCardDesc' },
+  cash: { icon: '💵', nameKey: 'checkout.payCash', descriptionKey: 'checkout.payCashDesc' },
+  transfer: { icon: '📲', nameKey: 'checkout.payTransfer', descriptionKey: 'checkout.payTransferDesc' },
+}
+const paymentMethods = STORE_PAYMENT_METHODS.map((id) => ({ id, ...PAYMENT_META[id] }))
 </script>

@@ -52,11 +52,11 @@
           )
             .text-lg.font-bold.text-primary.transition-all.duration-300(
               class="text-base md:text-xl group-hover:scale-105"
-            ) {{ formatPrice(product.price) }} ₽
+            ) {{ formatMoney(product.price) }}
             span.text-xs.line-through(
               v-if="hasDiscount(product)",
               class="text-base-content/45"
-            ) {{ formatPrice(product.oldPrice) }} ₽
+            ) {{ formatMoney(product.oldPrice) }}
             //- Плашка скидки: единый вид с ProductCardGrid/ProductInfo
             span.shrink-0(
               v-if="hasDiscount(product)",
@@ -123,7 +123,7 @@ const props = defineProps({
 // Используем единый useAppState
 const app = useAppState()
 const { $notify } = useNuxtApp()
-const { getSafeImage, formatPrice } = useProductUtils()
+const { formatMoney, getSafeImage, formatPrice } = useProductUtils()
 
 // Используем композабл для подсветки (не импортируем isQueryValidForHighlight, чтобы избежать конфликта)
 const { highlightText, highlightBadge, containsQuery } = useSearchHighlight()

@@ -200,10 +200,10 @@ const getValidImageUrl = (url) => {
   return fallbackImage
 }
 
-const formatPrice = (price) => {
-  if (!price && price !== 0) return '0 ₽'
-  return `${price.toLocaleString('ru-RU')} ₽`
-}
+// Цена с валютой — единый formatMoney из store.config (₽ / $ по конфигу витрины)
+import { formatMoney } from '../../../store.config'
+
+const formatPrice = (price) => formatMoney(price)
 
 const handleImageError = (event) => {
   if (event?.target) event.target.src = fallbackImage

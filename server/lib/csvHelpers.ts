@@ -14,6 +14,8 @@
 //    Такие значения префиксуются апострофом — в таблице они отображаются
 //    как текст (клиент с именем «=СУММ(A1)» не станет формулой).
 import type { Order } from './orderHelpers';
+// Валюта CSV-колонок и сумм — из конфига витрины (₽ / $, см. store.config.ts)
+import { currencySymbol } from '../../store.config';
 
 export const CSV_DELIMITER = ';';
 export const CSV_BOM = '﻿'; // U+FEFF — невидимый маркер UTF-8 для Excel
@@ -74,6 +76,7 @@ const DELIVERY_LABELS: Record<string, string> = {
 const PAYMENT_LABELS: Record<string, string> = {
   card: 'Картой',
   cash: 'Наличными',
+  transfer: 'Переводом',
 };
 
 export const ORDERS_CSV_HEADERS = [
@@ -90,17 +93,19 @@ export const ORDERS_CSV_HEADERS = [
   'Состав заказа',
   'Позиций',
   'Товаров, шт',
-  'Сумма товаров, ₽',
-  'Скидка, ₽',
+  'Сумма товаров, ' + currencySymbol(),
+  'Скидка, ' + currencySymbol(),
   'Промокод',
-  'Доставка, ₽',
-  'Итого, ₽',
+  'Доставка, ' + currencySymbol(),
+  'Итого, ' + currencySymbol(),
   'Комментарий',
 ];
 
-/** Состав заказа одной строкой: «Название × кол-во (цена ₽) | …». */
+/** Состав заказа одной строкой: «Название × кол-во (цена с валютой) | …». */
 export function orderItemsSummary(order: Order): string {
-  return (order.items ?? []).map((i) => `${i.name} × ${i.quantity} (${i.price} ₽)`).join(' | ');
+  return (order.items ?? [])
+    .map((i) => `${i.name} × ${i.quantity} (${i.price} ${currencySymbol()})`)
+    .join(' | ');
 }
 
 /** Заказ → массив полей CSV (порядок = ORDERS_CSV_HEADERS). */

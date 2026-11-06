@@ -271,7 +271,14 @@ const statusBadgeClass = (s) => ({
 const deliveryLabel = (m) =>
   m === 'courier' ? t('admin.orders.deliveryCourier') : m === 'post' ? t('admin.orders.deliveryPost') : t('admin.orders.deliveryPickup')
 
-const paymentLabel = (m) => (m === 'card' ? t('admin.orders.paymentCard') : t('admin.orders.paymentCash'))
+const paymentLabel = (m) =>
+  (
+    {
+      card: t('admin.orders.paymentCard'),
+      cash: t('admin.orders.paymentCash'),
+      transfer: t('admin.orders.paymentTransfer'),
+    }[m] || m
+  )
 
 //- ─── CSV-экспорт: blob-скачивание с обработкой ошибок ──────────────
 // Не <a href> — blob позволяет поймать 401/500 и показать тост,

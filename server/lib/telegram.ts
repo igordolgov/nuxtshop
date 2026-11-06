@@ -13,6 +13,8 @@
 // Отсутствие секретов — тихий no-op (dev не требует бота).
 
 import { ORDER_STATUS_LABELS, type OrderStatus } from './orderHelpers';
+// Валюта и формат сумм в карточках — из конфига витрины (₽ / $)
+import { formatMoney } from '../../store.config';
 
 const API_BASE = 'https://api.telegram.org';
 
@@ -275,12 +277,9 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/>/g, '&gt;');
 }
 
+// Суммы в карточках — formatMoney из store.config (₽ после суммы / $ перед)
 function formatRub(n: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(n ?? 0);
+  return formatMoney(n);
 }
 
 // ⚙️ НАСТРОЙКА: подписи способов доставки в сообщении
@@ -288,6 +287,14 @@ const DELIVERY_LABELS: Record<string, string> = {
   courier: '🚚 Курьером',
   pickup: '📍 Самовывоз',
   post: '📮 Почтой',
+};
+
+// ⚙️ НАСТРОЙКА: подписи способов оплаты в сообщении (transfer — Куба:
+// Transfermóvil / EnZona по QR после подтверждения)
+const PAYMENT_LINES: Record<string, string> = {
+  card: '💳 Картой при подтверждении',
+  cash: '💵 Наличными при получении',
+  transfer: '📲 Переводом (Transfermóvil/EnZona)',
 };
 
 /**
@@ -339,9 +346,7 @@ export function formatOrderCard(
     ? `, ${escapeHtml(order.customer.city)}, ${escapeHtml(order.customer.address)}`
     : '';
   lines.push(`${delivery}${address}`);
-  lines.push(
-    order.paymentMethod === 'card' ? '💳 Картой при подтверждении' : '💵 Наличными при получении',
-  );
+  lines.push(PAYMENT_LINES[order.paymentMethod] ?? order.paymentMethod);
 
   if (order.promoCode) {
     lines.push(`🎟 Промокод ${escapeHtml(order.promoCode)} (−${formatRub(order.discount)})`);
