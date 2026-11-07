@@ -3,7 +3,11 @@
 // (приём переводов PUT/POST: отсутствие поля / пустая строка / значение).
 import { describe, expect, it } from 'vitest';
 
-import { buildCategoryLabelMap, localizedProduct } from '../../app/utils/localizedProduct';
+import {
+  buildCategoryLabelMap,
+  localizedProduct,
+  storeLocaleFromPath,
+} from '../../app/utils/localizedProduct';
 import { localizedProduct as localizedProductServer } from '../../server/lib/localizedProduct';
 import { applyLocalizedPatch, extractLocalizedPatch } from '../../server/lib/productHelpers';
 
@@ -287,5 +291,39 @@ describe('server/app copies are in sync', () => {
 
   it.each(cases)('совпадение вывода для %j, локаль %s', (input, locale) => {
     expect(localizedProductServer(input, locale)).toEqual(localizedProduct(input, locale));
+  });
+});
+
+// ─── storeLocaleFromPath ──────────────────────────────────────────────
+// Локаль витрины из пути URL. Ключевой регресс: на копии с дефолтом 'es'
+// русская витрина живёт под префиксом /ru (prefix_except_default), который
+// прежняя /^\/(en|es)/ не матвила — весь каталог/корзина/поиск отдавали
+// испанский текст на русской локали.
+
+describe('storeLocaleFromPath', () => {
+  it('префиксы всех трёх локалей матчатся в любом положении пути', () => {
+    expect(storeLocaleFromPath('/en/cart', 'es')).toBe('en');
+    expect(storeLocaleFromPath('/es/cart', 'es')).toBe('es');
+    expect(storeLocaleFromPath('/ru/cart', 'es')).toBe('ru');
+    expect(storeLocaleFromPath('/ru', 'es')).toBe('ru');
+    expect(storeLocaleFromPath('/en/product/1', 'ru')).toBe('en');
+  });
+
+  it('путь без префикса — дефолтная локаль магазина (из store.config)', () => {
+    expect(storeLocaleFromPath('/', 'es')).toBe('es');
+    expect(storeLocaleFromPath('/product/1', 'es')).toBe('es');
+    expect(storeLocaleFromPath('/', 'ru')).toBe('ru');
+  });
+
+  it('нет пути или вне Nuxt-контекста — дефолт, как раньше', () => {
+    expect(storeLocaleFromPath(null, 'es')).toBe('es');
+    expect(storeLocaleFromPath(undefined, 'ru')).toBe('ru');
+    expect(storeLocaleFromPath('', 'es')).toBe('es');
+  });
+
+  it('префикс матчится только целиком: /russian — не /ru', () => {
+    expect(storeLocaleFromPath('/russian', 'es')).toBe('es');
+    expect(storeLocaleFromPath('/english', 'es')).toBe('es');
+    expect(storeLocaleFromPath('/españa', 'es')).toBe('es');
   });
 });

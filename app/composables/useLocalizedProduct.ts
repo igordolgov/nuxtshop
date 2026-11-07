@@ -18,7 +18,11 @@
 // ============================================
 
 import { computed } from 'vue';
-import { localizedProduct, buildCategoryLabelMap } from '../utils/localizedProduct';
+import {
+  localizedProduct,
+  buildCategoryLabelMap,
+  storeLocaleFromPath,
+} from '../utils/localizedProduct';
 // Дефолтная локаль витрины (без URL-префикса) — из store.config: у кубинской
 // копии это 'es' (а 'ru' — с префиксом /ru). Хардкод 'ru' здесь ломал копию:
 // весь переводной контент (новости, «О нас», категории, товары) откатывался
@@ -26,10 +30,11 @@ import { localizedProduct, buildCategoryLabelMap } from '../utils/localizedProdu
 import { STORE_DEFAULT_LOCALE } from '../../store.config';
 
 /**
- * Реактивная локаль витрины из URL: /en/… → 'en', /es/… → 'es',
+ * Реактивная локаль витрины из URL: /en/… → 'en', /es/… → 'es', /ru/… → 'ru',
  * путь без префикса — дефолтная локаль магазина (store.config: RU-магазин
  * 'ru', кубинская копия 'es'). Вне Nuxt-контекста (юнит-тесты на node) —
- * та же константа из store.config.
+ * та же константа из store.config. Правило матчится вынесенной чистой
+ * функцией storeLocaleFromPath (единая точка правды с useFilters/useAppState).
  */
 export function useStoreLocale() {
   let route: ReturnType<typeof useRoute> | null = null;
@@ -38,10 +43,7 @@ export function useStoreLocale() {
   } catch {
     route = null;
   }
-  return computed<'ru' | 'en' | 'es'>(() => {
-    const match = /^\/(en|es)(\/|$)/.exec(route?.path ?? '');
-    return match ? (match[1] as 'ru' | 'en' | 'es') : STORE_DEFAULT_LOCALE;
-  });
+  return computed<'ru' | 'en' | 'es'>(() => storeLocaleFromPath(route?.path, STORE_DEFAULT_LOCALE));
 }
 
 export function useLocalizedProduct() {

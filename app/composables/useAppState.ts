@@ -23,7 +23,7 @@ import {
 } from './useFilters';
 import { useAuth } from './useAuth';
 import { useFavorites } from './useFavorites';
-import { localizedProduct } from '../utils/localizedProduct';
+import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
 import { computed, watch } from 'vue';
 
 /** Товар в результатах поиска: локализованная копия + подсветка совпадений */
@@ -130,8 +130,9 @@ function createAppState() {
     // Поиск ведётся по локализованным КОПИЯМ: подсказки в шапке и подсветка
     // находят товар и по переводу («smartphone» на /en), и по русскому
     // оригиналу. ru-каталог проходит без копий (см. localizedProduct).
-    const localeMatch = /^\/(en|es)(\/|$)/.exec(searchRoute?.path ?? '');
-    const locale = localeMatch ? localeMatch[1] : STORE_DEFAULT_LOCALE;
+    // storeLocaleFromPath знает и /ru: на копии с дефолтом 'es' русская
+    // витрина живёт под префиксом /ru, который прежняя /^\/(en|es)/ пропускала
+    const locale = storeLocaleFromPath(searchRoute?.path, STORE_DEFAULT_LOCALE);
     const localizedItems = items.map(
       (item) => localizedProduct(item, locale) as LocalizedCatalogProduct,
     );

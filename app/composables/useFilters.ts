@@ -1,6 +1,6 @@
 // app/composables/useFilters.ts
 import { ref, computed, type Ref } from 'vue';
-import { localizedProduct } from '../utils/localizedProduct';
+import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
 // Фолбэк локали (путь без префикса) — дефолт из store.config: кубинская
 // копия с дефолтом 'es' должна локализовать каталог, а не откатываться на 'ru'
 import { STORE_DEFAULT_LOCALE } from '../../store.config';
@@ -131,8 +131,10 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     // фильтр поиска, сортировка по имени и выдача карточек работают на
     // языке страницы. Категорийные фильтры матчят СЫРЫЕ значения
     // (categoriesRaw) — сами значения фильтров локали не зависят.
-    const localeMatch = /^\/(en|es)(\/|$)/.exec(route?.path ?? '');
-    const locale = localeMatch ? localeMatch[1] : STORE_DEFAULT_LOCALE;
+    // storeLocaleFromPath знает все три префикса (/en, /es, /ru): на копии
+    // с дефолтом 'es' русская витрина живёт под /ru — прежняя /^\/(en|es)/
+    // её не видела и отдавала испанский каталог на русской локали
+    const locale = storeLocaleFromPath(route?.path, STORE_DEFAULT_LOCALE);
     let filtered = productsValue.map((p) => localizedProduct(p, locale) as LocalizedCatalogProduct);
 
     const query = searchQuery.value?.trim().toLowerCase();
