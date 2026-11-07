@@ -107,7 +107,7 @@
 // на en/es, кастомные — как есть
 import { CHARACTERISTIC_LABEL_KEYS } from '~/utils/characteristicLabels'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const { $notify } = useNuxtApp()
 
@@ -117,9 +117,11 @@ const productUrl = (p) => (p?.slug ? localePath(`/product/${p.slug}`) : localePa
 
 /* Объединение характеристик: все ключи, что встречаются хотя бы у одного
    товара, в порядке первого появления. Пустые значения рисуем «—». */
+// te() перед t(): ключа нет в словаре (дрейф, недогруженные lazy-сообщения)
+// → сырой русский лейбл, а НЕ литерал «specLabels.*» в UI
 const localizedSpecLabel = (label) => {
   const key = CHARACTERISTIC_LABEL_KEYS[label]
-  return key ? t(`specLabels.${key}`) : label
+  return key && te(`specLabels.${key}`) ? t(`specLabels.${key}`) : label
 }
 
 const characteristicKeys = computed(() => {

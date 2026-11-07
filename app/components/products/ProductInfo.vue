@@ -210,7 +210,7 @@ import {
 // Лейблы характеристик: известные (пресеты/сиды) переводятся на en/es
 import { CHARACTERISTIC_LABEL_KEYS } from '~/utils/characteristicLabels'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
@@ -257,10 +257,12 @@ const characteristicEntries = computed(() =>
   Object.entries(props.product?.characteristics || {}),
 )
 //- Лейбл на витрине: известный (пресет/сид) — словарь specLabels.* на en/es,
-//- кастомный — как есть (фолбэк-контракт локализации товара)
+//- кастомный — как есть (фолбэк-контракт локализации товара).
+//- te() перед t(): ключа нет в словаре (дрейф пресетов/сидов, недогруженные
+//- lazy-сообщения) → сырой русский лейбл, а НЕ литерал «specLabels.*» в UI
 const localizedSpecLabel = (label) => {
   const key = CHARACTERISTIC_LABEL_KEYS[label]
-  return key ? t(`specLabels.${key}`) : label
+  return key && te(`specLabels.${key}`) ? t(`specLabels.${key}`) : label
 }
 const hasCharacteristics = computed(() => characteristicEntries.value.length > 0)
 //- Строка «Варианты» в spec-листе: ось и все значения через запятую
