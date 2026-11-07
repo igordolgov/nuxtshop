@@ -33,8 +33,9 @@
         svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
 
-    //- Тело: ProductFilter (цена, категории, характеристики, чекбоксы).
-    //- Единственный скроллящийся регион панели
+    //- Тело: ProductFilter (цена, категории, характеристики).
+    //- Единственный скроллящийся регион панели; быстрые фильтры
+    //- (в наличии/избранное) вынесены в закреплённый блок ниже
     .filters-content(
       class="bg-base-100 px-3 py-2"
     )
@@ -46,7 +47,16 @@
         :priceRange="priceRange"
         :filtered-count="filteredCount"
         :total-count="totalCount"
+        :hideQuickFilters="true"
         @update:filters="emit('update:filters', $event)"
+      )
+
+    //- Быстрые фильтры: закреплены над кнопкой «Показать N» — всегда видны,
+    //- а характеристики скроллятся под ними (паттерн маркетплейсов)
+    .filters-quick(class="bg-base-100 border-base-200 border-t")
+      ProductQuickFilters(
+        :filters="filters"
+        @change="handleQuickFilter"
       )
 
     //- Подвал: главная кнопка с счётчиком (паттерн WB) — всегда видна,
@@ -128,13 +138,20 @@
 
 /* ── Шапка и подвал: зафиксированы flex-колонкой ─────────────── */
 .filters-header,
-.filters-footer {
+.filters-footer,
+.filters-quick {
   flex-shrink: 0;
 }
 
 /* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает) */
 .filters-header {
   padding-top: calc(0.5rem + var(--safe-area-top, 0px));
+}
+
+/* Закреплённые быстрые фильтры: компактная полоса над кнопкой
+   (0.75rem по горизонтали — выравнивание с телом панели px-3) */
+.filters-quick {
+  padding: 0.25rem 0.75rem;
 }
 
 .filters-footer {
@@ -178,5 +195,13 @@ const handleApplyAndClose = () => {
 
 const handleReset = () => {
   emit('reset-filters')
+}
+
+//- Быстрый фильтр (в наличии/избранное) из закреплённого блока:
+//- обновляем ОДИН ключ в снимке фильтров и отдаём наверх — как это
+//- делает ProductFilter для чекбоксов в скролле (без дебаунса —
+//- для одиночных кликов он не нужен)
+const handleQuickFilter = (key, value) => {
+  emit('update:filters', { ...props.filters, [key]: value })
 }
 </script>

@@ -1,6 +1,8 @@
 <!-- app/components/products/ProductFilter.vue — тело фильтров (без шапки
      и сортировки: сортировка — отдельный элемент над сеткой, паттерн
-     маркетплейсов). Секции: цена, категории, в наличии/избранное.
+     маркетплейсов). Секции: цена, категории, характеристики,
+     в наличии/избранное (последние можно скрыть пропом hideQuickFilters —
+     мобильная панель закрепляет их отдельно над кнопкой «Показать N»).
      Горизонтальные ветки isHorizontal удалены (мёртвые с чистки
      боковой навигации). Используется в DesktopSidebar и MobileFiltersPanel. -->
 <template lang="pug">
@@ -56,27 +58,14 @@
         )
 
       //- Быстрые фильтры: наличие и избранное (раньше были в стейте,
-      //- но без UI — мёртвые; теперь живые чекбоксы)
-      .filter-section
-        label.quick-filter.flex.items-center.cursor-pointer.select-none(
-          class="py-1 gap-2.5"
+      //- но без UI — мёртвые; теперь живые чекбоксы).
+      //- На мобильных панель рендерит их закреплёнными внизу
+      //- (hideQuickFilters), чтобы они не уезжали со скроллом
+      .filter-section(v-if="!hideQuickFilters")
+        ProductQuickFilters(
+          :filters="safeFilters"
+          @change="updateFilter"
         )
-          input.checkbox.checkbox-sm.checkbox-primary(
-            type="checkbox"
-            :checked="safeFilters.onlyInStock"
-            @change="updateFilter('onlyInStock', $event.target.checked)"
-          )
-          span.text-sm.text-base-content {{ $t('catalog.inStockOnly') }}
-
-        label.quick-filter.flex.items-center.cursor-pointer.select-none(
-          class="py-1 gap-2.5"
-        )
-          input.checkbox.checkbox-sm.checkbox-error(
-            type="checkbox"
-            :checked="safeFilters.onlyFavorites"
-            @change="updateFilter('onlyFavorites', $event.target.checked)"
-          )
-          span.text-sm.text-base-content {{ $t('catalog.favoritesOnly') }}
 </template>
 
 <style scoped>
@@ -140,6 +129,8 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
   filteredCount: { type: Number, default: 0 },
   totalCount: { type: Number, default: 0 },
+  //- Мобильная панель: быстрые фильтры рендерит сама, закреплёнными внизу
+  hideQuickFilters: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:filters'])
