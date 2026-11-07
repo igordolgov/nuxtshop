@@ -1,10 +1,9 @@
 <!-- components/layout/MobileFiltersPanel.vue — мобильная панель фильтров:
-    bottom-sheet (прижата к низу, шапка + скроллящееся тело + подвал с
-    кнопкой «Показать N»). Канонический паттерн маркетплейсов.
-    ⚠️ Панель — flex-колонка с max-height: тело (.filters-content) получает
-    остаток высоты и скроллится. Раньше стилей не было вовсе: overflow-y-auto
-    без высоты не работал, body заблокирован — длинный список (фасеты
-    характеристик) был недоступен по прокрутке. -->
+    ПОЛНЫЙ ЭКРАН (по требованию пользователя; раньше был bottom-sheet
+    88dvh): шапка + скроллящееся тело + подвал с кнопкой «Показать N».
+    Канонический паттерн маркетплейсов — фильтры отдельной «страницей».
+    ⚠️ Панель — flex-колонка на всю высоту: тело (.filters-content)
+    получает остаток высоты и скроллится, шапка/подвал зафиксированы. -->
 <template lang="pug">
 .mobile-filters-wrapper(class="md:hidden")
   .mobile-filters-overlay(@click="handleClose")
@@ -14,10 +13,7 @@
     aria-modal="true"
     :aria-label="$t('catalog.filtersAria')"
   )
-    //- Ручка bottom-sheet (визуальный affordance)
-    .sheet-handle
-
-    //- Шапка панели
+    //- Шапка панели (safe-area-top — статус-бар в standalone-PWA)
     .filters-header.flex.items-center.justify-between.gap-2(
       class="bg-base-100 px-3 py-2 border-base-300 border-b"
     )
@@ -71,7 +67,7 @@
 </template>
 
 <style scoped>
-/* ── Оверлей: панель прижата к низу ─────────────────────────── */
+/* ── Обёртка: fixed на весь вьюпорт, панель занимает её целиком ─ */
 .mobile-filters-wrapper {
   position: fixed;
   inset: 0;
@@ -89,20 +85,19 @@
   inset: 0;
 }
 
-/* ── Панель: flex-колонка фиксированной высоты ─────────────────
+/* ── Панель: flex-колонка на ВЕСЬ экран ────────────────────────
    Высота ЗАДАНА (а не только max-height): внутри неё flex-1/min-h-0
    тела дают определённый остаток, и .product-filter { height:100% }
-   не схлопывается в ноль. 88dvh — как у маркетплейсов: шапка сайта
-   чуть видна сверху, контекст не теряется. */
+   не схлопывается в ноль. min(100dvh, 100%) — dvh отслеживает
+   динамический тулбар мобильных браузеров, 100% — fallback. */
 .mobile-filters-panel {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 88vh;
-  height: min(88dvh, 100%);
+  height: 100vh;
+  height: min(100dvh, 100%);
+  width: 100%;
   background: var(--color-base-100);
-  border-radius: 1.25rem 1.25rem 0 0;
-  box-shadow: 0 -10px 40px rgb(0 0 0 / 0.22);
   overflow: hidden;
   /* Въезд снизу: только transform/opacity (правила экономии main.css) */
   animation: sheet-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -110,22 +105,13 @@
 
 @keyframes sheet-in {
   from {
-    transform: translateY(7%);
+    transform: translateY(10%);
     opacity: 0.5;
   }
   to {
     transform: translateY(0);
     opacity: 1;
   }
-}
-
-.sheet-handle {
-  width: 2.5rem;
-  height: 0.25rem;
-  margin: 0.5rem auto 0.15rem;
-  border-radius: 999px;
-  background: var(--color-base-300);
-  flex-shrink: 0;
 }
 
 /* ── Тело: единственный скроллящийся регион ─────────────────── */
@@ -146,6 +132,11 @@
   flex-shrink: 0;
 }
 
+/* Шапка: safe-area для standalone-PWA (статус-бар не перекрывает) */
+.filters-header {
+  padding-top: calc(0.5rem + var(--safe-area-top, 0px));
+}
+
 .filters-footer {
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + var(--safe-area-bottom, 0px));
@@ -153,7 +144,7 @@
 </style>
 
 <script setup>
-//- Bottom-sheet панель фильтров. ProductFilter автоимпортится.
+//- Полноэкранная панель фильтров. ProductFilter автоимпортится.
 //- Сортировка не здесь — она в ProductSortBar над сеткой
 const props = defineProps({
   searchQuery: { type: String, default: '' },
