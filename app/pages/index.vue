@@ -402,11 +402,16 @@ watch(showMobileFilters, updateBodyScroll)
   min-height: 0;
 
   @media (min-width: 1025px) {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 300px 1fr;
     grid-template-areas: 'sidebar main';
     gap: 1rem;
     padding: 0 1rem;
     padding-right: 0;
+  }
+
+  /* Широким экранам — просторный сайдбар: фасеты с чипами читаются лучше */
+  @media (min-width: 1280px) {
+    grid-template-columns: 330px 1fr;
   }
 }
 
@@ -532,7 +537,8 @@ watch(showMobileFilters, updateBodyScroll)
 .mobile-filters {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* Выше нижней навигации (z-60) — иначе nav перекрывает подвал панели */
+  z-index: 70;
   background: rgb(0 0 0 / 0.5);
 }
 </style>

@@ -13,15 +13,15 @@
         v-if="localSelectedCategories.length > 0"
       ) {{ $t('catalog.showAll') }}
 
-  .categories-container.max-h-100.overflow-y-auto
+  .categories-container.max-h-72.overflow-y-auto
     //- Всегда один контейнер с gap-1
     .flex.flex-wrap.gap-1.p-0
       template(v-if="availableCategories.length > 0")
-        label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.py-1.rounded-full.border.text-xs.font-medium(
+        label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.rounded-full.border.text-xs.font-medium(
           v-for="category in sortedCategories"
           :key="category"
           :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/60'",
-          class="hover:bg-primary/20 hover:text-primary"
+          class="py-0.5 hover:bg-primary/20 hover:text-primary"
         )
           input.hidden(
             type="checkbox"
@@ -117,7 +117,7 @@ defineExpose({
 
 @media (max-width: 768px) {
   .categories-container {
-    max-height: 280px;
+    max-height: 216px;
   }
   
   .category-item {

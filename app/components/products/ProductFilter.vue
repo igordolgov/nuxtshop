@@ -5,9 +5,25 @@
      боковой навигации). Используется в DesktopSidebar и MobileFiltersPanel. -->
 <template lang="pug">
 .product-filter.h-full.border-none.select-none
+  //- Десктопная шапка сайдбара: название + сброс (на мобильных своя
+  //- шапка в bottom-sheet — здесь не дублируем)
+  .filter-header.flex.items-center.justify-between.min-h-8.mb-1(
+    class="hidden lg:flex"
+  )
+    h4.section-title.text-sm.font-semibold.text-base-content {{ $t('catalog.filtersTitle') }}
+    button.btn.btn-ghost.btn-xs.gap-1.rounded-lg(
+      v-if="hasActiveFilters"
+      type="button"
+      @click="resetFilters"
+      class="text-base-content/60"
+    )
+      svg.w-3.h-3(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
+        path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
+      | {{ $t('catalog.reset') }}
+
   //- Основной контейнер
   .filter-content.flex.flex-1.min-h-0.overflow-hidden
-    .vertical-layout.flex.flex-col.flex-1.min-h-0.gap-4.overflow-y-auto.overflow-x-hidden(class="pr-1")
+    .vertical-layout.flex.flex-col.flex-1.min-h-0.gap-2.overflow-y-auto.overflow-x-hidden(class="pr-1")
       //- Диапазон цен
       .filter-section
         ProductPriceRange(
@@ -41,9 +57,9 @@
 
       //- Быстрые фильтры: наличие и избранное (раньше были в стейте,
       //- но без UI — мёртвые; теперь живые чекбоксы)
-      .filter-section(class="pb-2")
-        label.quick-filter.flex.items-center.gap-3.cursor-pointer.select-none(
-          class="py-1"
+      .filter-section
+        label.quick-filter.flex.items-center.cursor-pointer.select-none(
+          class="py-1 gap-2.5"
         )
           input.checkbox.checkbox-sm.checkbox-primary(
             type="checkbox"
@@ -52,8 +68,8 @@
           )
           span.text-sm.text-base-content {{ $t('catalog.inStockOnly') }}
 
-        label.quick-filter.flex.items-center.gap-3.cursor-pointer.select-none(
-          class="py-1"
+        label.quick-filter.flex.items-center.cursor-pointer.select-none(
+          class="py-1 gap-2.5"
         )
           input.checkbox.checkbox-sm.checkbox-error(
             type="checkbox"
@@ -75,6 +91,12 @@
 .filter-content {
   flex: 1;
   min-height: 0;
+}
+
+/* Разделители секций: структура без коробок, компактнее вертикальных зазоров */
+.filter-section + .filter-section {
+  border-top: 1px solid var(--color-base-200);
+  padding-top: 0.6rem;
 }
 
 .vertical-layout::-webkit-scrollbar {
@@ -126,11 +148,44 @@ const emit = defineEmits(['update:filters'])
 const priceRangeRef = ref(null)
 const categoriesRef = ref(null)
 
-//- Debounce для частых обновлений
+//- Debounce для частых обновлений. Снимок фильтров берём В МОМЕНТ эмита,
+//- а не при клике: дочерние колбэки (например, сброс диапазона из
+//- resetPriceRange) срабатывают в тот же тик, что и наш emit «сбросить всё» —
+//- props родителя ещё старые, и снимок унёс бы ОБРАТНО то, что сброс
+//- только что очистил (гонка «сброс → призрак старых фильтров»).
 let filterDebounceTimer = null
-const debouncedEmit = (data) => {
+//- Изменения копятся ПО КЛЮЧАМ: быстрые клики по разым фильтрам в окне
+//- дебаунса не теряют друг друга (последнее значение каждого ключа)
+const pendingUpdates = new Map()
+
+/** Применяет изменение одного ключа к снимку фильтров. */
+const applyKey = (filters, key, value) => {
+  if (key === 'priceRange') {
+    filters.priceRange = value ?? { min: null, max: null }
+  } else if (key === 'categories') {
+    filters.categories = Array.isArray(value) ? value : []
+  } else if (key === 'onlyInStock') {
+    filters.onlyInStock = Boolean(value)
+  } else if (key === 'onlyFavorites') {
+    filters.onlyFavorites = Boolean(value)
+  } else if (key === 'specs') {
+    filters.specs = value && typeof value === 'object' ? value : {}
+  }
+  return filters
+}
+
+const updateFilter = (key, value) => {
+  pendingUpdates.set(key, value)
   if (filterDebounceTimer) clearTimeout(filterDebounceTimer)
-  filterDebounceTimer = setTimeout(() => emit('update:filters', data), 50)
+  filterDebounceTimer = setTimeout(() => {
+    if (pendingUpdates.size === 0) return
+    let snapshot = { ...safeFilters.value }
+    for (const [pendingKey, pendingValue] of pendingUpdates) {
+      applyKey(snapshot, pendingKey, pendingValue)
+    }
+    pendingUpdates.clear()
+    emit('update:filters', snapshot)
+  }, 50)
 }
 
 //- ============================================
@@ -167,33 +222,33 @@ const safePriceRange = computed(() => ({
   max: Number(props.priceRange?.max) || 1000,
 }))
 
+//- Есть ли хоть один активный фильтр (кнопка «Сбросить» в шапке сайдбара)
+const hasActiveFilters = computed(() => {
+  const f = safeFilters.value
+  if (f.categories.length > 0) return true
+  if (f.onlyInStock || f.onlyFavorites) return true
+  if (f.priceRange.min !== null || f.priceRange.max !== null) return true
+  return Object.values(f.specs).some(
+    (values) => Array.isArray(values) && values.length > 0,
+  )
+})
+
 //- ============================================
 //- Обработчики
 //- ============================================
-const updateFilter = (key, value) => {
-  const newFilters = { ...safeFilters.value }
-
-  if (key === 'priceRange') {
-    newFilters.priceRange = value ?? { min: null, max: null }
-  } else if (key === 'categories') {
-    newFilters.categories = Array.isArray(value) ? value : []
-  } else if (key === 'onlyInStock') {
-    newFilters.onlyInStock = Boolean(value)
-  } else if (key === 'onlyFavorites') {
-    newFilters.onlyFavorites = Boolean(value)
-  } else if (key === 'specs') {
-    newFilters.specs = value && typeof value === 'object' ? value : {}
-  }
-
-  debouncedEmit(newFilters)
-}
-
 const handlePriceRangeUpdate = (value) => updateFilter('priceRange', value)
 const handleCategoriesUpdate = (categories) => updateFilter('categories', categories)
 const handleSpecsUpdate = (specs) => updateFilter('specs', specs)
 
-//- Сброс тела фильтров (кнопка «Сбросить всё» живёт снаружи — в чипах/подвале)
+//- Сброс тела фильтров (кнопка «Сбросить всё» в шапке сайдбара).
+//- Отменяем отложенный debounced-эмит: иначе он через 50 мс вернул бы
+//- то, что мы сейчас сбросим. Сброс самого диапазона (resetPriceRange)
+//- дочки эмитит сразу — его дебаунсированный эмит ляжет уже на чистые
+//- props и будет пустым no-op.
 const resetFilters = () => {
+  pendingUpdates.clear()
+  if (filterDebounceTimer) clearTimeout(filterDebounceTimer)
+
   if (categoriesRef.value?.resetCategories) categoriesRef.value.resetCategories()
   if (priceRangeRef.value?.resetPriceRange) priceRangeRef.value.resetPriceRange()
 

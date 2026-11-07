@@ -1,19 +1,22 @@
 <!-- app/components/products/ProductSpecFilters.vue — фасетные фильтры по
      характеристикам (паттерн WB/Ozon): сворачиваемые группы <details> с
-     чекбокс-чипами значений и счётчиками. Фасеты и счётчики считает
-     useFilters (buildSpecFacets) по базовой выборке каталога: выбор внутри
-     одной характеристики — ИЛИ, между характеристиками — И; выбор в одной
-     группе не обнуляет счётчики других. Используется в ProductFilter
+     чипами значений и счётчиками. Фасеты и счётчики считает useFilters
+     (buildSpecFacets) по базовой выборке каталога: выбор внутри одной
+     характеристики — ИЛИ, между характеристиками — И; выбор в одной группе
+     не обнуляет счётчики других. Используется в ProductFilter
      (десктоп-сайдбар и мобильная панель фильтров). -->
 <template lang="pug">
-.product-spec-filters.pb-2(class="lg:mr-3")
-  .section-header.flex.items-center.justify-between.mb-1
+.product-spec-filters
+  .section-header.flex.items-center.justify-between.min-h-7
     h4.section-title.text-sm.pb-0.min-h-6.text-base-content {{ $t('catalog.specFilters') }}
-    button.btn.btn-xs.btn-secondary(
+    button.btn.btn-ghost.btn-xs.gap-1.rounded-lg(
       v-if="selectedCount > 0"
       type="button"
       @click="clearAll"
-    ) {{ $t('catalog.reset') }}
+    )
+      svg.w-3.h-3(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
+        path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
+      | {{ $t('catalog.reset') }}
 
   .spec-groups(v-if="facets.length > 0")
     details.spec-group(
@@ -23,26 +26,28 @@
       @toggle="onToggle(group, $event)"
     )
       summary.spec-summary.flex.items-center.justify-between.cursor-pointer.text-sm.font-medium.text-base-content(
-        class="py-1 select-none"
+        class="py-1.5 select-none gap-2"
       )
-        span.inline-flex.items-center.gap-1.min-w-0
-          span.truncate {{ specLabel(group.label) }}
-          span.spec-count.text-xs.flex-shrink-0(class="text-base-content/50") {{ group.productCount }}
-        svg.w-3.h-3.flex-shrink-0.transition-transform(
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          class="text-base-content/40"
-        )
-          path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
+        span.truncate.min-w-0 {{ specLabel(group.label) }}
+        span.inline-flex.items-center.flex-shrink-0(class="gap-1.5")
+          span.spec-total.badge.badge-sm.font-normal(
+            class="bg-base-200 text-base-content/60 border-none"
+          ) {{ group.productCount }}
+          svg.spec-chevron.w-3.h-3.flex-shrink-0(
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            class="text-base-content/40"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
 
-      .spec-values.flex.flex-wrap.gap-1(class="pb-2 pt-1")
-        label.spec-chip.cursor-pointer.inline-flex.items-center.px-2.rounded-full.border.text-xs.font-medium(
+      .spec-values.flex.flex-wrap.gap-1(class="pb-2 pt-0.5")
+        label.spec-chip.cursor-pointer.inline-flex.items-center.px-2.rounded-full.border.text-xs.font-medium.transition-colors(
           v-for="entry in visibleValues(group)"
           :key="entry.value"
           :class="isChecked(group.label, entry.value) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/60'",
-          class="py-0.5 hover:bg-primary/20 hover:text-primary"
+          class="py-0.5 hover:border-primary hover:text-primary"
         )
           input.hidden(
             type="checkbox"
@@ -50,23 +55,51 @@
             @change="toggle(group.label, entry.value)"
           )
           span.whitespace-nowrap {{ entry.value }}
-          span.spec-value-count(class="ml-1 opacity-60") {{ entry.count }}
+          span.spec-value-count(class="ml-1 opacity-55") {{ entry.count }}
 
-        button.spec-more.btn.btn-xs.btn-ghost(
+        button.spec-more.btn.btn-xs.btn-ghost.rounded-full(
           v-if="group.values.length > VISIBLE_VALUES && !expanded[group.label]"
           type="button"
           @click="expand(group.label)"
         ) {{ $t('catalog.specMore', { n: group.values.length - VISIBLE_VALUES }) }}
 
-    button.spec-show-all.btn.btn-xs.btn-outline.w-full.mt-1(
+    button.spec-show-all.btn.btn-ghost.btn-xs.w-full.rounded-lg(
       v-if="hiddenGroupsCount > 0"
       type="button"
       @click="showAllGroups = true"
     ) {{ $t('catalog.specShowAll') }}
 
-  .empty-state.py-4.text-center(v-else)
+  .empty-state.py-3.text-center(v-else)
     .text-sm.opacity-70.text-base-content {{ $t('catalog.specEmpty') }}
 </template>
+
+<style scoped>
+/* Нативный маркер <details> прячем — свой шеврон с поворотом */
+.spec-group summary {
+  list-style: none;
+}
+.spec-group summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Разделители групп: структура списка читается без коробок */
+.spec-group + .spec-group {
+  border-top: 1px solid var(--color-base-200);
+}
+
+/* Шеврон: поворот у открытой группы (transform — по правилам экономии) */
+.spec-chevron {
+  transition: transform 0.16s ease;
+}
+.spec-group[open] .spec-chevron {
+  transform: rotate(180deg);
+}
+
+/* У выбранного значения счётчик подсвечен — галочка читается и без заливки */
+.spec-chip:has(input:checked) .spec-value-count {
+  opacity: 0.85;
+}
+</style>
 
 <script setup>
 //- Фасеты приходят готовыми (useFilters → buildSpecFacets); здесь только
