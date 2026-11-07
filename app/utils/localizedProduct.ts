@@ -29,6 +29,29 @@ const LOCALE_FIELD_SUFFIX: Record<string, string> = {
   es: 'Es',
 };
 
+/**
+ * Локаль витрины из пути URL: /en/… → 'en', /es/… → 'es', /ru/… → 'ru',
+ * путь без префикса → defaultLocale (дефолт магазина из store.config:
+ * RU-магазин 'ru', кубинская копия 'es').
+ *
+ * i18n-стратегия prefix_except_default: у копии с дефолтом 'es' русский
+ * доступен ТОЛЬКО под префиксом /ru — регулярка обязана знать все три
+ * локали. Прежняя /^\/(en|es)/ не матчила /ru, и на копии вся русская
+ * витрина (каталог, корзина, поиск) получала es-переводы. На RU-магазине
+ * /ru-префикса нет (ru — дефолт), поэтому баг там не проявлялся.
+ *
+ * Чистая функция: используется композаблами (useStoreLocale, useFilters,
+ * useAppState) и юнит-тестами. Префикс матчится только целиком
+ * (/ru/… или /ru), но не /russian.
+ */
+export function storeLocaleFromPath(
+  path: string | null | undefined,
+  defaultLocale: 'ru' | 'en' | 'es',
+): 'ru' | 'en' | 'es' {
+  const match = /^\/(en|es|ru)(\/|$)/.exec(path ?? '');
+  return (match?.[1] as 'ru' | 'en' | 'es') ?? defaultLocale;
+}
+
 /** Непустая строка → trimmed; пустая/не строка → null (сигнал фолбэка). */
 function nonEmpty(value: unknown): string | null {
   if (typeof value !== 'string') return null;
