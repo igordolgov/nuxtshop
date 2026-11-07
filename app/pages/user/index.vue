@@ -282,6 +282,8 @@
 import { formatMoney } from '../../../store.config'
 
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 // Ссылки и переходы страницы сохраняют префикс локали
 const localePath = useLocalePath()
 definePageMeta({
@@ -433,11 +435,12 @@ const updateProfile = async () => {
 
       $notify.success(t('user.profileUpdated'))
     } else {
-      throw new Error(data?.message || t('common.error'))
+      throw new Error(t('common.error'))
     }
   } catch (error) {
     console.error('Ошибка:', error)
-    $notify.error(error.data?.message || error.message || t('auth.errProfileUpdate'))
+    // Серверные коды (nameLength/authRequired/…) → server.*
+    $notify.error(serverMessage(error, 'auth.errProfileUpdate'))
   } finally {
     updatingProfile.value = false
   }

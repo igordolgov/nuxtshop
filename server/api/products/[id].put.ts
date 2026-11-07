@@ -34,7 +34,11 @@ export default defineEventHandler(async (event) => {
 
     const id = getRouterParam(event, 'id');
     if (!id) {
-      throw createError({ statusCode: 400, message: 'ID товара не указан' });
+      throw createError({
+        statusCode: 400,
+        message: 'ID товара не указан',
+        data: { code: 'productNoId' },
+      });
     }
 
     const body = await readBody<ProductBody>(event);
@@ -45,7 +49,11 @@ export default defineEventHandler(async (event) => {
     // products[index] — Product | undefined)
     const existing = products[index];
     if (!existing) {
-      throw createError({ statusCode: 404, message: 'Товар не найден' });
+      throw createError({
+        statusCode: 404,
+        message: 'Товар не найден',
+        data: { code: 'productNotFound' },
+      });
     }
 
     // Slug: если изменилось имя — генерируем заново, иначе оставляем
@@ -75,7 +83,11 @@ export default defineEventHandler(async (event) => {
     // Поле не пришло вовсе (null) — категории не трогаем.
     const categories = normalizeCategories(body);
     if (categories !== null && categories.length === 0) {
-      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' });
+      throw createError({
+        statusCode: 400,
+        message: 'Укажите хотя бы одну категорию',
+        data: { code: 'productMissingCategory' },
+      });
     }
 
     // Эффективная цена: нужна и для записи, и для проверки oldPrice —
@@ -140,6 +152,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка обновления товара:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось обновить товар' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось обновить товар',
+      data: { code: 'productUpdateFailed' },
+    });
   }
 });

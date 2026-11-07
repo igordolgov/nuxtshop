@@ -53,7 +53,13 @@ export async function destroySession(event: H3Event) {
 
 export async function requireUser(event: H3Event) {
   const user = await getSessionUser(event);
-  if (!user) throw createError({ statusCode: 401, message: 'Требуется авторизация' });
+  // code: локализация тоста на клиенте (server.authRequired)
+  if (!user)
+    throw createError({
+      statusCode: 401,
+      message: 'Требуется авторизация',
+      data: { code: 'authRequired' },
+    });
   return user;
 }
 
@@ -63,6 +69,7 @@ export async function requireAdmin(event: H3Event) {
     throw createError({
       statusCode: 403,
       message: 'Доступ запрещён. Требуются права администратора',
+      data: { code: 'adminRequired' },
     });
   }
   return user;
@@ -80,6 +87,7 @@ export async function requireStaff(event: H3Event) {
     throw createError({
       statusCode: 403,
       message: 'Доступ запрещён. Требуются права менеджера или администратора',
+      data: { code: 'managerRequired' },
     });
   }
   return user;

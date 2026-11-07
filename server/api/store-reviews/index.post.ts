@@ -52,10 +52,18 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: 'Спасибо! Отзыв появится после модерации' };
   } catch (error) {
     if (error instanceof StoreReviewValidationError) {
-      throw createError({ statusCode: 400, message: error.message });
+      throw createError({
+        statusCode: 400,
+        message: error.message,
+        data: { code: 'reviewInvalid' },
+      });
     }
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка добавления отзыва о магазине:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось отправить отзыв' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось отправить отзыв',
+      data: { code: 'reviewSubmitFailed' },
+    });
   }
 });

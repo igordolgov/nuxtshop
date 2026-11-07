@@ -137,6 +137,7 @@ definePageMeta({
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Тосты этой модалки были жёстко русскими — переводы admin.users.*
 const { user: currentUser } = useAuth()
 
 // Данные
@@ -195,7 +196,7 @@ const userCount = computed(() => users.value.filter(u => u.role === 'user').leng
 // Методы
 const refreshData = async () => {
   await loadUsers()
-  $notify.success('Данные обновлены')
+  $notify.success(t('admin.common.updated'))
 }
 
 const getUserInitials = (user) => {
@@ -221,10 +222,10 @@ const updateUserRole = async (userId, newRole) => {
       users.value[userIndex].role = newRole
     }
     
-    $notify.success('Роль пользователя обновлена')
+    $notify.success(t('admin.users.roleUpdateOk'))
   } catch (error) {
     console.error('Ошибка обновления роли:', error)
-    $notify.error('Ошибка при обновлении роли')
+    $notify.error(t('admin.users.roleUpdateError'))
   }
 }
 

@@ -14,7 +14,11 @@ export default defineEventHandler(async (event) => {
 
     const ids = normalizeIdList(body?.ids);
     if (!ids || ids.length === 0) {
-      throw createError({ statusCode: 400, message: 'Не выбран ни один товар' });
+      throw createError({
+        statusCode: 400,
+        message: 'Не выбран ни один товар',
+        data: { code: 'bulkNoIds' },
+      });
     }
 
     const products = await readProducts(event);
@@ -33,6 +37,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка массового удаления товаров:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось выполнить массовое удаление' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось выполнить массовое удаление',
+      data: { code: 'bulkDeleteFailed' },
+    });
   }
 });

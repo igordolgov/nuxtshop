@@ -309,8 +309,8 @@ const handleBulkDelete = async () => {
   if (!confirm(t('admin.products.bulkDeleteConfirm', { n: count }))) return
   try {
     // useProducts сам показывает тост с ошибкой сервера при неудаче
-    const result = await bulkDeleteProducts(selectedIds.value)
-    notify.success(result.message || t('admin.products.bulkDeleted', { n: count }))
+    await bulkDeleteProducts(selectedIds.value)
+    notify.success(t('admin.products.bulkDeleted', { n: count }))
     clearSelection()
   } catch {
     // Ошибка уже показана в useProducts — здесь только не падаем

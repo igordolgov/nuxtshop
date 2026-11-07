@@ -30,7 +30,11 @@ export default defineEventHandler(async (event) => {
     const products = await readProducts(event);
     const product = products.find((p) => String(p?.id) === clean.productId);
     if (!product) {
-      throw createError({ statusCode: 400, message: 'Товар не найден' });
+      throw createError({
+        statusCode: 400,
+        message: 'Товар не найден',
+        data: { code: 'productNotFound' },
+      });
     }
 
     const reviews = await readReviews(event);
@@ -80,10 +84,18 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: 'Спасибо! Отзыв появится после модерации' };
   } catch (error) {
     if (error instanceof ReviewValidationError) {
-      throw createError({ statusCode: 400, message: error.message });
+      throw createError({
+        statusCode: 400,
+        message: error.message,
+        data: { code: 'reviewInvalid' },
+      });
     }
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка добавления отзыва:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось отправить отзыв' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось отправить отзыв',
+      data: { code: 'reviewSubmitFailed' },
+    });
   }
 });

@@ -92,7 +92,7 @@ const remove = async (alert) => {
   busyId.value = alert.id
   try {
     const resp = await $fetch(`/api/admin/stock-alerts/${alert.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || t('admin.stockAlerts.deletedToast'))
+    $notify.success(t('admin.stockAlerts.deletedToast'))
     await load()
   } catch {
     $notify.error(t('admin.stockAlerts.deleteError'))

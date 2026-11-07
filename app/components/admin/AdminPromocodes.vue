@@ -144,6 +144,8 @@
 <script setup>
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 // Валюта витрины — единые formatMoney/currencySymbol (₽ / $ из store.config)
 const { formatMoney, currencySymbol } = useProductUtils()
 
@@ -258,11 +260,13 @@ const save = async () => {
     const resp = isNew.value
       ? await $fetch('/api/admin/promocodes', { method: 'POST', body: payload })
       : await $fetch(`/api/admin/promocodes/${form.value.id}`, { method: 'PUT', body: payload })
-    $notify.success(resp?.message || t('admin.common.saved'))
+    // Серверное сообщение дублирует словарь — показываем локализованный текст
+    $notify.success(t('admin.common.saved'))
     showForm.value = false
     await load()
   } catch (error) {
-    const message = error?.data?.message || error?.message || t('admin.promocodes.saveError')
+    // Код сервера (managerRequired/bulkNoIds/…) → server.*
+    const message = serverMessage(error, 'admin.promocodes.saveError')
     formError.value = message
     $notify.error(message)
   } finally {
@@ -285,10 +289,10 @@ const toggleActive = async (promo) => {
         active: !promo.active,
       },
     })
-    $notify.success(resp?.message || (promo.active ? t('admin.promocodes.turnedOff') : t('admin.promocodes.turnedOn')))
+    $notify.success(promo.active ? t('admin.promocodes.turnedOff') : t('admin.promocodes.turnedOn'))
     await load()
   } catch (error) {
-    $notify.error(error?.data?.message || t('admin.promocodes.saveError'))
+    $notify.error(serverMessage(error, 'admin.promocodes.saveError'))
   } finally {
     busyId.value = null
   }
@@ -299,7 +303,7 @@ const remove = async (promo) => {
   busyId.value = promo.id
   try {
     const resp = await $fetch(`/api/admin/promocodes/${promo.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || t('admin.promocodes.deleted'))
+    $notify.success(t('admin.promocodes.deleted'))
     await load()
   } catch {
     $notify.error(t('admin.promocodes.deleteError'))

@@ -34,11 +34,12 @@ export default defineNuxtRouteMiddleware(async () => {
   }
 
   if (!isAuthenticated.value) {
-    $notify.error('Для доступа необходимо войти в систему');
+    // tr() — вне setup-контекста; тост был жёстко русским при любой локали
+    $notify.error(tr('auth.loginRequired', 'Для доступа необходимо войти в систему'));
     return navigateTo('/auth/login', { replace: true });
   }
   if (!isManager.value) {
-    $notify.error('Недостаточно прав для доступа');
+    $notify.error(tr('auth.insufficientRights', 'Недостаточно прав для доступа'));
     return navigateTo('/', { replace: true });
   }
 });

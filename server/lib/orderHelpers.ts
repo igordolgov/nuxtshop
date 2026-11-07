@@ -191,12 +191,20 @@ function generateOrderId(): string {
 function validateCustomer(customer: CreateOrderInput['customer'], deliveryMethod: DeliveryMethod) {
   const name = customer?.name?.trim() ?? '';
   if (name.length < 2 || name.length > 100) {
-    throw createError({ statusCode: 400, message: 'Укажите имя (2–100 символов)' });
+    throw createError({
+      statusCode: 400,
+      message: 'Укажите имя (2–100 символов)',
+      data: { code: 'missingName' },
+    });
   }
 
   const email = customer?.email?.trim().toLowerCase() ?? '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw createError({ statusCode: 400, message: 'Укажите корректный email' });
+    throw createError({
+      statusCode: 400,
+      message: 'Укажите корректный email',
+      data: { code: 'badEmail' },
+    });
   }
 
   const phone = customer?.phone?.trim() ?? '';
@@ -204,6 +212,7 @@ function validateCustomer(customer: CreateOrderInput['customer'], deliveryMethod
     throw createError({
       statusCode: 400,
       message: 'Укажите корректный телефон (минимум 10 цифр)',
+      data: { code: 'badPhone' },
     });
   }
 
@@ -211,18 +220,30 @@ function validateCustomer(customer: CreateOrderInput['customer'], deliveryMethod
 
   const address = customer?.address?.trim() ?? '';
   if (needsAddress && address.length < 5) {
-    throw createError({ statusCode: 400, message: 'Укажите адрес доставки' });
+    throw createError({
+      statusCode: 400,
+      message: 'Укажите адрес доставки',
+      data: { code: 'missingAddress' },
+    });
   }
 
   const city = customer?.city?.trim() ?? '';
   if (needsAddress && city.length < 2) {
-    throw createError({ statusCode: 400, message: 'Укажите город' });
+    throw createError({
+      statusCode: 400,
+      message: 'Укажите город',
+      data: { code: 'missingCity' },
+    });
   }
 
   // Почта России: индекс обязателен, ровно 6 цифр
   const postalCode = customer?.postalCode?.trim() ?? '';
   if (deliveryMethod === 'post' && !/^\d{6}$/.test(postalCode)) {
-    throw createError({ statusCode: 400, message: 'Почтовый индекс: 6 цифр' });
+    throw createError({
+      statusCode: 400,
+      message: 'Почтовый индекс: 6 цифр',
+      data: { code: 'badZip' },
+    });
   }
 
   return { name, email, phone, address, city, postalCode };
@@ -240,7 +261,11 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     qtyById.set(id, (qtyById.get(id) ?? 0) + qty);
   }
   if (qtyById.size === 0) {
-    throw createError({ statusCode: 400, message: 'Корзина пуста' });
+    throw createError({
+      statusCode: 400,
+      message: 'Корзина пуста',
+      data: { code: 'emptyCart' },
+    });
   }
 
   // 2. Способы доставки/оплаты — только допустимые значения
@@ -250,7 +275,11 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     ? (input.deliveryMethod as DeliveryMethod)
     : null;
   if (!deliveryMethod) {
-    throw createError({ statusCode: 400, message: 'Выберите способ доставки' });
+    throw createError({
+      statusCode: 400,
+      message: 'Выберите способ доставки',
+      data: { code: 'missingDelivery' },
+    });
   }
   // Способы оплаты — только включённые в store.config (STORE_PAYMENT_METHODS)
   const paymentMethod: PaymentMethod | null = (STORE_PAYMENT_METHODS as readonly string[]).includes(
@@ -259,7 +288,11 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     ? (input.paymentMethod as PaymentMethod)
     : null;
   if (!paymentMethod) {
-    throw createError({ statusCode: 400, message: 'Выберите способ оплаты' });
+    throw createError({
+      statusCode: 400,
+      message: 'Выберите способ оплаты',
+      data: { code: 'missingPayment' },
+    });
   }
 
   // 3. Товары из KV: цены и наличие — серверные.
@@ -273,7 +306,11 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
     const variantId = sep === -1 ? null : String(lineId).slice(sep + 2) || null;
     const product = products.find((p) => String(p.id) === productId);
     if (!product) {
-      throw createError({ statusCode: 400, message: `Товар с ID ${productId} не найден` });
+      throw createError({
+        statusCode: 400,
+        message: `Товар с ID ${productId} не найден`,
+        data: { code: 'productNotFound' },
+      });
     }
     let price = product.price;
     let stock = product.stockQuantity ?? 0;
@@ -287,6 +324,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
         throw createError({
           statusCode: 400,
           message: `У товара «${product.name}» нет варианта ${variantId}`,
+          data: { code: 'variantMissing', params: { name: product.name, variant: variantId } },
         });
       }
       price = variant.price ?? product.price;
@@ -300,6 +338,10 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
       throw createError({
         statusCode: 409,
         message: `«${product.name}${variantName ? ` (${variantName})` : ''}»: доступно ${stock} шт., запрошено ${quantity}`,
+        data: {
+          code: 'stockShortage',
+          params: { name: product.name, available: stock, requested: quantity },
+        },
       });
     }
     items.push({
@@ -418,19 +460,24 @@ async function adjustStockForOrder(
   if (mode === 'deduct') {
     // Сначала проверяем ВСЕ позиции и только потом списываем —
     // иначе ошибка на середине оставила бы склад списанным наполовину
-    const shortages: string[] = [];
+    // Структурированные нехватки: клиент локализует по server.stockShortageItem
+    const shortages: Array<{ name: string; available: number; requested: number }> = [];
     for (const item of order.items) {
       const product = byId.get(String(item.id));
       if (!product) continue;
       const stock = product.stockQuantity ?? 0;
       if (item.quantity > stock) {
-        shortages.push(`«${product.name}»: на складе ${stock} шт., в заказе ${item.quantity}`);
+        shortages.push({ name: product.name, available: stock, requested: item.quantity });
       }
     }
     if (shortages.length) {
+      const ruList = shortages
+        .map((s) => `«${s.name}»: на складе ${s.available} шт., в заказе ${s.requested}`)
+        .join('; ');
       throw createError({
         statusCode: 409,
-        message: `Недостаточно товара на складе: ${shortages.join('; ')}`,
+        message: `Недостаточно товара на складе: ${ruList}`,
+        data: { code: 'stockShortage', params: { items: shortages } },
       });
     }
   }
@@ -463,13 +510,18 @@ export async function updateOrderStatus(
     throw createError({
       statusCode: 400,
       message: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
+      data: { code: 'invalidStatus' },
     });
   }
 
   const orders = await readOrders(event);
   const order = orders.find((o) => o.id === id);
   if (!order) {
-    throw createError({ statusCode: 404, message: 'Заказ не найден' });
+    throw createError({
+      statusCode: 404,
+      message: 'Заказ не найден',
+      data: { code: 'orderNotFound' },
+    });
   }
 
   // Идемпотентность: повторная установка того же статуса не дублирует

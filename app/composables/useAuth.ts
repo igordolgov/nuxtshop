@@ -1,4 +1,8 @@
 // app/composables/useAuth.ts
+// Локализация тостов/ошибок вне setup — через tr() (composables/tr.ts)
+// и serverMessageTr (composables/useServerMessage.ts: серверные коды →
+// server.* в словарях)
+import { serverMessageTr } from './useServerMessage';
 
 // In-flight дедупликация checkAuth. Только клиент: на SSR промисы нельзя
 // шарить между запросами — это утечка сессий между пользователями.
@@ -104,15 +108,22 @@ function createAuth() {
       updateAuthState(data.user);
       return data;
     } catch (error) {
-      // ofetch бросает FetchError: интересуют data.message / status / message
-      const err = error as { data?: { message?: string }; status?: number; message?: string };
-      let msg = tr('auth.errLoginGeneric', 'Ошибка при входе в систему');
-      if (err.data?.message) msg = err.data.message;
-      else if (err.status === 401) msg = tr('auth.errLoginWrong', 'Неверный email или пароль');
-      else if (err.status === 500)
-        msg = tr('auth.errServerError', 'Ошибка сервера. Попробуйте позже.');
-      else if (err.message) msg = err.message;
-      throw new Error(msg);
+      // ofetch бросает FetchError: сервер кладёт code в data.data — серверный
+      // код переводим через словарь (server.*), иначе локализованный фолбэк.
+      // Русский текст сервера больше не показываем напрямую (i18n тостов).
+      const err = error as {
+        data?: { message?: string; data?: { code?: unknown; params?: Record<string, unknown> } };
+        code?: unknown;
+        status?: number;
+        message?: string;
+      };
+      const coded = serverMessageTr(err);
+      if (coded) throw new Error(coded);
+      if (err.status === 401)
+        throw new Error(tr('auth.errLoginWrong', 'Неверный email или пароль'));
+      if (err.status === 500)
+        throw new Error(tr('auth.errServerError', 'Ошибка сервера. Попробуйте позже.'));
+      throw new Error(tr('auth.errLoginGeneric', 'Ошибка при входе в систему'));
     } finally {
       loading.value = false;
     }
@@ -135,11 +146,14 @@ function createAuth() {
       updateAuthState(data.user);
       return data;
     } catch (error) {
-      const err = error as { data?: { message?: string }; message?: string };
-      let msg = tr('auth.errRegister', 'Ошибка при регистрации');
-      if (err.data?.message) msg = err.data.message;
-      else if (err.message) msg = err.message;
-      throw new Error(msg);
+      // Серверные коды (missingFields/emailFormat/nameLength/…) → server.*
+      const err = error as {
+        data?: { message?: string; data?: { code?: unknown; params?: Record<string, unknown> } };
+        code?: unknown;
+        message?: string;
+      };
+      const coded = serverMessageTr(err);
+      throw new Error(coded || tr('auth.errRegister', 'Ошибка при регистрации'));
     } finally {
       loading.value = false;
     }

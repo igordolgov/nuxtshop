@@ -47,6 +47,8 @@
 <script setup>
 const { $notify } = useNuxtApp()
 const { t } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 //- ─── Состояние (GET /api/telegram/webhook/setup) ────────────────────
 const isLoading = ref(true)
@@ -124,7 +126,8 @@ const connect = async () => {
     }
   } catch (err) {
     console.error('[telegram-card] Ошибка подключения:', err?.data?.message || err?.message)
-    $notify.error(err?.data?.message || t('admin.telegram.connectFailed'))
+    // Код сервера (managerRequired/authRequired/…) → server.*
+    $notify.error(serverMessage(err, 'admin.telegram.connectFailed'))
   } finally {
     busy.value = false
   }

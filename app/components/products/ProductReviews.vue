@@ -137,6 +137,8 @@
 import { validateImageFile, useImageResize } from '~/composables/useImageResize'
 
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 const props = defineProps({
   productId: { type: [String, Number], required: true },
@@ -223,9 +225,10 @@ const toggleHelpful = async (review) => {
     review.helpfulCount = Number(resp?.helpfulCount) || 0
     review.likedByMe = Boolean(resp?.liked)
   } catch (error) {
-    $notify.error(error?.data?.message || t('reviews.helpfulError'))
+    // Серверные коды (authRequired/reviewInvalid/…) → server.*
+    $notify.error(serverMessage(error, 'reviews.helpfulError'))
   } finally {
-    helpfulBusyId.value = null
+    helpfulBusyId.value = null;
   }
 }
 
@@ -252,7 +255,8 @@ const submit = async () => {
         photos: form.photos,
       },
     })
-    $notify.success(resp?.message || t('reviews.moderationThanks'))
+    // Серверное «Спасибо! …» дублирует локализованный тост — показываем словарь
+    $notify.success(t('reviews.moderationThanks'))
     showForm.value = false
     form.author = ''
     form.rating = 5
@@ -260,7 +264,8 @@ const submit = async () => {
     form.website = ''
     form.photos = []
   } catch (error) {
-    const message = error?.data?.message || error?.message || t('reviews.sendError')
+    // Серверные коды (reviewInvalid/productNotFound/authRequired/…) → server.*
+    const message = serverMessage(error, 'reviews.sendError')
     formError.value = message
     $notify.error(message)
   } finally {

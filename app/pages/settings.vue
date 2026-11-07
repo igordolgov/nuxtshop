@@ -140,6 +140,8 @@
 
 <script setup>
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 definePageMeta({
   middleware: 'user-auth',
 })
@@ -254,11 +256,12 @@ const submitPassword = async () => {
       pwForm.value = { current: '', next: '', repeat: '' }
       showPasswords.value = false
     } else {
-      throw new Error(res?.message || t('favorites.error'))
+      throw new Error(t('favorites.error'))
     }
   } catch (error) {
     console.error('[settings] Смена пароля:', error)
-    $notify.error(error.data?.message || error.message || t('settings.errPassword'))
+    // Серверные коды (pwWrongCurrent/pwMinLength/authRequired/…) → server.*
+    $notify.error(serverMessage(error, 'settings.errPassword'))
   } finally {
     changingPassword.value = false
   }
@@ -272,10 +275,10 @@ const logoutOthers = async () => {
   try {
     loggingOutOthers.value = true
     const res = await $fetch('/api/auth/logout-others', { method: 'POST' })
-    if (res?.success) $notify.success(res.message || t('settings.done'))
+    if (res?.success) $notify.success(t('settings.done'))
   } catch (error) {
     console.error('[settings] Выход с устройств:', error)
-    $notify.error(error.data?.message || t('settings.errSessions'))
+    $notify.error(serverMessage(error, 'settings.errSessions'))
   } finally {
     loggingOutOthers.value = false
   }

@@ -173,9 +173,25 @@ const paymentData = ref({
 //- Ошибки валидации
 const errors = ref({})
 
-//- Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
-const errorMessage = (err) =>
-  err?.data?.message || err?.data?.statusMessage || err?.message || t('checkout.unknownError')
+//- Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
+
+//- Человекочитаемое сообщение из ошибки $fetch. Серверные коды
+//- (emptyCart/missingName/stockShortage/…) переводятся словарём;
+//- нехватка склада — особый случай: список позиций из data.params.items
+//- локализуется по-штучно (server.stockShortageItem). Русский текст
+//- сервера больше не показываем напрямую (i18n страницы).
+const errorMessage = (err) => {
+  const payload = err?.data?.data ?? err?.data ?? {}
+  const items = payload?.params?.items ?? payload?.items
+  if (payload?.code === 'stockShortage' && Array.isArray(items) && items.length > 0) {
+    const list = items
+      .map((s) => t('server.stockShortageItem', { name: s.name, available: s.available, requested: s.requested }))
+      .join('; ')
+    return `${t('server.stockShortage')}: ${list}`
+  }
+  return serverMessage(err, 'checkout.unknownError')
+}
 const isStepValid = computed(() => {
   switch (currentStep.value) {
     case 1:

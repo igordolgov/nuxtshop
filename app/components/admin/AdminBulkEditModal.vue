@@ -213,7 +213,8 @@ const handleSubmit = async () => {
     const ids = props.products.map((p) => p.id)
     const result = await bulkUpdateProducts(ids, patch)
 
-    notify.success(result.message || t('admin.common.updated'))
+    // Серверное сообщение дублирует словарь — показываем локализованный текст
+    notify.success(t('admin.common.updated'))
     if (result.skippedCount > 0) {
       notify.info(t('admin.bulkEdit.skipped', { n: result.skippedCount }))
     }

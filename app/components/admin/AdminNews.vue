@@ -241,6 +241,8 @@ import { NEWS_CATEGORIES, formatNewsDate, newsTone, localizedNews, newsCategoryL
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const localePath = useLocalePath()
 
 //- Локализованное ОТОБРАЖЕНИЕ строки списка (заголовок/лид на языке админа:
@@ -465,11 +467,13 @@ const save = async () => {
     const resp = isNew.value
       ? await $fetch('/api/news', { method: 'POST', body: payload })
       : await $fetch(`/api/news/${form.id}`, { method: 'PUT', body: payload })
-    $notify.success(resp?.message || t('admin.common.saved'))
+    // Серверное сообщение дублирует словарь — показываем локализованный текст
+    $notify.success(t('admin.common.saved'))
     showForm.value = false
     await load()
   } catch (error) {
-    const message = error?.data?.message || error?.message || t('admin.news.saveError')
+    // Код сервера (managerRequired/authRequired/…) → server.*
+    const message = serverMessage(error, 'admin.news.saveError')
     formError.value = message
     $notify.error(message)
   } finally {
@@ -481,7 +485,7 @@ const remove = async (item) => {
   if (!confirm(t('admin.news.deleteConfirm', { title: view(item).title }))) return
   try {
     const resp = await $fetch(`/api/news/${item.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || t('admin.news.deleted'))
+    $notify.success(t('admin.news.deleted'))
     await load()
   } catch {
     $notify.error(t('admin.news.deleteError'))

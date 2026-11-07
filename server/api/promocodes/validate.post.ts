@@ -18,7 +18,11 @@ export default defineEventHandler(async (event) => {
     .trim()
     .toUpperCase();
   if (!code) {
-    throw createError({ statusCode: 400, message: 'Введите промокод' });
+    throw createError({
+      statusCode: 400,
+      message: 'Введите промокод',
+      data: { code: 'promoEmpty' },
+    });
   }
 
   const promos = await readPromoCodes(event);

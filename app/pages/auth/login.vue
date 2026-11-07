@@ -105,6 +105,8 @@
 
 <script setup>
 const { t } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const appState = useAppState()
 const { login, isAuthenticated, checkAuth, user } = appState
 
@@ -201,14 +203,13 @@ const handleLogin = async () => {
       loginError.value = result?.error || t('auth.errLoginDefault')
     }
   } catch (error) {
-    if (error.data?.message || error.data?.statusMessage) {
-      loginError.value = error.data.message || error.data.statusMessage
-    } else if (error.status === 401) {
-      loginError.value = t('auth.errLoginWrong')
-    } else if (error.status === 500) {
+    // Сервер кладёт code в тело ошибки (data.data.code) — переводим через
+    // server.*; 500 — отдельный локализованный текст. Русский текст сервера
+    // больше не показываем напрямую (i18n страницы).
+    if (error?.status >= 500) {
       loginError.value = t('auth.errServerError')
     } else {
-      loginError.value = error.message || t('auth.errLoginGeneric')
+      loginError.value = serverMessage(error, 'auth.errLoginWrong')
     }
   } finally {
     loading.value = false
