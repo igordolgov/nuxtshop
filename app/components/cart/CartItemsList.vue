@@ -37,7 +37,7 @@
             ) {{ displayName(item) }}
             .variant-chip.text-xs.mb-2(class="text-base-content/70" v-if="item.variantName")
               | {{ item.variantName }}
-            span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ item.category }}
+            span.inline-block.px-2.py-1.rounded-full.text-xs.border.border-base-300.mb-2(class="text-base-content/65") {{ displayCategory(item) }}
             .flex.items-center.gap-1.mt-1
               button.qty-btn(
                 type="button"
@@ -104,7 +104,7 @@
             ) {{ displayName(item) }}
             .variant-chip.text-xs(class="mt-0.5 text-base-content/70" v-if="item.variantName")
               | {{ item.variantName }}
-            span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ item.category }}
+            span.inline-block.mt-1.px-2.py-1.rounded-full.text-xs.border.border-base-300.w-fit(class="text-base-content/65") {{ displayCategory(item) }}
             .text-xs.text-warning.mt-1(v-if="item.quantity > getMaxQuantity(item)")
               | {{ $t('cart.qtyExceededFull') }}
             .text-xs.mt-1(
@@ -155,18 +155,35 @@ import { parseCartLineId } from '@/utils/productVariants'
 const { t } = useI18n()
 const { $notify } = useNuxtApp()
 
-// Локализация названий: снапшот в localStorage хранит имя на языке
-// МОМЕНТА добавления; показываем актуальное имя из каталога (фолбэк — снапшот)
+// Локализация позиций: снапшот в localStorage хранит текст на языке
+// МОМЕНТА добавления; показываем актуальные имя и категорию из живого
+// каталога (фолбэк — снапшот: товар удалён или каталог ещё не загружен)
 const appState = useAppState()
 const { loc } = useLocalizedProduct()
-const displayName = (item) => {
-  // Позиция варианта лежит в корзине под составным id «productId::variantId» —
-  // свежий товар ищем по голому productId (parseCartLineId режет суффикс)
+// Свежий товар каталога по позиции корзины; товары в appState уже
+// локализованы под текущую локаль (см. useAppState). Вариантная позиция
+// лежит под составным id «productId::variantId» — ищем по голому
+// productId (parseCartLineId режет суффикс)
+const freshProductFor = (item) => {
   const { productId } = parseCartLineId(item?.id)
-  const fresh = appState.products.value?.find(
-    (p) => String(p.id) === String(productId),
+  return (
+    appState.products.value?.find((p) => String(p.id) === String(productId)) ??
+    null
   )
+}
+const displayName = (item) => {
+  const fresh = freshProductFor(item)
   return fresh ? loc(fresh).name : (item?.name ?? '')
+}
+
+// Плашка категории: та же логика, что у имени. Раньше здесь рендерился
+// сырой снапшот item.category — при переключении локали категория
+// оставалась на языке момента добавления (на ES-копии всегда русская)
+const displayCategory = (item) => {
+  const fresh = freshProductFor(item)
+  const categories = fresh ? loc(fresh).categories : null
+  if (Array.isArray(categories) && categories[0]) return categories[0]
+  return item?.category ?? ''
 }
 
 const {

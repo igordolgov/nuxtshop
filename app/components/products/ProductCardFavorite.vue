@@ -64,10 +64,13 @@
           span.line-clamp-2 {{ product.name }}
         
         //- Описание
+        //- Фолбэк описания: сначала локализованная категория из живого
+        //- каталога (categories[0] — карточка приходит уже локализованной,
+        //- см. favorites.vue), и только потом сырой снапшот из localStorage
         p.text-secondary.line-clamp-2.leading-snug.transition-colors.duration-300.text-xs(
           class="lg:text-sm group-hover:text-base-content/80"
         )
-          | {{ product.description || product.category }}
+          | {{ product.description || product.categories?.[0] || product.category }}
     
     //- Цена и статус
     .card-actions.justify-between.items-center.mt-0.px-3.pb-2
