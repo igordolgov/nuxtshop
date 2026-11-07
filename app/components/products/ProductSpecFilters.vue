@@ -113,6 +113,10 @@
 const props = defineProps({
   facets: { type: Array, default: () => [] },
   selected: { type: Object, default: () => ({}) },
+  //- Сколько групп видно до кнопки «Показать ещё {n}». Мало — чтобы кнопка
+  //- попадала на первый экран (как «Ещё {n}» у категорий), а не пряталась
+  //- за длинной колонкой аккордеонов (в каталоге бывает 100+ групп)
+  maxGroups: { type: Number, default: 4 },
 })
 
 const emit = defineEmits(['update:selected'])
@@ -122,7 +126,6 @@ const emit = defineEmits(['update:selected'])
 const { specLabel } = useSpecLabels()
 
 const VISIBLE_VALUES = 8
-const MAX_GROUPS = 10
 
 const expanded = ref({})
 const showAllGroups = ref(false)
@@ -142,7 +145,7 @@ const selectedCount = computed(() =>
 
 const visibleGroups = computed(() => {
   const list = Array.isArray(props.facets) ? props.facets : []
-  return showAllGroups.value ? list : list.slice(0, MAX_GROUPS)
+  return showAllGroups.value ? list : list.slice(0, props.maxGroups)
 })
 
 const hiddenGroupsCount = computed(() => {
