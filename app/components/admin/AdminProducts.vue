@@ -105,6 +105,7 @@ const isLoading = appState.loading
 const loadProducts = appState.loadProducts
 const deleteProduct = appState.deleteProduct
 const bulkDeleteProducts = appState.bulkDeleteProducts
+const ensureFullProducts = appState.ensureFullProducts
 const initializeApp = appState.initializeApp
 
 const notify = useNotifyQueue()
@@ -254,8 +255,16 @@ const handleExport = () => {
   notify.success(t('admin.products.exportDone'))
 }
 
-const handleEdit = (product) => {
-  currentProduct.value = { ...product }
+const handleEdit = async (product) => {
+  // Каталог в state может быть карточным слепком из SSR-payload: перед
+  // редактированием добираем полные данные (галереи, характеристики,
+  // описания) — иначе модалка запишет пустые поля поверх живого товара.
+  let full = product
+  if (!isFullCatalogProduct(product)) {
+    const all = await ensureFullProducts()
+    full = all.find((p) => String(p.id) === String(product.id)) || product
+  }
+  currentProduct.value = { ...full }
   showEditModal.value = true
 }
 

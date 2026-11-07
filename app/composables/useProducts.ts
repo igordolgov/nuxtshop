@@ -47,6 +47,11 @@ let favoriteFlagsScope: EffectScope | null = null;
 // одинаковых запроса /api/products за первый рендер. force=true
 // («Обновить» руками) — мимо кэша.
 let productsInFlight: Promise<CatalogProduct[]> | null = null;
+// Дедупликация параллельных ensureFullProducts: карточный слепок из
+// SSR-payload добирается до полных данных из нескольких мест (инициализация
+// после гидратации, «в сравнение» из карточки, админ-редактирование) —
+// все должны получить ОДИН и тот же фоновый запрос.
+let fullInFlight: Promise<CatalogProduct[]> | null = null;
 
 export const useProducts = () => {
   if (import.meta.server) return createProducts();
@@ -63,6 +68,11 @@ function createProducts() {
   // на клиенте при гидратации ref сразу инициализируется данными с сервера.
   // Все присваивания products.value = ... работают как раньше.
   const products = useState<CatalogProduct[]>('catalog-products', () => []);
+  // Полный ли каталог в state? На сервере state — карточный слепок
+  // (лёгкий payload, см. toCatalogCardProduct); клиент после гидратации
+  // добирает полные данные. Гидратация при этом не расходится: и SSR,
+  // и клиент стартуют с одного и того же слепка из payload.
+  const catalogFull = useState<boolean>('catalog-full', () => false);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -111,6 +121,19 @@ function createProducts() {
 
   // ─── Загрузка ─────────────────────────────────────────────
 
+  /** /api/products с одиночным повтором на сервере: чтение KV иногда
+   *  спотыкается на холодном изоляте воркера — без повтора посетитель
+   *  получал скелет вместо SSR-каталога (медленный прогон PageSpeed). */
+  const fetchCatalog = async (): Promise<CatalogProduct[] | { products?: CatalogProduct[] }> => {
+    try {
+      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>('/api/products');
+    } catch (err) {
+      if (!import.meta.server) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>('/api/products');
+    }
+  };
+
   const loadProducts = async (force = false): Promise<CatalogProduct[]> => {
     if (products.value.length > 0 && !force) return products.value;
     // Уже грузится другим вызовом — возвращаем тот же промис
@@ -121,9 +144,7 @@ function createProducts() {
 
     const request = (async (): Promise<CatalogProduct[]> => {
       try {
-        const response = await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>(
-          '/api/products',
-        );
+        const response = await fetchCatalog();
         const list = Array.isArray(response) ? response : response?.products || [];
 
         products.value = list.map((product) =>
@@ -134,6 +155,16 @@ function createProducts() {
             }) as CatalogProduct,
           ),
         );
+        if (import.meta.server) {
+          // SSR-payload — карточный слепок: галереи/характеристики не нужны
+          // витрине каталога (−70 КБ на страницу), клиент доберёт фоном
+          products.value = products.value.map(
+            (product) => toCatalogCardProduct(product) as CatalogProduct,
+          );
+          catalogFull.value = false;
+        } else {
+          catalogFull.value = true;
+        }
         persist();
         return products.value;
       } catch (err) {
@@ -177,6 +208,21 @@ function createProducts() {
     return request;
   };
 
+  /** Полные данные каталога (с характеристиками/галереями): карточный
+   *  слепок из SSR-payload добирается одним фоновым запросом. Все
+   *  потребители (сравнение из карточки, админ-редактирование, фон-инициализация)
+   *  получают один и тот же промис — двойных запросов нет. */
+  const ensureFullProducts = (): Promise<CatalogProduct[]> => {
+    if (catalogFull.value) return Promise.resolve(products.value);
+    if (products.value.length === 0) return loadProducts();
+    if (!fullInFlight) {
+      fullInFlight = loadProducts(true).finally(() => {
+        fullInFlight = null;
+      });
+    }
+    return fullInFlight;
+  };
+
   // ─── CRUD и массовые операции: реализация в useProductMutations.ts ───
   const {
     toggleFavorite,
@@ -199,13 +245,17 @@ function createProducts() {
 
   const getProductBySlug = async (slug: string): Promise<CatalogProduct | null> => {
     try {
-      const local = products.value.find((p) => p.slug === slug || String(p.id) === String(slug));
+      // Слепок из SSR-payload не годится потребителям, которым нужны
+      // характеристики/галереи: как полный товар его не возвращаем
+      const local = products.value.find(
+        (p) => (p.slug === slug || String(p.id) === String(slug)) && isFullCatalogProduct(p),
+      );
       if (local) return local;
 
       if (!loading.value) {
         await loadProducts(true);
         const refreshed = products.value.find(
-          (p) => p.slug === slug || String(p.id) === String(slug),
+          (p) => (p.slug === slug || String(p.id) === String(slug)) && isFullCatalogProduct(p),
         );
         if (refreshed) return refreshed;
       }
@@ -337,6 +387,8 @@ function createProducts() {
     favoritesCount: computed(() => favorites.favoritesCount.value),
 
     loadProducts,
+    ensureFullProducts,
+    catalogFull: computed(() => catalogFull.value),
     updateProduct,
     createProduct,
     deleteProduct,

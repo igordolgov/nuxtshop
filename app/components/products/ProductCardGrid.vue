@@ -188,8 +188,18 @@ const { $notify } = useNuxtApp()
 const { isCompared, toggleCompare } = useCompare()
 const isComparedVisible = computed(() => isHydrated.value && isCompared(props.product.id))
 
-const toggleCompareClick = (event) => {
-  const status = toggleCompare(props.product)
+//- Слепок каталога из SSR-payload не содержит характеристики: перед снапшотом
+//- добираем полные данные (дедуплицированный фоновый запрос), иначе в
+//- сравнении будут пустые строки характеристик
+
+const toggleCompareClick = async (event) => {
+  let product = props.product
+  if (!isFullCatalogProduct(product)) {
+    const all = await app.ensureFullProducts?.()
+    const full = all?.find((p) => String(p.id) === String(product?.id))
+    if (full) product = full
+  }
+  const status = toggleCompare(product)
   if (status === 'added') {
     $notify.success(t('compare.added'))
     // «Синяя точка» летит к бургеру/«Сравнению» в шапке (utils/compareFly.js)

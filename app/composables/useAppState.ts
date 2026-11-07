@@ -309,6 +309,12 @@ function createAppState() {
     try {
       if (import.meta.client && products.products.value.length === 0) {
         await products.loadProducts();
+      } else if (import.meta.client && !products.catalogFull.value) {
+        // В payload — карточный слепок каталога (лёгкий SSR): полные данные
+        // (галереи, характеристики) добираем ОДНИМ фоновым запросом сразу
+        // после гидратации. Не awaited: интерактив не ждёт, LCP не сдвигает
+        // (карточки уже отрисованы из SSR-HTML).
+        products.ensureFullProducts().catch(() => {});
       }
 
       await auth.checkAuth();

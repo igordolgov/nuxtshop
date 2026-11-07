@@ -355,10 +355,10 @@ export default defineNuxtConfig({
         // Preconnect к images.unsplash.com удалён: фото каталога переехали
         // на /images/products/* (тот же origin) — греть чужой origin больше
         // не для чего, соединение только тормозило первый рендер.
-        // Иконки, не попавшие в клиентский бандл (clientBundle.scan
-        // покрывает шаблоны), дозагружаются с api.iconify.design.
-        // preconnect вместо dns-prefetch: заранее открывает соединение.
-        { rel: 'preconnect', href: 'https://api.iconify.design' },
+        // Preconnect к api.iconify.design удалён (аудит PageSpeed
+        // «Неиспользуемое предварительное подключение»): иконки собираются
+        // в клиентский бандл (icon.clientBundle.scan + @iconify-json/*),
+        // запросов к API иконок в рантайме нет — греть origin не для чего.
         { rel: 'manifest', href: '/manifest.webmanifest' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
       ],
