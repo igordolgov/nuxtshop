@@ -27,6 +27,12 @@ export const STORE_LOCALES: StoreLocale[] = ['ru', 'en', 'es'];
 // Язык без URL-префикса (strategy prefix_except_default). ⚙️ Куба: 'es'.
 export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';
 
+// Порядок языковых вкладок в админке (форма добавления/редактирования
+// товара): язык магазина витрины — первым, чтобы контент его языка
+// набирался без лишнего клика. RU-магазин: ru → en → es.
+// ⚙️ Куба: ['es', 'en', 'ru'] (Español → English → Русский).
+export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['ru', 'en', 'es'];
+
 // ─── Валюта ─────────────────────────────────────────────────────────────
 export type StoreCurrency = 'RUB' | 'USD';
 // Валюта витрины: цены в каталоге/заказах/промокодах безразмерные числа,

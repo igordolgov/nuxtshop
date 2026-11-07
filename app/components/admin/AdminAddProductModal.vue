@@ -21,12 +21,20 @@
     h3.text-base.font-bold.mb-2(class="sm:text-xl") {{ $t('admin.productForm.addTitle') }}
 
     form(@submit.prevent="handleSubmit")
-      //- Языковые вкладки: RU — основной контент (обязательный), EN/ES —
-      //- необязательные переводы (пусто → витрина показывает русский)
+      //- Языковые вкладки: порядок из store.config (STORE_ADMIN_LANG_TABS) —
+      //- язык витрины магазина первым (RU-магазин Русский→English→Español,
+      //- кубинская копия Español→English→Русский). RU — базовый контент
+      //- (обязательный), EN/ES — необязательные переводы (пусто → витрина
+      //- показывает русский)
       .flex.gap-1.mb-2.flex-wrap.items-center
-        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
-        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
-        button.btn.btn-xs(type="button" :disabled="isSubmitting" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
+        button.btn.btn-xs(
+          v-for="tab in langTabs"
+          :key="tab.code"
+          type="button"
+          :disabled="isSubmitting"
+          :class="langTab === tab.code ? 'btn-primary' : 'btn-outline'"
+          @click="langTab = tab.code"
+        ) {{ tab.label }}
         span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60") {{ $t('admin.productForm.optionalHint') }}
 
       //- Основная информация — 2 колонки на мобильных
@@ -76,9 +84,10 @@
           .form-control(class="sm:col-span-2")
             label.label.py-1
               span.label-text.text-xs Categories (English)
+            //- Подсказки — в языке вкладки (переводы с товаров), не русские
             AdminCategoryPicker(
               v-model="form.categoriesEn"
-              :allCategories="props.allCategories"
+              :allCategories="pickerCategories"
               :disabled="isSubmitting"
               placeholder="Category in English or empty"
             )
@@ -97,9 +106,10 @@
           .form-control(class="sm:col-span-2")
             label.label.py-1
               span.label-text.text-xs Categorías (Español)
+            //- Подсказки — в языке вкладки (переводы с товаров), не русские
             AdminCategoryPicker(
               v-model="form.categoriesEs"
-              :allCategories="props.allCategories"
+              :allCategories="pickerCategories"
               :disabled="isSubmitting"
               placeholder="Categoría en español o vacío"
             )
@@ -176,33 +186,6 @@
           rows="2"
           :disabled="isSubmitting"
         )
-
-      //- Характеристики-переводы (en/es): редактор в своей языковой вкладке,
-      //- при первом открытии вкладки предзаполняется русским списком.
-      //- «Очистить»/пусто → сервер не сохранит поле, витрина фолбэкится на
-      //- русский список (известные лейблы переводятся словарём specLabels.*)
-      .form-control.mb-2(v-if="langTab === 'en'")
-        label.label.py-1
-          span.label-text.text-xs {{ $t('admin.characteristics.enTitle') }}
-        AdminCharacteristicsEditor(
-          v-model="characteristicPairsEn"
-          :categories="form.categories"
-          lang="en"
-          :show-clear="true"
-          :disabled="isSubmitting"
-        )
-        p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
-      .form-control.mb-2(v-else-if="langTab === 'es'")
-        label.label.py-1
-          span.label-text.text-xs {{ $t('admin.characteristics.esTitle') }}
-        AdminCharacteristicsEditor(
-          v-model="characteristicPairsEs"
-          :categories="form.categories"
-          lang="es"
-          :show-clear="true"
-          :disabled="isSubmitting"
-        )
-        p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
 
       //- Изображения
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-4")
@@ -304,7 +287,14 @@
             :disabled="isSubmitting"
           )
 
-      //- Характеристики (spec-лист карточки): чипы-пресеты по категориям
+      //- Характеристики (spec-лист карточки): редактор АКТИВНОЙ вкладки —
+      //- чипы и ввод в её языке (ru — русские пресеты; en/es — переводы
+      //- из словаря specLabels; при первом открытии вкладка предзаполняется
+      //- русским списком). Раньше базовый (русский) редактор был виден на
+      //- любой вкладке — на копии с es-вкладкой чипы вставляли русский.
+      //- «Очистить»/пусто у переводных вкладок → сервер не сохранит поле,
+      //- витрина фолбэкится на русский список (известные лейблы переводятся
+      //- словарём specLabels.*)
       details.border.border-base-300.rounded-lg.mt-2.group
         summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
           span {{ $t('admin.characteristics.sectionTitle', { n: filledCharacteristicsCount }) }}
@@ -315,10 +305,31 @@
             path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
         .px-3.py-3.border-t.border-base-300
           AdminCharacteristicsEditor(
+            v-if="langTab === 'ru'"
             v-model="characteristicPairs"
             :categories="form.categories"
             :disabled="isSubmitting"
           )
+          template(v-else)
+            label.label.py-1
+              span.label-text.text-xs {{ langTab === 'en' ? $t('admin.characteristics.enTitle') : $t('admin.characteristics.esTitle') }}
+            AdminCharacteristicsEditor(
+              v-if="langTab === 'en'"
+              v-model="characteristicPairsEn"
+              :categories="form.categories"
+              lang="en"
+              :show-clear="true"
+              :disabled="isSubmitting"
+            )
+            AdminCharacteristicsEditor(
+              v-else
+              v-model="characteristicPairsEs"
+              :categories="form.categories"
+              lang="es"
+              :show-clear="true"
+              :disabled="isSubmitting"
+            )
+            p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
 
       //- Прогресс-бар
       .mt-2(v-if="uploadProgress > 0 && uploadProgress < 100")
@@ -364,6 +375,9 @@ const { t } = useI18n()
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
   allCategories: { type: Array, default: () => [] },
+  // Карты «сырая категория → перевод» для подсказок пикера на вкладках
+  // en/es ({ en: Map, es: Map }, buildCategoryLabelMap в AdminProducts)
+  categoryLabelMaps: { type: Object, default: null },
 })
 
 const emit = defineEmits(['update:isOpen', 'productAdded'])
@@ -371,10 +385,19 @@ const emit = defineEmits(['update:isOpen', 'productAdded'])
 // ⚙️ НАСТРОЙКА: максимум изображений в галерее товара
 const MAX_GALLERY_IMAGES = 5
 
-// Активная языковая вкладка (RU — основной контент, EN/ES — переводы)
-const langTab = ref('ru')
-const LANG_LABELS = { ru: 'русский', en: 'English', es: 'Español' }
-const langLabel = computed(() => LANG_LABELS[langTab.value] || 'русский')
+//- Языковые вкладки: порядок из store.config (язык витрины магазина —
+//- первым); RU — базовый контент, EN/ES — переводы
+const { langTabs, langTab, langLabel } = useAdminLangTabs()
+
+//- Подсказки пикера категорий: на базовой вкладке — сырые значения,
+//- на en/es — переводы из карт (непереведённые остаются сырыми)
+const pickerCategories = computed(() => {
+  if (langTab.value === 'ru') return props.allCategories
+  return localizedCategorySuggestions(
+    props.allCategories,
+    props.categoryLabelMaps?.[langTab.value],
+  )
+})
 
 const isSubmitting = ref(false)
 const uploadProgress = ref(0)
@@ -406,9 +429,15 @@ watch(langTab, (tab) => {
     target.value = characteristicPairs.value.map((pair) => ({ ...pair }))
   }
 })
-const filledCharacteristicsCount = computed(
-  () => characteristicPairs.value.filter((p) => p?.label?.trim()).length,
-)
+const filledCharacteristicsCount = computed(() => {
+  const pairs =
+    langTab.value === 'ru'
+      ? characteristicPairs.value
+      : langTab.value === 'en'
+        ? characteristicPairsEn.value
+        : characteristicPairsEs.value
+  return pairs.filter((p) => p?.label?.trim()).length
+})
 
 // Ошибки валидации полей (categories добавлена как обязательная)
 const errors = ref({ name: '', price: '', oldPrice: '', categories: '' })
@@ -737,7 +766,7 @@ const resetForm = () => {
     stockQuantity: 0,
   }
   errors.value = { name: '', price: '', categories: '' }
-  langTab.value = 'ru'
+  langTab.value = langTabs[0].code
   if (mainImageInput.value) mainImageInput.value.value = ''
   if (galleryInput.value) galleryInput.value.value = ''
   uploadProgress.value = 0

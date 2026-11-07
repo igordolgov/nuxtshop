@@ -24,6 +24,11 @@ const REPLACES = [
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';",
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'es';",
   ],
+  // ─── Админка: языковые вкладки формы товара — Español первым ─────────
+  [
+    "export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['ru', 'en', 'es'];",
+    "export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['es', 'en', 'ru'];",
+  ],
   // ─── Валюта: USD ($ перед суммой, формат en-US — внутри formatMoney) ─
   [
     "export const STORE_CURRENCY: StoreCurrency = 'RUB';",

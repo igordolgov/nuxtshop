@@ -67,6 +67,7 @@
   AdminAddProductModal(
     v-model:isOpen="showAddModal"
     :allCategories="availableCategories"
+    :categoryLabelMaps="categoryLabelMaps"
     @productAdded="handleProductAdded"
   )
 
@@ -74,6 +75,7 @@
     v-model:isOpen="showEditModal"
     :product="currentProduct"
     :allCategories="availableCategories"
+    :categoryLabelMaps="categoryLabelMaps"
     @productUpdated="handleProductUpdated"
   )
 
@@ -161,6 +163,14 @@ const availableCategories = computed(() => {
 // (значения фильтров и пикер модалок остаются сырыми — переводится только
 // подпись; на ru карта пустая, дропдаун фолбэкается на сырые значения)
 const categoryLabels = computed(() => buildCategoryLabelMap(products.value, locale.value))
+
+// Карты переводов категорий для модалок товара (вкладки EN/ES): подсказки
+// пикера показываются в языке вкладки, а не по-русски (непереведённые
+// категории остаются сырыми — тот же фолбэк, что у витрины)
+const categoryLabelMaps = computed(() => ({
+  en: buildCategoryLabelMap(products.value, 'en'),
+  es: buildCategoryLabelMap(products.value, 'es'),
+}))
 
 const processedProducts = computed(() => {
   let result = [...products.value]

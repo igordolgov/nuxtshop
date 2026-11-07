@@ -9,10 +9,14 @@
      полный массив, серверной потери переводов нет. -->
 <template lang="pug">
 .variants-editor
-  //- Название оси (например, «Цвет») — с необязательными переводами
-  .grid.gap-1.mb-2(class="grid-cols-3")
-    .form-control
-      label.label.py-1
+  //- Название оси (например, «Цвет») — с необязательными переводами.
+  //- На телефоне — столбик, у label whitespace-normal: у daisyUI 5 .label
+  //- white-space:nowrap, и длинная подпись «Nombre del eje (p. ej., Color)»
+  //- в узкой колонке grid-cols-3 не переносилась, а НАЕЗЖАЛА на соседнюю
+  //- («Eje (EN)» + её поле — наложение подписей/полей на мобильной админке)
+  .grid.gap-1.mb-2(class="grid-cols-1 sm:grid-cols-3")
+    .form-control.min-w-0
+      label.label.py-1.whitespace-normal
         span.label-text.text-xs {{ $t('admin.variants.axisLabel') }}
       input.input.input-bordered.input-sm.w-full(
         type="text"
@@ -22,8 +26,8 @@
         :disabled="disabled"
         @input="updateAxis('ru', $event.target.value)"
       )
-    .form-control
-      label.label.py-1
+    .form-control.min-w-0
+      label.label.py-1.whitespace-normal
         span.label-text.text-xs {{ $t('admin.variants.axisEn') }}
       input.input.input-bordered.input-sm.w-full(
         type="text"
@@ -33,8 +37,8 @@
         :disabled="disabled"
         @input="updateAxis('en', $event.target.value)"
       )
-    .form-control
-      label.label.py-1
+    .form-control.min-w-0
+      label.label.py-1.whitespace-normal
         span.label-text.text-xs {{ $t('admin.variants.axisEs') }}
       input.input.input-bordered.input-sm.w-full(
         type="text"
