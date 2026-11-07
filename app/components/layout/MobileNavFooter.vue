@@ -437,10 +437,19 @@ const localePath = useLocalePath()
 const activeHome = computed(() => isActiveRoute('/'))
 const activeCart = computed(() => isActiveRoute('/cart'))
 const activeFavorites = computed(() => isActiveRoute('/favorites'))
-// /auth покрывает /auth/login и /auth/register, /user — кабинет.
-// Алиасы /login, /register, /profile, /account страницами не являются —
-// route.path на них никогда не указывает.
-const activeAuth = computed(() => isActiveRoute('/auth') || isActiveRoute('/user'))
+// Вход/регистрация — точечные проверки существующих маршрутов. Проверка
+// isActiveRoute('/auth') сыпала на КАЖДОЙ странице предупреждениями
+// VUE_ROUTER_R0004 «No match found for location with path "/auth"»:
+// маршрута /auth нет (есть только /auth/login и /auth/register), а
+// localePath внутри делает router.resolve несуществующего пути.
+// /user — кабинет. Алиасы /login, /register, /profile, /account
+// страницами не являются — route.path на них никогда не указывает.
+const activeAuth = computed(
+  () =>
+    isActiveRoute('/auth/login') ||
+    isActiveRoute('/auth/register') ||
+    isActiveRoute('/user'),
+)
 
 const displayFavoritesCount = computed(() => favoritesCount.value || 0)
 const cartItemsCount = computed(() => totalItems.value || 0)

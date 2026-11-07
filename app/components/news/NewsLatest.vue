@@ -54,10 +54,31 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
 import { localizedNews, newsCategoryLabel } from '~/utils/news'
 import type { NewsItem } from '~/utils/news'
 
+/** Тизер новости для блока «Последние»: без полных текстов (body/bodyEn/Es),
+ *  джойна товаров (products) и служебных полей — они payload не нужны. */
+type NewsTeaser = Pick<NewsItem, 'id' | 'date' | 'category' | 'title' | 'excerpt' | 'image'> &
+  Partial<Pick<NewsItem, 'titleEn' | 'titleEs' | 'excerptEn' | 'excerptEs'>>
+
 // SSR: сервер вызывает внутренний роут /api/news (сид при пустом KV)
 // и кладёт тизеры в payload — гидратация рендерит их сразу.
-const { data } = await useAsyncData('news-latest', () =>
-  $fetch<{ success: boolean; news: NewsItem[] }>('/api/news'),
+// transform срезает ответ ДО сериализации в payload: без него на главной
+// лежал весь каталог новостей с полными текстами и товарами (~47 kB,
+// NUXT_E8006 в dev-консоли), а блок рендерит только тизеры первых 3.
+const { data } = await useAsyncData('news-latest', (): Promise<{ news: NewsTeaser[] }> =>
+  $fetch<{ success: boolean; news: NewsItem[] }>('/api/news').then((res) => ({
+    news: (res.news ?? []).slice(0, 3).map((n) => ({
+      id: n.id,
+      date: n.date,
+      category: n.category,
+      title: n.title,
+      titleEn: n.titleEn,
+      titleEs: n.titleEs,
+      excerpt: n.excerpt,
+      excerptEn: n.excerptEn,
+      excerptEs: n.excerptEs,
+      image: n.image,
+    })),
+  })),
 )
 
 const { t } = useI18n()
@@ -65,10 +86,9 @@ const { t } = useI18n()
 // даты блока всегда рендерились по-русски даже на /en и /es)
 const locale = useStoreLocale()
 
-const items = computed<NewsItem[]>(() =>
-  (data.value?.news ?? [])
-    .slice(0, 3)
-    .map((n) => localizedNews(n, locale.value)),
+// Первые 3 новости уже отобраны при загрузке — payload минимален
+const items = computed<NewsTeaser[]>(() =>
+  (data.value?.news ?? []).map((n) => localizedNews(n, locale.value)),
 )
 </script>
 
