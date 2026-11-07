@@ -1,6 +1,8 @@
 // Тесты server/lib/csvHelpers.ts — экранирование CSV, документ целиком,
 // маппинг заказа в строку и защита от формульной инъекции (OWASP).
 import { describe, expect, it } from 'vitest';
+// Валюта в summary — из конфига витрины (₽ на main, $ на кубинской копии)
+import { formatMoney } from '../../store.config';
 import {
   CSV_BOM,
   CSV_DELIMITER,
@@ -130,7 +132,9 @@ describe('orderToCsvRow / orderItemsSummary', () => {
     const summary = orderItemsSummary(makeOrder());
     // название с кавычками попадёт в итоговый CSV в кавычках — в summary
     // оно остаётся как есть, экранирование — дело csvRow
-    expect(summary).toBe('Кружка "Керамика" × 2 (500 ₽) | Тарелка × 1 (300 ₽)');
+    expect(summary).toBe(
+      `Кружка "Керамика" × 2 (${formatMoney(500)}) | Тарелка × 1 (${formatMoney(300)})`,
+    );
   });
 
   it('строка заказа: 19 полей в порядке заголовков', () => {
@@ -141,7 +145,9 @@ describe('orderToCsvRow / orderItemsSummary', () => {
     expect(row[2]).toBe('Новый');
     expect(row[3]).toBe('Иван Иванов');
     expect(row[5]).toBe('+7 916 123-45-67'); // сырое значение; нейтрализация — в csvRow
-    expect(row[10]).toBe('Кружка "Керамика" × 2 (500 ₽) | Тарелка × 1 (300 ₽)');
+    expect(row[10]).toBe(
+      `Кружка "Керамика" × 2 (${formatMoney(500)}) | Тарелка × 1 (${formatMoney(300)})`,
+    );
     expect(row[11]).toBe(2); // позиций
     expect(row[12]).toBe(3); // товаров, шт
     expect(row[13]).toBe(1300);
@@ -180,6 +186,6 @@ describe('ordersToCsv', () => {
     expect(lines[1]).toContain('ORD-FRESH');
     expect(lines[2]).toContain('ORD-OLD');
     // кавычки в составе заказа экранированы удвоением
-    expect(doc).toContain('"Кружка ""Керамика"" × 2 (500 ₽)');
+    expect(doc).toContain(`"Кружка ""Керамика"" × 2 (${formatMoney(500)})`);
   });
 });

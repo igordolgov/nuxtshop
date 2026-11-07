@@ -2,6 +2,9 @@
 // применимость, расчёт скидки. Чистые функции — без KV.
 import { describe, expect, it } from 'vitest';
 
+// Символ валюты для фиксированных промокодов — из конфига витрины
+import { formatMoney } from '../../store.config';
+
 import {
   calcDiscount,
   findPromoByCode,
@@ -219,6 +222,7 @@ describe('sortPromosDesc / nextPromoId / promoValueLabel', () => {
 
   it('человекочитаемое значение скидки', () => {
     expect(promoValueLabel({ type: 'percent', value: 15 })).toBe('15%');
-    expect(promoValueLabel({ type: 'fixed', value: 500 })).toBe('500 ₽');
+    // Валюта — из конфига витрины (₽ на main, $ на кубинской копии)
+    expect(promoValueLabel({ type: 'fixed', value: 500 })).toBe(formatMoney(500));
   });
 });

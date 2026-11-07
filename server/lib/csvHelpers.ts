@@ -14,8 +14,9 @@
 //    Такие значения префиксуются апострофом — в таблице они отображаются
 //    как текст (клиент с именем «=СУММ(A1)» не станет формулой).
 import type { Order } from './orderHelpers';
-// Валюта CSV-колонок и сумм — из конфига витрины (₽ / $, см. store.config.ts)
-import { currencySymbol } from '../../store.config';
+// Валюта CSV-колонок и сумм — из конфига витрины (₽ / $, см. store.config.ts);
+// суммы в ячейках — единый formatMoney (позиция символа по валюте: «500 ₽» / «$500»)
+import { currencySymbol, formatMoney } from '../../store.config';
 
 export const CSV_DELIMITER = ';';
 export const CSV_BOM = '﻿'; // U+FEFF — невидимый маркер UTF-8 для Excel
@@ -104,7 +105,7 @@ export const ORDERS_CSV_HEADERS = [
 /** Состав заказа одной строкой: «Название × кол-во (цена с валютой) | …». */
 export function orderItemsSummary(order: Order): string {
   return (order.items ?? [])
-    .map((i) => `${i.name} × ${i.quantity} (${i.price} ${currencySymbol()})`)
+    .map((i) => `${i.name} × ${i.quantity} (${formatMoney(i.price)})`)
     .join(' | ');
 }
 

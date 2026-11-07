@@ -7,8 +7,9 @@
 // окончательный пересчёт и инкремент использований — в createOrder.
 import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
-// Символ валюты для человекочитаемых подписей скидок — из конфига витрины
-import { currencySymbol } from '../../store.config';
+// Человекочитаемые подписи скидок — валюта из конфига витрины через
+// единый formatMoney (позиция символа по валюте: «500 ₽» / «$500»)
+import { formatMoney } from '../../store.config';
 
 export const PROMOS_KEY = 'data:promocodes';
 
@@ -182,7 +183,7 @@ export function sortPromosDesc(items: PromoCode[]): PromoCode[] {
   });
 }
 
-/** Человекочитаемое описание скидки: «10%» / «500 ₽» (валюта из store.config). */
+/** Человекочитаемое описание скидки: «10%» / «500 ₽» / «$500» (formatMoney). */
 export function promoValueLabel(promo: Pick<PromoCode, 'type' | 'value'>): string {
-  return promo.type === 'percent' ? `${promo.value}%` : `${promo.value} ${currencySymbol()}`;
+  return promo.type === 'percent' ? `${promo.value}%` : formatMoney(promo.value);
 }
