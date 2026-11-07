@@ -40,20 +40,6 @@ ul#mobile-menu.mobile-menu.absolute.top-full.left-0.mt-3.z-50(
       li
         NuxtLink.mobile-menu-item.flex.items-center.justify-between(
           class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
-          :class="isActiveRoute('/favorites') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
-          :to="localePath('/favorites')"
-          @click="onMenuItemClick"
-          prefetch
-        )
-          span.flex.items-center.gap-3
-            svg.w-5.h-5.shrink-0(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
-              path(stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z")
-            span {{ $t('nav.favorites') }}
-          span.badge.badge-sm.badge-primary.rounded-full.count-pop(v-if="favoritesCount > 0" :key="favoritesCount")
-            | {{ favoritesCount }}
-      li
-        NuxtLink.mobile-menu-item.flex.items-center.justify-between(
-          class="px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all"
           :class="isActiveRoute('/compare') ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content'"
           :to="localePath('/compare')"
           @click="onMenuItemClick"
@@ -212,7 +198,6 @@ const emit = defineEmits(['itemClick'])
 // Активные пункты — та же логика, что у шапки и нижней навигации
 const { isActiveRoute, isExactActiveRoute } = useActiveRoute()
 const localePath = useLocalePath()
-const { favoritesCount } = useFavorites()
 const { compareCount } = useCompare()
 
 const onMenuItemClick = () => emit('itemClick')
