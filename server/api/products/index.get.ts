@@ -1,9 +1,22 @@
 // server/api/products/index.get.ts
 import { readProducts } from '../../lib/productHelpers';
 import { attachRatings } from '../../lib/reviewHelpers';
+import { readCatalogEdgeCache, writeCatalogEdgeCache } from '../../lib/catalogEdgeCache';
 
 export default defineEventHandler(async (event) => {
   try {
+    // Edge-кэш витринной выдачи: холодный изолят + чтение KV каталога и
+    // отзывов доходило до 1–2 с TTFB, и LCP главной уезжал за 4 с
+    // (PageSpeed, mobile). Cache API переживает смерть изолята — полная
+    // цена чтения платится один раз за TTL на коло. Мутирующие сценарии
+    // читают KV напрямую (readProducts), инвалидация — в writeProducts
+    // и при смене approved отзыва: кэш не участвует в read-modify-write.
+    const cachedList = await readCatalogEdgeCache<Awaited<ReturnType<typeof attachRatings>>>(event);
+    if (cachedList) {
+      setHeader(event, 'x-catalog-cache', 'hit');
+      return cachedList;
+    }
+
     const products = await readProducts(event);
     // rating { count, average } для карточек каталога: одна пачка отзывов
     // из KV на весь список, нулевая сводка товарам без одобренных отзывов
@@ -61,6 +74,11 @@ export default defineEventHandler(async (event) => {
         },
       };
     }
+
+    // «Чистый» запрос (без query) — горячий путь витрины и SSR главной:
+    // кладём в edge-кэш на TTL, следящий запросам отдаётся без чтения KV.
+    setHeader(event, 'x-catalog-cache', 'miss');
+    await writeCatalogEdgeCache(event, list);
 
     return list;
   } catch (error) {

@@ -33,6 +33,7 @@ import {
   writeProducts,
   type Product,
 } from '../../server/lib/productHelpers';
+import productsSeed from '../../server/data/products.json';
 
 const event = {} as never;
 
@@ -387,5 +388,44 @@ describe('migrateProductImages / photoIdOf — локальные фото ка�
       makeProduct({ id: '10', image: `https://images.unsplash.com/${MIGRATED_ID}` }),
     ]);
     expect((kvStore.get('data:products') as { image: string }[])[0].image).toBe(LOCAL);
+  });
+});
+
+describe('migrateProductImages — сидовые data-URI → файлы (товар 33)', () => {
+  // «Нинтендо свич 2» ехал в сиде с base64-картинками: image + 2 в галерее.
+  // В live-KV копии они лежат до сих пор (~50 КБ на каждый запрос выдачи).
+  it('data-URI image и галереи товара 33 заменяются путями из сида', () => {
+    const products = [
+      makeProduct({
+        id: '33',
+        slug: 'nintendo-svich-2',
+        image: 'data:image/webp;base64,AAAABBBB',
+        gallery: ['data:image/webp;base64,CCCCDDDD', 'data:image/webp;base64,EEEEFFFF'],
+      }),
+    ];
+    migrateProductImages(products);
+    const seed = (productsSeed as unknown as Product[]).find((p) => String(p.id) === '33');
+    expect(products[0].image).toBe(seed?.image);
+    expect(products[0].image).not.toMatch(/^data:/);
+    expect(products[0].gallery).toEqual(seed?.gallery);
+    expect(products[0].gallery?.every((g) => !g.startsWith('data:'))).toBe(true);
+  });
+
+  it('файл, выставленный админом, не подменяется сидом', () => {
+    const products = [
+      makeProduct({ id: '33', image: '/images/products/admin-upload.webp', gallery: [] }),
+    ];
+    migrateProductImages(products);
+    expect(products[0].image).toBe('/images/products/admin-upload.webp');
+  });
+
+  it('data-URI у товара вне белого списка не трогается', () => {
+    const products = [
+      makeProduct({ id: '12', image: 'data:image/webp;base64,AAAA' }),
+      makeProduct({ id: 'unknown-33', image: 'data:image/webp;base64,ZZZZ' }),
+    ];
+    migrateProductImages(products);
+    expect(products[0].image).toBe('data:image/webp;base64,AAAA');
+    expect(products[1].image).toBe('data:image/webp;base64,ZZZZ');
   });
 });

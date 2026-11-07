@@ -208,9 +208,12 @@ const toggleCompareClick = async (event) => {
   if (status === 'full') $notify.warning(t('compare.limit', { n: 4 }))
 }
 
-//- Оптимизация загрузки изображений - lazy для всех кроме первых 4
-const loadingAttr = computed(() => props.index < 4 ? 'eager' : 'lazy')
-const fetchPriority = computed(() => props.index < 4 ? 'high' : 'low')
+//- Оптимизация загрузки изображений: eager для первых 4 (первый ряд,
+//- виден без скролла), но fetchpriority=high — только первые 2 (мобильный
+//- первый экран): картинки ниже фолда не конкурируют с LCP-картинкой.
+//- Правила вынесены в utils/catalogCard.ts — чистые функции, покрыты тестами.
+const loadingAttr = computed(() => catalogCardImageLoading(props.index))
+const fetchPriority = computed(() => catalogCardImagePriority(props.index))
 
 //- ============================================
 //- Изображения - упрощённая логика

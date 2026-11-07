@@ -5,6 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   CATALOG_CARD_FIELDS,
+  catalogCardImageLoading,
+  catalogCardImagePriority,
   isFullCatalogProduct,
   toCatalogCardProduct,
 } from '../../app/utils/catalogCard';
@@ -131,5 +133,42 @@ describe('isFullCatalogProduct — слепок или полный товар',
   it('пустота — не полный', () => {
     expect(isFullCatalogProduct(null)).toBe(false);
     expect(isFullCatalogProduct(undefined)).toBe(false);
+  });
+});
+
+describe('catalogCardImageLoading — eager первым 4, дальше lazy', () => {
+  it('первый ряд (0–3) — eager', () => {
+    expect(catalogCardImageLoading(0)).toBe('eager');
+    expect(catalogCardImageLoading(3)).toBe('eager');
+  });
+
+  it('с четвёртого ряда — lazy', () => {
+    expect(catalogCardImageLoading(4)).toBe('lazy');
+    expect(catalogCardImageLoading(30)).toBe('lazy');
+  });
+
+  it('отрицательный индекс не отдаёт eager', () => {
+    expect(catalogCardImageLoading(-1)).toBe('lazy');
+  });
+});
+
+describe('catalogCardImagePriority — high только мобильному первому экрану', () => {
+  it('первые 2 (мобильный первый ряд) — high', () => {
+    expect(catalogCardImagePriority(0)).toBe('high');
+    expect(catalogCardImagePriority(1)).toBe('high');
+  });
+
+  it('второй ряд (2–3) — auto: eager без форса, не конкурирует с LCP', () => {
+    expect(catalogCardImagePriority(2)).toBe('auto');
+    expect(catalogCardImagePriority(3)).toBe('auto');
+  });
+
+  it('дальше — low', () => {
+    expect(catalogCardImagePriority(4)).toBe('low');
+    expect(catalogCardImagePriority(29)).toBe('low');
+  });
+
+  it('отрицательный индекс — не high', () => {
+    expect(catalogCardImagePriority(-1)).toBe('low');
   });
 });

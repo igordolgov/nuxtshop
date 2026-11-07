@@ -60,3 +60,24 @@ export const toCatalogCardProduct = (product: CatalogProduct): CatalogCardProduc
  *  тогда лишний ensureFullProducts просто дедуплицируется, хуже не будет. */
 export const isFullCatalogProduct = (product?: CatalogProduct | null): boolean =>
   !!product && ('characteristics' in product || 'gallery' in product);
+
+// ── Приоритет загрузки картинок карточек каталога ────────────────────────
+//
+// Сетка витрины: на мобильном 2 колонки → первый ряд (карточки 0–1) целиком
+// в первом экране; карточки 2–3 (второй ряд) обычно НИЖЕ фолда. На десктопе
+// первый ряд — 4–5 карточек. Раньше fetchpriority=high получали все первые
+// 4: на мобильном две картинки ниже фолда конкурировали за трафик с
+// LCP-картинкой первого ряда и оттягивали её загрузку.
+
+/** loading картинки карточки по её позиции в списке: первый ряд (4 шт.,
+ *  видимый без скролла на десктопе) — eager, остальное — lazy. */
+export const catalogCardImageLoading = (index: number): 'eager' | 'lazy' =>
+  index >= 0 && index < 4 ? 'eager' : 'lazy';
+
+/** fetchpriority картинки карточки: первые 2 (мобильный первый экран) —
+ *  high, вторые 2 (второй ряд) — auto (eager без форса), дальше — low. */
+export const catalogCardImagePriority = (index: number): 'high' | 'auto' | 'low' => {
+  if (index >= 0 && index < 2) return 'high';
+  if (index >= 2 && index < 4) return 'auto';
+  return 'low';
+};

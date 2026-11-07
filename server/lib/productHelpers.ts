@@ -1,6 +1,7 @@
 // server/lib/productHelpers.ts
 import type { H3Event } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
+import { purgeCatalogEdgeCache } from './catalogEdgeCache';
 import productsSeed from '../data/products.json';
 import migratedPhotos from './migratedPhotos.json';
 import photoReplacementsJson from './photoReplacements.json';
@@ -38,6 +39,19 @@ const DEAD_PHOTO_REPLACEMENTS: Record<string, string> = {
 // содержит старые пути, но после следующей админ-правки товар уйдёт в KV
 // уже с новыми путями — без ручных операций и без перезаписи KV целиком.
 const PHOTO_PATH_REPLACEMENTS = photoReplacementsJson as Record<string, Record<string, string>>;
+
+// Сидовые товары по id — для миграции data-URI фото (см. migrateProductImages).
+// ⚠️ Явный белый список идентификаторов: чиним ТОЛЬКО товары, чьи data-URI —
+// артефакт упаковки сида (произвольные data-URI из CSV-импорта/админки
+// подменять нельзя — это чьи-то загруженные картинки). Список растёт
+// руками, вместе с правкой сида.
+const DATA_URI_SEED_MIGRATION_IDS = new Set(['33']);
+const SEED_PRODUCTS_BY_ID = new Map<string, Product>(
+  (Array.isArray(productsSeed) ? (productsSeed as unknown as Product[]) : []).map((p) => [
+    String(p?.id),
+    p,
+  ]),
+);
 
 /**
  * photo-id из unsplash-URL или голого «photo-…»; null для data-URI
@@ -83,6 +97,35 @@ export function migrateProductImages(products: Product[]): void {
     const swap = forProduct(p);
     p.image = swap(p.image) as Product['image'];
     if (Array.isArray(p.gallery)) p.gallery = p.gallery.map(swap) as Product['gallery'];
+    // 3) сидовые data-URI фото → файлы из сида: «Нинтендо свич 2» ехал в
+    //    сиде с base64-картинками (image + 2 в галерее, ~50 КБ бандла и
+    //    выдачи на каждый запрос). Если в live-KV остался data-URI (товар
+    //    не правил админ — после правки там уже файл), подставляем путь
+    //    из сида по слоту: image — на image, gallery[i] — на gallery[i].
+    //    Правки админа (уже файлы) не трогаем.
+    const seed = DATA_URI_SEED_MIGRATION_IDS.has(String(p.id))
+      ? SEED_PRODUCTS_BY_ID.get(String(p.id))
+      : undefined;
+    if (!seed) continue;
+    if (
+      typeof p.image === 'string' &&
+      p.image.startsWith('data:') &&
+      typeof seed.image === 'string' &&
+      !seed.image.startsWith('data:')
+    ) {
+      p.image = seed.image;
+    }
+    if (Array.isArray(p.gallery) && Array.isArray(seed.gallery)) {
+      p.gallery = p.gallery.map((url, i) => {
+        const seedPhoto = seed.gallery?.[i];
+        const replaceable =
+          typeof url === 'string' &&
+          url.startsWith('data:') &&
+          typeof seedPhoto === 'string' &&
+          !seedPhoto.startsWith('data:');
+        return replaceable ? (seedPhoto as string) : url;
+      }) as Product['gallery'];
+    }
   }
 }
 
@@ -265,6 +308,11 @@ export async function writeProducts(event: H3Event, products: Product[]) {
   // (для скачанных фото) — hotlink Unsplash не возвращается в данные.
   migrateProductImages(products);
   await kvPutJSON(event, PRODUCTS_KEY, products);
+  // Инвалидация витринного edge-кэша выдачи /api/products: админка и
+  // покупатели видят правку (и списание склада заказом) сразу, а не по
+  // TTL. Списание склада заказа тоже идёт через writeProducts — единая
+  // точка записи каталога сбрасывает кэш при КАЖДОМ изменении товаров.
+  await purgeCatalogEdgeCache(event);
 }
 
 export function generateUniqueSlug(

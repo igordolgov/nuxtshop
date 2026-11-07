@@ -2,6 +2,7 @@
 // Модерация отзыва (PUT /api/admin/reviews/:id, body: { approved: boolean }).
 // true — опубликовать на витрине (и в aggregateRating), false — скрыть.
 import { readReviews, writeReviews } from '../../../lib/reviewHelpers';
+import { purgeCatalogEdgeCache } from '../../../lib/catalogEdgeCache';
 import { requireStaff } from '../../../utils/auth';
 
 export default defineEventHandler(async (event) => {
@@ -21,6 +22,9 @@ export default defineEventHandler(async (event) => {
 
   item.approved = body.approved;
   await writeReviews(event, reviews);
+  // Рейтинг товара в витринной выдаче /api/products считается из
+  // одобренных отзывов (attachRatings) — сбрасываем edge-кэш каталога.
+  await purgeCatalogEdgeCache(event);
 
   return {
     success: true,
