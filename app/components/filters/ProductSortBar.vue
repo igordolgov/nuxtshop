@@ -42,7 +42,7 @@
       :key="chip.key"
       type="button"
       :title="$t('catalog.removeFilter', { label: chip.label })"
-      @click="$emit('remove-filter', chip.key)"
+      @click="removeChip(chip)"
     )
       span {{ chip.label }}
       span(class="text-base-content/70") ✕
@@ -54,6 +54,8 @@
 </template>
 
 <script setup>
+import { countActiveSpecFilters } from '~/utils/specFacets'
+
 const { t } = useI18n()
 //- Пилюля фильтров+сортировки. События родителю:
 //- toggle-filters, remove-filter, reset-all, update:sort
@@ -67,6 +69,9 @@ const emit = defineEmits(['toggle-filters', 'remove-filter', 'reset-all', 'updat
 
 // Локализованные подписи категорийных чипов (значения фильтров — сырые)
 const { categoryLabel } = useCategoryLabels()
+
+// Локализованные подписи лейблов характеристик (фасетные чипы)
+const { specLabel } = useSpecLabels()
 
 // Цена с валютой — единый формат из useProductUtils/store.config
 const { formatMoney } = useProductUtils()
@@ -102,6 +107,7 @@ const activeFiltersCount = computed(() => {
   const min = f.priceRange?.min
   const max = f.priceRange?.max
   if ((min !== null && min !== undefined) || (max !== null && max !== undefined)) count++
+  count += countActiveSpecFilters(f.specs)
   return count
 })
 
@@ -129,8 +135,26 @@ const activeChips = computed(() => {
   if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: t('product.inStock') })
   if (f.onlyFavorites) chips.push({ key: 'onlyFavorites', label: t('nav.favorites') })
 
+  //- Фасеты характеристик: один чип на лейбл, снятие убирает все его значения.
+  //- Ключ чипа строковый (для :key), НО наружу уходит объект { kind, label }:
+  //- лейбл/значение могут содержать «:», парсить строку нельзя
+  if (f.specs && typeof f.specs === 'object') {
+    for (const [label, values] of Object.entries(f.specs)) {
+      if (!Array.isArray(values) || values.length === 0) continue
+      chips.push({
+        key: `spec:${label}`,
+        specLabel: label,
+        label: `${specLabel(label)}: ${values.join(', ')}`,
+      })
+    }
+  }
+
   return chips
 })
+
+const removeChip = (chip) => {
+  emit('remove-filter', chip.specLabel ? { kind: 'spec', label: chip.specLabel } : chip.key)
+}
 </script>
 
 <style scoped>

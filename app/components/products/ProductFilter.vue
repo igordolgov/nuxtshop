@@ -30,6 +30,15 @@
           :searchQuery="safeSearchQuery"
         )
 
+      //- Характеристики (фасеты по свойствам товаров текущей выборки:
+      //- выбрал категорию — получил её характеристики, паттерн WB/Ozon)
+      .filter-section
+        ProductSpecFilters(
+          :facets="specFacets"
+          :selected="safeFilters.specs"
+          @update:selected="handleSpecsUpdate"
+        )
+
       //- Быстрые фильтры: наличие и избранное (раньше были в стейте,
       //- но без UI — мёртвые; теперь живые чекбоксы)
       .filter-section(class="pb-2")
@@ -91,6 +100,7 @@
 const props = defineProps({
   searchQuery: { type: String, default: '' },
   categories: { type: Array, default: () => [] },
+  specFacets: { type: Array, default: () => [] },
   filters: {
     type: Object,
     default: () => ({
@@ -98,6 +108,7 @@ const props = defineProps({
       priceRange: { min: null, max: null },
       onlyInStock: false,
       onlyFavorites: false,
+      specs: {},
     }),
   },
   priceRange: {
@@ -145,6 +156,10 @@ const safeFilters = computed(() => ({
     : { min: null, max: null },
   onlyInStock: Boolean(props.filters?.onlyInStock),
   onlyFavorites: Boolean(props.filters?.onlyFavorites),
+  specs:
+    props.filters?.specs && typeof props.filters.specs === 'object'
+      ? props.filters.specs
+      : {},
 }))
 
 const safePriceRange = computed(() => ({
@@ -166,6 +181,8 @@ const updateFilter = (key, value) => {
     newFilters.onlyInStock = Boolean(value)
   } else if (key === 'onlyFavorites') {
     newFilters.onlyFavorites = Boolean(value)
+  } else if (key === 'specs') {
+    newFilters.specs = value && typeof value === 'object' ? value : {}
   }
 
   debouncedEmit(newFilters)
@@ -173,6 +190,7 @@ const updateFilter = (key, value) => {
 
 const handlePriceRangeUpdate = (value) => updateFilter('priceRange', value)
 const handleCategoriesUpdate = (categories) => updateFilter('categories', categories)
+const handleSpecsUpdate = (specs) => updateFilter('specs', specs)
 
 //- Сброс тела фильтров (кнопка «Сбросить всё» живёт снаружи — в чипах/подвале)
 const resetFilters = () => {
@@ -184,6 +202,7 @@ const resetFilters = () => {
     priceRange: { min: null, max: null },
     onlyInStock: false,
     onlyFavorites: false,
+    specs: {},
   })
 }
 

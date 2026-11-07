@@ -14,6 +14,7 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm(
     :show-product-count="true"
     :searchQuery="searchQuery"
     :categories="categories"
+    :specFacets="specFacets"
     :filters="filters"
     :priceRange="priceRange"
     @update:filters="handleFiltersUpdate"
@@ -79,6 +80,7 @@ const handleScrollToTop = () => {
 defineProps({
   searchQuery: { type: String, default: '' },
   categories: { type: Array, default: () => [] },
+  specFacets: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) },
   priceRange: { type: Object, default: () => ({}) },
   totalCount: { type: Number, default: 0 },

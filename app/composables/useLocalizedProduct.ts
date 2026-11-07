@@ -23,6 +23,8 @@ import {
   buildCategoryLabelMap,
   storeLocaleFromPath,
 } from '../utils/localizedProduct';
+// Известные лейблы характеристик (пресеты/сиды) → ключи specLabels.*
+import { CHARACTERISTIC_LABEL_KEYS } from '../utils/characteristicLabels';
 // Дефолтная локаль витрины (без URL-префикса) — из store.config: у кубинской
 // копии это 'es' (а 'ru' — с префиксом /ru). Хардкод 'ru' здесь ломал копию:
 // весь переводной контент (новости, «О нас», категории, товары) откатывался
@@ -72,4 +74,23 @@ export function useCategoryLabels() {
     labelMap.value.get(rawCategory) ?? rawCategory;
 
   return { categoryLabel };
+}
+
+/**
+ * Локализованные подписи лейблов характеристик (фасеты каталога
+ * ProductSpecFilters, чипы ProductSortBar). Известные лейблы (пресеты/сиды)
+ * переводятся словарём specLabels.*, кастомные фолбэкаются на сырой русский
+ * текст — тот же контракт, что у spec-листа карточки (ProductInfo):
+ * te() перед t(), чтобы недогруженные lazy-локали не дали литерал
+ * «specLabels.*» в UI.
+ */
+export function useSpecLabels() {
+  const { t, te } = useI18n();
+
+  const specLabel = (rawLabel: string): string => {
+    const key = CHARACTERISTIC_LABEL_KEYS[rawLabel];
+    return key && te(`specLabels.${key}`) ? t(`specLabels.${key}`) : rawLabel;
+  };
+
+  return { specLabel };
 }

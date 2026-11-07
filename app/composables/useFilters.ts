@@ -5,6 +5,10 @@ import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct
 // копия с дефолтом 'es' должна локализовать каталог, а не откатываться на 'ru'
 import { STORE_DEFAULT_LOCALE } from '../../store.config';
 import type { CatalogProduct } from './catalogProduct';
+// Фасетные фильтры по характеристикам (паттерн маркетплейсов): чистые
+// функции в utils — здесь только стейт и проводка в displayedProducts
+import { buildSpecFacets, filterBySpecSelection } from '../utils/specFacets';
+import type { SpecFacetGroup, SpecSelection } from '../utils/specFacets';
 
 /** Локализованная копия товара (localizedProduct добавляет categoriesRaw) */
 export type LocalizedCatalogProduct = CatalogProduct & { categoriesRaw?: string[] };
@@ -21,6 +25,8 @@ export interface CatalogFiltersState {
   onlyInStock: boolean;
   onlyFavorites: boolean;
   priceRange: { min: number | null; max: number | null };
+  /** Фасеты характеристик: лейбл → отмеченные значения (сырые тексты витрины) */
+  specs: SpecSelection;
 }
 
 export const useFilters = (products: Ref<CatalogProduct[]>) => {
@@ -67,6 +73,7 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     onlyInStock: false,
     onlyFavorites: false,
     priceRange: { min: null, max: null },
+    specs: {},
   });
   const sort = ref(getInitialSort());
 
@@ -123,7 +130,10 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     });
   };
 
-  const displayedProducts = computed<LocalizedCatalogProduct[]>(() => {
+  // ─── Базовая выборка: всё, КРОМЕ фасетов характеристик ────────────────
+  // На ней считаются счётчики фасетов (паттерн маркетплейсов: выбор в одной
+  // характеристике не обнуляет счётчики других) и из неё же displayedProducts.
+  const scopeProducts = computed<LocalizedCatalogProduct[]>(() => {
     const productsValue = products.value;
     if (!productsValue?.length) return [];
 
@@ -163,8 +173,18 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     if (min !== null && min !== undefined) filtered = filtered.filter((p) => p.price >= min);
     if (max !== null && max !== undefined) filtered = filtered.filter((p) => p.price <= max);
 
-    return sortProducts(filtered, sort.value);
+    return filtered;
   });
+
+  // Фасеты характеристик по базовой выборке (с учётом чужого spec-выбора,
+  // без собственного — счётчики выбранного не обнуляются)
+  const specFacets = computed<SpecFacetGroup[]>(() =>
+    buildSpecFacets(scopeProducts.value, filters.value.specs ?? {}),
+  );
+
+  const displayedProducts = computed<LocalizedCatalogProduct[]>(() =>
+    sortProducts(filterBySpecSelection(scopeProducts.value, filters.value.specs ?? {}), sort.value),
+  );
 
   const actualPriceRange = computed(() => {
     const productsValue = products.value;
@@ -200,6 +220,7 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
       onlyInStock: false,
       onlyFavorites: false,
       priceRange: { min: null, max: null },
+      specs: {},
     };
     searchQuery.value = '';
   };
@@ -217,6 +238,8 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     filters: computed(() => filters.value),
     sort: computed(() => sort.value),
     displayedProducts,
+    scopeProducts,
+    specFacets,
     actualPriceRange,
     handleSearchUpdate,
     handleFiltersUpdate,

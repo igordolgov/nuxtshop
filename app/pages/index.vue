@@ -24,6 +24,7 @@
       v-if="showMobileFilters"
       :searchQuery="searchQuery"
       :categories="categories"
+      :specFacets="specFacets"
       :filters="filters"
       :priceRange="priceRange"
       :total-count="totalProductsCount"
@@ -48,6 +49,7 @@
           v-if="!isMobile"
           :searchQuery="searchQuery"
           :categories="categories"
+          :specFacets="specFacets"
           :filters="filters"
           :sort="sort"
           :priceRange="priceRange"
@@ -109,6 +111,8 @@
 import { useAppState } from '@/composables/useAppState'
 import { useMobileDetection } from '@/composables/useMobileDetection'
 import { useCart } from '@/composables/useCart'
+// Счётчик активных фасетов характеристик (чипы/пилюля «Фильтры N»)
+import { countActiveSpecFilters } from '@/utils/specFacets'
 import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
@@ -158,6 +162,9 @@ const hasSearchSuggestions = computed(() => getState('search.hasSuggestions', fa
 const activeSuggestionIndex = computed(() => getState('search.activeSuggestionIndex', -1))
 const categories = computed(() => getState('categories', []))
 const filters = computed(() => getState('filters', {}))
+//- Фасеты характеристик (useFilters → buildSpecFacets): группы с счётчиками
+//- по базовой выборке; панель фильтров и мобильная получают их через props
+const specFacets = computed(() => getState('specFacets', []))
 const sort = computed(() => {
   if (!import.meta.client) return { field: 'createdAt', order: 'desc' }
   const currentSort = getState('sort')
@@ -245,6 +252,7 @@ const resetFilters = async () => {
     priceRange: { min: null, max: null },
     onlyInStock: false,
     onlyFavorites: false,
+    specs: {},
   })
   appState.setSearchQuery('')
 
@@ -256,11 +264,17 @@ const resetFilters = async () => {
   scrollToTop()
 }
 
-//- Снятие одного фильтра чипом из ProductSortBar
+//- Снятие одного фильтра чипом из ProductSortBar.
+//- Характеристики приходят объектом { kind: 'spec', label } — лейбл/значение
+//- могут содержать «:», строковый ключ разбирать нельзя
 const removeFilter = (key) => {
   const f = { ...filters.value }
 
-  if (key.startsWith('cat:')) {
+  if (typeof key === 'object' && key?.kind === 'spec') {
+    const specs = { ...f.specs }
+    delete specs[key.label]
+    f.specs = specs
+  } else if (typeof key === 'string' && key.startsWith('cat:')) {
     const cat = key.slice(4)
     f.categories = (f.categories ?? []).filter((c) => c !== cat)
   } else if (key === 'price') {
@@ -316,6 +330,7 @@ const activeFiltersCount = computed(() => {
   if (f.categories?.length > 0) count++
   if (f.onlyInStock) count++
   if (f.onlyFavorites) count++
+  count += countActiveSpecFilters(f.specs)
 
   const actualMin = priceRange.value.min || 0
   const actualMax = priceRange.value.max || 100000

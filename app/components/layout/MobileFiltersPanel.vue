@@ -30,11 +30,12 @@
         svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
 
-    //- Тело: ProductFilter (цена, категории, чекбоксы)
+    //- Тело: ProductFilter (цена, категории, характеристики, чекбоксы)
     .filters-content.flex-1.overflow-y-auto(class="bg-base-100 px-4 py-4")
       ProductFilter(
         :searchQuery="searchQuery"
         :categories="categories"
+        :specFacets="specFacets"
         :filters="filters"
         :priceRange="priceRange"
         :filtered-count="filteredCount"
@@ -69,6 +70,7 @@
 const props = defineProps({
   searchQuery: { type: String, default: '' },
   categories: { type: Array, default: () => [] },
+  specFacets: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) },
   priceRange: { type: Object, default: () => ({}) },
   totalCount: { type: Number, default: 0 },
