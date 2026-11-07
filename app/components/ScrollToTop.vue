@@ -22,14 +22,15 @@ const props = defineProps({
   threshold: { type: Number, default: 200 },
 })
 
-//- Видимость по направлению прокрутки (паттерн WB/Ozon): прокрутка
-//- вниз — кнопка уезжает и не накрывает контент (например, «Очистить»
-//- в «Недавно смотрели»), прокрутка вверх — возвращается. У верха
-//- страницы (<= threshold) всегда скрыта (atTop: 'hide' — кнопка
-//- «наверх» у верха не нужна). useScrollDirection сам ставит
-//- capture-слушатель на window (scroll не всплывает) и отсекает
-//- горизонтальные ленты/мелкие списки (переполнение < threshold).
-const { isVisible } = useScrollDirection({ threshold: props.threshold, atTop: 'hide' })
+//- Режим 'position' (классика «кнопки наверх»): видна всегда, когда
+//- страница/каталог прокручены дальше threshold, в любом направлении.
+//- Прежний режим 'direction' (WB/Ozon: вниз — скрыть, вверх — показать)
+//- пользователи читали как поломку: «кнопка не появляется при скролле
+//- вниз». У верха страницы (<= threshold) всегда скрыта (atTop: 'hide').
+//- useScrollDirection сам ставит capture-слушатель на window (scroll не
+//- всплывает — ловится и внутренний скролл каталога на главной) и
+//- отсекает горизонтальные ленты/мелкие списки (переполнение < threshold).
+const { isVisible } = useScrollDirection({ threshold: props.threshold, atTop: 'hide', follow: 'position' })
 
 const scrollToTop = () => {
   const behavior =
