@@ -9,6 +9,11 @@ import type { CatalogProduct } from './catalogProduct';
 // функции в utils — здесь только стейт и проводка в displayedProducts
 import { buildSpecFacets, filterBySpecSelection } from '../utils/specFacets';
 import type { SpecFacetGroup, SpecSelection } from '../utils/specFacets';
+// Сортировка каталога — чистая функция в utils (тестируется в node):
+// раньше при отсутствии даты компаратор подставлял id как дату
+// (new Date('33') → 2033 год, '27'…'30' → Invalid Date) — из-за NaN
+// новый товар оказывался в конце списка при «сначала новые»
+import { sortProductsByConfig } from '../utils/catalogSort';
 
 /** Локализованная копия товара (localizedProduct добавляет categoriesRaw) */
 export type LocalizedCatalogProduct = CatalogProduct & { categoriesRaw?: string[] };
@@ -80,55 +85,7 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
   const sortProducts = <T extends CatalogProduct>(
     list: T[],
     config?: CatalogSortConfig | null,
-  ): T[] => {
-    if (!config?.field) {
-      return [...list].sort((a, b) => {
-        const dateA = new Date(a.createdAt || a.id || 0);
-        const dateB = new Date(b.createdAt || b.id || 0);
-        return dateB.getTime() - dateA.getTime();
-      });
-    }
-
-    const { field, order } = config;
-
-    return [...list].sort((a, b) => {
-      let aVal: unknown = (a as Record<string, unknown>)[field];
-      let bVal: unknown = (b as Record<string, unknown>)[field];
-
-      if (field === 'createdAt' || field === 'updatedAt') {
-        const dateA = new Date((aVal as string) || a.id || 0);
-        const dateB = new Date((bVal as string) || b.id || 0);
-        return order === 'desc'
-          ? dateB.getTime() - dateA.getTime()
-          : dateA.getTime() - dateB.getTime();
-      }
-
-      if (field === 'id') {
-        const numA = parseInt(String(aVal)) || 0;
-        const numB = parseInt(String(bVal)) || 0;
-        return order === 'desc' ? numB - numA : numA - numB;
-      }
-
-      if (field === 'price') {
-        return order === 'desc' ? Number(bVal) - Number(aVal) : Number(aVal) - Number(bVal);
-      }
-
-      if (field === 'name') {
-        const aStr = String(aVal || '').toLowerCase();
-        const bStr = String(bVal || '').toLowerCase();
-        return order === 'desc' ? bStr.localeCompare(aStr) : aStr.localeCompare(bStr);
-      }
-
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-
-      const aCmp = aVal as string | number;
-      const bCmp = bVal as string | number;
-      if (aCmp < bCmp) return order === 'asc' ? -1 : 1;
-      if (aCmp > bCmp) return order === 'asc' ? 1 : -1;
-      return 0;
-    });
-  };
+  ): T[] => sortProductsByConfig(list, config);
 
   // ─── Базовая выборка: всё, КРОМЕ фасетов характеристик ────────────────
   // На ней считаются счётчики фасетов (паттерн маркетплейсов: выбор в одной
