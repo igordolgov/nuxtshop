@@ -195,39 +195,88 @@ describe('localizedSiteContent', () => {
     expect(localizedSiteContent(DEFAULT_SITE_CONTENT, 'ru')).toBe(DEFAULT_SITE_CONTENT);
   });
 
-  it('en — переводы магазинов/FAQ/цифр/истории, телефон не переводится', () => {
-    const loc = localizedSiteContent(DEFAULT_SITE_CONTENT, 'en');
+  it('en — переводы подставляются, телефон не переводится (механика на синтетической витрине)', () => {
+    const content = {
+      ...DEFAULT_SITE_CONTENT,
+      contacts: {
+        ...DEFAULT_SITE_CONTENT.contacts,
+        stores: [
+          {
+            city: 'Москва',
+            badge: 'Флагман',
+            address: 'ул. Тверская, 12',
+            hours: 'Ежедневно 10:00–21:00',
+            phone: '+7 495 555-35-35',
+            cityEn: 'Moscow',
+            badgeEn: 'Flagship store',
+            addressEn: '12 Tverskaya St.',
+            hoursEn: 'Daily 10:00–21:00',
+          },
+        ],
+        faq: [
+          {
+            q: 'Как быстро доставляете?',
+            a: 'За один день.',
+            qEn: 'How fast do you deliver?',
+            aEn: 'In one day.',
+          },
+        ],
+      },
+      about: {
+        stats: [
+          { value: '8 лет', label: 'на рынке', valueEn: '8 years', labelEn: 'in the tech market' },
+        ],
+        history: [
+          { year: '2018', text: 'Открыли магазин.', textEn: 'Opened our first electronics store.' },
+        ],
+      },
+    };
+    const loc = localizedSiteContent(content, 'en');
     expect(loc.contacts.stores[0].city).toBe('Moscow');
     expect(loc.contacts.stores[0].badge).toBe('Flagship store');
     expect(loc.contacts.stores[0].address).toBe('12 Tverskaya St.');
     expect(loc.contacts.stores[0].hours).toBe('Daily 10:00–21:00');
-    expect(loc.contacts.stores[0].phone).toBe(DEFAULT_SITE_CONTENT.contacts.stores[0].phone);
+    expect(loc.contacts.stores[0].phone).toBe('+7 495 555-35-35'); // телефон не переводится
     expect(loc.contacts.faq[0].q).toBe('How fast do you deliver?');
     expect(loc.about.stats[0].value).toBe('8 years');
     expect(loc.about.stats[0].label).toBe('in the tech market');
     expect(loc.about.history[0].text).toContain('Opened our first electronics store');
     // исходник не мутирован
-    expect(DEFAULT_SITE_CONTENT.contacts.stores[0].city).toBe('Москва');
+    expect(content.contacts.stores[0].city).toBe('Москва');
   });
 
-  it('es — переводы подставляются', () => {
-    const loc = localizedSiteContent(DEFAULT_SITE_CONTENT, 'es');
-    expect(loc.contacts.stores[1].city).toBe('San Petersburgo');
-    expect(loc.contacts.faq[1].q).toBe('¿Cómo devolver un producto?');
-    expect(loc.about.stats[1].label).toBe('clientes satisfechos');
+  it('en/es на дефолтах кубинской копии — фолбэк на испанскую базу', () => {
+    const en = localizedSiteContent(DEFAULT_SITE_CONTENT, 'en');
+    expect(en.contacts.stores[0].city).toBe('La Habana');
+    expect(en.contacts.faq[0].q).toBe(DEFAULT_SITE_CONTENT.contacts.faq[0].q);
+    expect(en.contacts.stores[0].phone).toBe(DEFAULT_SITE_CONTENT.contacts.stores[0].phone);
+    const es = localizedSiteContent(DEFAULT_SITE_CONTENT, 'es');
+    expect(es.contacts.stores[1].city).toBe('Centro Habana');
+    expect(es.about.stats[1].label).toBe('clientes satisfechos');
+    expect(es.about.history[0].text).toContain('La Habana');
   });
 
-  it('поэлементный фолбэк: нет перевода поля → русский текст этого поля', () => {
+  it('поэлементный фолбэк: нет перевода поля → базовый текст этого поля', () => {
     const partial = {
       ...DEFAULT_SITE_CONTENT,
       contacts: {
         ...DEFAULT_SITE_CONTENT.contacts,
-        stores: [{ ...DEFAULT_SITE_CONTENT.contacts.stores[0], badgeEn: '   ' }],
+        stores: [
+          {
+            city: 'Москва',
+            badge: 'Флагман',
+            address: 'ул. Тверская, 12',
+            hours: '10:00–21:00',
+            phone: '+7 495 000-00-00',
+            cityEn: 'Moscow',
+            badgeEn: '   ',
+          },
+        ],
       },
     };
     const loc = localizedSiteContent(partial, 'en');
     expect(loc.contacts.stores[0].city).toBe('Moscow');
-    expect(loc.contacts.stores[0].badge).toBe('Флагман'); // фолбэк
+    expect(loc.contacts.stores[0].badge).toBe('Флагман'); // фолбэк на базу
   });
 
   it('мессенджеры и карта проходят насквозь без изменений', () => {
@@ -293,11 +342,15 @@ describe('sanitize/merge сохраняют переводы', () => {
     expect(clean.contacts.stores[0]).not.toHaveProperty('cityEn');
   });
 
-  it('mergeSiteContent (чтение из KV) сохраняет переводы дефолтов', () => {
+  it('mergeSiteContent (чтение из KV) сохраняет дефолты кубинской копии как есть', () => {
     const merged = mergeSiteContent(DEFAULT_SITE_CONTENT);
-    expect(merged.contacts.stores[0].cityEn).toBe('Moscow');
-    expect(merged.contacts.faq[0].aEn).toBeTruthy();
-    expect(merged.about.history[3].textEs).toBeTruthy();
+    // Кубинские дефолты — испанская база без суффиксов En/Es: merge не
+    // добавляет переводов, витрина во всех локалях берёт испанскую базу
+    expect(merged.contacts.stores[0].city).toBe(DEFAULT_SITE_CONTENT.contacts.stores[0].city);
+    expect(merged.contacts.stores[0]).not.toHaveProperty('cityEn');
+    expect(merged.contacts.stores[0]).not.toHaveProperty('cityEs');
+    expect(merged.contacts.faq[0].a).toBe(DEFAULT_SITE_CONTENT.contacts.faq[0].a);
+    expect(merged.about.history[3].text).toBe(DEFAULT_SITE_CONTENT.about.history[3].text);
   });
 });
 
@@ -331,15 +384,14 @@ describe('справочник scripts/news-content-translations.json синхр
     }
   });
 
-  it('секции контента справочника совпадают с дефолтами siteContent', () => {
+  it('дефолты siteContent кубинской копии — испанская база без суффиксов', () => {
     const d = DEFAULT_SITE_CONTENT;
-    expect(guide.content.stores).toHaveLength(d.contacts.stores.length);
-    expect(guide.content.faq).toHaveLength(d.contacts.faq.length);
-    expect(guide.content.stats).toHaveLength(d.about.stats.length);
-    expect(guide.content.history).toHaveLength(d.about.history.length);
-
-    (guide.content.stores as Record<string, string>[]).forEach((t, i) => {
-      for (const field of [
+    // Кубинская копия не несёт En/Es-переводов контента: база испанская,
+    // остальные локали показывают её через фолбэк localizedSiteContent.
+    // Справочник scripts/news-content-translations.json на копию не
+    // распространяется (его секция content относится к дефолтам main).
+    const NO_FIELDS = {
+      stores: [
         'cityEn',
         'cityEs',
         'badgeEn',
@@ -348,32 +400,25 @@ describe('справочник scripts/news-content-translations.json синхр
         'addressEs',
         'hoursEn',
         'hoursEs',
-      ]) {
-        expect(t[field], `stores[${i}].${field}`).toBe(
-          (d.contacts.stores[i] as unknown as Record<string, string>)[field],
-        );
-      }
-    });
-    (guide.content.faq as Record<string, string>[]).forEach((t, i) => {
-      for (const field of ['qEn', 'aEn', 'qEs', 'aEs']) {
-        expect(t[field], `faq[${i}].${field}`).toBe(
-          (d.contacts.faq[i] as unknown as Record<string, string>)[field],
-        );
-      }
-    });
-    (guide.content.stats as Record<string, string>[]).forEach((t, i) => {
-      for (const field of ['valueEn', 'labelEn', 'valueEs', 'labelEs']) {
-        expect(t[field], `stats[${i}].${field}`).toBe(
-          (d.about.stats[i] as unknown as Record<string, string>)[field],
-        );
-      }
-    });
-    (guide.content.history as Record<string, string>[]).forEach((t, i) => {
-      for (const field of ['textEn', 'textEs']) {
-        expect(t[field], `history[${i}].${field}`).toBe(
-          (d.about.history[i] as unknown as Record<string, string>)[field],
-        );
-      }
-    });
+      ],
+      faq: ['qEn', 'aEn', 'qEs', 'aEs'],
+      stats: ['valueEn', 'labelEn', 'valueEs', 'labelEs'],
+      history: ['textEn', 'textEs'],
+    } as const;
+    for (const store of d.contacts.stores) {
+      for (const field of NO_FIELDS.stores) expect(store, field).not.toHaveProperty(field);
+    }
+    for (const f of d.contacts.faq) {
+      for (const field of NO_FIELDS.faq) expect(f, field).not.toHaveProperty(field);
+    }
+    for (const s of d.about.stats) {
+      for (const field of NO_FIELDS.stats) expect(s, field).not.toHaveProperty(field);
+    }
+    for (const h of d.about.history) {
+      for (const field of NO_FIELDS.history) expect(h, field).not.toHaveProperty(field);
+    }
+    // Испанская база на месте
+    expect(d.contacts.stores[0].city).toBe('La Habana');
+    expect(d.contacts.faq[0].q).toContain('¿');
   });
 });

@@ -2,9 +2,11 @@
   // wrangler.jsonc — единственный конфиг Wrangler (wrangler.toml удалён ранее).
   "$schema": "node_modules/wrangler/config-schema.json",
 
-  // ⚠️ Имя воркера: должно совпадать с существующим воркером Cloudflare.
-  // НЕ менять — иначе создастся ДРУГОЙ воркер без KV, секретов и домена.
-  "name": "nuxt-shop",
+  // ⚙️ КУБИНСКАЯ ИНСТАЛЛЯЦИЯ (ветка cuba): ОТДЕЛЬНЫЙ воркер — не трогает
+  // российский магазин (main, воркер nuxt-shop). Друг при переносе на свой
+  // аккаунт Cloudflare заменяет имя на СВОЁ (любое), создаёт свой KV и
+  // вписывает его ID ниже.
+  "name": "nuxt-shop-cu",
 
   "main": ".output/server/index.mjs",
   // Согласовано с compatibilityDate в nuxt.config.ts
@@ -29,7 +31,7 @@
     // (canonical/offers.url), sitemap.xml и robots.txt. ОБЯЗАТЕЛЕН:
     // в Workers getRequestURL() отдаёт http://localhost, без этой
     // переменной seoHelpers.resolveSiteUrl ушёл бы в localhost-фолбэк.
-    "NUXT_PUBLIC_SITE_URL": "https://nuxt-shop.igordolgov1972.workers.dev",
+    "NUXT_PUBLIC_SITE_URL": "https://nuxt-shop-cu.igordolgov1972.workers.dev",
     // Аварийный выключатель трансформатора /img (server/routes/img.ts):
     // 'off' → роут отвечает 302 на оригинал, трансформации отключены
     // (откат БЕЗ пересборки). Пусто — трансформации включены.
@@ -45,8 +47,11 @@
       // ⚠️ Биндинг обязан называться "KV" — его читают server/lib/storage.ts
       // (каталог data:products) и server/lib/imageStorage.js (картинки img:*)
       "binding": "KV",
-      // ⚙️ НАСТРОЙКА: ID вашего KV namespace
-      "id": "2882e3a4601940b881c2140f1401989f",
+      // ⚙️ ЗАМЕНИТЕ на ID СВОЕГО KV-namespace (друг: создать KV, например
+      // title nuxtshop-cu, в дашборде Cloudflare → Workers & Pages → KV,
+      // и вписать ID). Плейсхолдер преднамеренно: случайный деплой упадёт
+      // ГРОМКО, а не привяжет чужой/продовый каталог к копии.
+      "id": "REPLACE_WITH_YOUR_KV_ID",
       // Удалённое KV при wrangler dev.
       // ⚠️ remote: true требует CLOUDFLARE_API_TOKEN: на чистой машине
       // (без wrangler-логина) любая запись в dev — например, сессия —

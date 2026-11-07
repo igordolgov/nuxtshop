@@ -183,10 +183,11 @@ describe('sanitizeSiteContent', () => {
 
 describe('mergeSiteContent', () => {
   it('null / мусор → дефолты (глубокая копия, мутации не портят DEFAULT)', () => {
+    const originalPhone = DEFAULT_SITE_CONTENT.contacts.phone; // запомнили до мутаций
     const merged = mergeSiteContent(null);
     expect(merged).toEqual({ ...DEFAULT_SITE_CONTENT, updatedAt: '' });
     merged.contacts.phone = 'испортили';
-    expect(DEFAULT_SITE_CONTENT.contacts.phone).toBe('8 (800) 555-35-35');
+    expect(DEFAULT_SITE_CONTENT.contacts.phone).toBe(originalPhone);
 
     expect(mergeSiteContent('строка')).toEqual({ ...DEFAULT_SITE_CONTENT, updatedAt: '' });
     expect(mergeSiteContent(42)).toEqual({ ...DEFAULT_SITE_CONTENT, updatedAt: '' });

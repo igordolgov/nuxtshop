@@ -1,8 +1,11 @@
 // store.config.ts — конфигурация витрины: ОДНА кодовая база — разные магазины.
-// Копия под другой магазин правит ТОЛЬКО значения ниже (+ тексты i18n/locales,
-// seed-данные каталога, контакты в шапке/футере). Значения по умолчанию —
-// российский магазин (₽, ru, карта/наличные); кубинская инсталляция: USD,
-// defaultLocale 'es', paymentMethods ['transfer', 'cash'].
+// ⚙️ ЭТА ВЕТКА (cuba) — КУБИНСКАЯ ИНСТАЛЛЯЦИЯ: значения ниже уже кубинские
+// (Tienda Habana, USD, es, перевод Transfermóvil/EnZona, доставка 50/5/3).
+// Российский магазин живёт в ветке main (₽, ru, card/cash). Обновление ветки:
+// git merge main — после мерджа править ТОЛЬКО значения ниже (+ испанские
+// дефолты в shared/siteContent.ts, цены сида в USD — см. server/data/products.json).
+// Демо-витрина копии деплоится CI-ом из main с подстановкой этих же значений
+// (scripts/make-store-config-copy.mjs — держать синхронно с веткой).
 //
 // Файл импортируется НАПРЯМУЮ клиентом (composables/utils), сервером
 // (server/lib) и nuxt.config.ts — относительные пути, без алиасов:
@@ -10,14 +13,14 @@
 
 // ─── Идентичность магазина ──────────────────────────────────────────────
 // PWA-манифест (nuxt.config) и apple-mobile-web-app-title.
-export const STORE_NAME = 'Магазин';
+export const STORE_NAME = 'Tienda Habana';
 // Подпись магазина для PWA-манифеста (description в manifest.webmanifest —
 // видна в диалоге установки PWA). Страницы перекрывают head-мету из i18n
 // (app.vue), а манифест собирается на билде — отсюда. ⚙️ Куба: на испанском.
-export const STORE_TAGLINE = 'Интернет-магазин с оффлайн поддержкой';
+export const STORE_TAGLINE = 'Tienda online con soporte offline';
 // Канонический origin для hreflang/sitemap (i18n.baseUrl). ⚙️ Копия: заменить
 // на домен своего воркера/кастомный домен.
-export const STORE_SITE_URL = 'https://nuxt-shop.igordolgov1972.workers.dev';
+export const STORE_SITE_URL = 'https://nuxt-shop-cu.igordolgov1972.workers.dev';
 
 // ─── Локализация ────────────────────────────────────────────────────────
 export type StoreLocale = 'ru' | 'en' | 'es';
@@ -25,13 +28,13 @@ export type StoreLocale = 'ru' | 'en' | 'es';
 // и файлы переводов). По ним генерируются префиксные routeRules.
 export const STORE_LOCALES: StoreLocale[] = ['ru', 'en', 'es'];
 // Язык без URL-префикса (strategy prefix_except_default). ⚙️ Куба: 'es'.
-export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';
+export const STORE_DEFAULT_LOCALE: StoreLocale = 'es';
 
 // ─── Валюта ─────────────────────────────────────────────────────────────
 export type StoreCurrency = 'RUB' | 'USD';
 // Валюта витрины: цены в каталоге/заказах/промокодах безразмерные числа,
 // символ и позицию берёт formatMoney отсюда. ⚙️ Куба: 'USD'.
-export const STORE_CURRENCY: StoreCurrency = 'RUB';
+export const STORE_CURRENCY: StoreCurrency = 'USD';
 
 // Символ валюты (экспорт: используется composables/utils напрямую)
 export const CURRENCY_SYMBOL: Record<StoreCurrency, string> = { RUB: '₽', USD: '$' };
@@ -67,20 +70,20 @@ export const formatMoney = (price: number, currency: StoreCurrency = STORE_CURRE
 // Список = то, что видит покупатель в чекауте И что валидирует сервер.
 // ⚙️ Куба: ['transfer', 'cash'].
 export type StorePaymentMethod = 'card' | 'cash' | 'transfer';
-export const STORE_PAYMENT_METHODS: StorePaymentMethod[] = ['card', 'cash'];
+export const STORE_PAYMENT_METHODS: StorePaymentMethod[] = ['transfer', 'cash'];
 
 // ─── Доставка ───────────────────────────────────────────────────────────
 // Единый источник правил (раньше дублировались в app/utils/deliveryPrice.ts
 // и server/lib/orderHelpers.ts и расходились). Курьер — бесплатно от порога,
 // почта — всегда платно, самовывоз — 0. ⚙️ Куба: цифры свои, в валюте
 // STORE_CURRENCY (символ в цифры НЕ входит — выводит formatMoney).
-export const FREE_DELIVERY_FROM = 2000;
-export const DELIVERY_PRICE_COURIER = 300;
-export const DELIVERY_PRICE_POST = 200;
+export const FREE_DELIVERY_FROM = 50;
+export const DELIVERY_PRICE_COURIER = 5;
+export const DELIVERY_PRICE_POST = 3;
 
 // ─── «О магазине»: витрина категорий ─────────────────────────────────────
 // Подписи «от X» у плиток категорий на /about — демо-цифры в валюте
 // STORE_CURRENCY (символ добавляет formatMoney, в цифры он не входит).
 // Порядок: телефоны, ноутбуки, аудио, фототехника, часы, консоли.
 // ⚙️ Куба: свои цифры в USD.
-export const ABOUT_FROM_PRICES = [19990, 54990, 4990, 39990, 14990, 44990];
+export const ABOUT_FROM_PRICES = [199, 549, 49, 399, 149, 449];

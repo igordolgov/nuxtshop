@@ -2,9 +2,15 @@
 // storage мокируется на Map в памяти: заказы и каталог живут как в KV,
 // но безWorkers-окружения. Серверная логика — реальная.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-// Способы оплаты — из конфига витрины (тест не ломается при смене
-// набора методов: кубинская копия включает transfer вместо card)
-import { STORE_PAYMENT_METHODS, type StorePaymentMethod } from '../../store.config';
+// Деньги/оплата/доставка — из конфига витрины (тест не ломается при смене
+// набора методов и тарифов: кубинская копия — transfer/cash и USD-цифры)
+import {
+  DELIVERY_PRICE_COURIER,
+  DELIVERY_PRICE_POST,
+  FREE_DELIVERY_FROM,
+  STORE_PAYMENT_METHODS,
+  type StorePaymentMethod,
+} from '../../store.config';
 
 // ─── Мок KV: data:orders / data:products в обычной Map ──────────────
 const kvStore = new Map<string, unknown>();
@@ -92,9 +98,9 @@ describe('createOrder — деньги считает сервер', () => {
   it('subtotal/total из цен KV; клиентские суммы не учитываются', async () => {
     const order = await createOrder(event, makeInput({ items: [{ id: '1', quantity: 2 }] }));
     expect(order.subtotal).toBe(2000);
-    // Курьер: ровно 2000 — НЕ бесплатная доставка (порог «строго больше»)
-    expect(order.deliveryPrice).toBe(300);
-    expect(order.total).toBe(2300);
+    // 2000 выше порога бесплатной доставки — курьер бесплатный
+    expect(order.deliveryPrice).toBe(0);
+    expect(order.total).toBe(2000);
     expect(order.items[0]!.price).toBe(1000); // цена из KV, не из ввода
   });
 
@@ -102,7 +108,7 @@ describe('createOrder — деньги считает сервер', () => {
     const order = await createOrder(event, makeInput({ promoCode: 'sale10' }));
     expect(order.promoCode).toBe('SALE10');
     expect(order.discount).toBe(100); // 10% от 1000
-    expect(order.total).toBe(1200); // 1000 - 100 + 300
+    expect(order.total).toBe(900); // 1000 - 100 (доставка бесплатная)
     // счётчик применений увеличен после заказа
     const promos = (await kvStore.get('data:promocodes')) as PromoCode[];
     expect(promos[0]!.usedCount).toBe(1);
@@ -115,7 +121,7 @@ describe('createOrder — деньги считает сервер', () => {
     ]);
     const order = await createOrder(event, makeInput({ promoCode: 'minus500' }));
     expect(order.discount).toBe(500); // 1000 - 500
-    expect(order.total).toBe(800);
+    expect(order.total).toBe(500);
   });
 
   it('истёкший / неактивный / исчерпанный промокод — скидка 0, код не фиксируется', async () => {
@@ -138,31 +144,28 @@ describe('createOrder — деньги считает сервер', () => {
     expect(order.promoCode).toBeNull();
   });
 
-  it('бесплатная доставка курьером строго больше 2000', async () => {
-    const above = await createOrder(
-      event,
-      makeInput({ items: [{ id: '1', quantity: 3 }] }), // 3000
-    );
-    expect(above.deliveryPrice).toBe(0);
-    expect(above.total).toBe(3000);
+  it('бесплатная доставка курьером строго больше порога', async () => {
+    // Ровно порог — ещё платно (товар с ценой = FREE_DELIVERY_FROM)
+    kvStore.set('data:products', structuredClone([{ ...product, price: FREE_DELIVERY_FROM }]));
+    const exactly = await createOrder(event, makeInput({ items: [{ id: '1', quantity: 1 }] }));
+    expect(exactly.deliveryPrice).toBe(DELIVERY_PRICE_COURIER);
 
-    const exactly = await createOrder(
-      event,
-      makeInput({ items: [{ id: '1', quantity: 2 }] }), // ровно 2000
-    );
-    expect(exactly.deliveryPrice).toBe(300);
+    // Чуть выше порога — уже бесплатно
+    const above = await createOrder(event, makeInput({ items: [{ id: '1', quantity: 2 }] }));
+    expect(above.deliveryPrice).toBe(0);
+    expect(above.total).toBe(FREE_DELIVERY_FROM * 2);
   });
 
-  it('почта всегда платная (200), самовывоз всегда бесплатный', async () => {
+  it('почта всегда платная, самовывоз всегда бесплатный', async () => {
     const post = await createOrder(
       event,
       makeInput({
         deliveryMethod: 'post',
-        items: [{ id: '1', quantity: 5 }], // 5000 > 2000, но почта платная
+        items: [{ id: '1', quantity: 5 }], // сумма выше порога, но почта всегда платная
         customer: { ...makeInput().customer, postalCode: '123456' },
       }),
     );
-    expect(post.deliveryPrice).toBe(200);
+    expect(post.deliveryPrice).toBe(DELIVERY_PRICE_POST);
 
     const pickup = await createOrder(event, makeInput({ deliveryMethod: 'pickup' }));
     expect(pickup.deliveryPrice).toBe(0);
