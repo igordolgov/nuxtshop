@@ -255,7 +255,7 @@
                   )
                   .flex-1.min-w-0
                     .font-medium.text-sm.truncate {{ product.name }}
-                    p.text-xs(class="text-base-content/70") {{ product.category || '' }}
+                    p.text-xs(class="text-base-content/70") {{ product.categories?.[0] || product.category || '' }}
                     .text-sm.font-bold.text-primary.mt-1 {{ formatPrice(product.price) }}
                   .flex.flex-col.gap-1
                     button.btn.btn-ghost.btn-xs(
@@ -463,6 +463,10 @@ onMounted(async () => {
     window.addEventListener('storage', (e) => {
       if (e.key === 'favoriteProducts') loadFavorites()
     })
+    // Прямой заход на страницу: каталога в стейте может не быть (его
+    // наполняет главная) — подтягиваем, чтобы мини-карточки избранного
+    // локализовались живыми данными, а не русскими снапшотами
+    if (!appState.products.value?.length) appState.loadProducts?.()
   }
 })
 
@@ -501,7 +505,20 @@ const activeOrdersCount = computed(() =>
 const completedOrdersCount = computed(() =>
   orders.value.filter((o) => o.status === 'delivered').length,
 )
-const favoriteProducts = computed(() => localFavoriteProducts.value)
+//- Снапшоты избранного хранят имя/категорию на языке МОМЕНТА добавления;
+//- карточки рендерим из живого каталога в ТЕКУЩЕЙ локали (тот же паттерн,
+//- что favorites.vue и displayName корзины): без этого при переключении
+//- локали имя и плашка категории оставались русскими. Фолбэк — сам
+//- снапшот: товар удалён из каталога или каталог ещё не загружен
+const { loc } = useLocalizedProduct()
+const favoriteProducts = computed(() =>
+  (localFavoriteProducts.value ?? []).map((snap) => {
+    const fresh = appState.products.value?.find(
+      (p) => String(p.id) === String(snap.id),
+    )
+    return loc(fresh ?? snap)
+  }),
+)
 const favoritesCount = computed(() => localFavoriteProducts.value.length)
 
 const formatDate = (date) =>
