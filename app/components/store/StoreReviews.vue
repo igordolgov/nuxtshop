@@ -75,6 +75,8 @@
 import { formatNewsDate } from '~/utils/news'
 
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 const props = defineProps({
   reviews: { type: Array, default: () => [] },
@@ -123,14 +125,16 @@ const submit = async () => {
         website: form.website,
       },
     })
-    $notify.success(resp?.message || t('reviews.moderationThanks'))
+    // Серверное «Спасибо! …» дублирует локализованный тост — показываем словарь
+    $notify.success(t('reviews.moderationThanks'))
     showForm.value = false
     form.author = ''
     form.rating = 5
     form.text = ''
     form.website = ''
   } catch (error) {
-    const message = error?.data?.message || error?.message || t('reviews.sendError')
+    // Серверные коды (reviewInvalid/authRequired/…) → server.*
+    const message = serverMessage(error, 'reviews.sendError')
     formError.value = message
     $notify.error(message)
   } finally {

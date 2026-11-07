@@ -242,6 +242,8 @@ import { CONTENT_LIMITS, normalizePhoneHref } from '#shared/siteContent'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 const LIMITS = CONTENT_LIMITS
 
@@ -379,12 +381,14 @@ const save = async () => {
   try {
     const resp = await $fetch('/api/content', { method: 'PUT', body: form })
     applyContent(resp?.content)
-    $notify.success(resp?.message || t('admin.content.savedToast'))
+    // Серверное сообщение дублирует словарь — показываем локализованный текст
+    $notify.success(t('admin.content.savedToast'))
     // Витрины держат этот же ключ useAsyncData — обновим, чтобы клиентский
     // переход на /contacts или /about увидел свежий контент без F5.
     refreshNuxtData('site-content').catch(() => {})
   } catch (error) {
-    const message = error?.data?.message || error?.message || t('admin.content.saveError')
+    // Код сервера (managerRequired/authRequired/…) → server.*
+    const message = serverMessage(error, 'admin.content.saveError')
     formError.value = message
     $notify.error(message)
   } finally {

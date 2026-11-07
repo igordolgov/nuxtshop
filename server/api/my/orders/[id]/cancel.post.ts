@@ -17,12 +17,17 @@ export default defineEventHandler(async (event) => {
     const orders = await readOrders(event);
     const order = orders.find((o) => o.id === id);
     if (!order || order.customer?.userId !== user.id) {
-      throw createError({ statusCode: 404, message: 'Заказ не найден' });
+      throw createError({
+        statusCode: 404,
+        message: 'Заказ не найден',
+        data: { code: 'orderNotFound' },
+      });
     }
     if (!canCustomerCancel(order, user.id)) {
       throw createError({
         statusCode: 409,
         message: 'Заказ уже передан в доставку — отменить его нельзя',
+        data: { code: 'orderCancelShipped' },
       });
     }
 
@@ -31,6 +36,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка отмены заказа покупателем:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось отменить заказ' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось отменить заказ',
+      data: { code: 'orderCancelFailed' },
+    });
   }
 });

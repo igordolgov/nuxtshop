@@ -138,6 +138,8 @@ import { formatNewsDate } from '~/utils/news'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const localePath = useLocalePath()
 
 const items = ref([])
@@ -175,7 +177,7 @@ const setApproved = async (review, approved) => {
       method: 'PUT',
       body: { approved },
     })
-    $notify.success(resp?.message || (approved ? t('admin.reviews.publishedToast') : t('admin.reviews.hiddenToast')))
+    $notify.success(approved ? t('admin.reviews.publishedToast') : t('admin.reviews.hiddenToast'))
     await load()
   } catch {
     $notify.error(t('admin.reviews.saveError'))
@@ -204,11 +206,11 @@ const saveReply = async (review) => {
       body: { text: replyText.value.trim() },
     })
     review.shopReply = resp?.review?.shopReply ?? null
-    $notify.success(resp?.message || (replyText.value.trim() ? t('admin.reviews.replySaved') : t('admin.reviews.replyDeleted')))
+    $notify.success(replyText.value.trim() ? t('admin.reviews.replySaved') : t('admin.reviews.replyDeleted'))
     replyForId.value = null
     replyText.value = ''
   } catch (error) {
-    $notify.error(error?.data?.message || t('admin.reviews.replyError'))
+    $notify.error(serverMessage(error, 'admin.reviews.replyError'))
   } finally {
     replyBusy.value = false
   }
@@ -225,7 +227,7 @@ const removeReply = async (review) => {
     review.shopReply = resp?.review?.shopReply ?? null
     $notify.success(t('admin.reviews.replyDeleted'))
   } catch (error) {
-    $notify.error(error?.data?.message || t('admin.reviews.replyError'))
+    $notify.error(serverMessage(error, 'admin.reviews.replyError'))
   } finally {
     replyBusy.value = false
   }
@@ -236,7 +238,7 @@ const remove = async (review) => {
   busyId.value = review.id
   try {
     const resp = await $fetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || t('admin.reviews.deletedToast'))
+    $notify.success(t('admin.reviews.deletedToast'))
     await load()
   } catch {
     $notify.error(t('admin.reviews.deleteError'))

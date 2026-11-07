@@ -42,17 +42,29 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody<ProductBody>(event);
     if (!body?.name?.trim()) {
-      throw createError({ statusCode: 400, message: 'Название товара обязательно' });
+      throw createError({
+        statusCode: 400,
+        message: 'Название товара обязательно',
+        data: { code: 'productMissingName' },
+      });
     }
     if (!body.price || Number.isNaN(parseFloat(String(body.price)))) {
-      throw createError({ statusCode: 400, message: 'Цена товара обязательна' });
+      throw createError({
+        statusCode: 400,
+        message: 'Цена товара обязательна',
+        data: { code: 'productMissingPrice' },
+      });
     }
 
     // Категории: обязательны (сообщения согласованы с валидацией в админке).
     // null → поле не пришло; для POST это так же пусто, как []
     const categories = normalizeCategories(body) ?? [];
     if (categories.length === 0) {
-      throw createError({ statusCode: 400, message: 'Укажите хотя бы одну категорию' });
+      throw createError({
+        statusCode: 400,
+        message: 'Укажите хотя бы одну категорию',
+        data: { code: 'productMissingCategory' },
+      });
     }
 
     const products = await readProducts(event);
@@ -115,6 +127,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка добавления товара:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось добавить товар' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось добавить товар',
+      data: { code: 'productCreateFailed' },
+    });
   }
 });

@@ -7,6 +7,9 @@
 import type { Ref } from 'vue';
 import type { CatalogProduct } from './catalogProduct';
 import { fixProductImages, updateProductStockStatus } from './catalogProduct';
+// tr() — перевод вне setup-контекста: этот composable вызывается из
+// синглтона useProducts (создаётся в middleware, не в setup)
+import { tr } from './tr';
 
 /** Стейт и утилиты, с которыми работают мутации (живут в useProducts). */
 export interface ProductMutationsCtx {
@@ -55,7 +58,7 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
       return true;
     } catch (err) {
       console.error('[useProducts] Ошибка переключения избранного:', err);
-      showNotification('error', 'Ошибка при обновлении избранного');
+      showNotification('error', tr('products.errFavorite', 'Ошибка при обновлении избранного'));
       return false;
     }
   };
@@ -79,7 +82,7 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
       });
 
       if (!response.success || !response.product) {
-        throw new Error(response.message || 'Сервер не подтвердил обновление');
+        throw new Error(tr('products.errNotConfirmedUpdate', 'Сервер не подтвердил обновление'));
       }
 
       const index = products.value.findIndex((p) => String(p.id) === String(productId));
@@ -104,7 +107,10 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
     } catch (err) {
       console.error('[useProducts] Ошибка обновления товара:', err);
       error.value = errorMessage(err);
-      showNotification('error', `Ошибка обновления товара: ${errorMessage(err)}`);
+      showNotification(
+        'error',
+        `${tr('products.errUpdate', 'Ошибка обновления товара')}: ${errorMessage(err)}`,
+      );
       throw err;
     } finally {
       loading.value = false;
@@ -126,7 +132,7 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
       }>('/api/products', { method: 'POST', body: finalData });
 
       if (!response.success || !response.product) {
-        throw new Error(response.message || 'Сервер не подтвердил создание');
+        throw new Error(tr('products.errNotConfirmedCreate', 'Сервер не подтвердил создание'));
       }
 
       const newProduct = updateProductStockStatus(
@@ -138,7 +144,10 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
     } catch (err) {
       console.error('[useProducts] Ошибка создания товара:', err);
       error.value = errorMessage(err);
-      showNotification('error', `Ошибка создания товара: ${errorMessage(err)}`);
+      showNotification(
+        'error',
+        `${tr('products.errCreate', 'Ошибка создания товара')}: ${errorMessage(err)}`,
+      );
       throw err;
     } finally {
       loading.value = false;
@@ -154,7 +163,8 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
         `/api/products/${productId}`,
         { method: 'DELETE' },
       );
-      if (!response.success) throw new Error(response.message || 'Ошибка при удалении товара');
+      if (!response.success)
+        throw new Error(tr('products.errNotConfirmedDelete', 'Ошибка при удалении товара'));
 
       const idx = products.value.findIndex((p) => String(p.id) === String(productId));
       if (idx === -1) return false;
@@ -162,13 +172,16 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
       products.value.splice(idx, 1);
       persist();
       if (favorites.isFavorite(productId)) favorites.removeFromFavorites(productId);
-      showNotification('success', `Товар "${name}" удален`);
+      showNotification('success', tr('products.deletedName', 'Товар «{name}» удалён', { name }));
       return true;
     } catch (err) {
       console.error('[useProducts] Ошибка удаления товара:', err);
       error.value = errorMessage(err);
       // 401 — сессия истекла (например, после рестарта dev-сервера)
-      showNotification('error', `Ошибка удаления товара: ${errorMessage(err)}`);
+      showNotification(
+        'error',
+        `${tr('products.errDelete', 'Ошибка удаления товара')}: ${errorMessage(err)}`,
+      );
       return false;
     } finally {
       loading.value = false;
@@ -195,7 +208,9 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
         body: { ids, ...patch },
       });
       if (!response.success) {
-        throw new Error(response.message || 'Сервер не подтвердил обновление');
+        throw new Error(
+          tr('products.errNotConfirmedBulkUpdate', 'Сервер не подтвердил обновление'),
+        );
       }
 
       const byId = new Map((response.products || []).map((p) => [String(p.id), p]));
@@ -211,7 +226,10 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
     } catch (err) {
       console.error('[useProducts] Ошибка массового обновления товаров:', err);
       error.value = errorMessage(err);
-      showNotification('error', `Массовое обновление: ${errorMessage(err)}`);
+      showNotification(
+        'error',
+        `${tr('products.errBulkUpdate', 'Массовое обновление')}: ${errorMessage(err)}`,
+      );
       throw err;
     } finally {
       loading.value = false;
@@ -234,7 +252,7 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
         body: { ids },
       });
       if (!response.success) {
-        throw new Error(response.message || 'Сервер не подтвердил удаление');
+        throw new Error(tr('products.errNotConfirmedBulkDelete', 'Сервер не подтвердил удаление'));
       }
 
       const gone = new Set((response.deletedIds || []).map(String));
@@ -247,7 +265,10 @@ export function useProductMutations(ctx: ProductMutationsCtx) {
     } catch (err) {
       console.error('[useProducts] Ошибка массового удаления товаров:', err);
       error.value = errorMessage(err);
-      showNotification('error', `Массовое удаление: ${errorMessage(err)}`);
+      showNotification(
+        'error',
+        `${tr('products.errBulkDelete', 'Массовое удаление')}: ${errorMessage(err)}`,
+      );
       throw err;
     } finally {
       loading.value = false;

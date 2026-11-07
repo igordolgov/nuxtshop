@@ -211,6 +211,8 @@ import {
 import { CHARACTERISTIC_LABEL_KEYS } from '~/utils/characteristicLabels'
 
 const { t, te, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
@@ -341,9 +343,11 @@ const submitAlert = async () => {
       },
     })
     alertState.value = 'done'
-    $notify.success(resp?.message || t('product.notifyDone'))
+    // Серверное «Готово! …» дублирует локализованный тост — показываем словарь
+    $notify.success(t('product.notifyDone'))
   } catch (error) {
-    const message = error?.data?.message || t('product.notifyError')
+    // Серверные коды (productNotFound/stockAlertInvalid/authRequired/…) → server.*
+    const message = serverMessage(error, 'product.notifyError')
     alertError.value = message
   } finally {
     alertBusy.value = false

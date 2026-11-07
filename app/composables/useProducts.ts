@@ -31,6 +31,10 @@ import {
   updateProductStockStatus,
 } from './catalogProduct';
 import { useProductMutations } from './useProductMutations';
+// serverMessageTr — серверные коды ошибок (server.* в словарях) вне setup;
+// tr — перевод вне setup-контекста (см. composables/tr.ts)
+import { serverMessageTr } from './useServerMessage';
+import { tr } from './tr';
 let productsState: ReturnType<typeof createProducts> | null = null;
 let isInitialized = false;
 // Detached-scope для вотча флагов избранного: живёт на уровне
@@ -78,8 +82,12 @@ function createProducts() {
     console.log(`[${type.toUpperCase()}] ${message}`);
   };
 
-  // Человекочитаемое сообщение из ошибки $fetch (h3 кладёт тело в error.data)
+  // Человекочитаемое сообщение из ошибки $fetch: серверный код → server.*
+  // (словарь), иначе русский текст сервера как последний фолбэк — он хотя
+  // бы содержит детали (админ-операции), но ДО него всегда пробуем словарь.
   const errorMessage = (err?: unknown): string => {
+    const coded = serverMessageTr(err);
+    if (coded) return coded;
     const e = err as {
       data?: { message?: string; statusMessage?: string };
       message?: string;

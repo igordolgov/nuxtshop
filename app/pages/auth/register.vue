@@ -107,6 +107,8 @@
 
 <script setup>
 const { t } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const { register, isAuthenticated } = useAppState()
 const router = useRouter()
 // После регистрации возвращаемся на главную ТЕКУЩЕЙ локали
@@ -185,7 +187,8 @@ const handleRegister = async () => {
     }
   } catch (error) {
     console.error('❌ Ошибка регистрации:', error)
-    registerError.value = error.data?.message || t('auth.errRegister')
+    // Серверные коды (missingFields/emailFormat/…) → server.*, иначе локализованный фолбэк
+    registerError.value = serverMessage(error, 'auth.errRegister')
   } finally {
     loading.value = false
   }

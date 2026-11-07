@@ -29,7 +29,11 @@ export default defineEventHandler(async (event) => {
     const products = await readProducts(event);
     const product = products.find((p) => String(p?.id) === clean.productId);
     if (!product) {
-      throw createError({ statusCode: 400, message: 'Товар не найден' });
+      throw createError({
+        statusCode: 400,
+        message: 'Товар не найден',
+        data: { code: 'productNotFound' },
+      });
     }
 
     const alerts = await readStockAlerts(event);
@@ -73,10 +77,18 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: 'Готово! Сообщим, когда товар появится' };
   } catch (error) {
     if (error instanceof StockAlertValidationError) {
-      throw createError({ statusCode: 400, message: error.message });
+      throw createError({
+        statusCode: 400,
+        message: error.message,
+        data: { code: 'stockAlertInvalid' },
+      });
     }
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка сохранения заявки о поступлении:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось отправить заявку' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось отправить заявку',
+      data: { code: 'stockAlertInvalid' },
+    });
   }
 });

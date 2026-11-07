@@ -205,6 +205,8 @@ definePageMeta({
 const { $notify } = useNuxtApp()
 const appState = useAppState()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 const localePath = useLocalePath()
 
 useHead({ title: () => t('admin.users.pageTitle') })
@@ -263,10 +265,11 @@ const updateUserRole = async (userId, newRole) => {
       }
       $notify.success(t('admin.users.roleChanged', { role: getRoleLabel(newRole) }))
     } else {
-      throw new Error(data?.message || t('admin.users.roleUpdateError'))
+      throw new Error(t('admin.users.roleUpdateError'))
     }
   } catch (err) {
-    $notify.error(err.message || t('admin.users.roleUpdateError'))
+    // Код сервера (managerRequired/authRequired/…) → server.*
+    $notify.error(serverMessage(err, 'admin.users.roleUpdateError'))
     await loadUsers()
   }
 }
@@ -301,10 +304,10 @@ const deleteUser = async (user) => {
       $notify.success(t('admin.users.deleted', { name: user.name }))
       await loadUsers()
     } else {
-      throw new Error(data?.message || t('admin.users.deleteError'))
+      throw new Error(t('admin.users.deleteError'))
     }
   } catch (err) {
-    $notify.error(err.message || t('admin.users.deleteErrorToast'))
+    $notify.error(serverMessage(err, 'admin.users.deleteErrorToast'))
   }
 }
 

@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: `Недопустимый статус. Допустимо: ${ORDER_STATUSES.join(', ')}`,
+        data: { code: 'invalidStatus' },
       });
     }
 
@@ -48,6 +49,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка смены статуса заказа:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось изменить статус' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось изменить статус',
+      data: { code: 'statusUpdateFailed' },
+    });
   }
 });

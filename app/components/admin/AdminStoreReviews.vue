@@ -86,6 +86,8 @@ import { formatNewsDate } from '~/utils/news'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 const items = ref([])
 const pending = ref(0)
@@ -122,7 +124,7 @@ const setApproved = async (review, approved) => {
       method: 'PUT',
       body: { approved },
     })
-    $notify.success(resp?.message || (approved ? t('admin.reviews.publishedToast') : t('admin.reviews.hiddenToast')))
+    $notify.success(approved ? t('admin.reviews.publishedToast') : t('admin.reviews.hiddenToast'))
     await load()
   } catch {
     $notify.error(t('admin.storeReviews.saveError'))
@@ -136,7 +138,7 @@ const remove = async (review) => {
   busyId.value = review.id
   try {
     const resp = await $fetch(`/api/admin/store-reviews/${review.id}`, { method: 'DELETE' })
-    $notify.success(resp?.message || t('admin.storeReviews.deletedToast'))
+    $notify.success(t('admin.storeReviews.deletedToast'))
     await load()
   } catch {
     $notify.error(t('admin.storeReviews.deleteError'))

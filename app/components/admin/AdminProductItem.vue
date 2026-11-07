@@ -166,6 +166,8 @@ const emit = defineEmits(['update', 'delete', 'toggle-stock'])
 const { updateProduct } = useProducts()
 const notify = useNotifyQueue()
 const { t } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 // Валюта витрины — для подписи поля цены (₽ / $ из store.config)
 const { currencySymbol } = useProductUtils()
 
@@ -268,11 +270,13 @@ const saveChanges = async () => {
     localProduct.value = JSON.parse(JSON.stringify(updated))
     
     emit('update', updated)
-    notify.success(`Товар "${updated.name}" сохранён`)
+    // Тост был жёстко русским — ключ admin.products.savedName
+    notify.success(t('admin.products.savedName', { name: updated.name }))
     
   } catch (error) {
     console.error('Ошибка сохранения:', error)
-    notify.error(error.message || 'Ошибка сохранения товара')
+    // Код сервера (productMissingCategory/authRequired/…) → server.*
+    notify.error(serverMessage(error, 'admin.products.saveError'))
   } finally {
     isSaving.value = false
   }

@@ -240,6 +240,8 @@ import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
+// Локализация серверных ошибок по кодам (server.* в словарях)
+const { serverMessage } = useServerMessage()
 
 const orders = ref([])
 const isLoading = ref(true)
@@ -392,11 +394,14 @@ const applyStatus = async (order) => {
       // Сервер вернул обновлённый заказ — заменяем им карточку в списке
       orders.value = orders.value.map((o) => (o.id === order.id ? resp.order : o))
       nextStatus.value = { ...nextStatus.value, [order.id]: undefined }
-      $notify.success(resp.message || t('admin.orders.statusUpdated', { id: order.id }))
+      // Серверное сообщение («Заказ N: статус …») дублирует словарь —
+      // показываем локализованный текст с id заказа
+      $notify.success(t('admin.orders.statusUpdated', { id: order.id }))
     }
   } catch (err) {
     console.error('[admin-orders] Ошибка смены статуса:', err?.data?.message || err?.message)
-    $notify.error(err?.data?.message || t('admin.orders.statusChangeError'))
+    // Код сервера (invalidStatus/orderNotFound/…) → server.*
+    $notify.error(serverMessage(err, 'admin.orders.statusChangeError'))
   } finally {
     const done = new Set(updating.value)
     done.delete(order.id)

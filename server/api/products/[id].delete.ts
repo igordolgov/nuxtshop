@@ -9,7 +9,11 @@ export default defineEventHandler(async (event) => {
 
     const id = getRouterParam(event, 'id');
     if (!id) {
-      throw createError({ statusCode: 400, message: 'ID товара не указан' });
+      throw createError({
+        statusCode: 400,
+        message: 'ID товара не указан',
+        data: { code: 'productNoId' },
+      });
     }
 
     const products = await readProducts(event);
@@ -17,7 +21,11 @@ export default defineEventHandler(async (event) => {
     // Сужение вместо проверки index (noUncheckedIndexedAccess)
     const deleted = products[index];
     if (!deleted) {
-      throw createError({ statusCode: 404, message: 'Товар не найден' });
+      throw createError({
+        statusCode: 404,
+        message: 'Товар не найден',
+        data: { code: 'productNotFound' },
+      });
     }
     products.splice(index, 1);
     await writeProducts(event, products);
@@ -34,6 +42,10 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка удаления товара:', error);
-    throw createError({ statusCode: 500, message: 'Не удалось удалить товар' });
+    throw createError({
+      statusCode: 500,
+      message: 'Не удалось удалить товар',
+      data: { code: 'productDeleteFailed' },
+    });
   }
 });

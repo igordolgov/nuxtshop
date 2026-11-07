@@ -9,7 +9,11 @@ export default defineEventHandler(async (event) => {
   const password = body.password || '';
 
   if (!email || !password) {
-    throw createError({ statusCode: 400, message: 'Email и пароль обязательны' });
+    throw createError({
+      statusCode: 400,
+      message: 'Email и пароль обязательны',
+      data: { code: 'missingFields' },
+    });
   }
 
   const users = await readUsers(event);
@@ -17,7 +21,11 @@ export default defineEventHandler(async (event) => {
 
   // Одинаковый ответ для «нет пользователя» и «неверный пароль» — не раскрываем email'ы
   if (!user || !(await comparePassword(password, user.password ?? ''))) {
-    throw createError({ statusCode: 401, message: 'Неверный email или пароль' });
+    throw createError({
+      statusCode: 401,
+      message: 'Неверный email или пароль',
+      data: { code: 'invalidCredentials' },
+    });
   }
 
   user.lastLogin = new Date().toISOString();

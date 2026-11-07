@@ -9,6 +9,10 @@
 // ============================================
 
 import { ref, computed } from 'vue';
+// tr() — перевод вне setup-контекста (синглтон useCart живёт в middleware);
+// serverMessageTr — серверные коды ошибок (server.* в словарях)
+import { tr } from './tr';
+import { serverMessageTr } from './useServerMessage';
 // Правила доставки — единый модуль (зеркало server/lib/orderHelpers.ts):
 // до него чекаут держал собственный статический список цен и суммы
 // корзина/чекаут расходились (аудит F3)
@@ -275,12 +279,23 @@ function createCart() {
       const nextQty = existing.quantity + 1;
       const max = stock.stockQuantity || 0;
       if (nextQty > max) {
-        throw new Error(`Нельзя добавить больше ${max} шт. товара "${product.name}"`);
+        // Локализованный текст: тост корзины показывает error.message
+        throw new Error(
+          tr('cart.maxQuantity', 'Нельзя добавить больше {max} шт. товара «{name}»', {
+            max,
+            name: product.name,
+          }),
+        );
       }
       existing.quantity = nextQty;
     } else {
       if ((stock.stockQuantity || 0) === 0) {
-        throw new Error(`Товар "${product.name}" отсутствует на складе`);
+        // Локализованный текст: тост корзины показывает error.message
+        throw new Error(
+          tr('cart.outOfStock', 'Товар «{name}» отсутствует на складе', {
+            name: product.name,
+          }),
+        );
       }
 
       const productSlug = product.slug || slugify(product.name);
@@ -319,7 +334,13 @@ function createCart() {
 
     const max = item.stockQuantity || 999;
     if (newQuantity > max) {
-      throw new Error(`Нельзя добавить больше ${max} шт. товара "${item.name}"`);
+      // Локализованный текст: тост корзины показывает error.message
+      throw new Error(
+        tr('cart.maxQuantity', 'Нельзя добавить больше {max} шт. товара «{name}»', {
+          max,
+          name: item.name,
+        }),
+      );
     }
 
     item.quantity = Math.max(0, newQuantity);
@@ -358,13 +379,23 @@ function createCart() {
   interface PromoValidateResponse {
     valid: boolean;
     message?: string;
+    // причина отказа — ключ локализации server.promo* на клиенте
+    reason?: 'not_found' | 'inactive' | 'expired' | 'limit';
     // valid: true → сервер всегда возвращает promo
     promo: { code: string; type: 'percent' | 'fixed'; value: number };
   }
 
+  // причина отказа сервера → ключ словаря (секция server.*)
+  const PROMO_REASON_KEYS: Record<NonNullable<PromoValidateResponse['reason']>, string> = {
+    not_found: 'server.promoNotFound',
+    inactive: 'server.promoInactive',
+    expired: 'server.promoExpired',
+    limit: 'server.promoLimit',
+  };
+
   const applyPromoCode = async (code?: string | null): Promise<boolean> => {
     const trimmed = String(code || '').trim();
-    if (!trimmed) throw new Error('Введите промокод');
+    if (!trimmed) throw new Error(tr('cart.promoEnter', 'Введите промокод'));
 
     // Валидация на сервере: список промокодов живёт в KV (админка
     // /admin/promocodes). Клиентские суммы не участвуют в заказе.
@@ -372,15 +403,19 @@ function createCart() {
       method: 'POST',
       body: { code: trimmed, subtotal: subtotal.value },
     }).catch((error) => {
+      // код сервера → server.* (сейчас promoEmpty), иначе локализованный фолбэк
       throw new Error(
-        (error as { data?: { message?: string } })?.data?.message ||
-          'Не удалось проверить промокод',
+        serverMessageTr(error) || tr('cart.promoCheckFailed', 'Не удалось проверить промокод'),
       );
     });
 
     if (!resp?.valid) {
-      state.value.error = resp?.message || 'Неверный промокод';
-      throw new Error(state.value.error);
+      // Русский текст сервера не показываем: причина (reason) → server.promo*
+      const reasonKey = resp?.reason ? PROMO_REASON_KEYS[resp.reason] : null;
+      const invalid = tr('cart.promoInvalid', 'Неверный промокод');
+      const msg = reasonKey ? tr(reasonKey, invalid) : invalid;
+      state.value.error = msg;
+      throw new Error(msg);
     }
 
     state.value.promo = {
