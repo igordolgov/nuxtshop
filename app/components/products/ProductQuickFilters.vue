@@ -3,7 +3,10 @@
      чтобы мобильная панель могла закрепить их НАД кнопкой «Показать N»
      (всегда видны, а характеристики скроллятся под ними — паттерн
      маркетплейсов), не дублируя логику. Состояние живёт в родителе:
-     изменение уходит наверх парой (ключ, значение). -->
+     изменение уходит наверх парой (ключ, значение).
+     showFavorites=false прячет чекбокс «Только избранное» (мобильная
+     панель: страница избранного и так в нижней навигации); если фильтр
+     активен, снять его можно чипом над сеткой. -->
 <template lang="pug">
 label.quick-filter.flex.items-center.cursor-pointer.select-none(
   class="py-1 gap-2.5"
@@ -16,6 +19,7 @@ label.quick-filter.flex.items-center.cursor-pointer.select-none(
   span.text-sm.text-base-content {{ $t('catalog.inStockOnly') }}
 
 label.quick-filter.flex.items-center.cursor-pointer.select-none(
+  v-if="showFavorites"
   class="py-1 gap-2.5"
 )
   input.checkbox.checkbox-sm.checkbox-error(
@@ -29,6 +33,9 @@ label.quick-filter.flex.items-center.cursor-pointer.select-none(
 <script setup>
 const props = defineProps({
   filters: { type: Object, default: () => ({}) },
+  // Показывать чекбокс «Только избранное» (по умолчанию да — десктопный
+  // сайдбар); мобильная панель передаёт false
+  showFavorites: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['change'])
