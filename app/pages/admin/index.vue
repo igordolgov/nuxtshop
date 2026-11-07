@@ -463,6 +463,9 @@ const kpis = computed(() => [
 
 // Плитки быстрых действий (to — через localePath, чтобы не сбрасывать язык).
 // adminOnly — новости/контент/пользователи: не операционка менеджера
+// ⚠️ filter — МЕТОД МАССИВА: раньше стоял после закрывающей скобки computed
+// (computed(...).filter) — TypeError в setup, /admin отдавал 500 на обоих
+// магазинах (инцидент 2026-11-07 «Не получается добавить товар»)
 const quickLinks = computed(() =>
   [
     { to: localePath('/admin/products'), title: t('admin.dashboard.quickProductsTitle'), sub: t('admin.dashboard.quickProductsSub'), icon: 'heroicons:cube' },
@@ -471,7 +474,8 @@ const quickLinks = computed(() =>
     { to: localePath('/admin/content'), title: t('admin.dashboard.quickContentTitle'), sub: t('admin.dashboard.quickContentSub'), icon: 'heroicons:pencil-square', adminOnly: true },
     { to: localePath('/admin/reviews'), title: t('admin.dashboard.quickReviewsTitle'), sub: t('admin.dashboard.quickReviewsSub'), icon: 'heroicons:star' },
     { to: localePath('/admin/users'), title: t('admin.dashboard.quickUsersTitle'), sub: t('admin.dashboard.quickUsersSub'), icon: 'heroicons:users', adminOnly: true },
-  ]).filter((q) => !q.adminOnly || isAdmin.value)
+  ].filter((q) => !q.adminOnly || isAdmin.value)
+)
 
 // Заполненность склада: доля товаров в наличии
 const stockPercent = computed(() => {

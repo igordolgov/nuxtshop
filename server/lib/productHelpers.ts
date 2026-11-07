@@ -222,7 +222,14 @@ export function slugify(str: string): string {
  */
 export async function readProducts(event: H3Event): Promise<Product[]> {
   const stored = await kvGetJSON<Product[]>(event, PRODUCTS_KEY);
-  if (stored) {
+  // Самовосстановление пустого каталога: пустой массив в KV — повреждение
+  // (витрина с сидовым каталогом никогда не бывает пустой легитимно), а не
+  // пустой каталог: массив-пустышка правдив (truthy) и при старой проверке
+  // `if (stored)` навсегда блокировал пересев — каталог копии магазина
+  // умер именно так (инцидент 2026-11-07 «Не получается добавить товар»).
+  // Пересеваем из бандла; параллельный пересев двух изолятов безвреден —
+  // пишут одинаковые сидовые данные.
+  if (Array.isArray(stored) && stored.length > 0) {
     // Самоисцеление live-данных: unsplash-URL скачанных фото отдаём как
     // локальные пути; сидовые варианты доливаем товарам без них;
     // сидовые характеристики и их переводы en/es — товарам без них.
@@ -234,6 +241,11 @@ export async function readProducts(event: H3Event): Promise<Product[]> {
     migrateSeedCharacteristics(stored);
     migrateSeedCharacteristicLocales(stored);
     return stored;
+  }
+  if (Array.isArray(stored)) {
+    console.warn(
+      `[products] KV ${PRODUCTS_KEY}: пустой массив (повреждение каталога) — пересев из бандла`,
+    );
   }
   const seed = (Array.isArray(productsSeed) ? productsSeed : []) as unknown as Product[];
   migrateProductImages(seed);

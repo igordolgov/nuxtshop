@@ -163,6 +163,21 @@ describe('readProducts — прямое чтение KV (TTL-кеш удалён
     const fresh = await readProducts(event);
     expect(fresh.some((p) => p.id === '77')).toBe(true);
   });
+
+  // Регрессия инцидента 2026-11-07 («Не получается добавить товар»):
+  // пустой массив в KV — truthy — блокировал пересев, каталог копии
+  // магазина навсегда оставался пустым. Пустой каталог в магазине с
+  // сидовым каталогом — всегда повреждение: пересеваем из бандла.
+  it('пустой массив в KV — пересев из сида и восстановление записи', async () => {
+    kvStore.set('data:products', []);
+    const products = await readProducts(event);
+    expect(products.length).toBeGreaterThan(0);
+    // Пересев закрепился в KV — следующие чтения тоже не пустые
+    const stored = kvStore.get('data:products') as Product[];
+    expect(stored.length).toBeGreaterThan(0);
+    const second = await readProducts(event);
+    expect(second.length).toBeGreaterThan(0);
+  });
 });
 
 describe('getProductBySlug', () => {
