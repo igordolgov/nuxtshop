@@ -1,6 +1,8 @@
 <!-- app/components/products/ProductSpecFilters.vue — фасетные фильтры по
      характеристикам (паттерн WB/Ozon): сворачиваемые группы <details> с
-     чипами значений и счётчиками. Фасеты и счётчики считает useFilters
+     чипами значений и счётчиками; длинные списки (значения и сами группы)
+     сворачиваются кнопками с числом «Ещё {n}» — на тач-экранах иначе
+     непонятно, есть ли ещё ниже. Фасеты и счётчики считает useFilters
      (buildSpecFacets) по базовой выборке каталога: выбор внутри одной
      характеристики — ИЛИ, между характеристиками — И; выбор в одной группе
      не обнуляет счётчики других. Используется в ProductFilter
@@ -58,16 +60,18 @@
           span.spec-value-count(class="ml-1 opacity-55") {{ entry.count }}
 
         button.spec-more.btn.btn-xs.btn-ghost.rounded-full(
-          v-if="group.values.length > VISIBLE_VALUES && !expanded[group.label]"
+          v-if="group.values.length > VISIBLE_VALUES"
           type="button"
-          @click="expand(group.label)"
-        ) {{ $t('catalog.specMore', { n: group.values.length - VISIBLE_VALUES }) }}
+          @click="expanded[group.label] ? collapse(group.label) : expand(group.label)"
+        ) {{ expanded[group.label] ? $t('catalog.collapse') : $t('catalog.specMore', { n: group.values.length - VISIBLE_VALUES }) }}
 
+    //- Скрытые группы — с числом (без счётчика непонятно, есть ли ещё
+    //- характеристики ниже) и с обратным сворачиванием
     button.spec-show-all.btn.btn-ghost.btn-xs.w-full.rounded-lg(
-      v-if="hiddenGroupsCount > 0"
+      v-if="hiddenGroupsCount > 0 || showAllGroups"
       type="button"
-      @click="showAllGroups = true"
-    ) {{ $t('catalog.specShowAll') }}
+      @click="showAllGroups = !showAllGroups"
+    ) {{ showAllGroups ? $t('catalog.collapse') : $t('catalog.specShowAll', { n: hiddenGroupsCount }) }}
 
   .empty-state.py-3.text-center(v-else)
     .text-sm.opacity-70.text-base-content {{ $t('catalog.specEmpty') }}
@@ -176,6 +180,12 @@ const visibleValues = (group) => {
 
 const expand = (label) => {
   expanded.value = { ...expanded.value, [label]: true }
+}
+
+const collapse = (label) => {
+  const next = { ...expanded.value }
+  delete next[label]
+  expanded.value = next
 }
 
 const isOpen = (group) => {
