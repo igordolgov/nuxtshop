@@ -2,54 +2,9 @@
 .product-info
   .card.bg-base-100(class="lg:shadow-none")
     .card-body.p-3.gap-3(class="lg:p-0")
-      //- Заголовок и избранное/сравнение
-      .flex.justify-between.items-start.gap-3
-        h1.text-xl.font-semibold.text-base-content.leading-snug(class="lg:text-2xl") {{ product.name }}
-        ClientOnly
-          .flex.shrink-0.gap-2
-            //- Тач-цель 40px (size-10), иконка /70 вместо полупрозрачной /50 —
-            //- на белом фоне выглядели бледно (аудит F6)
-            //- Поиск: иконка ПЕРЕД «Сравнить»/«Избранное» — строка поиска
-            //- из шапки на карточке убрана (шапка однострочная), тап
-            //- открывает полноэкранный ProductSearchOverlay (v-model у страницы)
-            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              class="border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40"
-              :title="$t('catalog.search')"
-              :aria-label="$t('catalog.search')"
-              @click="$emit('open-search')"
-            )
-              icon(name="heroicons:magnifying-glass" size="20")
-            //- Шаринг (WB/Ozon): Web Share API на мобиле — нативный шер-шит
-            //- (мессенджеры, почта) даёт «сарафанный» трафик; на десктопе
-            //- без navigator.share — фолбэк: ссылка в буфер обмена + тост
-            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              class="border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40"
-              :title="$t('product.share')"
-              :aria-label="$t('product.share')"
-              @click="shareProduct"
-            )
-              icon(name="heroicons:share" size="20")
-            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="isComparedNow ? 'bg-primary text-primary-content border-primary' : 'border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40'"
-              :title="$t('compare.toggleAria')"
-              :aria-label="$t('compare.toggleAria')"
-              @click="onCompareClick"
-            )
-              icon(name="heroicons:arrows-right-left" size="20")
-            //- bg-heart (токен main.css): одинаковый глубокий красный на обеих
-            //- темах — как на светлой; bg-error на тёмной лососевый (WCAG-текст)
-            button.shrink-0.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
-              :class="[isFavorite ? 'bg-heart text-white border-heart' : 'border-base-300 text-base-content/70 hover:text-error hover:border-error/40', { 'fav-pop': isFavorite }]"
-              @click="$emit('toggle-favorite')"
-              :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
-            )
-              svg.w-5.h-5(
-                :class="isFavorite ? 'fill-current' : 'fill-none stroke-current'"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-              )
-                path(d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")
+      //- Заголовок: ряд действий (поиск/шаринг/сравнение/избранное) переехал
+      //- ПОВЕРХ фото галереи — ProductImageActions (WB/Ozon-паттерн)
+      h1.text-xl.font-semibold.text-base-content.leading-snug(class="lg:text-2xl") {{ product.name }}
 
       //- Категории
       .flex.flex-wrap.gap-2(v-if="product.categories?.length")
@@ -236,7 +191,6 @@ const { serverMessage } = useServerMessage()
 const props = defineProps({
   product: { type: Object, required: true },
   isInCart: { type: Boolean, default: false },
-  isFavorite: { type: Boolean, default: false },
   // Сводка рейтинга { count, average } — приходит с /api/product/[slug]
   rating: { type: Object, default: null },
   // Выбранный вариант (id) — состояние держит родитель ([slug].vue):
@@ -244,7 +198,7 @@ const props = defineProps({
   selectedVariantId: { type: String, default: null }
 })
 
-const emit = defineEmits(['toggle-favorite', 'add-to-cart', 'update:selectedVariantId', 'open-search'])
+const emit = defineEmits(['add-to-cart', 'update:selectedVariantId'])
 void emit
 
 const { $notify } = useNuxtApp()
@@ -310,42 +264,6 @@ const currentInCart = computed(() => {
   const line = cartLineId(props.product?.id, selectedVariant.value?.id)
   return cartItems.value?.some((i) => i?.id === line) ?? false
 })
-
-//- ── Сравнение (ClientOnly в шаблоне: состояние после гидратации) ──────
-const { isCompared, toggleCompare } = useCompare()
-const isComparedNow = computed(() => isCompared(props.product.id))
-
-const onCompareClick = (event) => {
-  const status = toggleCompare(props.product)
-  if (status === 'added') {
-    $notify.success(t('compare.added'))
-    // «Синяя точка» летит к бургеру/«Сравнению» в шапке (utils/compareFly.js)
-    emitCompareFly(event?.currentTarget)
-  }
-  if (status === 'full') $notify.warning(t('compare.limit', { n: 4 }))
-}
-
-//- ── Шаринг товара ────────────────────────────────────────────────────────
-// Web Share API (мобильные — нативный шер-шит) — прямой канал трафика;
-// AbortError — пользователь закрыл шер-шит, это не ошибка (тост не нужен).
-// Десктоп без navigator.share — копируем ссылку в буфер обмена с тостом
-const shareProduct = async () => {
-  const url = window.location.href
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: props.product?.name || '', url })
-      return
-    } catch (error) {
-      if (error?.name === 'AbortError') return
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(url)
-    $notify.success(t('product.linkCopied'))
-  } catch {
-    $notify.error(t('product.linkCopyError'))
-  }
-}
 
 //- ── «Сообщить о поступлении»: idle → форма → готово ────────────────────
 const alertState = ref('idle')

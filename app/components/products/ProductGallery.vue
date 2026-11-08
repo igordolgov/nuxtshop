@@ -134,6 +134,16 @@
         class="left-2 bottom-2 sm:bottom-8 lg:bottom-1.5 z-20 absolute rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white tabular-nums pointer-events-none"
       ) {{ currentIndex + 1 }}/{{ gallery.length }}
 
+      //- Действия товара ПОВЕРХ фото (WB/Ozon): поиск/шаринг/сравнение/
+      //- избранное в правом верхнем углу; клики компонент гасит (.stop) —
+      //- до свайп-жестов слайдера они не доходят
+      ProductImageActions(
+        :product="product"
+        :is-favorite="isFavorite"
+        @open-search="$emit('open-search')"
+        @toggle-favorite="$emit('toggle-favorite')"
+      )
+
       //- Индикаторы (точки)
       .image-indicator(
         v-if="gallery.length > 1"
@@ -208,10 +218,12 @@ const props = defineProps({
   productName: { type: String, default: '' },
   // URL картинки выбранного варианта (цвет/память): галерея прыгает на
   // неё. null/undefined — товар без вариантов или вариант без картинки
-  jumpToImage: { type: String, default: null }
+  jumpToImage: { type: String, default: null },
+  // Для ProductImageActions (поверх фото): подсветка сердечка
+  isFavorite: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['image-load', 'image-error'])
+const emit = defineEmits(['image-load', 'image-error', 'open-search', 'toggle-favorite'])
 
 //- isDesktop: на десктопе клик по картинке открывает зум (cursor-zoom-in)
 const { isDesktop } = useMobileDetection()

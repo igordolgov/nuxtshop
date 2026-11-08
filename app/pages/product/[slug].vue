@@ -51,12 +51,17 @@
           //- -mx-2/0: на <lg галерея выходит за паддинг контейнера (px-2) —
           //- фото на ВСЮ ширину экрана, как в маркетплейсах; на lg —
           //- обычная колонка с паддингом lg:p-3
+          //- Действия (поиск/шаринг/сравнение/избранное) — ПОВЕРХ фото
+          //- (ProductImageActions внутри галереи, WB/Ozon-паттерн)
           .product-image.flex-1(class="-mx-2 lg:mx-0 lg:p-3")
             ProductGallery(
               :product="productView"
               :gallery="productGallery"
               :product-name="productView?.name"
               :jump-to-image="galleryJumpTo"
+              :is-favorite="isFavorite"
+              @toggle-favorite="toggleFavorite"
+              @open-search="isProductSearchOpen = true"
             )
 
           //- Информация о товаре (productView — локализованная копия:
@@ -65,13 +70,10 @@
             ProductInfo(
               :product="productView"
               :rating="ratingSummary"
-              :is-favorite="isFavorite"
               :is-in-cart="isInCart(product.id)"
               :selected-variant-id="selectedVariantId"
               @update:selectedVariantId="selectedVariantId = $event"
-              @toggle-favorite="toggleFavorite"
               @add-to-cart="addToCartHandler"
-              @open-search="isProductSearchOpen = true"
             )
 
     //- Похожие товары
