@@ -418,6 +418,10 @@ watch(showMobileFilters, updateBodyScroll)
 .sidebar-area {
   grid-area: sidebar;
   display: none;
+  /* Не даём сайдбару раздувать строку грида под контент (раскрытые
+     «Ещё N» на невысоких мониторах): лишняя высота уходит во
+     внутренний скролл тела, «Только в наличии» остаётся у нижнего края */
+  min-height: 0;
 
   @media (min-width: 1025px) {
     display: block;
