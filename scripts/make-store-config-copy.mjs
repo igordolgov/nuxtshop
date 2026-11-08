@@ -3,9 +3,11 @@
 // (воркер nuxt-shop-cu, см. .github/workflows/deploy-copy.yml):
 //   имя Tienda Habana, USD/$, дефолтная локаль es, оплата transfer/cash
 //   (Transfermóvil / EnZona), порог/цены доставки в долларах.
-//   Русский в админке УБРАН: вкладки ['es', 'en'], базовый язык
-//   контента 'es' (отзыв: «уберем русский — друг не знает русского»):
-//   базовые поля товара набираются по-испански, вкладки «Русский» нет.
+//   Русский УБРАН ЦЕЛИКОМ (отзыв: «уберем русский — друг не знает
+//   русского»): локали витрины ['es','en'] — русский не регистрируется
+//   в i18n (в переключателе языка на витрине его нет, /ru/** — 404,
+//   hreflang ru исчезают из sitemap и <head>); вкладки админки
+//   ['es','en'], базовый язык контента 'es'.
 // Файл меняется ТОЛЬКО в рабочей копии workflow (не коммитится) —
 // прод собирается в ci.yml из репозитория с дефолтами (₽, ru, card/cash).
 // Замены точечные, с проверкой уникальности (иначе ошибка — конфиг разъехался).
@@ -22,7 +24,13 @@ const REPLACES = [
     "export const STORE_SITE_URL = 'https://nuxt-shop.igordolgov1972.workers.dev';",
     "export const STORE_SITE_URL = 'https://nuxt-shop-cu.igordolgov1972.workers.dev';",
   ],
-  // ─── Локализация: дефолт es (es без префикса, ru/en с префиксами) ────
+  // ─── Локализация: локали витрины БЕЗ русского (es — дефолт, en — префикс;
+  // русский не регистрируется в i18n: в переключателе языка витрины его
+  // нет, /ru/** — 404, hreflang ru нет в sitemap и <head>) ────────────
+  [
+    "export const STORE_LOCALES: StoreLocale[] = ['ru', 'en', 'es'];",
+    "export const STORE_LOCALES: StoreLocale[] = ['es', 'en'];",
+  ],
   [
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';",
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'es';",
@@ -72,5 +80,5 @@ for (const [from, to] of REPLACES) {
 }
 writeFileSync('store.config.ts', src);
 console.log(
-  'store.config.ts → копия: Tienda Habana, USD, es (вкладки админки es/en, базовый язык es), transfer/cash, доставка 50/5/3',
+  'store.config.ts → копия: Tienda Habana, USD, локали es/en (без русского), transfer/cash, доставка 50/5/3',
 );

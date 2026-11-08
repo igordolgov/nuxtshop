@@ -9,6 +9,8 @@ import removeConsole from 'vite-plugin-remove-console';
 // обе инсталляции (RU / кубинская копия), см. store.config.ts
 import {
   STORE_DEFAULT_LOCALE,
+  STORE_LOCALE_BCP47,
+  STORE_LOCALE_NAMES,
   STORE_LOCALES,
   STORE_NAME,
   STORE_SITE_URL,
@@ -179,11 +181,18 @@ export default defineNuxtConfig({
     strategy: 'prefix_except_default',
     // baseUrl для абсолютных hreflang/alternate-ссылок (SEO) — из store.config
     baseUrl: STORE_SITE_URL,
-    locales: [
-      { code: 'ru', language: 'ru-RU', name: 'Русский', file: 'ru.json' },
-      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
-      { code: 'es', language: 'es-ES', name: 'Español', file: 'es.json' },
-    ],
+    // Реестр локалей ВЫВОДИТСЯ из STORE_LOCALES (store.config) — единый
+    // источник «какие языки есть у витрины». Кубинская копия объявляет
+    // STORE_LOCALES = ['es', 'en'] — русский не регистрируется вовсе:
+    // в переключателе языка его нет, маршруты /ru/** отдают 404,
+    // hreflang-альтернаты ru из sitemap/app.vue исчезают
+    // (отзыв: «убери русский из языков на главной странице»).
+    locales: STORE_LOCALES.map((code) => ({
+      code,
+      language: STORE_LOCALE_BCP47[code],
+      name: STORE_LOCALE_NAMES[code],
+      file: `${code}.json`,
+    })),
     langDir: 'locales',
     // Ленивые локали: ru (66 КБ) + en (46 КБ) + es (50 КБ) не вшиваются
     // в стартовый бандл целиком — грузится только текущая (первичная

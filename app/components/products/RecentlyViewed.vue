@@ -4,8 +4,10 @@
      и сам скрывается без истории (главная/карточка не ломаются).
      Товары разименуются из общего каталога appState; если каталог ещё
      не загружен (прямой заход на карточку) — догружается на клиенте.
-     Сетка и карточка — паттерн SimilarProducts; текущий товар карточки
-     исключается через excludeId. -->
+     Вид — маркетплейс-паттерн «Вы недавно смотрели» (отзыв: «карточки
+     очень большие»): ГОРИЗОНТАЛЬНАЯ ЛЕНТА компактных плиток (фото-квадрат,
+     название в 2 строки, цена) со снапом и скрытым скроллбаром; вся
+     плитка — ссылка на товар, без кнопок на карточке. -->
 <template lang="pug">
 section.recently-viewed(
   v-if="isMounted && items.length"
@@ -20,79 +22,50 @@ section.recently-viewed(
         @click="clearHistory"
       ) {{ $t('product.clear') }}
 
-    .grid.grid-cols-2.gap-1(
-      class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
+    //- Лента: на мобиле выходит за паддинг контейнера (px-2) — плитки
+    //- скроллятся от края до края экрана; на lg — в пределах контейнера.
+    //- tabindex=0: скроллируемая область фокусируется с клавиатуры
+    //- (WCAG 2.1 / стрелки и пробел скроллят сфокусированную ленту)
+    .recent-strip.flex.gap-2.overflow-x-auto.pb-1(
+      class="lg:gap-3 -mx-2 px-2 lg:mx-0 lg:px-0 snap-x"
+      tabindex="0"
     )
-      .recent-card(v-for="item in items" :key="item.id")
-        .card.bg-base-100.shadow-md.transition-all.duration-300.h-full.flex.flex-col.group(class="hover:shadow-lg")
-          //- Кнопки действий
-          .absolute.top-1.left-2.z-10
-            //- text-white, а не text-error-content: в business error-content
-            //- тёмный — сердече «чёрное на красном» (паттерн ProductInfo)
-            button.btn.btn-circle.btn-xs(
-              :class="isFav(item.id) ? 'btn-error text-white' : 'btn-ghost bg-base-100/80'"
-              @click.stop="$emit('toggle-favorite', item.id)"
-              :title="isFav(item.id) ? $t('product.favRemove') : $t('product.favAdd')"
-            )
-              svg.w-4.h-4(
-                :class="isFav(item.id) ? 'fill-current' : 'fill-none stroke-current text-base-content/70'"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-              )
-                path(d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")
+      //- Плитка: ширина фиксированная (shrink-0) — сжимаются ТОЛЬКО краем
+      //- ленты, а не сеткой; скроллбар скрыт CSS-ом ниже
+      NuxtLink.recent-card.group.flex.flex-col.overflow-hidden.rounded-xl(
+        v-for="item in items"
+        :key="item.id"
+        :to="getProductUrl(item)"
+        prefetch
+        class="shrink-0 snap-start w-28 sm:w-32 lg:w-36 bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-300"
+      )
+        figure.aspect-square.bg-base-200.overflow-hidden.shrink-0
+          NuxtImg.w-full.h-full.object-cover.transition-transform.duration-300(
+            class="group-hover:scale-105"
+            :src="getValidImageUrl(item.image)"
+            :srcset="productSrcset(getValidImageUrl(item.image))"
+            :sizes="productSrcset(getValidImageUrl(item.image)) ? '(max-width: 639px) 35vw, 150px' : undefined"
+            :alt="item.name"
+            @error="handleImageError"
+            draggable="false"
+            loading="lazy"
+            :width="400"
+            :height="300"
+          )
 
-          .absolute.top-1.right-2.z-10
-            button.btn.btn-circle.btn-xs(
-              @click.stop="$emit('add-to-cart', item)"
-              :disabled="!item.inStock || isInCart(item.id)"
-              :class="isInCart(item.id) ? 'btn-success text-success-content' : 'btn-primary text-primary-content'"
-              :title="isInCart(item.id) ? $t('product.inCartAlready') : $t('product.addToCart')"
-            )
-              svg.w-6.h-6(
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              )
-                path(
-                  v-if="!isInCart(item.id)"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                )
-                path(
-                  v-else
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M5 13l4 4L19 7"
-                )
-
-          //- Ссылка на товар
-          NuxtLink.flex-1.flex.flex-col(:to="getProductUrl(item)" prefetch)
-            figure.p-1.pt-0.flex.justify-center.items-center(class="lg:h-40")
-              NuxtImg.rounded-box.w-full.object-cover.max-w-full(
-                :src="getValidImageUrl(item.image)"
-                :srcset="productSrcset(getValidImageUrl(item.image))"
-                :sizes="productSrcset(getValidImageUrl(item.image)) ? '(max-width: 767px) 45vw, 280px' : undefined"
-                :alt="item.name"
-                @error="handleImageError"
-                draggable="false"
-                loading="lazy"
-                :width="400"
-                :height="300"
-              )
-
-            .card-body.p-1.flex-1.flex.flex-col
-              .flex-1
-                h3.card-title.text-xs.font-semibold.text-base-content.line-clamp-2.mb-1(class="lg:text-sm") {{ item.name }}
-
-              .flex.items-center.justify-between.-mt-1.border-t.border-base-200
-                .text-md.font-bold.text-primary {{ formatPrice(item.price) }}
-                .text-xs(
-                  :class="item.inStock ? 'text-success' : 'text-error'"
-                ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
+        .p-2.flex.flex-col.gap-1.flex-1
+          h3.leading-snug.font-medium.text-base-content.line-clamp-2(
+            class="text-[11px] lg:text-xs"
+          ) {{ item.name }}
+          //- Цена — своя строка (в узкой плитке не переносится);
+          //- «в наличии» не дублируем (норма для плейсмаркета), метка
+          //- «нет в наличии» появляется только под ценой у out-of-stock
+          .mt-auto.flex.flex-col(class="gap-0.5")
+            span.text-sm.font-bold.text-primary {{ formatPrice(item.price) }}
+            span.text-error.leading-tight(
+              v-if="!item.inStock"
+              class="text-[10px]"
+            ) {{ $t('product.outOfStock') }}
 </template>
 
 <script setup>
@@ -101,14 +74,12 @@ const props = defineProps({
   excludeId: { type: [String, Number], default: null },
 })
 
-defineEmits(['toggle-favorite', 'add-to-cart'])
-
 const MAX_VISIBLE = 8
 
 const appState = useAppState()
 const { products } = appState
 const { loc } = useLocalizedProduct()
-const { cartItems, getProductUrl, slugify } = useCart()
+const { getProductUrl, slugify } = useCart()
 const { readSlugs, clearRecentlyViewed } = useRecentlyViewed()
 
 const isMounted = ref(false)
@@ -175,21 +146,6 @@ const clearHistory = () => {
   refreshHistory()
 }
 
-const isFav = (id) => {
-  try {
-    return appState.isFavorite?.(id) ?? false
-  } catch {
-    return false
-  }
-}
-
-const isInCart = (productId) => {
-  if (!productId) return false
-  const items = cartItems.value
-  if (!items || !Array.isArray(items)) return false
-  return items.some((item) => item && String(item.id) === String(productId))
-}
-
 const fallbackImage = '/images/placeholder.jpg'
 
 const getValidImageUrl = (url) => {
@@ -214,6 +170,17 @@ const handleImageError = (event) => {
 .recently-viewed {
   width: 100%;
   margin-top: 0.5rem;
+}
+
+/* Лента без скроллбара (маркетплейс-паттерн): прокрутка — свайпом,
+  трекпадом/колесом; правый край плиток + снап подсказывают жест.
+  tabindex=0 в шаблоне — область скроллится с клавиатуры. */
+.recent-strip {
+  scrollbar-width: none;
+}
+
+.recent-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .line-clamp-2 {

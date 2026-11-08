@@ -5,6 +5,8 @@
 import { getRequestURL } from 'h3';
 import type { H3Event } from 'h3';
 import type { Product } from './productHelpers';
+// Реестр локалей sitemap — из store.config (см. SITEMAP_LOCALES ниже)
+import { STORE_DEFAULT_LOCALE, STORE_LOCALES } from '../../store.config';
 
 // nitro объявляет useRuntimeConfig как глобаль; в vitest (окружение node)
 // её нет — поэтому проверяем typeof и оборачиваем в try/catch.
@@ -80,16 +82,20 @@ export function buildRobotsTxt(siteUrl: string): string {
 }
 
 // Локали витрины для hreflang-альтернатов в sitemap: код + URL-префикс.
-// Должно совпадать с i18n.locales в nuxt.config.ts (ru — без префикса).
-const SITEMAP_LOCALES: Array<{ code: string; prefix: string }> = [
-  { code: 'ru', prefix: '' },
-  { code: 'en', prefix: '/en' },
-  { code: 'es', prefix: '/es' },
-];
+// ВЫВОДИТСЯ из store.config (STORE_LOCALES/STORE_DEFAULT_LOCALE), а не
+// захардкожено: кубинская копия объявляет STORE_LOCALES = ['es', 'en'] —
+// в её sitemap русского нет вовсе (как и в i18n.locales nuxt.config —
+// оба реестра из одного источника, разъехаться не могут).
+const SITEMAP_LOCALES: Array<{ code: string; prefix: string }> = STORE_LOCALES.map((code) => ({
+  code,
+  // Дефолтная локаль без префикса (strategy prefix_except_default)
+  prefix: code === STORE_DEFAULT_LOCALE ? '' : `/${code}`,
+}));
 
 /**
  * Блок <xhtml:link rel="alternate"> для одного пути: по записи на каждую
- * локаль + x-default (дефолтная локаль ru). Путь — канонический ru-путь:
+ * локаль + x-default (дефолтная локаль store.config). Путь — канонический
+ * путь в дефолтной локали:
  * '/' → ru: site, en: site/en, es: site/es; '/product/x' → '/en/product/x' …
  */
 export function sitemapAlternatesXml(siteUrl: string, path: string): string {
@@ -106,7 +112,8 @@ export function sitemapAlternatesXml(siteUrl: string, path: string): string {
 }
 
 /** sitemap.xml: статические страницы + все товары с lastmod.
- *  Для каждого URL — hreflang-альтернаты ru/en/es (x-default → ru). */
+ *  Для каждого URL — hreflang-альтернаты по локалям store.config
+ *  (RU-витрина: ru/en/es, x-default → ru; на копии ru нет вовсе). */
 export function buildSitemapXml(siteUrl: string, products: Product[]): string {
   const staticPages = [
     { loc: '/', changefreq: 'daily', priority: '1.0' },

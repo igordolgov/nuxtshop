@@ -2,8 +2,10 @@
 <!-- ============================================
   Компонент: ProductImageActions
   Назначение: действия товара ПОВЕРХ фото галереи (как в WB/Ozon):
-  поиск, шаринг, сравнение, избранное — полупрозрачные белые круги
-  с блюром и тенью в правом верхнем углу зоны галереи.
+  поиск, шаринг, сравнение, избранное — полупрозрачные круги ЦВЕТА
+  ПОВЕРХНОСТИ темы с блюром и тенью в правом верхнем углу зоны галереи
+  (светлая тема — светлые круги, тёмная — тёмные: как карточки блока
+  «Похожие товары», bg-base-100).
   Размещение: внутри .image-wrapper (position:relative) — свободный
   угол: стрелки листания по центру боков, зум/точки/счётчик снизу.
   Props: product, isFavorite
@@ -130,19 +132,20 @@ const shareProduct = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  /* Полупрозрачный белый круг + блюр (отзыв: «полупрозрачными и с
-    небольшим размытием»): фото просвечивает, контур отделяет тень;
-    фон кнопки = снимок, а не тема.
-    Цвет иконки ФИКСИРОВАННЫЙ тёмный, НЕ var(--color-base-content):
-    в тёмной теме business base-content светлый (oklch 84.9%) и сливался
-    с белым кругом (отзыв «иконки не видны»). Значение = base-content
-    corporate — светлая тема выглядит как раньше, тёмная теперь тоже. */
-  background-color: rgb(255 255 255 / 0.55);
-  color: oklch(22.389% 0.031 278.072);
+  /* Круг ЦВЕТА ПОВЕРХНОСТИ ТЕМЫ (отзыв: «тёмные на тёмной теме, светлые
+    на светлой — как у раздела Похожие товары», там карточки bg-base-100):
+    corporate base-100 белый → светлый круг с тёмной иконкой (base-content
+    тёмный), business base-100 тёмный → тёмный круг со светлой иконкой
+    (base-content светлый). Фон полупрозрачный (55%) + блюр: фото
+    просвечивает, снимок остаётся главным. color-mix — то же, во что
+    Tailwind компилирует bg-base-100/55. Тонкая обводка цвета текста
+    отделяет круг от совпадающего с ним по яркости участка снимка. */
+  background-color: color-mix(in oklab, var(--color-base-100) 55%, transparent);
+  color: var(--color-base-content);
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 16%, transparent);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: none;
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
@@ -154,7 +157,7 @@ const shareProduct = async () => {
   stroke-width: 2;
 }
 .action-btn:hover {
-  background-color: rgb(255 255 255 / 0.8);
+  background-color: color-mix(in oklab, var(--color-base-100) 80%, transparent);
   transform: scale(1.06);
 }
 .action-btn:active {
@@ -162,16 +165,19 @@ const shareProduct = async () => {
 }
 /* Активные состояния — ТОЛЬКО здесь (scoped-стили вне @layer перебили
    бы утилиты bg-heart/bg-primary — как с .badge подсветки), поэтому
-   состояния — отдельные классы, а не утилиты в :class */
+   состояния — отдельные классы, а не утилиты в :class. Обводка —
+   transparent: цветной круг чистый, без серой рамки. */
 .action-btn.is-heart,
 .action-btn.is-heart:hover {
   background-color: var(--color-heart);
   color: #fff;
+  border-color: transparent;
 }
 .action-btn.is-active-compare,
 .action-btn.is-active-compare:hover {
   background-color: var(--color-primary);
   color: var(--color-primary-content);
+  border-color: transparent;
 }
 @media (min-width: 1024px) {
   .action-btn {

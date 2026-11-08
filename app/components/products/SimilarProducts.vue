@@ -1,14 +1,18 @@
 <!-- app/components/products/SimilarProducts.vue -->
+<!-- Размещение: ВНУТРИ колонки галереи страницы товара (под фото,
+  Ozon-паттерн), поэтому БЕЗ контейнера/полной ширины страницы:
+  ширина задаётся колонкой (на мобиле колонка full-bleed → px-2
+  выравнивает контент с остальной страницей; на lg паддинг даёт
+  сама колонка lg:p-3). -->
 <template lang="pug">
 .similar-products(
         v-if="products.length > 0"
-        class="lg:mt-0 lg:mb-3 px-2 pb-15 lg:pb-3"
+        class="mt-3 px-2 lg:mt-4 lg:px-0"
 )
-        .container.mx-auto.px-2(class="lg:px-4")
                 h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") {{ $t('product.similar') }}
                 
                 .grid.grid-cols-2.gap-1(
-                        class="lg:gap-4 sm:grid-cols-3 lg:grid-cols-4"
+                        class="lg:gap-3 sm:grid-cols-3 lg:grid-cols-4"
                 )
                         .similar-product-card(
                                 v-for="item in localizedProducts"
@@ -128,7 +132,6 @@ const handleImageError = (event) => {
 .similar-products {
         width: 100%;
 }
-
 .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;

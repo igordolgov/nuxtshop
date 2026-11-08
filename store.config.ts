@@ -21,9 +21,30 @@ export const STORE_SITE_URL = 'https://nuxt-shop.igordolgov1972.workers.dev';
 
 // ─── Локализация ────────────────────────────────────────────────────────
 export type StoreLocale = 'ru' | 'en' | 'es';
-// Коды локалей витрины — зеркало i18n.locales в nuxt.config.ts (там — имена
-// и файлы переводов). По ним генерируются префиксные routeRules.
+// Коды локалей витрины — ЕДИНЫЙ источник реестра языков: из них
+// выводятся i18n.locales (nuxt.config), hreflang sitemap (seoHelpers)
+// и префиксные routeRules. По умолчанию все три.
+// ⚙️ Куба: ['es', 'en'] — русский УБРАН из витрины целиком (отзыв: «уберем
+// русский из языков на главной странице — друг не знает русского»):
+// не регистрируется в i18n → в переключателе языка витрины только
+// Español/English, маршруты /ru/** отдают 404, hreflang ru нет ни в
+// sitemap, ни в <head>.
 export const STORE_LOCALES: StoreLocale[] = ['ru', 'en', 'es'];
+
+// BCP-47 теги и человекочитаемые имена локалей: «паспорта» кодов из
+// STORE_LOCALES (потребители — i18n.locales в nuxt.config). Ключи покрывают
+// все значения StoreLocale — лишние на копии не мешают.
+export const STORE_LOCALE_BCP47: Record<StoreLocale, string> = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  es: 'es-ES',
+};
+export const STORE_LOCALE_NAMES: Record<StoreLocale, string> = {
+  ru: 'Русский',
+  en: 'English',
+  es: 'Español',
+};
+
 // Язык без URL-префикса (strategy prefix_except_default). ⚙️ Куба: 'es'.
 export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';
 

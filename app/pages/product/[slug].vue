@@ -64,6 +64,17 @@
               @open-search="isProductSearchOpen = true"
             )
 
+            //- Похожие товары — ПОД ГАЛЕРЕЕЙ, в той же колонке
+            //- (Ozon-паттерн: слева фото, под ним «Похожие»;
+            //- на десктопе соседствует с info-колонкой справа)
+            SimilarProducts(
+              v-if="product && similarProducts.length > 0"
+              :products="similarProducts"
+              :is-in-cart="(item) => isInCart(item.id)"
+              @toggle-favorite="toggleSimilarFavorite"
+              @add-to-cart="addSimilarToCart"
+            )
+
           //- Информация о товаре (productView — локализованная копия:
           //  имя/описание/категории в языке страницы, остаток/цена — общие)
           .product-info.flex-1(class="sm:pt-4")
@@ -76,23 +87,11 @@
               @add-to-cart="addToCartHandler"
             )
 
-    //- Похожие товары
-    SimilarProducts(
-      v-if="product && similarProducts.length > 0"
-      :products="similarProducts"
-      :is-in-cart="(item) => isInCart(item.id)"
-      :is-favorite="(item) => appState.isFavorite(item.id)"
-      @toggle-favorite="toggleSimilarFavorite"
-      @add-to-cart="addSimilarToCart"
-    )
-
     //- Недавно смотрели: localStorage клиента, SSR не рендерит;
-    //- текущий товар исключается, обработчики — как у похожих
+    //- текущий товар исключается
     RecentlyViewed(
       v-if="product"
       :exclude-id="product.id"
-      @toggle-favorite="toggleSimilarFavorite"
-      @add-to-cart="addSimilarToCart"
     )
 
     //- Отзывы (approved — приходят с /api/product/[slug]; новые уходят
