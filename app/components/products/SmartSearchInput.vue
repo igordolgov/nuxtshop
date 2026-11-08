@@ -50,6 +50,7 @@
   Transition(name="fade-slide")
     .suggestions-panel.absolute.top-full.left-0.right-0.mt-1.z-50.bg-base-100.shadow-xl.rounded-lg.overflow-hidden(
       v-if="shouldShowSuggestionsPanel"
+      ref="suggestionsPanel"
       @mousedown.prevent="handlePanelMouseDown"
     )
       .card-body.p-0
@@ -148,6 +149,7 @@ const { highlightText } = useSearchHighlight()
 //- ============================================
 const searchInput = ref(null)
 const searchContainer = ref(null)
+const suggestionsPanel = ref(null)
 
 //- ============================================
 //- Local state
@@ -360,6 +362,23 @@ const handleClickOutside = (event) => {
   }
 }
 
+//- Скролл страницы уводит фокус с поиска (мобильный: закрывается
+//- клавиатура — раньше фокус «залипал» в поле при прокрутке).
+//- Событие scroll не всплывает — ловим в capture-фазе на document;
+//- скролл ВНУТРИ панели подсказок фокус не трогаем.
+const handleDocScroll = (event) => {
+  if (!isInputFocused.value) return
+  const target = event.target
+  if (
+    suggestionsPanel.value &&
+    target instanceof Node &&
+    suggestionsPanel.value.contains(target)
+  ) {
+    return
+  }
+  searchInput.value?.blur()
+}
+
 //- ============================================
 //- Lifecycle
 //- ============================================
@@ -372,6 +391,7 @@ onMounted(() => {
   
   if (process.client) {
     document.addEventListener('click', handleClickOutside)
+    document.addEventListener('scroll', handleDocScroll, { capture: true, passive: true })
   }
 })
 
@@ -380,6 +400,7 @@ onUnmounted(() => {
   
   if (process.client) {
     document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('scroll', handleDocScroll, { capture: true })
   }
 })
 </script>

@@ -59,6 +59,9 @@
       )
         //- card-enter + --card-i: каскадное появление партии карточек
         //- (main.css; чистый CSS, transform+opacity, без JS)
+        //- searchQuery обязателен вниз: без него ProductCardGrid не
+        //- подсвечивает совпадения в названии/описании (регресс:
+        //- проп приходил в секцию и терялся, до карточек не доходил)
         ProductCard.product-card.card-enter(
           v-for="(product, index) in visibleProducts"
           :key="product.id"
@@ -66,6 +69,7 @@
           :index="index"
           :style="{ '--card-i': index % 12 }"
           :viewMode="isMobile ? 'list' : 'grid'"
+          :searchQuery="searchQuery"
           @toggleFavorite="$emit('toggleFavorite', $event)"
           @addToCart="$emit('addToCart', $event)"
         )
