@@ -9,9 +9,11 @@
      высоты, развёрнутый список при переполнении скроллится внутри
      секции; ХАРАКТЕРИСТИКИ забирают остаток высоты панели (flex-grow),
      ВСЕ группы рендерятся сразу, при переполнении список групп
-     скроллится внутри секции (синий стилизованный скроллбар всегда
-     виден), короткий список прижат к низу, к закреплённому «Только
-     в наличии»; при дефиците высоты секция сжимается, не обрезаясь.
+     скроллится внутри секции, короткий список прижат к низу, к
+     закреплённому «Только в наличии»; при дефиците высоты секция
+     сжимается, не обрезаясь. Скроллбары всех списков — постоянные
+     синие рельсы AppScrollArea (нативная полоса на мобильных/новых
+     Chrome исчезает при простое и наезжает на контент).
      Шапки «Фильтры» на десктопе нет (убрана по требованию
      пользователя — всё поднято к верху сайдбара).
      Горизонтальные ветки isHorizontal удалены (мёртвые с чистки
@@ -20,7 +22,10 @@
 .product-filter.h-full.border-none.select-none
   //- Основной контейнер (шапки «Фильтры» на десктопе больше нет)
   .filter-content.flex.flex-1.min-h-0.overflow-hidden
-    .vertical-layout.flex.flex-col.flex-1.min-h-0.gap-2.overflow-y-auto.overflow-x-hidden(class="pr-1")
+    //- Тело: единственный фолбэк-скролл при дефиците высоты (низкие
+    //- экраны). Рельса AppScrollArea вместо нативной полосы: видна
+    //- всегда, пока тело не помещается, и не наезжает на секции
+    AppScrollArea.vertical-layout.flex-1(contentClass="flex flex-col gap-2")
       //- Диапазон цен
       .filter-section
         ProductPriceRange(
@@ -86,9 +91,9 @@
    короткий список прижат к низу — к закреплённому «Только в наличии»;
    при дефиците сжимается секция характеристик, но не ниже min-height
    (иначе на низких экранах секция исчезает целиком) — дальше фолбэк
-   скролл тела. Цена — своей высоты. Синие скроллбары у всех списков —
-   всегда видны (scrollbar-color + ::-webkit-scrollbar: Chrome/Android
-   рисует постоянную классическую полосу вместо исчезающей overlay). */
+   скролл тела. Цена — своей высоты. Скроллбары всех списков — рельсы
+   AppScrollArea (нативная полоса ненадёжна: на мобильных/новых Chrome
+   она overlay — исчезает при простое и рисуется поверх контента). */
 .filter-section {
   flex-shrink: 0; /* цена и соседи не сжимаются — дефицит уходит в скролл тела */
 }
@@ -106,26 +111,11 @@
   flex-direction: column;
 }
 
-.filter-section--categories :deep(.categories-list) {
+.filter-section--categories :deep(.categories-scroll) {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--color-base-300);
-}
-
-.filter-section--categories :deep(.categories-list::-webkit-scrollbar) {
-  width: 6px;
-}
-
-.filter-section--categories :deep(.categories-list::-webkit-scrollbar-track) {
-  background: var(--color-base-300);
-  border-radius: 3px;
-}
-
-.filter-section--categories :deep(.categories-list::-webkit-scrollbar-thumb) {
-  background: var(--color-primary);
-  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
 }
 
 .filter-section--specs {
@@ -147,47 +137,12 @@
   flex-shrink: 0;
 }
 
-/* Список групп характеристик: скроллится внутри секции, синий
-   скроллбар всегда виден (как у категорий) */
+/* Список групп характеристик: скроллится внутри секции (переполнение
+   и постоянную рельсу задаёт AppScrollArea, здесь — только место
+   во flex-колонке секции) */
 .filter-section--specs :deep(.spec-groups) {
   flex: 0 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--color-base-300);
-}
-
-.filter-section--specs :deep(.spec-groups::-webkit-scrollbar) {
-  width: 6px;
-}
-
-.filter-section--specs :deep(.spec-groups::-webkit-scrollbar-track) {
-  background: var(--color-base-300);
-  border-radius: 3px;
-}
-
-.filter-section--specs :deep(.spec-groups::-webkit-scrollbar-thumb) {
-  background: var(--color-primary);
-  border-radius: 3px;
-}
-
-.vertical-layout {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--color-base-300);
-}
-
-.vertical-layout::-webkit-scrollbar {
-  width: 6px;
-}
-
-.vertical-layout::-webkit-scrollbar-track {
-  background: var(--color-base-300);
-  border-radius: 3px;
-}
-
-.vertical-layout::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border-radius: 3px;
 }
 </style>
 

@@ -3,7 +3,8 @@
     (без жёсткого лимита «первые 10 + Ещё N»: у сайдбара/панели есть
     свободная высота — чипы занимают её сами). Если развёрнутый список
     не помещается — секция сжимается, список скроллится внутри
-    (стилизованный скроллбар задаёт ProductFilter). -->
+    (постоянную синюю рельсу задаёт AppScrollArea: нативная полоса на
+    мобильных/новых Chrome исчезает при простое и наезжает на чипы). -->
 <template lang="pug">
 .product-categories.pb-2(class="lg:mr-3")
   .section-header.flex.items-center.justify-between.mb-1.bg-base-100.sticky.-top-2.h-8.z-10
@@ -20,9 +21,9 @@
 
   //- Все категории сразу (разворот по максимуму — жёсткий лимит
   //- «первые 10 + Ещё N» удалён): переполнение гасит внутренний
-  //- скролл списка (стилизованный скроллбар в ProductFilter),
+  //- скролл списка с постоянной синей рельсой (AppScrollArea),
   //- а не кнопка «Ещё N»
-  .categories-list.flex.flex-wrap.gap-1.p-0
+  AppScrollArea.categories-scroll(contentClass="flex flex-wrap gap-1 p-0")
     template(v-if="availableCategories.length > 0")
       label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.rounded-full.border.text-xs.font-medium(
         v-for="category in availableCategories"
