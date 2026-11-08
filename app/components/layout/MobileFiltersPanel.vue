@@ -131,9 +131,26 @@
   overflow-y: auto;
   overscroll-behavior: contain; /* прокрутка не «протекает» в подложку */
   -webkit-overflow-scrolling: touch;
+  /* Синий скроллбар ВСЕГДА виден, когда список не помещается:
+     scrollbar-color переключает Chrome/Android на постоянную
+     классическую полосу (вместо исчезающей overlay), webkit-правила
+     — для Safari и старых Chromium */
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--color-base-content) 20%, transparent)
-    transparent;
+  scrollbar-color: var(--color-primary) var(--color-base-300);
+}
+
+.filters-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filters-content::-webkit-scrollbar-track {
+  background: var(--color-base-300);
+  border-radius: 3px;
+}
+
+.filters-content::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 3px;
 }
 
 /* ── Шапка и подвал: зафиксированы flex-колонкой ─────────────── */

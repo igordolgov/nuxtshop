@@ -70,7 +70,6 @@
     "specFilters": "Characteristics",
     "specEmpty": "No characteristics to filter",
     "specMore": "{n} more",
-    "specShowAll": "Show {n} more",
     "collapse": "Show less",
     "inStockOnly": "In stock only",
     "price": "Price:",

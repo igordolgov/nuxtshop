@@ -1,8 +1,13 @@
 <!-- app/components/products/ProductSpecFilters.vue — фасетные фильтры по
      характеристикам (паттерн WB/Ozon): сворачиваемые группы <details> с
-     чипами значений и счётчиками; длинные списки (значения и сами группы)
-     сворачиваются кнопками с числом «Ещё {n}» — на тач-экранах иначе
-     непонятно, есть ли ещё ниже. Фасеты и счётчики считает useFilters
+     чипами значений и счётчиками; длинные списки ЗНАЧЕНИЙ внутри группы
+     сворачиваются кнопкой с числом «Ещё {n}» — на тач-экранах иначе
+     непонятно, есть ли ещё ниже. Сами ГРУППЫ лимита больше не имеют
+     («первые 4 + Показать ещё» удалено): рендерятся все, переполнение
+     гасит внутренний скролл списка со стилизованным скроллбаром (CSS в
+     ProductFilter). Значения группы — лениво, только у открытой (группы
+     с выбранными значениями открываются сами — isOpen): SSR/DOM заметно
+     меньше при сотнях групп. Фасеты и счётчики считает useFilters
      (buildSpecFacets) по базовой выборке каталога: выбор внутри одной
      характеристики — ИЛИ, между характеристиками — И; выбор в одной группе
      не обнуляет счётчики других. Используется в ProductFilter
@@ -20,9 +25,14 @@
         path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
       | {{ $t('catalog.reset') }}
 
-  .spec-groups(v-if="facets.length > 0")
+  //- Все группы сразу (авто-разворот по максимуму — лимит «первые 4 +
+  //- Показать ещё» удалён): переполнение гасит внутренний скролл списка
+  //- (стилизованный скроллбар задаёт ProductFilter), а не кнопка.
+  //- Значения — лениво, только у ОТКРЫТОЙ группы (группы с выбранными
+  //- значениями открываются сами — isOpen)
+  .spec-groups(v-if="groups.length > 0")
     details.spec-group(
-      v-for="group in visibleGroups"
+      v-for="group in groups"
       :key="group.label"
       :open="isOpen(group)"
       @toggle="onToggle(group, $event)"
@@ -44,7 +54,7 @@
           )
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
 
-      .spec-values.flex.flex-wrap.gap-1(class="pb-2 pt-0.5")
+      .spec-values.flex.flex-wrap.gap-1(class="pb-2 pt-0.5" v-if="isOpen(group)")
         label.spec-chip.cursor-pointer.inline-flex.items-center.px-2.rounded-full.border.text-xs.font-medium.transition-colors(
           v-for="entry in visibleValues(group)"
           :key="entry.value"
@@ -64,14 +74,6 @@
           type="button"
           @click="expanded[group.label] ? collapse(group.label) : expand(group.label)"
         ) {{ expanded[group.label] ? $t('catalog.collapse') : $t('catalog.specMore', { n: group.values.length - VISIBLE_VALUES }) }}
-
-    //- Скрытые группы — с числом (без счётчика непонятно, есть ли ещё
-    //- характеристики ниже) и с обратным сворачиванием
-    button.spec-show-all.btn.btn-ghost.btn-xs.w-full.rounded-lg(
-      v-if="hiddenGroupsCount > 0 || showAllGroups"
-      type="button"
-      @click="showAllGroups = !showAllGroups"
-    ) {{ showAllGroups ? $t('catalog.collapse') : $t('catalog.specShowAll', { n: hiddenGroupsCount }) }}
 
   .empty-state.py-3.text-center(v-else)
     .text-sm.opacity-70.text-base-content {{ $t('catalog.specEmpty') }}
@@ -113,10 +115,6 @@
 const props = defineProps({
   facets: { type: Array, default: () => [] },
   selected: { type: Object, default: () => ({}) },
-  //- Сколько групп видно до кнопки «Показать ещё {n}». Мало — чтобы кнопка
-  //- попадала на первый экран (как «Ещё {n}» у категорий), а не пряталась
-  //- за длинной колонкой аккордеонов (в каталоге бывает 100+ групп)
-  maxGroups: { type: Number, default: 4 },
 })
 
 const emit = defineEmits(['update:selected'])
@@ -128,7 +126,6 @@ const { specLabel } = useSpecLabels()
 const VISIBLE_VALUES = 8
 
 const expanded = ref({})
-const showAllGroups = ref(false)
 //- Ручное раскрытие/сворачивание групп (нативный <details> + событие toggle):
 //- перекрывает авто-правило «раскрыта группа с выбранными значениями»
 const manualOpen = ref(new Map())
@@ -137,21 +134,14 @@ const safeSelected = computed(() =>
   props.selected && typeof props.selected === 'object' ? props.selected : {},
 )
 
+//- Все группы фасетов (лимита «первые N» больше нет)
+const groups = computed(() => (Array.isArray(props.facets) ? props.facets : []))
+
 const selectedCount = computed(() =>
   Object.values(safeSelected.value).filter(
     (values) => Array.isArray(values) && values.length > 0,
   ).length,
 )
-
-const visibleGroups = computed(() => {
-  const list = Array.isArray(props.facets) ? props.facets : []
-  return showAllGroups.value ? list : list.slice(0, props.maxGroups)
-})
-
-const hiddenGroupsCount = computed(() => {
-  const total = Array.isArray(props.facets) ? props.facets.length : 0
-  return Math.max(0, total - visibleGroups.value.length)
-})
 
 const isChecked = (label, value) => (safeSelected.value[label] ?? []).includes(value)
 

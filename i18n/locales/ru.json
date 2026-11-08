@@ -70,7 +70,6 @@
     "specFilters": "Характеристики",
     "specEmpty": "Нет характеристик для фильтрации",
     "specMore": "Ещё {n}",
-    "specShowAll": "Показать ещё {n}",
     "collapse": "Свернуть",
     "inStockOnly": "Только в наличии",
     "price": "Цена:",
