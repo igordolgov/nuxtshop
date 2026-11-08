@@ -18,6 +18,9 @@ node_modules/
 .env
 .env.local
 .env.*.local
+# Секреты wrangler dev (ключ API elTOQUE и др.) — только локально
+.dev.vars
+.dev.vars.*
 
 # ===========================================
 # Build

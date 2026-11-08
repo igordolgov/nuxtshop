@@ -80,6 +80,17 @@ export const CURRENCY_NUMBER_LOCALE: Record<StoreCurrency, string> = {
   USD: 'en-US',
 };
 
+// ─── Эквивалент в CUP по курсу elTOQUE ──────────────────────────────
+// Кубинская витрина показывает под ценой в USD её пересчёт в кубинские
+// песо по «неформальному» курсу elTOQUE (медианы рынка — то, по чему
+// на Кубе реально считают цены): строка «≈ 46 500 CUP · Tasa elTOQUE»
+// под ценой карточки и под итогом корзины/чекаута.
+// Ставку тянет роут /api/rates (server/api/rates.get.ts): секрет воркера
+// ELTOQUE_API_KEY (JWT из письма elTOQUE, wrangler secret put), KV-кэш 2ч.
+// RU-магазин: false и ключа нет — строк CUP нет нигде.
+// ⚙️ Куба: true (+ секрет ELTOQUE_API_KEY на воркере).
+export const SHOW_CUP_EQUIVALENT = false;
+
 /** Символ активной (или указанной) валюты: '₽' / '$'. */
 export const currencySymbol = (currency: StoreCurrency = STORE_CURRENCY): string =>
   CURRENCY_SYMBOL[currency] ?? String(currency);

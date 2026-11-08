@@ -61,6 +61,10 @@ const REPLACES = [
   ['export const FREE_DELIVERY_FROM = 2000;', 'export const FREE_DELIVERY_FROM = 50;'],
   ['export const DELIVERY_PRICE_COURIER = 300;', 'export const DELIVERY_PRICE_COURIER = 5;'],
   ['export const DELIVERY_PRICE_POST = 200;', 'export const DELIVERY_PRICE_POST = 3;'],
+  // ─── Эквивалент в CUP (курс elTOQUE): строка под ценой/итогом ──────
+  // Секрет ELTOQUE_API_KEY ставится на воркер копии отдельно:
+  //   npx wrangler secret put ELTOQUE_API_KEY --name nuxt-shop-cu
+  ['export const SHOW_CUP_EQUIVALENT = false;', 'export const SHOW_CUP_EQUIVALENT = true;'],
   // ─── «О магазине»: цены витрины категорий в валюте копии (USD) ─────
   [
     'export const ABOUT_FROM_PRICES = [19990, 54990, 4990, 39990, 14990, 44990];',

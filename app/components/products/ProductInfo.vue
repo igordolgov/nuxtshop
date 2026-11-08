@@ -47,6 +47,17 @@
               class="inline-flex items-center bg-red-700 px-1.5 pt-px pb-0.5 rounded-md font-bold text-white text-base leading-5"
             ) −{{ discountPercent(product) }}%
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
+          //- Эквивалент в песо по курсу elTOQUE (кубинская копия; RU скрыт
+          //-  флагом SHOW_CUP_EQUIVALENT — строка просто не рендерится).
+          //- Появляется после клиентского fetch /api/rates — без CLS-скелетонов
+          .cup-equiv.text-xs(class="text-base-content/55 mt-0.5" v-if="cupLine")
+            span {{ cupLine }} ·
+            a.link.link-hover(class="ml-0.5"
+              :href="CUP_RATE_SOURCE_URL"
+              target="_blank"
+              rel="noopener"
+              :title="cupUpdatedAt || undefined"
+            ) {{ $t('product.cupRateSource') }}
 
         //- shrink-0: плашка наличия не сжимается — текст всегда в одну строку
         .stock-section.text-right.shrink-0
@@ -172,6 +183,8 @@
 </template>
 
 <script setup>
+// CUP_RATE_SOURCE_URL — страница курса elTOQUE (shared, тесты импортируют ту же константу)
+import { CUP_RATE_SOURCE_URL } from '#shared/cupRates'
 // Варианты: чистые хелперы (составной id позиции, цена/склад, локализация)
 import {
   hasVariants as hasVariantsOf,
@@ -215,6 +228,9 @@ const hasVariants = computed(() => hasVariantsOf(props.product))
 const selectedVariant = computed(() => findVariant(props.product, props.selectedVariantId))
 const currentPrice = computed(() => variantPrice(props.product, selectedVariant.value))
 const currentStock = computed(() => variantStock(props.product, selectedVariant.value))
+// Эквивалент цены в CUP по курсу elTOQUE (кубинская копия): строка под ценой
+const { cupFor, rateUpdatedAt: cupUpdatedAt } = useCupRate()
+const cupLine = computed(() => cupFor(currentPrice.value))
 //- Скидка базовой цены: показываем только когда отображается база
 //- (без варианта или у варианта нет своей цены) — иначе сравнение
 //- с oldPrice было бы неверным

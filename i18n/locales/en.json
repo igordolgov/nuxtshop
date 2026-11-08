@@ -158,6 +158,7 @@
     "favoritesShown": "Showing {n} favorite item | Showing {n} favorite items",
     "noFavoritesToClear": "No favorite items to clear",
     "vatIncluded": "VAT included",
+    "cupRateSource": "elTOQUE rate",
     "left": "Only {n} left",
     "leftShort": "Only {n} left",
     "alreadyInCart": "Already in cart",

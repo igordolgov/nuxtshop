@@ -45,9 +45,20 @@
         .flex.justify-between.font-bold.text-primary(:class="compact ? 'text-sm' : 'text-base'")
           span {{ $t('cart.total') }}
           span {{ formatMoney(finalTotal) }}
+        //- Эквивалент итога в песо по курсу elTOQUE (кубинская копия; RU скрыт)
+        .cup-equiv.text-right.text-xs(v-if="cupTotalLine" class="text-base-content/55")
+          span {{ cupTotalLine }} ·
+          a.link.link-hover(class="ml-0.5"
+            :href="CUP_RATE_SOURCE_URL"
+            target="_blank"
+            rel="noopener"
+            :title="cupUpdatedAt || undefined"
+          ) {{ $t('product.cupRateSource') }}
 </template>
 
 <script setup>
+// CUP_RATE_SOURCE_URL — страница курса elTOQUE (shared, тесты импортируют ту же константу)
+import { CUP_RATE_SOURCE_URL } from '#shared/cupRates'
 // compact — мобильная версия (мельче заголовок, ниже список, без варианта)
 defineProps({
   compact: { type: Boolean, default: false },
@@ -82,4 +93,8 @@ const finalTotal = computed(() => {
   const disc = discount.value || 0
   return sub - disc + deliveryPrice.value
 })
+
+// Эквивалент итога в CUP по курсу elTOQUE (кубинская копия)
+const { cupFor, rateUpdatedAt: cupUpdatedAt } = useCupRate()
+const cupTotalLine = computed(() => cupFor(finalTotal.value))
 </script>

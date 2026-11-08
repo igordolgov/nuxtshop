@@ -25,6 +25,16 @@
         .flex.justify-between.items-baseline.pt-3.border-t.border-base-300
           span.text-base.font-semibold {{ $t('cart.total') }}
           span.text-2xl.font-bold.text-base-content {{ formatMoney(total) }}
+        //- Эквивалент итога в песо по курсу elTOQUE (кубинская копия;
+        //-  RU скрыт флагом): появляется после клиентского fetch — без CLS
+        .cup-equiv.text-right.text-xs(v-if="cupTotalLine" class="text-base-content/55 mt-0.5")
+          span {{ cupTotalLine }} ·
+          a.link.link-hover(class="ml-0.5"
+            :href="CUP_RATE_SOURCE_URL"
+            target="_blank"
+            rel="noopener"
+            :title="cupUpdatedAt || undefined"
+          ) {{ $t('product.cupRateSource') }}
 
       .form-control
         .join.w-full
@@ -108,6 +118,8 @@
 </template>
 
 <script setup>
+// CUP_RATE_SOURCE_URL — страница курса elTOQUE (shared, тесты импортируют ту же константу)
+import { CUP_RATE_SOURCE_URL } from '#shared/cupRates'
 // CartCheckoutPanel.vue — карточка оформления в корзине: итоги, промокод,
 // способ доставки/оплаты, кнопка (разбивка cart/index.vue, этап 6).
 // Состояние обработки и переход в чекаут — на странице (события
@@ -133,6 +145,10 @@ const {
   setDeliveryMethod,
 } = useCart()
 const { formatMoney, formatPrice } = useProductUtils()
+
+// Эквивалент итога в CUP по курсу elTOQUE (кубинская копия)
+const { cupFor, rateUpdatedAt: cupUpdatedAt } = useCupRate()
+const cupTotalLine = computed(() => cupFor(total.value))
 
 // Локальный ввод промокода (применение — на странице)
 const promoCode = defineModel('promoCode', { type: String, default: '' })
