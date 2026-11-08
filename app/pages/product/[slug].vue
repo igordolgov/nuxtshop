@@ -42,18 +42,23 @@
             NuxtLink.btn.btn-secondary.btn-sm(:to="$localePath('/')" prefetch) {{ $t('productPage.toCatalog') }}
 
       //- Контент товара.
-      //- В landscape двухколоночная раскладка больше не используется:
-      //- вертикальный поток на всех мобильных (как в крупных магазинах),
-      //- двухколоночная — только на десктопе (lg:flex-row)
+      //- Сетка с named areas вместо flex-колонок: на мобиле описание
+      //- СРАЗУ под галереей (вернули по отзыву — «на мобильном описание
+      //- должно быть под картинкой»), «Похожие» — после описания;
+      //- на десктопе двухколоночная раскладка Ozon-паттерна сохранена:
+      //- слева фото + «Похожие» под ним, справа info (38e76bd).
+      //- Гриды делают это одним DOM-деревом без дублей компонентов:
+      //- areas — 'gallery / info / similar' на мобиле,
+      //- 'gallery info / similar info' на lg.
       template(v-else)
-        .flex.flex-col(class="lg:flex-row lg:gap-6")
+        .product-layout
           //- Галерея изображений
           //- -mx-2/0: на <lg галерея выходит за паддинг контейнера (px-2) —
           //- фото на ВСЮ ширину экрана, как в маркетплейсах; на lg —
           //- обычная колонка с паддингом lg:p-3
           //- Действия (поиск/шаринг/сравнение/избранное) — ПОВЕРХ фото
           //- (ProductImageActions внутри галереи, WB/Ozon-паттерн)
-          .product-image.flex-1(class="-mx-2 lg:mx-0 lg:p-3")
+          .product-image(class="-mx-2 lg:mx-0 lg:p-3")
             ProductGallery(
               :product="productView"
               :gallery="productGallery"
@@ -64,20 +69,11 @@
               @open-search="isProductSearchOpen = true"
             )
 
-            //- Похожие товары — ПОД ГАЛЕРЕЕЙ, в той же колонке
-            //- (Ozon-паттерн: слева фото, под ним «Похожие»;
-            //- на десктопе соседствует с info-колонкой справа)
-            SimilarProducts(
-              v-if="product && similarProducts.length > 0"
-              :products="similarProducts"
-              :is-in-cart="(item) => isInCart(item.id)"
-              @toggle-favorite="toggleSimilarFavorite"
-              @add-to-cart="addSimilarToCart"
-            )
-
           //- Информация о товаре (productView — локализованная копия:
           //  имя/описание/категории в языке страницы, остаток/цена — общие)
-          .product-info.flex-1(class="sm:pt-4")
+          //- На мобиле идёт СРАЗУ за галереей (grid-area info),
+          //- на lg — правая колонка на всю высоту сетки
+          .product-info(class="sm:pt-4")
             ProductInfo(
               :product="productView"
               :rating="ratingSummary"
@@ -86,6 +82,18 @@
               @update:selectedVariantId="selectedVariantId = $event"
               @add-to-cart="addToCartHandler"
             )
+
+          //- Похожие товары: на мобиле — ПОСЛЕ описания, на десктопе —
+          //- ПОД ГАЛЕРЕЕЙ в левой колонке (grid-area similar,
+          //- Ozon-паттерн 38e76bd). Один экземпляр на оба брейкпоинта
+          SimilarProducts(
+            v-if="product && similarProducts.length > 0"
+            class="similar-slot"
+            :products="similarProducts"
+            :is-in-cart="(item) => isInCart(item.id)"
+            @toggle-favorite="toggleSimilarFavorite"
+            @add-to-cart="addSimilarToCart"
+          )
 
     //- Недавно смотрели: localStorage клиента, SSR не рендерит;
     //- текущий товар исключается
@@ -417,6 +425,46 @@ watch(() => route.params.slug, () => {
 <style scoped>
 .product-page {
   min-height: 100dvh;
+}
+
+/* Сетка карточки товара (named areas).
+  Мобильный: галерея → описание → «Похожие» — описание снова прямо
+  под фото (отзыв), как было до переезда «Похожих» в колонку галереи.
+  Десктоп lg: две равные колонки (бывшие flex-1 + gap-6 →
+  1fr 1fr + column-gap), «Похожие» — под фото, info — правая колонка
+  на обеих строках. Row-gap 0: вертикальные отступы дают свои
+  mt/pt самих блоков (sm:pt-4 у info, lg:mt-4 у «Похожих»). */
+.product-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'gallery'
+    'info'
+    'similar';
+}
+
+.product-image {
+  grid-area: gallery;
+}
+
+.product-info {
+  grid-area: info;
+}
+
+/* Корень SimilarProducts: класс приходит сквозь fallthrough, scoped-
+  атрибут родителя есть на корне дочернего компонента */
+.similar-slot {
+  grid-area: similar;
+}
+
+@media (min-width: 1024px) {
+  .product-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'gallery info'
+      'similar info';
+    column-gap: 1.5rem;
+  }
 }
 
 .flex-1.overflow-auto {
