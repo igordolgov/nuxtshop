@@ -195,23 +195,9 @@ const toggleFavorite = () => {
 </script>
 
 <style scoped>
-/* Стили для подсветки поиска */
-:deep(.search-highlight) {
-  background-color: #ffeb3b !important;
-  border-radius: 2px !important;
-  color: #000 !important;
-}
-
-/* Стили для подсветки в бейджах */
-:deep(.badge-highlight) {
-  background-color: #ffeb3b !important;
-  color: #000 !important;
-}
-
-:deep(.badge-highlight .search-highlight) {
-  background-color: #ff5722 !important;
-  color: white !important;
-}
+/* Цвет фрагментов подсветки (.search-highlight) и совпавших бейджей
+   (.badge-highlight) — глобальный, см. main.css:
+   «Подсветка найденного в поиске». */
 
 /* Стиль карточки с подсветкой */
 .has-search-highlight {

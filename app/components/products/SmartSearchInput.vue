@@ -416,15 +416,17 @@ onUnmounted(() => {
 }
 
 .suggestions-content::-webkit-scrollbar-thumb {
-  background: oklch(var(--bc) / 0.3);
+  /* oklch(var(--bc) / 0.3) — канальная переменная daisyUI 3/4, в
+     daisyUI 5 не существует → thumb был прозрачным; color-mix по
+     готовому токену --color-base-content */
+  background: color-mix(in oklab, var(--color-base-content) 30%, transparent);
   border-radius: 3px;
 }
 
-:deep(.search-highlight) {
-  background: linear-gradient(120deg, oklch(var(--wa)/0.3), oklch(var(--wa)/0.3));
-  border-radius: 2px;
-  color: oklch(var(--wa)/1);
-}
+/* Цвет фрагментов подсветки (.search-highlight) — глобальный,
+   см. main.css: «Подсветка найденного в поиске» (локальное правило
+   здесь было мёртвым: oklch(var(--wa)) — канальные переменные
+   daisyUI 3/4, в daisyUI 5 не существуют, значение невалидно). */
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {

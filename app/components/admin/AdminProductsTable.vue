@@ -226,7 +226,7 @@ const truncate = (text, length) => {
 const highlightText = (text) => {
   if (!props.searchQuery || !text) return text
   const q = props.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return text.replace(new RegExp(`(${q})`, 'gi'), '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>')
+  return text.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>')
 }
 
 const onImageError = (e) => { e.target.style.display = 'none' }

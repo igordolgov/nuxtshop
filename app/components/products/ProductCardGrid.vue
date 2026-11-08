@@ -304,7 +304,7 @@ const highlightText = (text, query) => {
   if (!text || !query) return text
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const regex = new RegExp(`(${escaped})`, 'gi')
-  return text.replace(regex, '<mark class="bg-primary/20 px-0.5 rounded text-base-content">$1</mark>')
+  return text.replace(regex, '<mark>$1</mark>')
 }
 
 const toggleFavorite = () => {
@@ -374,11 +374,8 @@ const toggleFavorite = () => {
   transform: scale(1.04);
 }
 
-/* Подсветка поиска */
-:deep(mark) {
-  border-radius: 2px;
-  padding: 0 1px;
-}
+/* Стиль самой подсветки (mark) — глобальный, см. main.css:
+   «Подсветка найденного в поиске». */
 
 .has-search-highlight {
   border-color: color-mix(in oklab, var(--color-primary) 40%, transparent) !important;
