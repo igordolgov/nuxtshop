@@ -21,8 +21,12 @@
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   )
+    //- --gallery-ratio: пропорция главного фото (натуральная h/w по load).
+    //- Зона = ширина экрана × пропорция: фото занимает её целиком,
+    //- «пустое место от картинки до описания» исчезло (см. CSS)
     .image-wrapper.overflow-hidden.relative.bg-base-200(
       ref="imageWrapper"
+      :style="{ '--gallery-ratio': mainRatio }"
     )
       //- Кнопка "Назад"
       button.image-nav-btn.prev-btn(
@@ -75,7 +79,7 @@
               :alt="$t('product.imageAlt', { name: productName || $t('product.nameFallback'), n: index + 1 })"
               class="z-10 relative product-main-image"
               :class="{ 'cursor-zoom-in': isDesktop }"
-              @load="handleImageLoad(index)"
+              @load="onMainImageLoad(index, $event)"
               @error="(e) => handleImageError(e, index)"
               @click="isDesktop ? openZoom(index) : null"
               draggable="false"
@@ -121,6 +125,14 @@
           stroke-width="2"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7")
+
+      //- Счётчик «1/5» — стандарт WB/Ozon: сколько фото и где мы сейчас.
+      //- Декоративный дубль точек (aria-hidden): у точек свои aria-label.
+      .image-counter(
+        v-if="gallery.length > 1"
+        aria-hidden="true"
+        class="left-2 bottom-2 sm:bottom-8 lg:bottom-1.5 z-20 absolute rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white tabular-nums pointer-events-none"
+      ) {{ currentIndex + 1 }}/{{ gallery.length }}
 
       //- Индикаторы (точки)
       .image-indicator(
@@ -214,6 +226,24 @@ const {
   handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave,
 } = useGallerySlider({ gallery: () => props.gallery, jumpToImage: () => props.jumpToImage, emit })
 
+// ─── Высота зоны галереи = пропорция главного фото ──────────────────────
+// Зона была квадратной (min(100vw, 30rem)): фото 4:3 занимало 75% высоты —
+// под ним оставалось серое поле до описания («пустое место»). Теперь зона
+// подстраивается под натуральную пропорцию первого слайда (по load),
+// дефолт 0.75 = витринные 800×600 (все картинки ресайзятся в админке) —
+// SSR сразу рендерит правильную высоту, сдвига после загрузки нет.
+// Клампы [0.5, 1.3]: панорамы не схлопывают зону в полоску, портретные
+// не растягивают её бесконечно (кап 30rem остаётся)
+const mainRatio = ref(0.75)
+const onMainImageLoad = (index, event) => {
+  const img = event?.target
+  if (index === 0 && img?.naturalWidth > 0 && img?.naturalHeight > 0) {
+    const ratio = img.naturalHeight / img.naturalWidth
+    if (Number.isFinite(ratio)) mainRatio.value = Math.min(1.3, Math.max(0.5, ratio))
+  }
+  handleImageLoad(index)
+}
+
 // Автоскролл: раз в 4 с следующий слайд; при касании/клике/скролле со
 // стороны пользователя или выборе варианта — пауза, возобновление через
 // 5 с бездействия; при prefers-reduced-motion не запускается вовсе
@@ -248,10 +278,13 @@ const {
 .image-wrapper {
   width: 100%;
   /* Мобильный (<lg): галерея выведена за паддинг контейнера (-mx-2 на
-     .product-image в [slug].vue) и занимает ВСЮ ширину экрана; зона —
-     квадратная (как в маркетплейсах), cap 30rem для планшетов.
+     .product-image в [slug].vue) и занимает ВСЮ ширину экрана.
+     Зона = ширина экрана × пропорция главного фото (--gallery-ratio,
+     дефолт 0.75 = витринные 800×600): фото занимает зону целиком —
+     серое поле между фото и описанием исчезло; точки и счётчик «1/5»
+     лежат ПОВЕРХ фото (как в WB/Ozon). Кап 30rem для планшетов.
      Скругления нет — фото от края до края. */
-  height: min(100vw, 30rem);
+  height: min(calc(100vw * var(--gallery-ratio, 0.75)), 30rem);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -19,6 +19,16 @@
               @click="$emit('open-search')"
             )
               icon(name="heroicons:magnifying-glass" size="20")
+            //- Шаринг (WB/Ozon): Web Share API на мобиле — нативный шер-шит
+            //- (мессенджеры, почта) даёт «сарафанный» трафик; на десктопе
+            //- без navigator.share — фолбэк: ссылка в буфер обмена + тост
+            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
+              class="border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40"
+              :title="$t('product.share')"
+              :aria-label="$t('product.share')"
+              @click="shareProduct"
+            )
+              icon(name="heroicons:share" size="20")
             button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
               :class="isComparedNow ? 'bg-primary text-primary-content border-primary' : 'border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40'"
               :title="$t('compare.toggleAria')"
@@ -313,6 +323,28 @@ const onCompareClick = (event) => {
     emitCompareFly(event?.currentTarget)
   }
   if (status === 'full') $notify.warning(t('compare.limit', { n: 4 }))
+}
+
+//- ── Шаринг товара ────────────────────────────────────────────────────────
+// Web Share API (мобильные — нативный шер-шит) — прямой канал трафика;
+// AbortError — пользователь закрыл шер-шит, это не ошибка (тост не нужен).
+// Десктоп без navigator.share — копируем ссылку в буфер обмена с тостом
+const shareProduct = async () => {
+  const url = window.location.href
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: props.product?.name || '', url })
+      return
+    } catch (error) {
+      if (error?.name === 'AbortError') return
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url)
+    $notify.success(t('product.linkCopied'))
+  } catch {
+    $notify.error(t('product.linkCopyError'))
+  }
 }
 
 //- ── «Сообщить о поступлении»: idle → форма → готово ────────────────────
