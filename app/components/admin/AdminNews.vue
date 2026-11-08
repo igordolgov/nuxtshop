@@ -75,16 +75,23 @@
       h3.font-semibold.text-lg.mb-4 {{ isNew ? $t('admin.news.formNew') : $t('admin.news.formEdit') }}
 
       form(@submit.prevent="save" novalidate)
-        //- Языковые вкладки: RU — основной контент (обязательный), EN/ES —
-        //- необязательные переводы (пусто → витрина показывает русский)
+        //- Языковые вкладки из store.config: базовая — обязательный контент
+        //- (RU-магазин: Русский; кубинская копия: Español, вкладки «Русский»
+        //- нет — отзыв «уберем русский»), остальные — необязательные
+        //- переводы (пусто → витрина показывает базовое)
         .flex.gap-1.mb-3.flex-wrap.items-center
-          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
-          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
-          button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
-          span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60")
-            | {{ $t('admin.productForm.optionalHint') }}
+          button.btn.btn-xs(
+            v-for="tab in langTabs"
+            :key="tab.code"
+            type="button"
+            :disabled="saving"
+            :class="langTab === tab.code ? 'btn-primary' : 'btn-outline'"
+            @click="langTab = tab.code"
+          ) {{ tab.label }}
+          span.text-xs.ml-1(v-if="!isBaseTab" class="text-base-content/60")
+            | {{ $t('admin.productForm.optionalHint', { lang: baseTabLabel }) }}
 
-        template(v-if="langTab === 'ru'")
+        template(v-if="isBaseTab")
           label.block.mb-3
             span.form-label {{ $t('admin.news.titleLabel') }}
             input.input.input-bordered.rounded-xl.w-full(
@@ -128,7 +135,7 @@
             input.toggle.toggle-primary(type="checkbox" v-model="form.published")
             span.text-sm {{ form.published ? $t('admin.news.publishedOn') : $t('admin.news.draftOn') }}
 
-        template(v-if="langTab === 'ru'")
+        template(v-if="isBaseTab")
           label.block.mt-3
             span.form-label {{ $t('admin.news.excerptLabel') }}
             input.input.input-bordered.rounded-xl.w-full(
@@ -180,7 +187,7 @@
           p.text-xs(class="mt-0.5 text-base-content/50")
             | {{ $t('admin.news.imageHint') }}
 
-        template(v-if="langTab === 'ru'")
+        template(v-if="isBaseTab")
           label.block.mt-3
             span.form-label {{ $t('admin.news.bodyLabel') }}
             textarea.textarea.textarea-bordered.w-full.leading-relaxed(
@@ -313,8 +320,9 @@ const showForm = ref(false)
 const isNew = ref(true)
 const saving = ref(false)
 const formError = ref('')
-// Языковая вкладка: RU — основной контент, EN/ES — необязательные переводы
-const langTab = ref('ru')
+// Языковые вкладки из store.config: базовая — обязательный контент,
+// остальные — необязательные переводы (см. useAdminLangTabs)
+const { langTabs, langTab, isBaseTab, baseTabLabel } = useAdminLangTabs()
 const form = reactive({
   id: null,
   title: '',
@@ -323,7 +331,7 @@ const form = reactive({
   excerpt: '',
   image: '',
   body: '',
-  // Переводы (i18n): пусто → витрина показывает русский (фолбэк)
+  // Переводы (i18n): пусто → витрина показывает базовое (фолбэк)
   titleEn: '',
   excerptEn: '',
   bodyEn: '',
@@ -404,7 +412,7 @@ const openCreate = () => {
   })
   pickedProductId.value = ''
   formError.value = ''
-  langTab.value = 'ru'
+  langTab.value = langTabs[0].code
   showForm.value = true
 }
 
@@ -418,7 +426,7 @@ const openEdit = (item) => {
     excerpt: item.excerpt || '',
     image: item.image || '',
     body: (item.body || []).join('\n'),
-    // Переводы: пусто в KV → пустое поле (витрина покажет русский)
+    // Переводы: пусто в KV → пустое поле (витрина покажет базовое)
     titleEn: item.titleEn || '',
     excerptEn: item.excerptEn || '',
     bodyEn: (item.bodyEn || []).join('\n'),
@@ -434,7 +442,7 @@ const openEdit = (item) => {
   })
   pickedProductId.value = ''
   formError.value = ''
-  langTab.value = 'ru'
+  langTab.value = langTabs[0].code
   showForm.value = true
 }
 
@@ -454,7 +462,7 @@ const save = async () => {
       excerpt: form.excerpt,
       image: form.image,
       body: form.body,
-      // Переводы: пустая строка → сервер удалит перевод (фолбэк на русский)
+      // Переводы: пустая строка → сервер удалит перевод (фолбэк на базовое)
       titleEn: form.titleEn,
       excerptEn: form.excerptEn,
       bodyEn: form.bodyEn,

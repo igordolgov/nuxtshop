@@ -33,16 +33,23 @@
     button.btn.btn-primary.btn-sm.rounded-xl(type="button" @click="load") {{ $t('admin.common.retry') }}
 
   form(v-else @submit.prevent="save" novalidate)
-    //- ─── Языковые вкладки: RU — весь контент, EN/ES — только переводы ──
+    //- ─── Языковые вкладки из store.config: базовая — весь контент
+    //- (RU-магазин: Русский; кубинская копия: Español, вкладки «Русский»
+    //- нет — отзыв «уберем русский»), остальные — только переводы ──
     .flex.gap-1.mb-4.flex-wrap.items-center
-      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'ru' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'ru'") Русский
-      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'en' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'en'") English
-      button.btn.btn-xs(type="button" :disabled="saving" :class="langTab === 'es' ? 'btn-primary' : 'btn-outline'" @click="langTab = 'es'") Español
-      span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60")
-        | {{ $t('admin.content.optionalHint') }}
+      button.btn.btn-xs(
+        v-for="tab in langTabs"
+        :key="tab.code"
+        type="button"
+        :disabled="saving"
+        :class="langTab === tab.code ? 'btn-primary' : 'btn-outline'"
+        @click="langTab = tab.code"
+      ) {{ tab.label }}
+      span.text-xs.ml-1(v-if="!isBaseTab" class="text-base-content/60")
+        | {{ $t('admin.content.optionalHint', { lang: baseTabLabel }) }}
 
     //- ─── Контакты ──────────────────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       h3.card-title {{ $t('admin.content.contactsTitle') }}
       .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
         label.block
@@ -65,7 +72,7 @@
           | {{ $t('admin.content.mapHint') }}
 
     //- ─── Мессенджеры ───────────────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title {{ $t('admin.content.messengersTitle') }}
         span.counter {{ form.contacts.messengers.length }} из {{ LIMITS.messengers }}
@@ -84,7 +91,7 @@
       ) {{ $t('admin.content.addMessenger') }}
 
     //- ─── Магазины ──────────────────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title {{ $t('admin.content.storesTitle') }}
         span.counter {{ form.contacts.stores.length }} из {{ LIMITS.stores }}
@@ -114,7 +121,7 @@
       ) {{ $t('admin.content.addStore') }}
 
     //- Магазины: переводы EN/ES — те же записи, другие поля
-    section.editor-card(v-show="langTab !== 'ru'")
+    section.editor-card(v-show="!isBaseTab")
       h3.card-title {{ $t('admin.content.storesTrTitle', { lang: langLabel }) }}
       .store-block(v-for="(s, i) in form.contacts.stores" :key="`store-tr-${i}`")
         .list-row
@@ -135,7 +142,7 @@
         | {{ $t('admin.content.phoneNotTranslated') }}
 
     //- ─── FAQ ───────────────────────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title {{ $t('admin.content.faqTitle') }}
         span.counter {{ form.contacts.faq.length }} из {{ LIMITS.faq }}
@@ -155,7 +162,7 @@
       ) {{ $t('admin.content.addQuestion') }}
 
     //- FAQ: переводы EN/ES
-    section.editor-card(v-show="langTab !== 'ru'")
+    section.editor-card(v-show="!isBaseTab")
       h3.card-title {{ $t('admin.content.faqTrTitle', { lang: langLabel }) }}
       .faq-block(v-for="(f, i) in form.contacts.faq" :key="`faq-tr-${i}`")
         .list-row
@@ -167,7 +174,7 @@
           textarea.textarea.textarea-bordered.rounded-xl.w-full.leading-relaxed(v-model="f[aField]" rows="3" :maxlength="LIMITS.faqA" :placeholder="f.a")
 
     //- ─── О магазине: цифры ─────────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title {{ $t('admin.content.statsTitle') }}
         span.counter {{ form.about.stats.length }} из {{ LIMITS.stats }}
@@ -186,7 +193,7 @@
       ) {{ $t('admin.content.addStat') }}
 
     //- Цифры: переводы EN/ES
-    section.editor-card(v-show="langTab !== 'ru'")
+    section.editor-card(v-show="!isBaseTab")
       h3.card-title {{ $t('admin.content.statsTrTitle', { lang: langLabel }) }}
       .list-row(v-for="(st, i) in form.about.stats" :key="`stat-tr-${i}`")
         label.block.w-36.flex-shrink-0
@@ -197,7 +204,7 @@
           input.input.input-bordered.rounded-xl.w-full(type="text" v-model="st[labelField]" :maxlength="LIMITS.statLabel" :placeholder="st.label")
 
     //- ─── О магазине: история ───────────────────────────────────────────
-    section.editor-card(v-show="langTab === 'ru'")
+    section.editor-card(v-show="isBaseTab")
       .flex.items-center.justify-between.gap-2.mb-3
         h3.card-title {{ $t('admin.content.historyTitle') }}
         span.counter {{ form.about.history.length }} из {{ LIMITS.history }}
@@ -216,7 +223,7 @@
       ) {{ $t('admin.content.addEvent') }}
 
     //- История: переводы EN/ES
-    section.editor-card(v-show="langTab !== 'ru'")
+    section.editor-card(v-show="!isBaseTab")
       h3.card-title {{ $t('admin.content.historyTrTitle', { lang: langLabel }) }}
       .list-row(v-for="(h, i) in form.about.history" :key="`hist-tr-${i}`")
         label.block.w-28.flex-shrink-0
@@ -253,9 +260,11 @@ const loadError = ref(false)
 const saving = ref(false)
 const formError = ref('')
 
-// ─── Языковые вкладки: RU — весь контент, EN/ES — только переводы ────
-const langTab = ref('ru')
-const langLabel = computed(() => (langTab.value === 'en' ? 'English' : 'Español'))
+// ─── Языковые вкладки из store.config: базовая — весь контент,
+// остальные — только переводы (см. useAdminLangTabs). langLabel нужен
+// ТОЛЬКО секциям переводов (v-show="!isBaseTab") — там он всегда
+// «English»/«Español», как раньше
+const { langTabs, langTab, langLabel, isBaseTab, baseTabLabel } = useAdminLangTabs()
 // Динамические поля активной языковой вкладки (ключи записей списков)
 const cityField = computed(() => (langTab.value === 'en' ? 'cityEn' : 'cityEs'))
 const badgeField = computed(() => (langTab.value === 'en' ? 'badgeEn' : 'badgeEs'))
@@ -309,7 +318,7 @@ const applyContent = (content) => {
   form.contacts.messengers = (c.messengers ?? []).map((m) => ({ name: m.name, handle: m.handle }))
   form.contacts.stores = (c.stores ?? []).map((s) => ({
     city: s.city, badge: s.badge, address: s.address, hours: s.hours, phone: s.phone,
-    // Переводы (i18n): пусто → витрина показывает русский
+    // Переводы (i18n): пусто → витрина показывает базовое
     cityEn: s.cityEn ?? '', cityEs: s.cityEs ?? '',
     badgeEn: s.badgeEn ?? '', badgeEs: s.badgeEs ?? '',
     addressEn: s.addressEn ?? '', addressEs: s.addressEs ?? '',

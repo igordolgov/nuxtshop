@@ -3,6 +3,9 @@
 // (воркер nuxt-shop-cu, см. .github/workflows/deploy-copy.yml):
 //   имя Tienda Habana, USD/$, дефолтная локаль es, оплата transfer/cash
 //   (Transfermóvil / EnZona), порог/цены доставки в долларах.
+//   Русский в админке УБРАН: вкладки ['es', 'en'], базовый язык
+//   контента 'es' (отзыв: «уберем русский — друг не знает русского»):
+//   базовые поля товара набираются по-испански, вкладки «Русский» нет.
 // Файл меняется ТОЛЬКО в рабочей копии workflow (не коммитится) —
 // прод собирается в ci.yml из репозитория с дефолтами (₽, ru, card/cash).
 // Замены точечные, с проверкой уникальности (иначе ошибка — конфиг разъехался).
@@ -24,10 +27,17 @@ const REPLACES = [
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'ru';",
     "export const STORE_DEFAULT_LOCALE: StoreLocale = 'es';",
   ],
-  // ─── Админка: языковые вкладки формы товара — Español первым ─────────
+  // ─── Админка: вкладки Español → English, русский убран ───────────────
   [
     "export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['ru', 'en', 'es'];",
-    "export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['es', 'en', 'ru'];",
+    "export const STORE_ADMIN_LANG_TABS: StoreLocale[] = ['es', 'en'];",
+  ],
+  // ─── Базовый язык контента товара/новостей/контента — es ──────────────
+  // (базовые поля записи набираются по-испански, обязательного русского
+  // в формах админки копии нет)
+  [
+    "export const STORE_BASE_CONTENT_LOCALE: StoreLocale = 'ru';",
+    "export const STORE_BASE_CONTENT_LOCALE: StoreLocale = 'es';",
   ],
   // ─── Валюта: USD ($ перед суммой, формат en-US — внутри formatMoney) ─
   [
@@ -61,4 +71,6 @@ for (const [from, to] of REPLACES) {
   src = src.replace(from, to);
 }
 writeFileSync('store.config.ts', src);
-console.log('store.config.ts → копия: Tienda Habana, USD, es, transfer/cash, доставка 50/5/3');
+console.log(
+  'store.config.ts → копия: Tienda Habana, USD, es (вкладки админки es/en, базовый язык es), transfer/cash, доставка 50/5/3',
+);

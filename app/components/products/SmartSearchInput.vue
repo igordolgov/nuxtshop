@@ -130,7 +130,20 @@ const props = defineProps({
   // слушателями клика), свежесмонтированный компонент считает этот клик
   // «мимо поля» и сбрасывает фокусные флаги — подсказки при вводе не
   // появлялись вовсе (дом-фокус был, панель — мертва)
-  disableClickOutside: { type: Boolean, default: false }
+  disableClickOutside: { type: Boolean, default: false },
+  // Полноэкранный оверлей: НЕ блюрить поле по скроллу документа. Блюр-по-скроллу
+  // нужен на странице (спрятать клавиатуру при прокрутке, 02588fe), но в оверлее
+  // за ним нечего прокручивать (document overflow:hidden), а урон он приносит
+  // реальный: на телефоне открытие клавиатуры/инерционный дожим после тапа по
+  // иконке поиска ловят scroll — поле блюрилось, клавиатура пряталась, панель
+  // умирала ДО набора (отзыв: «при поиске со страницы товара не выходит список,
+  // как на главной»). Клавиатуру в оверлее прячут ✕/Escape/тап мимо поля
+  disableScrollBlur: { type: Boolean, default: false },
+  // Полноэкранный оверлей: панель по факту запроса, а не по фокусу — список
+  // не исчезает при потери фокуса (клавиатура/скролл/тап мимо поля): пока
+  // в поле есть текст — панель видна. На странице это меняло бы поведение
+  // (панель закрывается по клику мимо) — там проп не ставится
+  stickyPanel: { type: Boolean, default: false }
 })
 
 //- ============================================
@@ -207,6 +220,11 @@ const filteredSuggestions = computed(() => {
 })
 
 const shouldShowSuggestionsPanel = computed(() => {
+  //- Оверлей: список виден, пока в поле есть запрос — независимо от фокуса
+  if (props.stickyPanel) {
+    if (localSearchQuery.value) return true
+    return isPanelForcedOpen.value
+  }
   if (!isInputFocused.value && !isPanelMouseDown.value) return false
   if (!localSearchQuery.value) return isPanelForcedOpen.value
   if (localSearchQuery.value.length === 1) return true
@@ -376,6 +394,9 @@ const handleClickOutside = (event) => {
 //- Событие scroll не всплывает — ловим в capture-фазе на document;
 //- скролл ВНУТРИ панели подсказок фокус не трогаем.
 const handleDocScroll = (event) => {
+  //- Оверлей: скролл не трогает фокус (см. disableScrollBlur) — иначе
+  // клавиатура/инерция после открытия убивали панель до набора текста
+  if (props.disableScrollBlur) return
   if (!isInputFocused.value) return
   const target = event.target
   if (

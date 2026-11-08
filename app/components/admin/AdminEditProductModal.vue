@@ -17,10 +17,11 @@
     h3.text-base.font-bold.mb-2(class="sm:text-xl") {{ $t('admin.productForm.editTitle') }}
     form(@submit.prevent="handleSubmit" v-if="form")
       //- Языковые вкладки: порядок из store.config (STORE_ADMIN_LANG_TABS) —
-      //- язык витрины магазина первым (RU-магазин Русский→English→Español,
-      //- кубинская копия Español→English→Русский). RU — базовый контент
-      //- (обязательный), EN/ES — необязательные переводы (пусто → витрина
-      //- показывает русский)
+      //- язык базового контента первым (RU-магазин Русский→English→Español,
+      //- кубинская копия Español→English, вкладка «Русский» убрана).
+      //- Базовая вкладка (STORE_BASE_CONTENT_LOCALE) — обязательные поля
+      //- записи, остальные — необязательные переводы (пусто → витрина
+      //- показывает базовое)
       .flex.gap-1.mb-2.flex-wrap.items-center
         button.btn.btn-xs(
           v-for="tab in langTabs"
@@ -30,12 +31,14 @@
           :class="langTab === tab.code ? 'btn-primary' : 'btn-outline'"
           @click="langTab = tab.code"
         ) {{ tab.label }}
-        span.text-xs.ml-1(v-if="langTab !== 'ru'" class="text-base-content/60") {{ $t('admin.productForm.optionalHint') }}
+        span.text-xs.ml-1(v-if="!isBaseTab" class="text-base-content/60") {{ $t('admin.productForm.optionalHint', { lang: baseTabLabel }) }}
 
       //- Основная информация - 2 колонки на мобильных, 6 на десктопе
       .grid.gap-2.mb-2(class="grid-cols-2 sm:grid-cols-6")
-        //- Название и категории — поля активной языковой вкладки
-        template(v-if="langTab === 'ru'")
+        //- Название и категории — поля активной языковой вкладки;
+        //- базовая вкладка — обязательные поля записи (язык базового
+        //- контента: ru на RU-магазине, es на кубинской копии)
+        template(v-if="isBaseTab")
           .form-control(class="sm:col-span-2")
             label.label.py-1
               span.label-text.text-xs
@@ -164,7 +167,7 @@
             )
             | {{ $t('admin.productForm.inStock') }}
         textarea.textarea.textarea-bordered.textarea-sm.w-full(
-          v-if="langTab === 'ru'"
+          v-if="isBaseTab"
           v-model="form.description"
           :placeholder="$t('admin.productForm.descriptionPlaceholder')"
           rows="2"
@@ -290,12 +293,13 @@
           )
 
       //- Характеристики (spec-лист карточки): редактор АКТИВНОЙ вкладки —
-      //- чипы и ввод в её языке (ru — русские пресеты; en/es — переводы
+      //- чипы и ввод в её языке (базовая вкладка — пресеты в языке базового
+      //- контента: ru на RU-магазине, es на копии; en/es — переводы
       //- из словаря specLabels; при первом открытии вкладка предзаполняется
-      //- русским списком). Раньше базовый (русский) редактор был виден на
+      //- базовым списком). Раньше базовый (русский) редактор был виден на
       //- любой вкладке — на копии с es-вкладкой чипы вставляли русский.
       //- «Очистить»/пусто у переводных вкладок → сервер удалит поле,
-      //- витрина фолбэкится на русский список (известные лейблы переводятся
+      //- витрина фолбэкится на базовый список (известные лейблы переводятся
       //- словарём specLabels.*)
       details.border.border-base-300.rounded-lg.mt-2.group
         summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
@@ -307,9 +311,10 @@
             path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
         .px-3.py-3.border-t.border-base-300
           AdminCharacteristicsEditor(
-            v-if="langTab === 'ru'"
+            v-if="isBaseTab"
             v-model="characteristicPairs"
             :categories="form.categories"
+            :lang="baseLocale"
             :disabled="isSubmitting"
           )
           template(v-else)
@@ -388,14 +393,15 @@ const emit = defineEmits(['update:isOpen', 'productUpdated'])
 
 const MAX_GALLERY_IMAGES = 5
 
-//- Языковые вкладки: порядок из store.config (язык витрины магазина —
-//- первым); RU — базовый контент, EN/ES — переводы
-const { langTabs, langTab, langLabel } = useAdminLangTabs()
+//- Языковые вкладки: порядок из store.config; базовая вкладка — язык
+//- базового контента (STORE_BASE_CONTENT_LOCALE), остальные — переводы
+const { langTabs, langTab, langLabel, baseLocale, isBaseTab, baseTabLabel } = useAdminLangTabs()
 
-//- Подсказки пикера категорий: на базовой вкладке — сырые значения,
-//- на en/es — переводы из карт (непереведённые остаются сырыми)
+//- Подсказки пикера категорий: на базовой вкладке — сырые значения
+//- (контракт фильтров), на en/es — переводы из карт (непереведённые
+//- остаются сырыми)
 const pickerCategories = computed(() => {
-  if (langTab.value === 'ru') return props.allCategories || []
+  if (isBaseTab.value) return props.allCategories || []
   return localizedCategorySuggestions(
     props.allCategories || [],
     props.categoryLabelMaps?.[langTab.value],
@@ -415,30 +421,29 @@ const variantAxis = ref({ ru: '', en: '', es: '' })
 const variantRows = ref([])
 const characteristicPairs = ref([])
 //- Переводные spec-листы (вкладки EN/ES): массив пар, как базовый список;
-//- пустой список в payload = сервер удаляет поле (фолбэк на русский).
+//- пустой список в payload = сервер удаляет поле (фолбэк на базовый).
 //- При инициализации здесь ТОЛЬКО сохранённый перевод: вкладку могли не
 //- открывать — нетронутый список не должен переписывать запись в KV
 const characteristicPairsEn = ref([])
 const characteristicPairsEs = ref([])
-//- Первое переключение на вкладку перевода предзаполняет её русским
+//- Первое переключение на вкладку перевода предзаполняет её базовым
 //- списком (переводить на месте легче, чем набирать заново; сохранённый
-//- перевод приоритетен по позициям, новые русские строки достраиваются).
+//- перевод приоритетен по позициям, новые базовые строки достраиваются).
 //- Флаги — чтобы повторные переключения НЕ затирали правки админа
 const specPrefilled = ref({ en: false, es: false })
 watch(langTab, (tab) => {
-  if (tab !== 'en' && tab !== 'es') return
+  if (tab === baseLocale) return
   if (specPrefilled.value[tab]) return
   specPrefilled.value[tab] = true
   const target = tab === 'en' ? characteristicPairsEn : characteristicPairsEs
   target.value = mergeSpecRows(target.value, characteristicPairs.value)
 })
 const filledCharacteristicsCount = computed(() => {
-  const pairs =
-    langTab.value === 'ru'
-      ? characteristicPairs.value
-      : langTab.value === 'en'
-        ? characteristicPairsEn.value
-        : characteristicPairsEs.value
+  const pairs = isBaseTab.value
+    ? characteristicPairs.value
+    : langTab.value === 'en'
+      ? characteristicPairsEn.value
+      : characteristicPairsEs.value
   return pairs.filter((p) => p?.label?.trim()).length
 })
 
@@ -603,7 +608,7 @@ const handleSubmit = async () => {
       inStock: Boolean(form.value.inStock),
       stockQuantity: Number(form.value.stockQuantity) || 0,
       // Переводы уходят ВСЕГДА: пустая строка = «очистить перевод»
-      // (сервер удаляет поле → витрина фолбэкается на русский)
+      // (сервер удаляет поле → витрина фолбэкается на базовое)
       nameEn: form.value.nameEn?.trim() || '',
       nameEs: form.value.nameEs?.trim() || '',
       descriptionEn: form.value.descriptionEn?.trim() || '',
@@ -618,7 +623,7 @@ const handleSubmit = async () => {
       // Характеристики: всегда полным списком (заменяют прежние; [] = очистить)
       characteristics: buildCharacteristicsPayload(),
       // Переводные spec-листы: всегда полным списком ([] = удалить перевод,
-      // витрина фолбэкится на русский; известные лейблы переводит словарь)
+      // витрина фолбэкится на базовое; известные лейблы переводит словарь)
       characteristicsEn: buildCharacteristicsPayload(characteristicPairsEn.value),
       characteristicsEs: buildCharacteristicsPayload(characteristicPairsEs.value),
     }
@@ -714,7 +719,7 @@ const initializeForm = () => {
     //- Характеристики: Record → массив пар для редактора (порядок — как в KV)
     characteristicPairs.value = toSpecPairs(props.product.characteristics)
     //- Переводные списки — только сохранённый перевод; предзаполнение
-    //- русскими строками происходит при первом переключении на вкладку
+    //- базовыми строками происходит при первом переключении на вкладку
     //- (watch langTab выше) — нетронутые вкладки не переписывают KV
     characteristicPairsEn.value = toSpecPairs(props.product.characteristicsEn)
     characteristicPairsEs.value = toSpecPairs(props.product.characteristicsEs)

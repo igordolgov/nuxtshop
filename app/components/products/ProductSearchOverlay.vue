@@ -9,6 +9,15 @@
   выбор подсказки → карточка товара, Enter → каталог ?search=…
   (index.vue восстанавливает запрос из URL). Закрытие: ✕, Escape,
   навигация. html overflow:hidden — фон не скроллится под оверлеем.
+
+  Поиск с карточки не «терял список» на телефоне: панель подсказок жила
+  на ФОКУСЕ поля, а в реальном телефоне фокус умирал до набора —
+  открытие клавиатуры и инерционный дожим после тапа по иконке ловятся
+  как scroll, скролл блюрит поле (02588fe). Поэтому оверлей ставит
+  SmartSearchInput флаги disableScrollBlur (скролл не блюрит) и
+  stickyPanel (панель по факту запроса, не по фокусу) — список ведёт
+  себя как в шапке главной: появился при вводе и не исчезает на ровном
+  месте.
 ============================================ -->
 <template lang="pug">
 Teleport(to="body")
@@ -26,6 +35,8 @@ Teleport(to="body")
             :products="allProducts"
             :isActive="true"
             :disableClickOutside="true"
+            :disableScrollBlur="true"
+            :stickyPanel="true"
             :searchQuery="searchQuery"
             :isSearching="isSearching"
             :showSuggestions="showSuggestions"
