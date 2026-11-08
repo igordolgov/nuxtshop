@@ -421,7 +421,6 @@ watch(showMobileFilters, updateBodyScroll)
 
   @media (min-width: 1025px) {
     display: block;
-    padding-top: 10px;
   }
 }
 

@@ -34,8 +34,8 @@
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
 
     //- Тело: ProductFilter (цена, категории, характеристики).
-    //- Единственный скроллящийся регион панели; быстрые фильтры
-    //- (в наличии/избранное) вынесены в закреплённый блок ниже
+    //- Единственный скроллящийся регион панели; быстрый фильтр
+    //- «В наличии» вынесен в закреплённый блок ниже
     .filters-content(
       class="bg-base-100 px-3 py-2"
     )
@@ -47,19 +47,15 @@
         :priceRange="priceRange"
         :filtered-count="filteredCount"
         :total-count="totalCount"
-        :hideQuickFilters="true"
         @update:filters="emit('update:filters', $event)"
       )
 
-    //- Быстрые фильтры: закреплены над кнопкой «Показать N» — всегда видны,
-    //- а характеристики скроллятся под ними (паттерн маркетплейсов).
-    //- «Только избранное» на мобильных спрятано (showFavorites=false):
-    //- страница избранного и так в нижней навигации; активный фильтр
-    //- снимается чипом над сеткой
+    //- Быстрый фильтр «Только в наличии»: закреплён над кнопкой
+    //- «Показать N» — всегда виден, а характеристики скроллятся под
+    //- ними (паттерн маркетплейсов)
     .filters-quick(class="bg-base-100 border-base-200 border-t")
       ProductQuickFilters(
         :filters="filters"
-        :showFavorites="false"
         @change="handleQuickFilter"
       )
 

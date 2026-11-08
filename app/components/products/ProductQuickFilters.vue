@@ -1,12 +1,13 @@
-<!-- app/components/products/ProductQuickFilters.vue — быстрые фильтры
-     «Только в наличии» и «Только избранное». Вынесены из ProductFilter,
-     чтобы мобильная панель могла закрепить их НАД кнопкой «Показать N»
-     (всегда видны, а характеристики скроллятся под ними — паттерн
-     маркетплейсов), не дублируя логику. Состояние живёт в родителе:
-     изменение уходит наверх парой (ключ, значение).
-     showFavorites=false прячет чекбокс «Только избранное» (мобильная
-     панель: страница избранного и так в нижней навигации); если фильтр
-     активен, снять его можно чипом над сеткой. -->
+<!-- app/components/products/ProductQuickFilters.vue — быстрый фильтр
+     «Только в наличии». Вынесен из ProductFilter, чтобы десктопный
+     сайдбар и мобильная панель закрепляли его ВНИЗУ (всегда виден,
+     а списки выше скроллятся — паттерн маркетплейсов), не дублируя
+     логику. Состояние живёт в родителе: изменение уходит наверх
+     парой (ключ, значение).
+     Чекбокс «Только избранное» убран из витринных фильтров (решение
+     владельца: страница избранного и так в навигации); если фильтр
+     активен (например, из сохранённого URL), снять его можно чипом
+     над сеткой товаров. -->
 <template lang="pug">
 label.quick-filter.flex.items-center.cursor-pointer.select-none(
   class="py-1 gap-2.5"
@@ -17,31 +18,16 @@ label.quick-filter.flex.items-center.cursor-pointer.select-none(
     @change="emit('change', 'onlyInStock', $event.target.checked)"
   )
   span.text-sm.text-base-content {{ $t('catalog.inStockOnly') }}
-
-label.quick-filter.flex.items-center.cursor-pointer.select-none(
-  v-if="showFavorites"
-  class="py-1 gap-2.5"
-)
-  input.checkbox.checkbox-sm.checkbox-error(
-    type="checkbox"
-    :checked="safeFilters.onlyFavorites"
-    @change="emit('change', 'onlyFavorites', $event.target.checked)"
-  )
-  span.text-sm.text-base-content {{ $t('catalog.favoritesOnly') }}
 </template>
 
 <script setup>
 const props = defineProps({
   filters: { type: Object, default: () => ({}) },
-  // Показывать чекбокс «Только избранное» (по умолчанию да — десктопный
-  // сайдбар); мобильная панель передаёт false
-  showFavorites: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['change'])
 
 const safeFilters = computed(() => ({
   onlyInStock: Boolean(props.filters?.onlyInStock),
-  onlyFavorites: Boolean(props.filters?.onlyFavorites),
 }))
 </script>

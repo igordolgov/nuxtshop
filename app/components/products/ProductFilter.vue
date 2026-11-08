@@ -1,8 +1,10 @@
 <!-- app/components/products/ProductFilter.vue — тело фильтров (без шапки
      и сортировки: сортировка — отдельный элемент над сеткой, паттерн
-     маркетплейсов). Секции: цена, категории, характеристики,
-     в наличии/избранное (последние можно скрыть пропом hideQuickFilters —
-     мобильная панель закрепляет их отдельно над кнопкой «Показать N»).
+     маркетплейсов). Секции: цена, категории, характеристики.
+     Быстрые фильтры («Только в наличии») здесь НЕ рендерятся: оба
+     родителя (DesktopSidebar и MobileFiltersPanel) закрепляют их внизу
+     отдельно, вне скролла — паттерн маркетплейсов. На десктопе (≥1025px)
+     секция категорий растягивается на остаток высоты сайдбара.
      Горизонтальные ветки isHorizontal удалены (мёртвые с чистки
      боковой навигации). Используется в DesktopSidebar и MobileFiltersPanel. -->
 <template lang="pug">
@@ -38,8 +40,9 @@
           :compact="compact"
         )
 
-      //- Категории (чекбокс-чипы с подсветкой поиска)
-      .filter-section
+      //- Категории (чекбокс-чипы с подсветкой поиска). На десктопе
+      //- секция растягивается на оставшуюся высоту сайдбара
+      .filter-section.filter-section--categories
         ProductCategories(
           ref="categoriesRef"
           :categories="sortedCategories"
@@ -57,15 +60,6 @@
           @update:selected="handleSpecsUpdate"
         )
 
-      //- Быстрые фильтры: наличие и избранное (раньше были в стейте,
-      //- но без UI — мёртвые; теперь живые чекбоксы).
-      //- На мобильных панель рендерит их закреплёнными внизу
-      //- (hideQuickFilters), чтобы они не уезжали со скроллом
-      .filter-section(v-if="!hideQuickFilters")
-        ProductQuickFilters(
-          :filters="safeFilters"
-          @change="updateFilter"
-        )
 </template>
 
 <style scoped>
@@ -86,6 +80,16 @@
 .filter-section + .filter-section {
   border-top: 1px solid var(--color-base-200);
   padding-top: 0.6rem;
+}
+
+/* Категории занимают оставшуюся высоту сайдбара: только десктоп
+   (≥1025px — там сайдбар растянут под хедером), мобильную панель
+   не трогаем. При коротком контенте секция растягивается и разделитель
+   «Характеристик» уходит к низу; при длинном — обычный скролл. */
+@media (min-width: 1025px) {
+  .filter-section--categories {
+    flex-grow: 1;
+  }
 }
 
 .vertical-layout::-webkit-scrollbar {
@@ -129,8 +133,6 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
   filteredCount: { type: Number, default: 0 },
   totalCount: { type: Number, default: 0 },
-  //- Мобильная панель: быстрые фильтры рендерит сама, закреплёнными внизу
-  hideQuickFilters: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:filters'])
