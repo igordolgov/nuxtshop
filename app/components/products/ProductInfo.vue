@@ -9,6 +9,16 @@
           .flex.shrink-0.gap-2
             //- Тач-цель 40px (size-10), иконка /70 вместо полупрозрачной /50 —
             //- на белом фоне выглядели бледно (аудит F6)
+            //- Поиск: иконка ПЕРЕД «Сравнить»/«Избранное» — строка поиска
+            //- из шапки на карточке убрана (шапка однострочная), тап
+            //- открывает полноэкранный ProductSearchOverlay (v-model у страницы)
+            button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
+              class="border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40"
+              :title="$t('catalog.search')"
+              :aria-label="$t('catalog.search')"
+              @click="$emit('open-search')"
+            )
+              icon(name="heroicons:magnifying-glass" size="20")
             button.size-10.rounded-full.flex.items-center.justify-center.border.transition-colors(
               :class="isComparedNow ? 'bg-primary text-primary-content border-primary' : 'border-base-300 text-base-content/70 hover:text-primary hover:border-primary/40'"
               :title="$t('compare.toggleAria')"
@@ -224,7 +234,7 @@ const props = defineProps({
   selectedVariantId: { type: String, default: null }
 })
 
-const emit = defineEmits(['toggle-favorite', 'add-to-cart', 'update:selectedVariantId'])
+const emit = defineEmits(['toggle-favorite', 'add-to-cart', 'update:selectedVariantId', 'open-search'])
 void emit
 
 const { $notify } = useNuxtApp()

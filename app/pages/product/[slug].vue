@@ -46,7 +46,10 @@
       template(v-else)
         .flex.flex-col(class="lg:flex-row lg:gap-6")
           //- Галерея изображений
-          .product-image.flex-1(class="lg:p-3")
+          //- -mx-2/0: на <lg галерея выходит за паддинг контейнера (px-2) —
+          //- фото на ВСЮ ширину экрана, как в маркетплейсах; на lg —
+          //- обычная колонка с паддингом lg:p-3
+          .product-image.flex-1(class="-mx-2 lg:mx-0 lg:p-3")
             ProductGallery(
               :product="productView"
               :gallery="productGallery"
@@ -66,6 +69,7 @@
               @update:selectedVariantId="selectedVariantId = $event"
               @toggle-favorite="toggleFavorite"
               @add-to-cart="addToCartHandler"
+              @open-search="isProductSearchOpen = true"
             )
 
     //- Похожие товары
@@ -146,6 +150,10 @@
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
   //- ClientOnly задерживал его до гидратации
   MobileNavFooter
+
+  //- Полноэкранный поиск (иконка в действиях карточки): телепорт в body,
+  //- z-70 — над шапкой (50) и крошками (45), под тостами (1000)
+  ProductSearchOverlay(v-model:open="isProductSearchOpen")
 </template>
 
 <script setup>
@@ -173,6 +181,17 @@ import {
   cartLineId,
   VARIANT_SEPARATOR,
 } from '~/utils/productVariants'
+
+//- Полноэкранный поиск со страницы товара (иконка в ProductInfo)
+const isProductSearchOpen = ref(false)
+
+//- Шапка карточки без строки поиска → однострочная: sticky-офсеты
+//- (крошки, тосты) считаются от 56px уже в SSR-HTML (htmlAttrs,
+//- CSS-правило — main.css, «html[data-header-compact]»). Атрибут
+//- снимается при уходе со страницы (unhead чистит за компонентом)
+useHead({
+  htmlAttrs: { 'data-header-compact': 'true' },
+})
 
 const productSlug = computed(() => route.params.slug)
 

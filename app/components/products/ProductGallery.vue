@@ -21,7 +21,7 @@
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   )
-    .image-wrapper.rounded-box.overflow-hidden.relative.bg-base-200(
+    .image-wrapper.overflow-hidden.relative.bg-base-200(
       ref="imageWrapper"
     )
       //- Кнопка "Назад"
@@ -54,8 +54,9 @@
           class="relative w-full h-full shrink-0"
         )
           .image-center-container
-            //- Скелетон для конкретного слайда
-            .skeleton.w-full.h-full.rounded-box.absolute.inset-0(
+            //- Скелетон для конкретного слайда (радиус наследует wrapper —
+            //- на мобиле wrapper без скругления, см. CSS)
+            .skeleton.w-full.h-full.absolute.inset-0(
               v-if="loadingStates[index]"
               aria-hidden="true"
             )
@@ -246,7 +247,11 @@ const {
 }
 .image-wrapper {
   width: 100%;
-  height: 300px;
+  /* Мобильный (<lg): галерея выведена за паддинг контейнера (-mx-2 на
+     .product-image в [slug].vue) и занимает ВСЮ ширину экрана; зона —
+     квадратная (как в маркетплейсах), cap 30rem для планшетов.
+     Скругления нет — фото от края до края. */
+  height: min(100vw, 30rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -256,6 +261,9 @@ const {
 @media (min-width: 1024px) {
   .image-wrapper {
     height: 400px;
+    /* Скругление только на десктопе: на мобиле full-bleed без радиуса
+       (было rounded-box на элементе — на всю ширину смотрелось чужо) */
+    border-radius: var(--radius-box, 0.5rem);
   }
 }
 .image-center-container {
@@ -267,17 +275,21 @@ const {
   padding: 16px;
   position: relative;
 }
+/* Мобильный: без внутренних полей — картинка во всю ширину зоны */
+@media (max-width: 1023.98px) {
+  .image-center-container {
+    padding: 0;
+  }
+}
 .product-main-image {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   position: relative;
   z-index: 10;
 }
 @media (min-width: 1024px) {
   .product-main-image {
-    max-width: 100%;
-    max-height: 100%;
     width: 100%;
     height: 100%;
   }

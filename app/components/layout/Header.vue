@@ -178,8 +178,10 @@ header.app-header.sticky.top-0.z-50.border-b(
     //- Правая группа: поиск (десктоп) · корзина (десктоп) · тема · профиль
     .flex.items-center.gap-1.shrink-0(class="lg:gap-2")
       //- Поиск — только десктоп (на мобильных строка 2). На админ-страницах
-      //- скрыт: там свой поиск по каталогу, витринный только путает
-      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80" v-if="!isAdminRoute")
+      //- скрыт: там свой поиск по каталогу, витринный только путает.
+      //- На карточке товара тоже скрыт: поиск — иконка в действиях
+      //- карточки (ProductInfo), открывает полноэкранный ProductSearchOverlay
+      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80" v-if="!isAdminRoute && !isProductRoute")
         SmartSearchInput(
           :products="allProducts"
           :isActive="true"
@@ -246,7 +248,9 @@ header.app-header.sticky.top-0.z-50.border-b(
         span {{ $t('header.login') }}
 
   //- ═══ Строка 2 (только мобильные): поиск на всю ширину ═══
-  .px-3.pb-2(class="md:hidden" v-if="!isAdminRoute")
+  //- На карточке товара строки нет — шапка однострочная (--header-height
+  //- 56px через html[data-header-compact], ставит страница /product/**)
+  .px-3.pb-2(class="md:hidden" v-if="!isAdminRoute && !isProductRoute")
     .flex.items-center.gap-2
       .flex-1.min-w-0
         SmartSearchInput(
@@ -372,6 +376,11 @@ const localePath = useLocalePath()
 //- не ловит '/en/admin/...' (префикс локали)
 const isAdminRoute = computed(() => isActiveRoute('/admin'))
 
+//- На карточке товара поиск в шапке не нужен: иконка поиска стоит в
+//- действиях карточки (перед «Сравнить»/«Избранное») и открывает
+//- полноэкранный ProductSearchOverlay — как у крупных маркетплейсов
+const isProductRoute = computed(() => isActiveRoute('/product'))
+
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()
 const { compareCount } = useCompare()
@@ -399,11 +408,13 @@ watch(searchQuery, (q) => {
 const onSearchQueryUpdate = (q) => appState.setSearchQuery?.(q)
 const onSearch = (q) => appState.setSearchQuery?.(q)
 
-//- Enter: с чужой страницы → каталог с запросом; на главной — штатно
+//- Enter: с чужой страницы → каталог с запросом; на главной — штатно.
+//- localePath({ path, query }): сырой path:'/' на /en и /es вёл на
+//- русскую главную (strategy prefix_except_default) — префикс локали терялся
 const onPerformSearch = () => {
   const q = searchQuery.value?.trim()
   if (!isHomePage.value && q) {
-    navigateTo({ path: '/', query: { search: q } })
+    navigateTo(localePath({ path: '/', query: { search: q } }))
     return
   }
   appState.search?.performSearch?.()
