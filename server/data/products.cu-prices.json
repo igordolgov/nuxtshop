@@ -1,0 +1,53 @@
+{
+  "$comment": "USD-цены каталога КУБИНСКОЙ копии (Tienda Habana). Ключ — id товара из products.json; oldPrice — зачёркнутая «цена до скидки» (только там, где она есть в сиде); variants — цена варианта по его id. Используется scripts/make-products-copy.mjs: на сборке копии переписывает цены в server/data/products.json (в рабочей копии runner-а, не коммитится) и deploy-copy-in-ci.mjs: разово синхронизирует каталог в KV копии (маркер data:products-seed-version). Правило: map покрывает ВСЕ товары сида — новый товар в products.json без цены здесь валит тест cu-prices.test.ts и деплой копии. Ориентир цен — уличные USD конца 2026 г. (демо-линейка 2023–2024 гг.).",
+  "version": "2026-11-09-1",
+  "prices": {
+    "1": {
+      "price": 549,
+      "oldPrice": 699,
+      "variants": { "s23-phantom-black": 549, "s23-cream": 549, "s23-green": 569 }
+    },
+    "2": {
+      "price": 2499,
+      "oldPrice": 2799,
+      "variants": { "mbp16-512gb": 2499, "mbp16-1tb": 2699, "mbp16-2tb": 3099 }
+    },
+    "3": {
+      "price": 248,
+      "oldPrice": 299,
+      "variants": { "sony-xm4-black": 248, "sony-xm4-silver": 248 }
+    },
+    "4": { "price": 1599 },
+    "5": {
+      "price": 329,
+      "oldPrice": 379,
+      "variants": { "watch9-41mm": 329, "watch9-45mm": 359 }
+    },
+    "6": { "price": 499 },
+    "7": { "price": 29 },
+    "8": { "price": 119 },
+    "9": { "price": 12 },
+    "10": { "price": 89 },
+    "11": { "price": 599 },
+    "12": { "price": 189 },
+    "13": { "price": 19 },
+    "14": { "price": 59 },
+    "15": { "price": 549 },
+    "16": { "price": 449 },
+    "17": { "price": 39, "oldPrice": 49 },
+    "18": { "price": 89, "oldPrice": 109 },
+    "19": { "price": 279, "oldPrice": 349 },
+    "20": { "price": 69, "oldPrice": 84 },
+    "21": { "price": 34 },
+    "22": { "price": 49 },
+    "23": { "price": 79 },
+    "24": { "price": 189 },
+    "25": { "price": 95 },
+    "26": { "price": 35 },
+    "27": { "price": 289 },
+    "28": { "price": 549, "oldPrice": 649 },
+    "29": { "price": 279 },
+    "30": { "price": 69 },
+    "33": { "price": 449 }
+  }
+}
