@@ -1,4 +1,9 @@
-<!-- app/components/products/ProductCategories.vue -->
+<!-- app/components/products/ProductCategories.vue — фильтр по категориям:
+    чипы с подсветкой поиска. Список разворачивается ПО МАКСИМУМУ
+    (без жёсткого лимита «первые 10 + Ещё N»: у сайдбара/панели есть
+    свободная высота — чипы занимают её сами). Если развёрнутый список
+    не помещается — секция сжимается, список скроллится внутри
+    (стилизованный скроллбар задаёт ProductFilter). -->
 <template lang="pug">
 .product-categories.pb-2(class="lg:mr-3")
   .section-header.flex.items-center.justify-between.mb-1.bg-base-100.sticky.-top-2.h-8.z-10
@@ -13,15 +18,14 @@
         v-if="localSelectedCategories.length > 0"
       ) {{ $t('catalog.showAll') }}
 
-  //- Без вложенного скролла (на тач-экранах скроллбар невидим и обрезанный
-  //- ряд чипов выглядит концом списка — жалоба пользователей): длинный
-  //- список сворачивается кнопкой «Ещё {n}» — паттерн маркетплейсов.
-  //- Выбранные категории за пределами первых N видны всегда — отмеченное
-  //- не прячется в свёрнутую часть списка.
+  //- Все категории сразу (разворот по максимуму — жёсткий лимит
+  //- «первые 10 + Ещё N» удалён): переполнение гасит внутренний
+  //- скролл списка (стилизованный скроллбар в ProductFilter),
+  //- а не кнопка «Ещё N»
   .categories-list.flex.flex-wrap.gap-1.p-0
     template(v-if="availableCategories.length > 0")
       label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.rounded-full.border.text-xs.font-medium(
-        v-for="category in visibleCategories"
+        v-for="category in availableCategories"
         :key="category"
         :class="isSelected(category) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/60'",
         class="py-0.5 hover:bg-primary/20 hover:text-primary"
@@ -32,12 +36,6 @@
           v-model="localSelectedCategories"
         )
         span.whitespace-nowrap {{ categoryLabel(category) }}
-
-      button.category-more.btn.btn-ghost.btn-xs.rounded-full(
-        v-if="hiddenCount > 0 || expanded"
-        type="button"
-        @click="expanded = !expanded"
-      ) {{ expanded ? $t('catalog.collapse') : $t('catalog.categoriesMore', { n: hiddenCount }) }}
 
     //- Пустое состояние внутри того же контейнера
     .empty-state.py-6.w-full.text-center(v-else)
@@ -53,9 +51,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:selectedCategories'])
-
-//- Сколько категорий видно до кнопки «Ещё {n}»
-const VISIBLE_CATEGORIES = 10
 
 const localSelectedCategories = computed({
   get: () => props.selectedCategories || [],
@@ -79,28 +74,6 @@ const sortedCategories = computed(() => {
 const { categoryLabel } = useCategoryLabels()
 
 const availableCategories = computed(() => sortedCategories.value)
-
-//- Раскрытие списка (кнопка «Ещё {n}» / «Свернуть»)
-const expanded = ref(false)
-
-const visibleCategories = computed(() => {
-  const all = availableCategories.value
-  if (expanded.value) return all
-  const list = all.slice(0, VISIBLE_CATEGORIES)
-  //- Выбранные за пределами первых N показываем всегда:
-  //- иначе отмеченное остаётся невидимым в свёрнутой части списка
-  const missing = localSelectedCategories.value.filter(
-    (category) => !list.includes(category)
-  )
-  return [...list, ...missing]
-})
-
-//- Сколько категорий скрыто сворачиванием (число в кнопке «Ещё {n}»):
-//- выбранные «хвостовые» уже видимы, поэтому считаем от фактического списка
-const hiddenCount = computed(() => {
-  if (expanded.value) return 0
-  return Math.max(0, availableCategories.value.length - visibleCategories.value.length)
-})
 
 const isSelected = (category) => {
   return localSelectedCategories.value.includes(category)

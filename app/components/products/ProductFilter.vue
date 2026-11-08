@@ -3,12 +3,14 @@
      маркетплейсов). Секции: цена, категории, характеристики.
      Быстрые фильтры («Только в наличии») здесь НЕ рендерятся: оба
      родителя (DesktopSidebar и MobileFiltersPanel) закрепляют их внизу
-     отдельно, вне скролла — паттерн маркетплейсов. На десктопе (≥1025px)
-     содержимое характеристик прижато к низу сайдбара, к закреплённому
-     «Только в наличии»: свободное место — над ними, внутри секции;
-     секция не сжимается ниже содержимого (минимум текущих пяти строк).
-     Категории идут своей высотой, развёрнутый список скроллится внутри
-     секции. Шапки «Фильтры» на десктопе нет (убрана по требованию
+     отдельно, вне скролла — паттерн маркетплейсов.
+     ЕДИНАЯ flex-модель для десктопа И мобильного (одни и те же CSS):
+     категории сначала разворачиваются по максимуму — секция своей
+     высоты, развёрнутый список при переполнении скроллится внутри
+     секции; ХАРАКТЕРИСТИКИ забирают остаток высоты панели — их
+     содержимое прижато к низу, к закреплённому «Только в наличии»;
+     секция не сжимается ниже содержимого (минимум текущих строк).
+     Шапки «Фильтры» на десктопе нет (убрана по требованию
      пользователя — всё поднято к верху сайдбара).
      Горизонтальные ветки isHorizontal удалены (мёртвые с чистки
      боковой навигации). Используется в DesktopSidebar и MobileFiltersPanel. -->
@@ -28,8 +30,9 @@
           :compact="compact"
         )
 
-      //- Категории (чекбокс-чипы с подсветкой поиска). Своя высота;
-      //- если развёрнутый список не помещается — внутренний скролл
+      //- Категории (чекбокс-чипы с подсветкой поиска). Разворачиваются
+      //- по максимуму: своя высота, пока помещаются; не помещается —
+      //- внутренний скролл списка внутри секции
       .filter-section.filter-section--categories
         ProductCategories(
           :categories="sortedCategories"
@@ -40,8 +43,9 @@
 
       //- Характеристики (фасеты по свойствам товаров текущей выборки:
       //- выбрал категорию — получил её характеристики, паттерн WB/Ozon).
-      //- На десктопе забирают свободную высоту, содержимое прижато к
-      //- низу сайдбара, к закреплённому «Только в наличии» (CSS)
+      //- Забирают СВОБОДНУЮ высоту после категорий (flex-grow), содержимое
+      //- прижато к низу, к закреплённому «Только в наличии» (CSS) —
+      // и на десктопе, и на мобильном
       .filter-section.filter-section--specs
         ProductSpecFilters(
           :facets="specFacets"
@@ -71,57 +75,58 @@
   padding-top: 0.6rem;
 }
 
-/* Десктоп (≥1025px — сайдбар растянут под хедером), мобильную панель
-   не трогаем. Свободное место забирает секция «Характеристики», её
-   содержимое прижато к низу сайдбара — к закреплённому «Только
-   в наличии»; секция не сжимается меньше содержимого (минимум текущих
-   пяти строк) и не обрезается. Категории идут своей высотой, а если
-   развёрнутый список не помещается — скроллятся внутри своей секции,
-   не сдвигая цену и характеристики. */
-@media (min-width: 1025px) {
-  .filter-section--categories {
-    flex: 0 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── Единое распределение высоты (десктоп-сайдбар И мобильная панель).
+   Приоритет: категории разворачиваются по максимуму (секция своей
+   высоты, переполнение — внутренний скролл списка), ХАРАКТЕРИСТИКИ
+   забирают остаток (flex-grow), их содержимое прижато к низу —
+   к закреплённому «Только в наличии»; секция характеристик не
+   сжимается ниже содержимого и не обрезается. Цена — своей высоты. */
+.filter-section {
+  flex-shrink: 0; /* цена и соседи не сжимаются — дефицит высоты уходит в скролл тела */
+}
 
-  .filter-section--categories :deep(.product-categories) {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
+.filter-section--categories {
+  flex: 0 1 auto; /* растёт только до содержимого; под давлением дефицита — сжимается */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-  .filter-section--categories :deep(.categories-list) {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-primary) var(--color-base-300);
-  }
+.filter-section--categories :deep(.product-categories) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-  .filter-section--categories :deep(.categories-list::-webkit-scrollbar) {
-    width: 6px;
-  }
+.filter-section--categories :deep(.categories-list) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-base-300);
+}
 
-  .filter-section--categories :deep(.categories-list::-webkit-scrollbar-track) {
-    background: var(--color-base-300);
-    border-radius: 3px;
-  }
+.filter-section--categories :deep(.categories-list::-webkit-scrollbar) {
+  width: 6px;
+}
 
-  .filter-section--categories :deep(.categories-list::-webkit-scrollbar-thumb) {
-    background: var(--color-primary);
-    border-radius: 3px;
-  }
+.filter-section--categories :deep(.categories-list::-webkit-scrollbar-track) {
+  background: var(--color-base-300);
+  border-radius: 3px;
+}
 
-  .filter-section--specs {
-    flex-grow: 1;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
+.filter-section--categories :deep(.categories-list::-webkit-scrollbar-thumb) {
+  background: var(--color-primary);
+  border-radius: 3px;
+}
+
+.filter-section--specs {
+  flex-grow: 1; /* забирает всю пустоту панели ПОСЛЕ разворота категорий */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .vertical-layout::-webkit-scrollbar {
