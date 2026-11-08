@@ -877,12 +877,12 @@
       "editTitle": "Editar producto",
       "addTitle": "Añadir producto",
       "optionalHint": "Opcional: sin traducción se muestra el ruso",
-      "nameLabel": "Nombre *",
+      "nameLabel": "Nombre",
       "namePlaceholder": "Nombre",
-      "categoriesLabel": "Categorías *",
+      "categoriesLabel": "Categorías",
       "categoriesPlaceholder": "Elige o introduce una nueva",
       "categoriesRequired": "Especifica al menos una categoría",
-      "priceLabel": "Precio *",
+      "priceLabel": "Precio",
       "qtyLabel": "Cant.",
       "descriptionLabel": "Descripción ({lang})",
       "inStock": "En stock",
@@ -906,13 +906,16 @@
       },
       "priceValidation": {
         "required": "Obligatorio",
-        "negative": "No puede ser negativa"
+        "negative": "No puede ser negativa",
+        "zero": "Debe ser mayor que cero"
       },
       "oldPriceLabel": "Precio antes del descuento",
       "oldPriceValidation": {
         "belowPrice": "Debe ser superior al precio actual"
       },
-      "descriptionPlaceholder": "Descripción del producto"
+      "descriptionPlaceholder": "Descripción del producto",
+      "fillRequired": "Completa los campos marcados: {fields}",
+      "baseTabHint": "El nombre base obligatorio está en la pestaña «{tab}» → cambiar"
     },
     "categoryPicker": {
       "placeholder": "Empieza a escribir o pega separado por comas",

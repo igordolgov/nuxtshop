@@ -20,7 +20,10 @@
 
     h3.text-base.font-bold.mb-2(class="sm:text-xl") {{ $t('admin.productForm.addTitle') }}
 
-    form(@submit.prevent="handleSubmit")
+    //- novalidate: браузерные тултипы (язык ОС) заменяем своей валидацией
+    //- с подсказками на языке витрины — на кубинской копии браузер может
+    //- быть нерусским, а сообщения должны быть понятны менеджеру
+    form(@submit.prevent="handleSubmit" novalidate)
       //- Языковые вкладки: порядок из store.config (STORE_ADMIN_LANG_TABS) —
       //- язык витрины магазина первым (RU-магазин Русский→English→Español,
       //- кубинская копия Español→English→Русский). RU — базовый контент
@@ -43,7 +46,11 @@
         template(v-if="langTab === 'ru'")
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs {{ $t('admin.productForm.nameLabel') }}
+              //- Обязательное поле — красная звёздочка (лейбл без «*»,
+              //- звезда — отдельным элементом с text-error)
+              span.label-text.text-xs
+                | {{ $t('admin.productForm.nameLabel') }}
+                span(class="text-error ml-0.5" aria-hidden="true") *
             input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="form.name"
@@ -59,7 +66,9 @@
           //- Категории — обязательное поле, мультвыбор с подсказками
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs {{ $t('admin.productForm.categoriesLabel') }}
+              span.label-text.text-xs
+                | {{ $t('admin.productForm.categoriesLabel') }}
+                span(class="text-error ml-0.5" aria-hidden="true") *
             AdminCategoryPicker(
               v-model="form.categories"
               :allCategories="props.allCategories"
@@ -80,6 +89,14 @@
               placeholder="Product name in English"
               :disabled="isSubmitting"
             )
+            //- Базовое имя обязательно (RU-вкладка): на копии с другим
+            //- первым языком оно вне экрана — подсказка ведёт на нужную
+            p.text-xs.mt-1(v-if="!form.name?.trim()")
+              button.link.link-warning.text-xs(
+                type="button"
+                :disabled="isSubmitting"
+                @click="langTab = 'ru'"
+              ) {{ $t('admin.productForm.baseTabHint', { tab: baseTabLabel }) }}
 
           .form-control(class="sm:col-span-2")
             label.label.py-1
@@ -102,6 +119,13 @@
               placeholder="Nombre del producto en español"
               :disabled="isSubmitting"
             )
+            //- Базовое имя обязательно (RU-вкладка) — см. вкладку EN
+            p.text-xs.mt-1(v-if="!form.name?.trim()")
+              button.link.link-warning.text-xs(
+                type="button"
+                :disabled="isSubmitting"
+                @click="langTab = 'ru'"
+              ) {{ $t('admin.productForm.baseTabHint', { tab: baseTabLabel }) }}
 
           .form-control(class="sm:col-span-2")
             label.label.py-1
@@ -117,12 +141,14 @@
         //- Цена
         .form-control(class="sm:col-span-1")
           label.label.py-1
-            span.label-text.text-xs {{ $t('admin.productForm.priceLabel') }}
+            span.label-text.text-xs
+              | {{ $t('admin.productForm.priceLabel') }}
+              span(class="text-error ml-0.5" aria-hidden="true") *
           input.input.input-bordered.input-sm.w-full(
             type="number"
             v-model.number="form.price"
             required
-            placeholder="0"
+            placeholder="1"
             min="0"
             step="0.01"
             :disabled="isSubmitting"
@@ -347,9 +373,12 @@
           @click="handleCancel"
           :disabled="isSubmitting"
         ) {{ $t('admin.common.cancel') }}
+        //- Без !isFormValid в :disabled: мёртвая кнопка без объяснений —
+        //- причина «невозможно добавить». Клик по невалидной форме сам
+        //- покажет подсказки (handleSubmit валидирует до отправки)
         button.btn.btn-primary.btn-sm(
           type="submit"
-          :disabled="isSubmitting || !isFormValid"
+          :disabled="isSubmitting"
         )
           span.loading.loading-spinner.loading-xs.mr-1(v-if="isSubmitting")
           span(v-if="isSubmitting") {{ $t('admin.common.saving') }}
@@ -388,6 +417,11 @@ const MAX_GALLERY_IMAGES = 5
 //- Языковые вкладки: порядок из store.config (язык витрины магазина —
 //- первым); RU — базовый контент, EN/ES — переводы
 const { langTabs, langTab, langLabel } = useAdminLangTabs()
+
+//- Подпись базовой (русской) вкладки — для подсказки на переводных
+//- вкладках: ru — базовый контент при ЛЮБОМ порядке вкладок (кубинская
+//- копия начинается с Español, а обязательное имя — на вкладке «Русский»)
+const baseTabLabel = langTabs.find((tab) => tab.code === 'ru')?.label || 'Русский'
 
 //- Подсказки пикера категорий: на базовой вкладке — сырые значения,
 //- на en/es — переводы из карт (непереведённые остаются сырыми)
@@ -445,7 +479,10 @@ const errors = ref({ name: '', price: '', oldPrice: '', categories: '' })
 const form = ref({
   name: '',
   description: '',
-  price: null,
+  // Дефолт 1 (отзыв «цену поставь по умолчанию 1»): сервер (POST
+  // /api/products) отклоняет пустоту и ноль — null делал кнопку
+  // «Добавить» молча неактивной
+  price: 1,
   // «Цена до скидки» для витринного бейджа −%; пусто — без скидки
   oldPrice: null,
   categories: [],
@@ -472,19 +509,28 @@ watch(
   { deep: true },
 )
 
-//- Цена изменилась — перепроверяем уже показанную ошибку oldPrice
-//- (условие «oldPrice > price» могло стать выполненным/нарушенным)
+// Цена изменилась — перепроверяем уже показанные ошибки (условия
+// «цена > 0» и «oldPrice > price» могли стать выполненными/нарушенными)
 watch(
   () => form.value.price,
   () => {
+    if (errors.value.price) validateField('price')
     if (errors.value.oldPrice) validateField('oldPrice')
+  },
+)
+
+//- Название правится — снимаем уже показанную ошибку на лету
+watch(
+  () => form.value.name,
+  () => {
+    if (errors.value.name) validateField('name')
   },
 )
 
 const isFormValid = computed(() => {
   const hasName = form.value.name?.trim().length > 0
   const hasValidPrice =
-    form.value.price !== null && form.value.price !== undefined && form.value.price >= 0
+    form.value.price !== null && form.value.price !== undefined && form.value.price > 0
   const hasCategories = form.value.categories.length > 0
   const noErrors =
     !errors.value.name && !errors.value.price && !errors.value.oldPrice && !errors.value.categories
@@ -504,9 +550,16 @@ const validateField = (field) => {
       else errors.value.name = ''
       break
     case 'price':
-      if (form.value.price === null || form.value.price === undefined)
+      // Согласовано с сервером (POST /api/products отклоняет пустоту и
+      // ноль). Пустая строка — очищенный number-инпут (v-model.number)
+      if (
+        form.value.price === null ||
+        form.value.price === undefined ||
+        form.value.price === ''
+      )
         errors.value.price = t('admin.productForm.priceValidation.required')
-      else if (form.value.price < 0) errors.value.price = t('admin.productForm.priceValidation.negative')
+      else if (Number.isNaN(Number(form.value.price)) || form.value.price <= 0)
+        errors.value.price = t('admin.productForm.priceValidation.zero')
       else errors.value.price = ''
       break
     case 'oldPrice':
@@ -675,7 +728,23 @@ const handleSubmit = async () => {
   validateField('oldPrice')
   validateField('categories')
 
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    //- Подсказки к незаполненному (отзыв: «добавь подсказки если что-то
+    //- не заполнено»): сводка списком + красные рамки полей + фокус на
+    //- первое ошибочное. Кнопка больше не мёртвая — сама валидирует.
+    const missing = []
+    if (errors.value.name) missing.push(t('admin.productForm.nameLabel'))
+    if (errors.value.price) missing.push(t('admin.productForm.priceLabel'))
+    if (errors.value.oldPrice) missing.push(t('admin.productForm.oldPriceLabel'))
+    if (errors.value.categories) missing.push(t('admin.productForm.categoriesLabel'))
+    formError.value = t('admin.productForm.fillRequired', { fields: missing.join(', ') })
+    //- Имя — базовое поле RU-вкладки: на копии с другим первым языком
+    //- (кубинская — Español) оно вне экрана — сами открываем нужную
+    if (errors.value.name && langTab.value !== 'ru') langTab.value = 'ru'
+    await nextTick()
+    document.querySelector('.modal-open .input-error')?.focus()
+    return
+  }
   if (hasTooManyGalleryImages.value) {
     formError.value = t('admin.productForm.maxImages', { n: MAX_GALLERY_IMAGES })
     return
@@ -752,7 +821,7 @@ const resetForm = () => {
   form.value = {
     name: '',
     description: '',
-    price: null,
+    price: 1,
     categories: [],
     nameEn: '',
     nameEs: '',
@@ -765,7 +834,7 @@ const resetForm = () => {
     inStock: true,
     stockQuantity: 0,
   }
-  errors.value = { name: '', price: '', categories: '' }
+  errors.value = { name: '', price: '', oldPrice: '', categories: '' }
   langTab.value = langTabs[0].code
   if (mainImageInput.value) mainImageInput.value.value = ''
   if (galleryInput.value) galleryInput.value.value = ''

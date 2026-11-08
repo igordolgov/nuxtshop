@@ -877,12 +877,12 @@
       "editTitle": "Редактировать товар",
       "addTitle": "Добавить товар",
       "optionalHint": "Необязательно — без перевода показывается русский",
-      "nameLabel": "Название *",
+      "nameLabel": "Название",
       "namePlaceholder": "Название",
-      "categoriesLabel": "Категории *",
+      "categoriesLabel": "Категории",
       "categoriesPlaceholder": "Выбрать или ввести новую",
       "categoriesRequired": "Укажите хотя бы одну категорию",
-      "priceLabel": "Цена *",
+      "priceLabel": "Цена",
       "qtyLabel": "Кол-во",
       "descriptionLabel": "Описание ({lang})",
       "inStock": "В наличии",
@@ -906,13 +906,16 @@
       },
       "priceValidation": {
         "required": "Обязательно",
-        "negative": "Не может быть отрицательной"
+        "negative": "Не может быть отрицательной",
+        "zero": "Должна быть больше нуля"
       },
       "oldPriceLabel": "Цена до скидки",
       "oldPriceValidation": {
         "belowPrice": "Должна быть выше текущей цены"
       },
-      "descriptionPlaceholder": "Описание товара"
+      "descriptionPlaceholder": "Описание товара",
+      "fillRequired": "Заполните выделенные поля: {fields}",
+      "baseTabHint": "Обязательное базовое название — на вкладке «{tab}» → перейти"
     },
     "categoryPicker": {
       "placeholder": "Начните вводить или вставьте через запятую",

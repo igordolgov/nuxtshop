@@ -38,7 +38,9 @@
         template(v-if="langTab === 'ru'")
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs {{ $t('admin.productForm.nameLabel') }}
+              span.label-text.text-xs
+                | {{ $t('admin.productForm.nameLabel') }}
+                span(class="text-error ml-0.5" aria-hidden="true") *
             input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="form.name"
@@ -50,7 +52,9 @@
           //- Категории — обязательное поле, мультвыбор с подсказками
           .form-control(class="sm:col-span-2")
             label.label.py-1
-              span.label-text.text-xs {{ $t('admin.productForm.categoriesLabel') }}
+              span.label-text.text-xs
+                | {{ $t('admin.productForm.categoriesLabel') }}
+                span(class="text-error ml-0.5" aria-hidden="true") *
             AdminCategoryPicker(
               v-model="form.categories"
               :allCategories="props.allCategories || []"
@@ -108,7 +112,9 @@
         //- Цена
         .form-control(class="sm:col-span-1")
           label.label.py-1
-            span.label-text.text-xs {{ $t('admin.productForm.priceLabel') }}
+            span.label-text.text-xs
+              | {{ $t('admin.productForm.priceLabel') }}
+              span(class="text-error ml-0.5" aria-hidden="true") *
           input.input.input-bordered.input-sm.w-full(
             type="number"
             v-model.number="form.price"
