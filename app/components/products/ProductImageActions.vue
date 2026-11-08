@@ -125,10 +125,13 @@ const shareProduct = async () => {
   justify-content: center;
   border-radius: 9999px;
   /* Белый полупрозрачный круг + блюр: читаем на любом фото (WB/Ozon),
-    тень отделяет от светлых участков снимка; на тёмной теме — тот же
-    белый: фон кнопки = фото, а не тема */
+    тень отделяет от светлых участков снимка; фон кнопки = фото, а не тема.
+    Цвет иконки ФИКСИРОВАННЫЙ тёмный, НЕ var(--color-base-content):
+    в тёмной теме business base-content светлый (oklch 84.9%) и сливался
+    с белым кругом (отзыв «иконки не видны»). Значение = base-content
+    corporate — светлая тема выглядит как раньше, тёмная теперь тоже. */
   background-color: rgb(255 255 255 / 0.9);
-  color: var(--color-base-content);
+  color: oklch(22.389% 0.031 278.072);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
