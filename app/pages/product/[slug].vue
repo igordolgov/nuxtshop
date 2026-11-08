@@ -153,10 +153,19 @@
           stroke-width="2"
         )
           path(stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7")
-        span
+        span.flex.flex-col.items-center.leading-tight
           span(v-if="isInCart(product.id, selectedVariantId)") {{ $t('product.alreadyInCart') }}
           span(v-else-if="selectedStock.inStock") {{ $t('product.addWithPrice', { price: formatMoney(variantPrice(product, selectedVariant)) }) }}
           span(v-else) {{ $t('product.soldOut') }}
+          //- Эквивалент цены в песо по курсу elTOQUE (кубинская копия; RU
+          //-  скрыт флагом SHOW_CUP_EQUIVALENT): мелкая строка под ценой —
+          //-  как под ценой карточки. Приходит после клиентского fetch
+          //-  /api/rates: до этого кнопка однострочная, высота не меняется.
+          //-  «Уже в корзине»/«закончился» — цены нет, строки CUP тоже
+          span.text-xs.font-normal.opacity-80(
+            v-if="selectedStock.inStock && !isInCart(product.id, selectedVariantId) && selectedCupLine"
+            :title="cupUpdatedAt || undefined"
+          ) {{ selectedCupLine }}
 
   //- Футер SSR-рендерится сам (CSS прячет на десктопе ≥768px):
   //- ClientOnly задерживал его до гидратации
@@ -344,6 +353,19 @@ const isInCart = (productId, variantId = null) => {
 // formatPrice — единый из useProductUtils; в строку кнопки «В корзину»
 // валюта добавляется рядом с параметром локали (аудит F13)
 const { formatMoney, formatPrice } = useProductUtils()
+
+// ─── Эквивалент цены в CUP по курсу elTOQUE (кубинская копия) ────────
+// cupFor сам проверяет флаг SHOW_CUP_EQUIVALENT и валидность ставки:
+// RU-витрина и «ставка не доехала» → null, строка в кнопке не рендерится.
+// Ставку тянет тот же клиентский fetch /api/rates, что и ProductInfo
+// (useState шарит ответ; in-flight guard в useCupRate не даёт двух fetch)
+const { cupFor, rateUpdatedAt: cupUpdatedAt } = useCupRate()
+
+// Цена выбранного варианта в песо ('≈ 21 900 CUP'): пересчитывается при
+// смене варианта — в нижней кнопке всегда курс текущего варианта
+const selectedCupLine = computed(() =>
+  cupFor(variantPrice(product.value, selectedVariant.value)),
+)
 
 const toggleFavorite = () => {
   if (!product.value) return

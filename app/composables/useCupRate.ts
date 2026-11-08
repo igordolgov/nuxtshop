@@ -12,18 +12,33 @@
 import { SHOW_CUP_EQUIVALENT } from '../../store.config';
 import { formatCupAmount, type RatesResponse } from '#shared/cupRates';
 
+// Один fetch на страницу, даже если useCupRate() вызван из нескольких
+// компонентов: на карточке товара его зовут И ProductInfo (строка под
+// ценой), И страница (нижняя кнопка «В корзину») — оба смонтируются
+// с параллельными onMounted. Без guard — два /api/rates подряд.
+// inflight — НА УРОВНЕ МОДУЛЯ: объявленный внутри композабла он свой
+// у каждого экземпляра и ничего не дедуплицирует (проверено счётчиком
+// на роуте: 2 хита вместо 1).
+let inflight: Promise<void> | null = null;
+
 export const useCupRate = () => {
   const payload = useState<RatesResponse | null>('cup-rate', () => null);
 
   const load = async (): Promise<void> => {
     if (!SHOW_CUP_EQUIVALENT || payload.value?.available) return;
-    try {
-      const res = await $fetch<RatesResponse>('/api/rates');
-      if (res?.available) payload.value = res;
-    } catch {
-      // Курс недоступен (оффлайн/сбой) — тихо живём без строки CUP;
-      // повторная попытка — на следующей навигации
-    }
+    if (inflight) return inflight;
+    inflight = (async () => {
+      try {
+        const res = await $fetch<RatesResponse>('/api/rates');
+        if (res?.available) payload.value = res;
+      } catch {
+        // Курс недоступен (оффлайн/сбой) — тихо живём без строки CUP;
+        // повторная попытка — на следующей навигации
+      } finally {
+        inflight = null;
+      }
+    })();
+    return inflight;
   };
 
   if (SHOW_CUP_EQUIVALENT && import.meta.client) {
