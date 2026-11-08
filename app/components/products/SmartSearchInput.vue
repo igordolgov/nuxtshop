@@ -122,7 +122,15 @@ const props = defineProps({
   totalResults: { type: Number, default: 0 },
   activeSuggestionIndex: { type: Number, default: -1 },
   isActive: { type: Boolean, default: false },
-  products: { type: Array, default: () => [] }
+  products: { type: Array, default: () => [] },
+  // Полноэкранный оверлей (ProductSearchOverlay): клик-аутсайд там бессмыслен
+  // (весь экран — контейнер поиска), а без запрета он УБИВАЛ панель сразу
+  // после открытия: клик по иконке поиска всплывает до document уже ПОСЛЕ
+  // монтирования оверлея (Vue синхронно флешит рендер в микротаске между
+  // слушателями клика), свежесмонтированный компонент считает этот клик
+  // «мимо поля» и сбрасывает фокусные флаги — подсказки при вводе не
+  // появлялись вовсе (дом-фокус был, панель — мертва)
+  disableClickOutside: { type: Boolean, default: false }
 })
 
 //- ============================================
@@ -355,6 +363,7 @@ const getHighlightedText = (text) => {
 }
 
 const handleClickOutside = (event) => {
+  if (props.disableClickOutside) return
   if (searchContainer.value && !searchContainer.value.contains(event.target)) {
     isInputFocused.value = false
     clearTimeout(closePanelTimer)

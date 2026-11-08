@@ -186,6 +186,44 @@ const showSkeleton = computed(
 //- ============================================
 const setSearchQuery = (query) => appState.setSearchQuery(query)
 
+//- ============================================
+//- ?search= в адресной строке — источник истины поиска на главной.
+//- Раньше запрос жил только в глобальном state: любая перезагрузка
+//- /?search=… (шеринг карточки поиска, «Назад» с карточки товара,
+//- повторное открытие вкладки) показывала главную БЕЗ запроса — строка
+//- поиска пуста, сетка не отфильтрована («строка поиска исчезла»).
+//- Два наблюдения закольцованы с защитой от лишних обновлений:
+//- URL → state (заход/возврат/восстановление) и state → URL
+//- (печать/Enter/сброс отражаются в адресе через replace — без
+//- раздувания истории, как на маркетплейсах).
+//- ============================================
+const isHomePage = computed(() => route.path === localePath('/'))
+
+const urlSearchQuery = () =>
+  typeof route.query.search === 'string' ? route.query.search : ''
+
+//- URL → state: восстановление запроса при заходе на главную
+watch(
+  () => urlSearchQuery(),
+  (fromUrl) => {
+    if (!isHomePage.value) return
+    if ((appState.search?.query?.value ?? '') !== fromUrl) {
+      appState.setSearchQuery(fromUrl)
+    }
+  },
+  { immediate: true },
+)
+
+//- state → URL: поиск на главной всегда читаем из адресной строки
+watch(
+  () => appState.search?.query?.value ?? '',
+  (q) => {
+    if (!import.meta.client || !isHomePage.value) return
+    if (q === urlSearchQuery()) return
+    router.replace({ query: { ...route.query, search: q || undefined } })
+  },
+)
+
 const performSearch = () => appState.search?.performSearch?.()
 
 const resetSearch = () => appState.search?.resetSearch?.()

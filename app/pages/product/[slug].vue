@@ -9,10 +9,12 @@
   //- чем на телефоне (раньше sm:hidden прятал их от 640px — аудит F10).
   //- Категория — текстовая крошка (не ссылка): фильтры каталога живут
   //- в локальном состоянии панелей, честная ссылка на неё невозможна.
+  //- Компактная высота (min-h-8/pt-1): под крошками сразу главная галерея —
+  //- каждый лишний пиксель здесь сдвигает фото вниз («галерею поднять»)
   .breadcrumbs-bar.sticky.bg-base-100.border-b.border-base-200.shadow-sm
-    .container.min-h-10.mx-auto.px-2
+    .container.min-h-8.mx-auto.px-2
       nav(:aria-label="$t('catalog.breadcrumbs')")
-        .breadcrumbs.pt-2.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
+        .breadcrumbs.pt-1.pb-1.text-sm.overflow-x-auto.whitespace-nowrap
           ul.flex
             li
               NuxtLink.link.link-hover(:to="$localePath('/')" prefetch) {{ $t('nav.home') }}

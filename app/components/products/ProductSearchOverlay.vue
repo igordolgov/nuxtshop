@@ -25,6 +25,7 @@ Teleport(to="body")
           SmartSearchInput(
             :products="allProducts"
             :isActive="true"
+            :disableClickOutside="true"
             :searchQuery="searchQuery"
             :isSearching="isSearching"
             :showSuggestions="showSuggestions"

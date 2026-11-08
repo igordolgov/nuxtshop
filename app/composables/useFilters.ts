@@ -171,7 +171,7 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     }
   };
 
-  const resetFilters = (): void => {
+  const resetCatalogFilters = (): void => {
     filters.value = {
       categories: [],
       onlyInStock: false,
@@ -179,6 +179,10 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
       priceRange: { min: null, max: null },
       specs: {},
     };
+  };
+
+  const resetFilters = (): void => {
+    resetCatalogFilters();
     searchQuery.value = '';
   };
 
@@ -202,6 +206,7 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     handleFiltersUpdate,
     handleSortUpdate,
     resetFilters,
+    resetCatalogFilters,
     resetAll,
   };
 };

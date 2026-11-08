@@ -298,11 +298,20 @@ function createAppState() {
     }
   });
 
-  watch(searchQuery, (newQuery) => {
-    if (newQuery !== filters.searchQuery.value) {
-      filters.handleSearchUpdate(newQuery);
-    }
-  });
+  // Глобальный запрос → фильтр каталога. immediate: при гидратации
+  // useState поднимается из payload (например, восстановленный из
+  // ?search= запрос) — внутренний ref фильтра стартует с '' и без
+  // этой синхронизации сетка рендерится без фильтра (расходится
+  // с SSR-HTML и с заполненным полем поиска в шапке)
+  watch(
+    searchQuery,
+    (newQuery) => {
+      if (newQuery !== filters.searchQuery.value) {
+        filters.handleSearchUpdate(newQuery);
+      }
+    },
+    { immediate: true },
+  );
 
   // ─── Инициализация ───────────────────────────────────────
   async function initializeApp(): Promise<void> {
@@ -318,7 +327,10 @@ function createAppState() {
       }
 
       await auth.checkAuth();
-      filters.resetFilters();
+      // Каталогные фильтры — в исходное, поиск НЕ трогаем: здесь мог
+      // быть уже восстановленный из ?search= запрос (index.vue), и
+      // resetFilters() затирал его в сетке при заполненном поле
+      filters.resetCatalogFilters();
     } catch (err) {
       // error из useProducts — computed без сеттера: присваивание ниже
       // сохранено как в оригинале (no-op c dev-варнингом Vue)
