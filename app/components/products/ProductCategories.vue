@@ -2,12 +2,12 @@
     чипы с подсветкой поиска. Список разворачивается ПО МАКСИМУМУ
     (без жёсткого лимита «первые 10 + Ещё N»: у сайдбара/панели есть
     свободная высота — чипы занимают её сами). Если развёрнутый список
-    не помещается — секция сжимается, список скроллится внутри
-    (постоянную синюю рельсу задаёт AppScrollArea: нативная полоса на
-    мобильных/новых Chrome исчезает при простое и наезжает на чипы). -->
+    не помещается — на десктопе секция сжимается и список скроллится
+    внутри (постоянную синюю рельсу задаёт AppScrollArea); на мобильном
+    (flow) список растекается в единый плоский скролл панели. -->
 <template lang="pug">
 .product-categories.pb-2(class="lg:mr-3")
-  .section-header.flex.items-center.justify-between.mb-1.bg-base-100.sticky.-top-2.h-8.z-10
+  .section-header.flex.items-center.justify-between.mb-1.bg-base-100.sticky.top-0.h-8.z-10
     h4.section-title.text-sm.pb-0.min-h-6.text-base-content {{ $t('catalog.categories') }}
     .flex.items-center.gap-2
       button.btn.btn-xs.btn-primary(
@@ -23,7 +23,7 @@
   //- «первые 10 + Ещё N» удалён): переполнение гасит внутренний
   //- скролл списка с постоянной синей рельсой (AppScrollArea),
   //- а не кнопка «Ещё N»
-  AppScrollArea.categories-scroll(contentClass="flex flex-wrap gap-1 p-0")
+  AppScrollArea.categories-scroll(:flow="flow" contentClass="flex flex-wrap gap-1 p-0")
     template(v-if="availableCategories.length > 0")
       label.category-item.cursor-pointer.inline-flex.items-center.transition-all.duration-200.px-2.rounded-full.border.text-xs.font-medium(
         v-for="category in availableCategories"
@@ -48,7 +48,10 @@
 const props = defineProps({
   searchQuery: { type: String, default: '' },
   categories: { type: Array, default: () => [] },
-  selectedCategories: { type: Array, default: () => [] }
+  selectedCategories: { type: Array, default: () => [] },
+  //- Flow-режим (мобильная панель): список без своего скролла —
+  //- растекается в единый плоский скролл панели
+  flow: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:selectedCategories'])

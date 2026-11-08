@@ -3,8 +3,10 @@
      чипами значений и счётчиками; длинные списки ЗНАЧЕНИЙ внутри группы
      сворачиваются кнопкой с числом «Ещё {n}» — на тач-экранах иначе
      непонятно, есть ли ещё ниже. Сами ГРУППЫ лимита больше не имеют
-     («первые 4 + Показать ещё» удалено): рендерятся все, переполнение
-     гасит внутренний скролл списка. Скроллбар — рельса AppScrollArea:
+     («первые 4 + Показать ещё» удалено): рендерятся все. На десктопе
+     переполнение гасит внутренний скролл списка; на мобильном (flow)
+     список растекается в единый плоский скролл панели — вложенные
+     скролл-окна на таче «зависают». Скроллбар — рельса AppScrollArea:
      видна ВСЕГДА, пока список не помещается (нативная полоса на
      мобильных/новых Chrome исчезает при простое и наезжает на шевроны
      групп и кнопки «Ещё N»), и не перекрывает контент — зона под неё
@@ -18,7 +20,10 @@
      панель фильтров). -->
 <template lang="pug">
 .product-spec-filters
-  .section-header.flex.items-center.justify-between.min-h-7
+  //- Шапка липнет к верху скролла (bg — чипы не просвечивают под ней):
+  //- при длинном списке понятно, чья это группа. На десктопе секция и
+  //- так не скроллится под шапкой — sticky там нейтрален
+  .section-header.flex.items-center.justify-between.min-h-7.sticky.top-0.z-10.bg-base-100
     h4.section-title.text-sm.pb-0.min-h-6.text-base-content {{ $t('catalog.specFilters') }}
     button.btn.btn-ghost.btn-xs.gap-1.rounded-lg(
       v-if="selectedCount > 0"
@@ -30,11 +35,12 @@
       | {{ $t('catalog.reset') }}
 
   //- Все группы сразу (авто-разворот по максимуму — лимит «первые 4 +
-  //- Показать ещё» удалён): переполнение гасит внутренний скролл
-  //- списка с постоянной синей рельсой (AppScrollArea), а не кнопка.
+  //- Показать ещё» удалён): на десктопе переполнение гасит внутренний
+  //- скролл списка с постоянной синей рельсой (AppScrollArea), на
+  //- мобильном (flow) список растекается в плоский скролл панели.
   //- Значения — лениво, только у ОТКРЫТОЙ группы (группы с выбранными
   //- значениями открываются сами — isOpen)
-  AppScrollArea.spec-groups(v-if="groups.length > 0")
+  AppScrollArea.spec-groups(:flow="flow" v-if="groups.length > 0")
     details.spec-group(
       v-for="group in groups"
       :key="group.label"
@@ -42,7 +48,7 @@
       @toggle="onToggle(group, $event)"
     )
       summary.spec-summary.flex.items-center.justify-between.cursor-pointer.text-sm.font-medium.text-base-content(
-        class="py-1.5 select-none gap-2"
+        class="py-2 select-none gap-2 md:py-1.5"
       )
         span.truncate.min-w-0 {{ specLabel(group.label) }}
         span.inline-flex.items-center.flex-shrink-0(class="gap-1.5")
@@ -119,6 +125,9 @@
 const props = defineProps({
   facets: { type: Array, default: () => [] },
   selected: { type: Object, default: () => ({}) },
+  //- Flow-режим (мобильная панель): список групп без своего скролла —
+  //- растекается в единый плоский скролл панели
+  flow: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:selected'])

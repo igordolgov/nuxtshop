@@ -13,11 +13,19 @@
      — pointer-events: none, только индикатор. Позиция и размер thumb
      обновляются на scroll и ResizeObserver (вьюпорт + контент: фасеты,
      локаль и шрифты меняют высоту списка уже после монтирования).
-     Используется: ProductFilter (.vertical-layout — фолбэк-скролл тела),
-     ProductCategories (.categories-scroll), ProductSpecFilters
-     (.spec-groups). -->
+     ПРОП flow — «прозрачный» режим для ВЛОЖЕННЫХ областей мобильной
+     панели: она сама не скроллит (вьюпорт без overflow, контент своей
+     высоты, рельса скрыта — переполнения нет), список растекается, а
+     скроллит единственный родительский скролл. Вложенные скролл-окна
+     на тач-экране «зависают»: свайп умирает на границе окна, свайпы
+     вне окна не скроллят ничего — серьёзные сайты держат один плоский
+     скролл. Используется: ProductFilter (.vertical-layout — фолбэк-
+     скролл тела на десктопе), ProductCategories, ProductSpecFilters,
+     MobileFiltersPanel (единый скролл тела мобильной панели). -->
 <template lang="pug">
-.app-scroll-area(:class="{ 'app-scroll-area--scrollable': scrollable }")
+.app-scroll-area(
+  :class="{ 'app-scroll-area--scrollable': scrollable, 'app-scroll-area--flow': flow }"
+)
   .app-scroll-area__viewport(
     ref="viewport"
     @scroll.passive="update"
@@ -68,6 +76,33 @@
   height: 100%;
 }
 
+/* ── Flow-режим (prop flow): вложенная область НЕ скроллит сама ──
+   Вьюпорт прозрачен (без overflow и без зоны рельсы), контент —
+   своей высоты; рельса скрыта автоматически (переполнения нет).
+   Нужен, когда скролл живёт в родителе — единственный плоский
+   скролл мобильной панели (вложенные окна на таче зависают) */
+.app-scroll-area--flow {
+  width: 100%;
+}
+
+.app-scroll-area--flow .app-scroll-area__viewport {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.app-scroll-area--flow .app-scroll-area__content {
+  height: auto;
+}
+
+/* Рельса в flow не нужна вовсе (скроллит родитель) и прячется жёстко:
+   в транзитных состояниях раскладки scrollHeight может на миг
+   отличаться от clientHeight — без display:none рельса-призрак
+   оставалась бы видимой в середине панели */
+.app-scroll-area--flow .app-scroll-area__rail {
+  display: none;
+}
+
 /* Рельса: трек во всю высоту вьюпорта с отступом RAIL_INSET (3px,
    синхронно с константой в script) */
 .app-scroll-area__rail {
@@ -109,6 +144,9 @@ const props = defineProps({
   //- Классы для обёртки контента (раскладка списка: flex-wrap у чипов,
   //- flex-col + gap у секций тела фильтров)
   contentClass: { type: String, default: '' },
+  //- Flow-режим: область сама не скроллит (вложенная в единый скролл
+  //- мобильной панели) — вьюпорт прозрачен, рельса скрыта
+  flow: { type: Boolean, default: false },
 })
 
 const viewport = ref(null)

@@ -2,8 +2,13 @@
     ПОЛНЫЙ ЭКРАН (по требованию пользователя; раньше был bottom-sheet
     88dvh): шапка + скроллящееся тело + подвал с кнопкой «Показать N».
     Канонический паттерн маркетплейсов — фильтры отдельной «страницей».
-    ⚠️ Панель — flex-колонка на всю высоту: тело (.filters-content)
-    получает остаток высоты и скроллится, шапка/подвал зафиксированы. -->
+    ТЕЛО — ЕДИНСТВЕННЫЙ ПЛОСКИЙ СКРОЛЛ (AppScrollArea с постоянной
+    синей рельсой): цена, категории, характеристики растекаются одной
+    лентой (ProductFilter flow), БЕЗ вложенных скролл-окон — на таче
+    они «зависают»: свайп умирает на границе вложенного окна, а свайпы
+    вне окна не скроллят ничего. ⚠️ Панель — flex-колонка на всю
+    высоту: тело получает остаток высоты и скроллится, шапка/подвал
+    зафиксированы. -->
 <template lang="pug">
 .mobile-filters-wrapper(class="md:hidden")
   .mobile-filters-overlay(@click="handleClose")
@@ -33,13 +38,13 @@
         svg.w-5.h-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor")
           path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12")
 
-    //- Тело: ProductFilter (цена, категории, характеристики).
-    //- Единственный скроллящийся регион панели; быстрый фильтр
-    //- «В наличии» вынесен в закреплённый блок ниже
-    .filters-content(
-      class="bg-base-100 px-3 py-2"
-    )
+    //- Тело: ЕДИНСТВЕННЫЙ скроллящийся регион панели — один плоский
+    //- скролл (рельса — в AppScrollArea). ProductFilter в flow-режиме:
+    //- секции растекаются, переполнение гасит скролл здесь, а не окно
+    //- внутри. Быстрый фильтр «В наличии» — в закреплённом блоке ниже
+    AppScrollArea.filters-scroll(contentClass="px-3 py-2")
       ProductFilter(
+        :flow="true"
         :searchQuery="searchQuery"
         :categories="categories"
         :specFacets="specFacets"
@@ -97,9 +102,11 @@
 
 /* ── Панель: flex-колонка на ВЕСЬ экран ────────────────────────
    Высота ЗАДАНА (а не только max-height): внутри неё flex-1/min-h-0
-   тела дают определённый остаток, и .product-filter { height:100% }
-   не схлопывается в ноль. min(100dvh, 100%) — dvh отслеживает
-   динамический тулбар мобильных браузеров, 100% — fallback. */
+   тела дают определённый остаток, и скролл тела работает. Тело —
+   AppScrollArea (единый плоский скролл), ProductFilter в нём —
+   flow (своей высоты, растекается). min(100dvh, 100%) — dvh
+   отслеживает динамический тулбар мобильных браузеров, 100% —
+   fallback. */
 .mobile-filters-panel {
   position: relative;
   display: flex;
@@ -109,8 +116,12 @@
   width: 100%;
   background: var(--color-base-100);
   overflow: hidden;
-  /* Въезд снизу: только transform/opacity (правила экономии main.css) */
-  animation: sheet-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Въезд снизу: только transform/opacity (правила экономии main.css).
+     fill backwards (не both): после анимации transform возвращается в
+     none — панель не остаётся навсегда в GPU-слое с трансформом
+     (трансформированный предок — классическая причина фризов скролла
+     на iOS); конечный кадр совпадает с естественным состоянием */
+  animation: sheet-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @keyframes sheet-in {
@@ -124,33 +135,14 @@
   }
 }
 
-/* ── Тело: единственный скроллящийся регион ─────────────────── */
-.filters-content {
+/* ── Тело: единственный ПЛОСКИЙ скролл панели ──────────────
+   Без вложенных скролл-окон: на таче свайп внутри маленького окна
+   умирает на его границе, свайпы вне окна не скроллят ничего —
+   панель «зависает». Один скролл = предсказуемый свайп в любой
+   точке тела. Рельса (постоянная синяя полоса) — в AppScrollArea */
+.filters-scroll {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain; /* прокрутка не «протекает» в подложку */
-  -webkit-overflow-scrolling: touch;
-  /* Синий скроллбар ВСЕГДА виден, когда список не помещается:
-     scrollbar-color переключает Chrome/Android на постоянную
-     классическую полосу (вместо исчезающей overlay), webkit-правила
-     — для Safari и старых Chromium */
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--color-base-300);
-}
-
-.filters-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.filters-content::-webkit-scrollbar-track {
-  background: var(--color-base-300);
-  border-radius: 3px;
-}
-
-.filters-content::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border-radius: 3px;
 }
 
 /* ── Шапка и подвал: зафиксированы flex-колонкой ─────────────── */
