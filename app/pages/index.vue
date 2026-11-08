@@ -265,14 +265,19 @@ const resetFilters = async () => {
 }
 
 //- Снятие одного фильтра чипом из ProductSortBar.
-//- Характеристики приходят объектом { kind: 'spec', label } — лейбл/значение
-//- могут содержать «:», строковый ключ разбирать нельзя
+//- Характеристики приходят объектом { kind: 'spec-value', label, value } —
+//- лейбл/значение могут содержать «:», строковый ключ разбирать нельзя.
+//- Чип снимает ОДНО значение группы («Материал: Хлопок»), группа без
+//- значений удаляется целиком — раньше чип был один на группу со всеми
+//- значениями через запятую (одна нечитаемая строка на мобильном)
 const removeFilter = (key) => {
   const f = { ...filters.value }
 
-  if (typeof key === 'object' && key?.kind === 'spec') {
+  if (typeof key === 'object' && key?.kind === 'spec-value') {
     const specs = { ...f.specs }
-    delete specs[key.label]
+    const rest = (specs[key.label] ?? []).filter((v) => v !== key.value)
+    if (rest.length > 0) specs[key.label] = rest
+    else delete specs[key.label]
     f.specs = specs
   } else if (typeof key === 'string' && key.startsWith('cat:')) {
     const cat = key.slice(4)

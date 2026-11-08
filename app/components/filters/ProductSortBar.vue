@@ -1,9 +1,11 @@
 <!-- components/filters/ProductSortBar.vue — строка-пилюля над сеткой:
     [Фильтры (N)] [Сортировка ▾] [чипы активных…]. Паттерн WB/Ozon.
     Сортировка больше не внутри панели фильтров.
-    Чипы не влияют на ширину колонки товаров: длинные значения
-    фасетов («Материал: Алюминий с антипригарным покрытием») обрезаются
-    многоточием — полный текст в title и в группе сайдбара. -->
+    Чипы характеристик — один чип на ЗНАЧЕНИЕ группы: все значения,
+    склеенные в один чип («Материал: a, b, c…»), рендерились одной
+    нечитаемой строкой с многоточием. Чипы не влияют на ширину колонки
+    товаров: длинное значение («Материал: Алюминий с антипригарным
+    покрытием») обрезается многоточием — полный текст в title. -->
 <template lang="pug">
 .sort-bar.flex.items-center.gap-2.flex-wrap(
   class="py-1"
@@ -141,17 +143,23 @@ const activeChips = computed(() => {
   if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: t('product.inStock') })
   if (f.onlyFavorites) chips.push({ key: 'onlyFavorites', label: t('nav.favorites') })
 
-  //- Фасеты характеристик: один чип на лейбл, снятие убирает все его значения.
-  //- Ключ чипа строковый (для :key), НО наружу уходит объект { kind, label }:
+  //- Фасеты характеристик: один чип на ЗНАЧЕНИЕ группы (WB/Ozon).
+  //- Раньше значения группы склеивались в один чип «Материал: a, b, c…» —
+  //- при выборе всех материалов группы это одна нечитаемая строка с
+  //- многоточием, а снять точечно одно значение было нельзя.
+  //- Ключ чипа строковый (для :key), наружу уходит объект:
   //- лейбл/значение могут содержать «:», парсить строку нельзя
   if (f.specs && typeof f.specs === 'object') {
     for (const [label, values] of Object.entries(f.specs)) {
-      if (!Array.isArray(values) || values.length === 0) continue
-      chips.push({
-        key: `spec:${label}`,
-        specLabel: label,
-        label: `${specLabel(label)}: ${values.join(', ')}`,
-      })
+      if (!Array.isArray(values)) continue
+      for (const value of values) {
+        chips.push({
+          key: `spec:${label}:${value}`,
+          specLabel: label,
+          specValue: value,
+          label: `${specLabel(label)}: ${value}`,
+        })
+      }
     }
   }
 
@@ -159,7 +167,13 @@ const activeChips = computed(() => {
 })
 
 const removeChip = (chip) => {
-  emit('remove-filter', chip.specLabel ? { kind: 'spec', label: chip.specLabel } : chip.key)
+  //- Спец-чип снимает одно значение группы («Материал: Хлопок»);
+  //- строковый ключ — остальные фильтры (категория/цена/наличие)
+  if (chip.specValue !== undefined) {
+    emit('remove-filter', { kind: 'spec-value', label: chip.specLabel, value: chip.specValue })
+  } else {
+    emit('remove-filter', chip.key)
+  }
 }
 </script>
 
