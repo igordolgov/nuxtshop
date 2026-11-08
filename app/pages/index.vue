@@ -397,12 +397,16 @@ watch(showMobileFilters, updateBodyScroll)
 .content-area {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr), а не 1fr: 1fr = minmax(auto, 1fr) — широкий
+     неразрывный контент (чип фильтра, длинное слово) раздувал
+     минимальную ширину трека и сдвигал/растягивал колонку товаров.
+     minmax(0, 1fr) жёстко держит трек в пределах доступной ширины */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas: 'main';
   min-height: 0;
 
   @media (min-width: 1025px) {
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 300px minmax(0, 1fr);
     grid-template-areas: 'sidebar main';
     gap: 1rem;
     padding: 0 1rem;
@@ -411,7 +415,7 @@ watch(showMobileFilters, updateBodyScroll)
 
   /* Широким экранам — просторный сайдбар: фасеты с чипами читаются лучше */
   @media (min-width: 1280px) {
-    grid-template-columns: 330px 1fr;
+    grid-template-columns: 330px minmax(0, 1fr);
   }
 }
 
@@ -469,6 +473,9 @@ watch(showMobileFilters, updateBodyScroll)
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* flex/grid-элементы не сжимаются ниже min-content (min-width:auto):
+     без обнуления широкий чип фильтра растягивал колонку товаров */
+  min-width: 0;
   width: 100%;
 }
 

@@ -1,6 +1,9 @@
 <!-- components/filters/ProductSortBar.vue — строка-пилюля над сеткой:
     [Фильтры (N)] [Сортировка ▾] [чипы активных…]. Паттерн WB/Ozon.
-    Сортировка больше не внутри панели фильтров. -->
+    Сортировка больше не внутри панели фильтров.
+    Чипы не влияют на ширину колонки товаров: длинные значения
+    фасетов («Материал: Алюминий с антипригарным покрытием») обрезаются
+    многоточием — полный текст в title и в группе сайдбара. -->
 <template lang="pug">
 .sort-bar.flex.items-center.gap-2.flex-wrap(
   class="py-1"
@@ -33,19 +36,22 @@
       option(value="price:desc") {{ $t('catalog.sortPriceDesc') }}
       option(value="name:asc") {{ $t('catalog.sortName') }}
 
-  //- Чипы активных фильтров (кроме сортировки)
-  .chips.flex.items-center.gap-1.flex-wrap(
+  //- Чипы активных фильтров (кроме сортировки).
+  //- min-w-0 обязателен: без него блок чипов (flex-элемент) не сжимается
+  //- ниже минимальной ширины контента, и самый длинный чип раздувает
+  //- всю колонку товаров (сетка 1fr = minmax(auto, 1fr)) — карточки растут
+  .chips.flex.items-center.gap-1.flex-wrap.min-w-0(
     v-if="activeChips.length > 0"
   )
-    button.chip-item.badge.badge-outline.gap-1.cursor-pointer(
+    button.chip-item.badge.badge-outline.gap-1.cursor-pointer.max-w-full(
       v-for="chip in activeChips"
       :key="chip.key"
       type="button"
       :title="$t('catalog.removeFilter', { label: chip.label })"
       @click="removeChip(chip)"
     )
-      span {{ chip.label }}
-      span(class="text-base-content/70") ✕
+      span.truncate.min-w-0 {{ chip.label }}
+      span.shrink-0(class="text-base-content/70") ✕
 
     button.chip-item.badge.gap-1.cursor-pointer(
       type="button"
@@ -175,6 +181,17 @@ const removeChip = (chip) => {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+/* daisyUI-badge не сжимается (width:fit-content + flex-shrink:0):
+   длинный чип фасета рендерился одной строкой, не помещался и
+   раздвигал колонку товаров вправо (карточки росли). Перебиваем:
+   чип не шире строки, текст с многоточием, крестик всегда виден. */
+.chip-item {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 1;
 }
 
 .chip-item:hover {
