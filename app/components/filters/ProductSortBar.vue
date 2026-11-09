@@ -10,8 +10,10 @@
 .sort-bar.flex.items-center.gap-2.flex-wrap(
   class="py-1"
 )
-  //- Кнопка «Фильтры» — на мобильных открывает панель
-  button.filter-pill.btn.btn-sm.rounded-full(
+  //- Кнопка «Фильтры» — на мобильных открывает панель. На десктопе
+  //- (≥1025px) прячется: там фильтры уже в левой панели-сайдбаре,
+  //- дублировать их кнопкой не нужно
+  button.filter-pill.btn.btn-sm.rounded-full.filters-toggle-btn(
     type="button"
     :class="{ 'pill-active': activeFiltersCount > 0 }"
     @click="$emit('toggle-filters')"
@@ -178,6 +180,15 @@ const removeChip = (chip) => {
 </script>
 
 <style scoped>
+/* Десктоп (≥1025px — брейкпоинт появления .sidebar-area в index.vue):
+   фильтры уже показываются в левой панели, кнопка-дубль лишняя.
+   Специфичность .filters-toggle-btn[data-v] перекрывает display у .btn */
+@media (min-width: 1025px) {
+  .filters-toggle-btn {
+    display: none;
+  }
+}
+
 .filter-pill.pill-active {
   border-color: var(--color-primary);
   color: var(--color-primary);

@@ -480,6 +480,31 @@ watch(() => props.currentMax, (newVal) => {
   }
 }, { immediate: true })
 
+// Диапазон каталога изменился (рефетч/догрузка после гидратации): ползунок
+// обязан следовать за новыми границами. Без слежки он оставался со
+// значениями, зафиксированными при монтировании, — симптом «от 0 до 2 500»
+// при каталоге 1 990–249 990 (старые значения округлялись до сотен).
+// Без явного фильтра ползунок прыгает на новый диапазон каталога;
+// с явным — клампится в новые границы (emit не нужен: фильтр меняет
+// только пользователь, родитель и так знает своё состояние).
+watch(
+  () => [props.minPrice, props.maxPrice],
+  () => {
+    const resolve = (filterValue, boundValue) => {
+      if (filterValue === null || filterValue === undefined) return boundValue
+      return Math.max(props.minPrice, Math.min(filterValue, props.maxPrice))
+    }
+    const min = resolve(props.currentMin, props.minPrice)
+    const max = resolve(props.currentMax, props.maxPrice)
+    inputMin.value = min
+    inputMax.value = max
+    sliderMin.value = min
+    sliderMax.value = max
+    inputMinValue.value = min === props.minPrice ? '' : min.toString()
+    inputMaxValue.value = max === props.maxPrice ? '' : max.toString()
+  },
+)
+
 // Экспорт методов
 defineExpose({ resetPriceRange })
 </script>
