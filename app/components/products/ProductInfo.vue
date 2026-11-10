@@ -1,13 +1,20 @@
 <template lang="pug">
 .product-info
   .card.bg-base-100(class="lg:shadow-none")
-    .card-body.p-3.gap-3(class="lg:p-0")
+    //- На мобильном зазоры плотнее (8px вместо 12px): цена попадает в
+    //- первый экран, а заголовок «Характеристики» перестаёт прятаться
+    //- под фиксированной CTA (отзыв: «совсем не видно, что ниже есть
+    //- характеристики»). На lg — прежние 12px.
+    .card-body.p-3.gap-2(class="lg:p-0 lg:gap-3")
       //- Заголовок: ряд действий (поиск/шаринг/сравнение/избранное) переехал
       //- ПОВЕРХ фото галереи — ProductImageActions (WB/Ozon-паттерн)
       h1.text-xl.font-semibold.text-base-content.leading-snug(class="lg:text-2xl") {{ product.name }}
 
-      //- Категории
-      .flex.flex-wrap.gap-2(v-if="product.categories?.length")
+      //- Категории — только на десктопе (lg+): на мобильном чипы съедали
+      //- строку первого экрана, цена и «Характеристики» уезжали под
+      //- фиксированную CTA (отзыв: «убрать или переместить чипы»). Категория
+      //- и так видна в крошках под шапкой и строкой «Категории» в spec-листе
+      .flex.flex-wrap.gap-2.hidden(v-if="product.categories?.length" class="lg:flex")
         span.px-2.py-1.rounded-full.text-xs.border.border-base-300(
           v-for="category in product.categories"
           :key="category"
@@ -23,8 +30,9 @@
         span.font-medium {{ ratingAverage }}
         span(class="text-base-content/50") · {{ ratingCountLabel }}
 
-      //- Описание
-      p.text-sm.leading-relaxed(class="text-base-content/85") {{ product.description }}
+      //- Описание: на мобильном чуть плотнее (13px/1.375 вместо 14px/1.625 —
+      //- «немного уплотнить по высоте», отзыв), с 640px (sm) прежняя типографика
+      p(class="text-[13px] leading-snug text-base-content/85 sm:text-sm sm:leading-relaxed") {{ product.description }}
 
       //- Цена и наличие (у варианта — своя цена/склад, этап «варианты»).
       //- Скидка (oldPrice) — только у базовой цены: у варианта со своей
