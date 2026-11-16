@@ -247,7 +247,9 @@ export default defineNuxtConfig({
         { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
       ],
     },
-    workbox: {
+    // v2 модуля (@unplugin-pwa): опция переименована workbox → generateSW,
+    // форма та же (workbox-build 8: globPatterns, runtimeCaching и т.д.)
+    generateSW: {
       // SSR-режим: HTML НЕ кэшируем — навигации всегда в сеть,
       // страницы рендерит сервер. Раньше html был в globPatterns и
       // navigateFallback отдавал кэшированную главную вместо
