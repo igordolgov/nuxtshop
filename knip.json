@@ -10,9 +10,12 @@
         "app/components/**/*.vue",
         "app/composables/**/*.{ts,js}",
         "app/providers/**/*.{ts,js}",
-        "server/**/*.{ts,js}"
+        "server/**/*.{ts,js}",
+        "e2e/**/*.{ts,js}"
       ],
-      "project": ["app/**/*.{js,ts,vue,css}"],
+      "project": [
+        "app/**/*.{js,ts,vue,css}"
+      ],
       "ignoreDependencies": [
         "@markuplint/pug-parser",
         "@markuplint/vue-parser",

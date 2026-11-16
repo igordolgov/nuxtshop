@@ -60,6 +60,14 @@ export default defineNuxtConfig({
       // (виден в HTML любого сайта с CF Analytics). Пусто — скрипт
       // не подключается (dev и до настройки сайта в дашборде). См. app.vue.
       cfBeaconToken: '',
+      // Sentry (мониторинг ошибок): DSN клиента И сервера — одна переменная
+      // NUXT_PUBLIC_SENTRY_DSN (vars wrangler.jsonc или дашборд воркера).
+      // DSN публичен по дизайну (вшивается в клиентский бандл SDK).
+      // Пусто → клиентский SDK стартует без DSN и ничего не отправляет,
+      // серверный форвардер (server/plugins/sentry-error.ts) молчит —
+      // витрина без настроенного Sentry работает как раньше. См.
+      // sentry.client.config.ts.
+      sentryDsn: '',
     },
   },
 
@@ -162,6 +170,12 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
     '@baptistecrouzet/nuxt-oxlint',
+    // Мониторинг ошибок на клиенте (Vue/waterfall/консоль) — Sentry SDK.
+    // Серверная сторона НЕ через SDK модуля (тот тянет @sentry/node —
+    // на Cloudflare Workers/workerd это риск рантайма), а лёгким
+    // форвардером envelope-протокола через fetch:
+    // server/plugins/sentry-error.ts. Без DSN обе стороны отключены.
+    '@sentry/nuxt',
     // '@pinia/nuxt' УДАЛЁН (этап 6, вердикт по модулям): в коде нет ни
     // одного defineStore/импорта pinia — стейт живёт в useState/composables.
     // Пакеты pinia и @pinia/nuxt сняты с зависимостей.
