@@ -379,7 +379,14 @@ const isAdminRoute = computed(() => isActiveRoute('/admin'))
 //- На карточке товара поиск в шапке не нужен: иконка поиска стоит в
 //- действиях карточки (перед «Сравнить»/«Избранное») и открывает
 //- полноэкранный ProductSearchOverlay — как у крупных маркетплейсов
-const isProductRoute = computed(() => isActiveRoute('/product'))
+//- /product — секция без базовой страницы (только /product/:slug):
+//- localePath('/product') резолвит несуществующий маршрут и на каждом
+//- рендере шапки сыплет [VUE_ROUTER_R0004]. Проверяем сегменты пути
+//- напрямую — локаль-агностично ('/product/x' и '/en/product/x').
+const isProductRoute = computed(() => {
+  const segments = route.path.split('/')
+  return segments[1] === 'product' || segments[2] === 'product'
+})
 
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()

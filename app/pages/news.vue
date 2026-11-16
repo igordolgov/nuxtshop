@@ -517,6 +517,7 @@ useSeoMeta({
   color: var(--color-base-content);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

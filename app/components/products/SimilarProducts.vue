@@ -137,6 +137,7 @@ const handleImageError = (event) => {
 .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
 }
