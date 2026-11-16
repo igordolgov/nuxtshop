@@ -45,7 +45,7 @@
     // ничего, серверный форвардер молчит). См. sentry.client.config.ts и
     // server/plugins/sentry-error.ts. Копия шлёт в ТОТ ЖЕ проект — события
     // различаются меткой store («Магазин» / «Tienda Habana»).
-    "NUXT_PUBLIC_SENTRY_DSN": "",
+    "NUXT_PUBLIC_SENTRY_DSN": "https://ae5f5fb76c373e0ab2e588acddd98207@o4512439963287552.ingest.us.sentry.io/4512440084660224",
   },
   "kv_namespaces": [
     {
