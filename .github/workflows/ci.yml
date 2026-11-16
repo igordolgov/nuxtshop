@@ -87,3 +87,53 @@ jobs:
             exit 0
           fi
           pnpm run deploy
+
+  e2e:
+    # E2E-смоук (Playwright) против живой витрины: после деплоя main —
+    # против свежего прода, на PR — против текущего прода. Тесты только
+    # читающие + локальные состояния (корзина/избранное в localStorage,
+    # изолировано per-test): заказы и формы в прод не отправляются.
+    needs: deploy
+    if: >-
+      always() &&
+      (github.event_name == 'pull_request' || needs.deploy.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Установка зависимостей
+        run: pnpm install --frozen-lockfile
+
+      - name: Браузер Chromium для Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E-тесты (прод-смоук RU)
+        run: pnpm test:e2e
+        env:
+          E2E_BASE_URL: https://nuxt-shop.igordolgov1972.workers.dev
+
+      # Кубинская копия: тот же набор (тесты агностичны к составу
+      # локалей и валюте — es-first, USD), свой воркер с холодным
+      # стартом — retries ×2 из playwright.config.ts сглаживают
+      - name: E2E-тесты (прод-смоук копии CU)
+        run: pnpm test:e2e
+        env:
+          E2E_BASE_URL: https://nuxt-shop-cu.igordolgov1972.workers.dev
+
+      - name: Отчёт Playwright (артефакт при падении)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
