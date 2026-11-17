@@ -80,23 +80,30 @@ function nonEmptySpecRecord(value: unknown): Record<string, string> | null {
  * словарём specLabels.*).
  * Объект не мутируется: карточки/списки получают поверхностную копию.
  */
-export function localizedProduct<T extends Record<string, unknown>>(
+export function localizedProduct<T extends object>(
   product: T | null | undefined,
   locale: string,
 ): T {
-  if (!product || typeof product !== 'object') return product as T;
+  if (product === null || product === undefined || typeof product !== 'object') {
+    // Runtime-договорённость: битый вход возвращаем как есть;
+    // тип T непустой, поэтому двойной каст.
+    return product as unknown as T;
+  }
+  // Интерфейсы (Product, NewsProductCard и др.) не имеют сигнатуры индекса
+  // и не проходят ограничение Record<string, unknown> — из-за этого вызовы
+  // из news.vue сыпали TS2345 с каскадом. Индексный доступ по вычисляемому
+  // ключу — только через Record-вид (та же схема, что в серверной копии
+  // server/lib/localizedProduct.ts).
+  const rec = product as Record<string, unknown>;
 
   const suffix = LOCALE_FIELD_SUFFIX[locale];
   if (!suffix) return product;
 
-  const name = nonEmpty(product[`name${suffix}`]) ?? (product.name as T['name']);
-  const description =
-    nonEmpty(product[`description${suffix}`]) ?? (product.description as T['description']);
+  const name = nonEmpty(rec[`name${suffix}`]) ?? rec.name;
+  const description = nonEmpty(rec[`description${suffix}`]) ?? rec.description;
 
-  const rawCategories = Array.isArray(product.categories)
-    ? (product.categories as string[])
-    : undefined;
-  const translated = product[`categories${suffix}`];
+  const rawCategories = Array.isArray(rec.categories) ? (rec.categories as string[]) : undefined;
+  const translated = rec[`categories${suffix}`];
 
   let categories = rawCategories;
   if (Array.isArray(translated) && translated.length > 0) {
@@ -109,9 +116,10 @@ export function localizedProduct<T extends Record<string, unknown>>(
     }
   }
 
-  // Spec-лист: цельный переводной Record или фолбэк на русский
-  const localizedSpecs = nonEmptySpecRecord(product[`characteristics${suffix}`]);
-  const characteristics = localizedSpecs ?? (product.characteristics as T['characteristics']);
+  // Spec-лист: цельный переводной Record (characteristicsEn/Es) или
+  // фолбэк на русский characteristics
+  const localizedSpecs = nonEmptySpecRecord(rec[`characteristics${suffix}`]);
+  const characteristics = localizedSpecs ?? rec.characteristics;
 
   return {
     ...product,

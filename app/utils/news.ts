@@ -89,20 +89,26 @@ function nonEmpty(value: unknown): string | null {
  *   непустого абзаца — показываем русский список.
  * Объект не мутируется: карточки/списки получают поверхностную копию.
  */
-export function localizedNews<T extends Record<string, unknown>>(
-  item: T | null | undefined,
-  locale: string,
-): T {
-  if (!item || typeof item !== 'object') return item as T;
+export function localizedNews<T extends object>(item: T | null | undefined, locale: string): T {
+  if (item === null || item === undefined || typeof item !== 'object') {
+    // Runtime-договорённость: битый вход возвращаем как есть;
+    // тип T непустой, поэтому двойной каст.
+    return item as unknown as T;
+  }
+  // Интерфейсы (NewsWithProducts и др.) не имеют сигнатуры индекса и не
+  // проходят ограничение Record<string, unknown> — из-за этого вызовы из
+  // news.vue сыпали TS2345 с каскадом. Динамические ключи переводных
+  // полей читаем через Record-вид (та же схема, что в localizedProduct).
+  const rec = item as Record<string, unknown>;
 
   const suffix = LOCALE_FIELD_SUFFIX[locale];
   if (!suffix) return item;
 
-  const title = nonEmpty(item[`title${suffix}`]) ?? (item.title as T['title']);
-  const excerpt = nonEmpty(item[`excerpt${suffix}`]) ?? (item.excerpt as T['excerpt']);
+  const title = nonEmpty(rec[`title${suffix}`]) ?? rec.title;
+  const excerpt = nonEmpty(rec[`excerpt${suffix}`]) ?? rec.excerpt;
 
-  const rawBody = Array.isArray(item.body) ? (item.body as string[]) : undefined;
-  const translated = item[`body${suffix}`];
+  const rawBody = Array.isArray(rec.body) ? (rec.body as string[]) : undefined;
+  const translated = rec[`body${suffix}`];
   const translatedList = Array.isArray(translated)
     ? (translated as unknown[]).filter((p): p is string => nonEmpty(p) !== null)
     : [];
