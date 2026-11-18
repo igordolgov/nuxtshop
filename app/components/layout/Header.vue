@@ -141,6 +141,12 @@ header.app-header.sticky.top-0.z-50.border-b(
                 prefetch
               ) {{ $t('nav.orders') }}
               NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
+                :to="localePath(\'/admin/analytics\')"
+                @click="closeAdminMenu"
+                :class="isExactActiveRoute('/admin/analytics') ? 'bg-primary text-primary-content' : 'hover:bg-base-200 text-base-content'"
+                prefetch
+              ) {{ $t('nav.analytics') }}
+              NuxtLink.flex.items-center.gap-3.px-3.py-2.rounded-xl.text-sm(
                 v-if="isAdmin"
                 :to="localePath(\'/admin/news\')"
                 @click="closeAdminMenu"

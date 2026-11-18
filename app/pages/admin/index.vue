@@ -470,6 +470,7 @@ const quickLinks = computed(() =>
   [
     { to: localePath('/admin/products'), title: t('admin.dashboard.quickProductsTitle'), sub: t('admin.dashboard.quickProductsSub'), icon: 'heroicons:cube' },
     { to: localePath('/admin/orders'), title: t('admin.dashboard.quickOrdersTitle'), sub: t('admin.dashboard.quickOrdersSub'), icon: 'heroicons:shopping-bag' },
+    { to: localePath('/admin/analytics'), title: t('admin.dashboard.quickAnalyticsTitle'), sub: t('admin.dashboard.quickAnalyticsSub'), icon: 'heroicons:chart-bar' },
     { to: localePath('/admin/news'), title: t('admin.dashboard.quickNewsTitle'), sub: t('admin.dashboard.quickNewsSub'), icon: 'heroicons:newspaper', adminOnly: true },
     { to: localePath('/admin/content'), title: t('admin.dashboard.quickContentTitle'), sub: t('admin.dashboard.quickContentSub'), icon: 'heroicons:pencil-square', adminOnly: true },
     { to: localePath('/admin/reviews'), title: t('admin.dashboard.quickReviewsTitle'), sub: t('admin.dashboard.quickReviewsSub'), icon: 'heroicons:star' },

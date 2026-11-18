@@ -1,6 +1,7 @@
 // server/api/admin/stats.get.ts
 import { readUsers, stripPassword } from '../../lib/userHelpers';
 import { readProducts } from '../../lib/productHelpers';
+import { readOrders } from '../../lib/orderHelpers';
 import { cacheStats } from '../../lib/cache';
 import { requireStaff } from '../../utils/auth';
 import { adminActionLog } from '../../lib/logger';
@@ -27,15 +28,21 @@ export default defineEventHandler(async (event) => {
     active: users.filter((u) => u.lastLogin && new Date(u.lastLogin) > weekAgo).length,
   };
 
-  // Заказы не хранятся на сервере — когда появится БД, заменить на реальные данные
+  // Заказы в KV (data:orders): сводка для KPI дашборда. Детальная
+  // аналитика (графики, топ товаров) — на /api/admin/analytics.
+  // Выручка — не-отменённые заказы (семантика analyticsHelpers).
+  const orders = await readOrders(event);
+  const nonCancelled = orders.filter((o) => o.status !== 'cancelled');
   const orderStats = {
-    total: 0,
-    pending: 0,
-    processing: 0,
-    completed: 0,
-    cancelled: 0,
-    totalRevenue: 0,
-    weekRevenue: 0,
+    total: orders.length,
+    pending: orders.filter((o) => o.status === 'new').length,
+    processing: orders.filter((o) => o.status === 'confirmed' || o.status === 'shipped').length,
+    completed: orders.filter((o) => o.status === 'delivered').length,
+    cancelled: orders.filter((o) => o.status === 'cancelled').length,
+    totalRevenue: nonCancelled.reduce((sum, o) => sum + o.total, 0),
+    weekRevenue: nonCancelled
+      .filter((o) => new Date(o.createdAt) > weekAgo)
+      .reduce((sum, o) => sum + o.total, 0),
   };
 
   const productStats = {
