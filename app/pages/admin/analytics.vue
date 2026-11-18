@@ -23,6 +23,29 @@
             :class="period === p.days ? 'btn-primary' : 'btn-outline'"
             @click="setPeriod(p.days)"
           ) {{ p.label }}
+        //- Экспорт CSV: три среза аналитики (топ товаров, дни, промокоды)
+        .dropdown.dropdown-end
+          button.btn.btn-sm.btn-ghost.rounded-xl(
+            type="button"
+            :disabled="loading || isExporting"
+            :aria-label="$t('admin.analytics.exportAria')"
+            :title="$t('admin.analytics.exportTitle')"
+          )
+            icon(name="heroicons:arrow-down-tray" size="16" :class="{ 'animate-pulse': isExporting }")
+            span.hidden(class="sm:inline") {{ $t('admin.analytics.exportLabel') }}
+          ul.dropdown-content.menu.z-50.w-56.rounded-xl.border.border-base-300.bg-base-100.p-1.shadow-lg
+            li
+              button(type="button" @click="exportCsv('top-products')")
+                icon(name="heroicons:squares-2x2" size="16")
+                span {{ $t('admin.analytics.exportTop') }}
+            li
+              button(type="button" @click="exportCsv('series')")
+                icon(name="heroicons:chart-bar" size="16")
+                span {{ $t('admin.analytics.exportDaily') }}
+            li
+              button(type="button" @click="exportCsv('promo-codes')")
+                icon(name="heroicons:ticket" size="16")
+                span {{ $t('admin.analytics.exportPromo') }}
         button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="load" :aria-label="$t('admin.analytics.refreshAria')")
           icon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
           span.hidden(class="sm:inline") {{ $t('admin.analytics.refresh') }}
@@ -96,6 +119,28 @@
               .row-main
                 span.badge.badge-sm(:class="statusBadgeClass(s)") {{ statusLabel(s) }}
               span.row-value {{ byStatus[s] ?? 0 }}
+
+      //- Промокоды за период: код, скидка, статус, заказы/выручка/скидки.
+      //- Известные коды показываем даже без применений (нули);
+      //- удалённые из справочника — со статусом «Удалён».
+      .panel.mt-4
+        .panel-head
+          h2.panel-title {{ $t('admin.analytics.promoTitle') }}
+          span.panel-hint {{ $t('admin.analytics.promoHint') }}
+        .panel-empty(v-if="!promoCodes.length") {{ $t('admin.analytics.promoEmpty') }}
+        .panel-list(v-else)
+          .promo-row(v-for="p in promoCodes" :key="p.code")
+            .promo-main
+              .promo-top
+                span.promo-code {{ p.code }}
+                span.promo-value(v-if="p.type") {{ promoValueLabel(p) }}
+                span.badge.badge-sm(:class="promoBadgeClass(p)") {{ promoStatusLabel(p) }}
+              .promo-meta
+                span(v-if="p.lastUsedAt") {{ $t('admin.analytics.promoLastUsed', { date: promoLastUsed(p.lastUsedAt) }) }}
+                span(v-if="p.cancelled > 0") {{ $t('admin.analytics.promoCancelled', { n: p.cancelled }) }}
+            .promo-nums
+              .promo-revenue {{ formatPrice(p.revenue) }}
+              .promo-sub {{ p.orders }} {{ $t('admin.analytics.ordersCount') }} · {{ $t('admin.analytics.promoDiscountShort', { amount: formatPrice(p.discount) }) }}
 
       //- Доставка и оплата
       .grid.grid-cols-1.gap-3.mt-4(class="lg:grid-cols-2")
@@ -429,6 +474,71 @@
   color: var(--color-base-content);
   font-variant-numeric: tabular-nums;
 }
+
+/* Промокоды */
+.promo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  background: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+  border-radius: 0.625rem;
+}
+
+.promo-main {
+  min-width: 0;
+}
+
+.promo-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.promo-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-base-content);
+  background: color-mix(in oklab, var(--color-base-content) 6%, transparent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+}
+
+.promo-value {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.promo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
+
+.promo-nums {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.promo-revenue {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-base-content);
+  font-variant-numeric: tabular-nums;
+}
+
+.promo-sub {
+  font-size: 0.6875rem;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
 </style>
 
 <script setup>
@@ -463,6 +573,7 @@ const topProducts = computed(() => data.value?.topProducts ?? [])
 const byStatus = computed(() => data.value?.byStatus ?? {})
 const byDelivery = computed(() => data.value?.byDelivery ?? {})
 const byPayment = computed(() => data.value?.byPayment ?? {})
+const promoCodes = computed(() => data.value?.promoCodes ?? [])
 const hasData = computed(() => (summary.value.orders ?? 0) > 0)
 const maxRevenue = computed(() => Math.max(...series.value.map((d) => d.revenue), 0))
 const maxTopRevenue = computed(() => Math.max(...topProducts.value.map((p) => p.revenue), 0))
@@ -512,6 +623,69 @@ const load = async () => {
 const setPeriod = (days) => {
   if (period.value === days) return
   period.value = days
+}
+
+//- ─── CSV-экспорт: тот же blob-паттерн, что и выгрузка заказов ───────
+//- Не <a href> — blob позволяет поймать 401/500 и показать тост,
+//- а не молча отдать JSON-ошибку в файле.
+const isExporting = ref(false)
+const EXPORT_FILES = {
+  'top-products': 'analytics-top-products',
+  series: 'analytics-daily',
+  'promo-codes': 'analytics-promo-codes',
+}
+const exportCsv = async (type) => {
+  if (isExporting.value) return
+  isExporting.value = true
+  try {
+    const blob = await $fetch('/api/admin/analytics/export', {
+      query: { type, days: period.value },
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${EXPORT_FILES[type]}-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    $notify.success(t('admin.analytics.exportDone'))
+  } catch (err) {
+    console.error('[admin-analytics] Ошибка экспорта:', err?.data?.message || err?.message)
+    $notify.error(t('admin.analytics.exportError'))
+  } finally {
+    isExporting.value = false
+  }
+}
+
+//- ─── Промокоды: подписи статусов и формат скидки ────────────────────
+//- Локальная promoValueLabel вместо серверной promoValueLabel:
+//- серверный promoHelpers тащит KV-хелперы, в клиентский бандл нельзя.
+const promoValueLabel = (p) => (p.type === 'percent' ? `${p.value}%` : formatPrice(p.value))
+
+const promoStatusLabel = (p) => {
+  if (p.issue === 'inactive') return t('admin.analytics.promoStatusInactive')
+  if (p.issue === 'expired') return t('admin.analytics.promoStatusExpired')
+  if (p.issue === 'limit') return t('admin.analytics.promoStatusLimit')
+  if (p.type == null) return t('admin.analytics.promoStatusDeleted')
+  if (p.active === false) return t('admin.analytics.promoStatusInactive')
+  return t('admin.analytics.promoStatusActive')
+}
+
+const promoBadgeClass = (p) => {
+  if (p.issue === 'inactive' || p.active === false) return 'badge-neutral'
+  if (p.issue === 'expired' || p.issue === 'limit') return 'badge-warning'
+  if (p.type == null) return 'badge-ghost'
+  return 'badge-success'
+}
+
+//- «05.11.2026 14:30» из ISO (UTC — как в CSV-выгрузке, детерминированно)
+const promoLastUsed = (iso) => {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`
 }
 
 //- Смена периода — перезагрузка данных
