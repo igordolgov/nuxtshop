@@ -15,10 +15,20 @@ describe('productSrcset — 400w+800w для локальных фото кат�
     expect(productSrcset('data:image/webp;base64,AAAA')).toBeUndefined();
     expect(productSrcset('/api/images/products/product-123-abcd.webp')).toBeUndefined();
     expect(productSrcset('/images/placeholder.jpg')).toBeUndefined();
-    expect(
-      productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500'),
-    ).toBeUndefined();
     expect(productSrcset('/images/products/evil-../../etc.webp')).toBeUndefined();
+  });
+
+  it('Unsplash-URL без w= → srcset 400w/800w через параметр imgix w=', () => {
+    const out = productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570');
+    expect(out).toBeDefined();
+    expect(out).toContain('auto=format');
+    expect(out).toContain('q=75');
+    expect(out).toContain('w=400 400w');
+    expect(out).toContain('w=800 800w');
+  });
+
+  it('Unsplash-URL с явным w= админа → undefined (размер задан сознательно)', () => {
+    expect(productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500')).toBeUndefined();
   });
 
   it('мусор на входе → undefined, атрибут не выводится', () => {
@@ -26,6 +36,7 @@ describe('productSrcset — 400w+800w для локальных фото кат�
     expect(productSrcset(undefined)).toBeUndefined();
     expect(productSrcset(42)).toBeUndefined();
     expect(productSrcset('')).toBeUndefined();
+    expect(productSrcset('это не URL вообще')).toBeUndefined();
   });
 });
 
@@ -34,5 +45,18 @@ describe('withImageFormat — регресс: q=75 остаётся строко
     const out = withImageFormat('https://images.unsplash.com/photo-1?w=500');
     expect(out).toContain('auto=format');
     expect(out).toContain('q=75');
+  });
+
+  it('width добавляет w=, если его ещё нет (карточки: без w= Unsplash отдаёт оригинал)', () => {
+    const out = withImageFormat('https://images.unsplash.com/photo-1', 800);
+    expect(out).toContain('w=800');
+    expect(out).toContain('auto=format');
+    expect(out).toContain('q=75');
+  });
+
+  it('явный w= админа не перетирается, не-unsplash URL не трогаются', () => {
+    expect(withImageFormat('https://images.unsplash.com/photo-1?w=300', 800)).toContain('w=300');
+    expect(withImageFormat('https://example.com/photo-1', 800)).toBe('https://example.com/photo-1');
+    expect(withImageFormat('не URL')).toBe('не URL');
   });
 });

@@ -230,12 +230,14 @@ const currentImage = computed(() => {
   // Base64
   if (url.startsWith('data:')) return url
 
-  // Unsplash без домена — сразу с auto=format/q=75 (utils/productImage):
-  // без auto=format Unsplash отдаёт JPEG вместо WebP/AVIF
-  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}`)
+  // Unsplash без домена — сразу с auto=format/q=75/w=800 (utils/productImage):
+  // без auto=format Unsplash отдаёт JPEG вместо WebP/AVIF, без w= — оригинал
+  // в полном разрешении (3000-5000px). w=800 совпадает со старшим кандидатом
+  // srcset — для браузеров без srcset это та же картина 800w.
+  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}`, 800)
 
   // Полный URL (unsplash-ссылки получают auto=format, остальные не меняются)
-  if (url.startsWith('http')) return withImageFormat(url)
+  if (url.startsWith('http')) return withImageFormat(url, 800)
   if (url.startsWith('/')) return url
 
   return `/images/${url}`

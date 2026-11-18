@@ -174,6 +174,36 @@ const displayedProducts = computed(() => getState('displayedProducts', []))
 const products = computed(() => getState('products', []))
 const totalProductsCount = computed(() => products.value?.length ?? 0)
 
+//- Preload LCP-картинки: первая карточка каталога — LCP первого экрана,
+//- а браузер находит её <img> только после парсинга HTML до конца разметки.
+//- <link rel=preload imagesrcset> в <head> стартует загрузку параллельно с
+//- CSS/JS (~200-400 мс выигрыша на мобильных). candidates совпадают со
+//- srcset карточки (productSrcset) и imagesizes — с sizes карточки, иначе
+//- Chrome мог бы выбрать другой файл и скачать его дважды.
+const lcpImage = computed(() => {
+  const first = displayedProducts.value?.[0]
+  const raw = first?.image
+  if (!raw || raw === 'null' || raw === 'undefined' || raw.startsWith('data:')) return null
+  if (raw.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${raw}`)
+  if (raw.startsWith('http')) return withImageFormat(raw)
+  return raw.startsWith('/') ? raw : `/images/${raw}`
+})
+const lcpPreloadLinks = computed(() => {
+  const url = lcpImage.value
+  const srcset = productSrcset(url)
+  if (!srcset) return []
+  return [
+    {
+      rel: 'preload',
+      as: 'image',
+      imagesrcset: srcset,
+      imagesizes: '(max-width: 639px) 50vw, 300px',
+      fetchpriority: 'high',
+    },
+  ]
+})
+useHead({ link: lcpPreloadLinks })
+
 //- Скелетон: только пока каталог пуст и его нечего показать
 const showSkeleton = computed(
   () => products.value.length === 0 && (!isMounted.value || isLoading.value),
