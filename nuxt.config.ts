@@ -228,7 +228,14 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
-    includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+    // ⚠️ includeAssets НЕ ставить: globPatterns ниже уже покрывает
+    // public/*.ico и public/*.png, а includeAssets добавлял те же URL
+    // с ДРУГИМИ ревизиями → workbox бросал add-to-cache-list-conflicting-
+    // entries при evaluation sw.js → service worker вообще не устанавливался
+    // (PWA-устройства навсегда оставались на старом SW и его прекэше).
+    // Диагностика: страница логирует «Service Worker registration failed:
+    // ServiceWorker script evaluation failed»; дубликаты favicon.ico/
+    // apple-touch-icon.png в конце манифеста sw.js.
     devOptions: { enabled: false, type: 'module' },
     client: { installPrompt: true, registerPlugin: true },
     strategies: 'generateSW',
