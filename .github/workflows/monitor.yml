@@ -1,0 +1,97 @@
+# Мониторинг прода: RU и CU копии каждые 30 минут (vitrina + каталог + sw.js).
+# Падение проверки → красный прогон (GitHub шлёт письмо на failed scheduled
+# run) + Telegram-алерт через секреты РЕПОЗИТОРИЯ:
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID
+# (Settings → Secrets and variables → Actions; значения те же, что у
+# воркера — см. `npx wrangler secret list`). Пока секретов нет, алерт-шаг
+# печатает инструкцию и пропускает отправку — прогон всё равно красный.
+#
+# Тест алерта: Actions → Monitor → Run workflow → fail_on_purpose = true.
+name: Monitor
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      fail_on_purpose:
+        description: 'Специально уронить проверку — тест алерта'
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: monitor
+
+jobs:
+  ping:
+    name: ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: RU
+            base: https://nuxt-shop.igordolgov1972.workers.dev
+            home: 'Интернет-магазин'
+          - env: CU
+            base: https://nuxt-shop-cu.igordolgov1972.workers.dev
+            home: 'Tienda online'
+    steps:
+      - name: Проверки витрины
+        run: |
+          BASE="${{ matrix.base }}"
+          HOME_MARK="${{ matrix.home }}"
+
+          if [ "${{ inputs.fail_on_purpose }}" = "true" ]; then
+            echo "reason=тест алерта (fail_on_purpose)" >> "$GITHUB_ENV"
+            echo "::error::Специальный провал для проверки алерта"
+            exit 1
+          fi
+
+          # check <имя> <url> <маркер в ответе>: HTTP 200 + маркер = жив
+          check() {
+            local name="$1" url="$2" marker="$3" code
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 25 "$url" 2>/dev/null) || code=000
+            if [ "$code" != "200" ]; then
+              echo "reason=$name → HTTP $code" >> "$GITHUB_ENV"
+              echo "::error::$name: HTTP $code"
+              exit 1
+            fi
+            if ! grep -q -- "$marker" /tmp/body; then
+              echo "reason=$name → нет «$marker» в ответе" >> "$GITHUB_ENV"
+              echo "::error::$name: нет «$marker» в ответе"
+              exit 1
+            fi
+          }
+
+          check "главная" "$BASE/" "$HOME_MARK"
+          check "каталог /api/products" "$BASE/api/products" '"id"'
+          check "sw.js (PWA)" "$BASE/sw.js" "workbox"
+          echo "reason=" >> "$GITHUB_ENV"
+
+      - name: Telegram-алерт
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: |
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_ADMIN_CHAT_ID:-}" ]; then
+            echo "⚠️ Секреты GitHub не заданы — Telegram-алерт пропущен."
+            echo "   Добавь TELEGRAM_BOT_TOKEN и TELEGRAM_ADMIN_CHAT_ID:"
+            echo "   Settings → Secrets and variables → Actions → New repository secret"
+            echo "   (значения те же, что у воркера: npx wrangler secret list)."
+            echo "   Прогон красный — GitHub шлёт письмо на failed scheduled run."
+            exit 0
+          fi
+          # reason заполнил шаг «Проверки» через $GITHUB_ENV; при пустом
+          # значении (нестандартный сбой) — запасной текст
+          TEXT=$(printf '🔴 Прод недоступен\n%s: %s\n%s' \
+            "${{ matrix.env }}" "${{ matrix.base }}" "${reason:-проверка упала}")
+          curl -sS --max-time 20 \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_ADMIN_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}" >/dev/null
+          echo "Telegram-алерт отправлен"
