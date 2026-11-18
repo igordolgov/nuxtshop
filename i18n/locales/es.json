@@ -475,7 +475,8 @@
     "count": "{n} artículo | {n} artículos | {n} artículos",
     "error": "Error",
     "removed": "Eliminado de favoritos",
-    "cleared": "Favoritos borrados"
+    "cleared": "Favoritos borrados",
+    "syncMerged": "Se añadieron {count} productos de tus favoritos guardados"
   },
   "auth": {
     "loginTitle": "Iniciar sesión",
@@ -684,6 +685,8 @@
     "statusUpdateFailed": "No se pudo actualizar el estado",
     "promoEmpty": "Introduce un código promocional",
     "cartInvalid": "Cuerpo de la solicitud no válido (carrito)",
+    "favoritesInvalid": "Cuerpo de la solicitud no válido (favoritos)",
+    "recentlyViewedInvalid": "Cuerpo de la solicitud no válido (vistos recientemente)",
     "promoNotFound": "Código promocional no encontrado",
     "stockAlertInvalid": "Revisa los datos de la solicitud de aviso",
     "reviewInvalid": "Revisa los datos de la reseña",

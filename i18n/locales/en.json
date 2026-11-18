@@ -475,7 +475,8 @@
     "count": "{n} item | {n} items",
     "error": "Error",
     "removed": "Removed from favorites",
-    "cleared": "Favorites cleared"
+    "cleared": "Favorites cleared",
+    "syncMerged": "Added {count} products from your saved favorites"
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -684,6 +685,8 @@
     "statusUpdateFailed": "Failed to update the status",
     "promoEmpty": "Enter a promo code",
     "cartInvalid": "Invalid request body (cart)",
+    "favoritesInvalid": "Invalid request body (favorites)",
+    "recentlyViewedInvalid": "Invalid request body (recently viewed)",
     "promoNotFound": "Promo code not found",
     "stockAlertInvalid": "Please check your restock alert details",
     "reviewInvalid": "Please check your review details",

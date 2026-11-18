@@ -24,6 +24,7 @@ import {
 import { useAuth } from './useAuth';
 import { useFavorites } from './useFavorites';
 import { useCart } from './useCart';
+import { useRecentlyViewed } from './useRecentlyViewed';
 import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
 import { computed, watch } from 'vue';
 
@@ -328,10 +329,17 @@ function createAppState() {
       }
 
       await auth.checkAuth();
-      // Синк корзины с аккаунтом при загрузке с живой сессией (смена
-      // устройства/перезагрузка). Не awaited: не блокирует инициализацию.
+      // Синк корзины/избранного/истории просмотров с аккаунтом при загрузке
+      // с живой сессией (смена устройства/перезагрузка). Не awaited: не
+      // блокирует инициализацию.
       if (import.meta.client && auth.isAuthenticated.value && auth.user.value) {
         useCart()
+          .handleAuthLogin(auth.user.value)
+          .catch(() => {});
+        useFavorites()
+          .handleAuthLogin(auth.user.value)
+          .catch(() => {});
+        useRecentlyViewed()
           .handleAuthLogin(auth.user.value)
           .catch(() => {});
       }

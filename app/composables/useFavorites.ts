@@ -4,30 +4,40 @@
 // Единственный источник правды по избранному.
 // Реактивный массив снапшотов + автосохранение в localStorage.
 // Новые товары добавляются сверху — порядок стабилен между перезагрузками.
+//
+// Синк с аккаунтом (тот же паттерн, что в useCart): debounce-push на
+// PUT /api/my/favorites после мутаций, pull+merge при входе/загрузке с
+// сессией, гашение при выходе/401. Чистая логика merge/санитизации —
+// app/utils/favoritesSync.ts (общая с сервером).
 // ============================================
 
 import { ref, computed, watch } from 'vue';
+// tr() — перевод вне setup-контекста (синглтон живёт в middleware)
+import { tr } from './tr';
+// Синк с аккаунтом: чистая логика merge/санитизации (общая с сервером).
+// favoritesSync — автономный модуль (без импортов из composables): он же
+// подключается сервером (favoritesHelpers).
+import {
+  favoritesSignature,
+  mergeFavorites,
+  normalizeRemoteFavorites,
+  type SyncFavorite,
+} from '../utils/favoritesSync';
 
 const STORAGE_KEY = 'favoriteProducts';
 // Ключи от старой второй системы избранного — вычищаем при загрузке
 const LEGACY_KEYS = ['userFavorites'];
+// Владелец локального избранного (id пользователя, с которым оно синхронизировано
+// в последний раз): вход в ДРУГОЙ аккаунт на этом устройстве не переносит
+// чужое избранное в новую учётку — берём серверный список целиком.
+const OWNER_KEY = 'favorites-owner';
+// Задержка пуша после мутации: склеиваем серии изменений в один PUT
+const PUSH_DEBOUNCE_MS = 1200;
 
-/** Снапшот товара в избранном — минимум полей для карточки */
-export interface FavoriteSnapshot {
-  id: string | null;
-  slug: string | null;
-  name: string;
-  price: number | null;
-  image: string | null;
-  // Legacy-записи могли сохранить объект категории из categories[0]
-  category: string | { name?: string | null } | null;
-  categorySlug: string | null;
-  brand: string | null;
-  description: string;
-  inStock: boolean;
-  stockQuantity: number | null;
-  addedAt: string;
-}
+/** Снапшот товара в избранном — минимум полей для карточки.
+ *  Каноническая форма — SyncFavorite в utils/favoritesSync.ts (его же
+ *  валидация хранит на сервере); здесь алиас ради совместимости импортов. */
+export type FavoriteSnapshot = SyncFavorite;
 
 /** Минимальная форма товара, из которой строится снапшот (включая legacy-поля) */
 export interface FavoriteProductInput {
@@ -96,6 +106,74 @@ function createFavorites() {
   const favoriteIds = computed(() => items.value.map((p) => p.id));
   const favoritesCount = computed(() => items.value.length);
 
+  // ─── Синк с аккаунтом ───────────────────────────────────
+  // id пользователя, с которым избранное синхронизируется в ЭТОЙ сессии
+  // (null — гость: только localStorage, никаких запросов к /api/my/favorites).
+  const syncUserId = ref<string | null>(null);
+  let pushTimer: ReturnType<typeof setTimeout> | null = null;
+  // Слепок последнего удачно отправленного состояния: не гоняем одинаковые
+  // списки при каждом изменении (PUT только на реальные диффы).
+  let lastPushedSignature: string | null = null;
+  // Дедупликация pull при входе (login-страница + initializeApp могут
+  // вызвать handleAuthLogin почти одновременно).
+  let pullInFlight: Promise<void> | null = null;
+  // Локальное сохранённое прочитано (load уже выполнялся): merge при входе
+  // обязан видеть гостевое избранное, а не пустой стартовый стейт.
+  let localLoaded = false;
+
+  const readOwner = (): string | null => {
+    try {
+      return localStorage.getItem(OWNER_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const writeOwner = (userId: string): void => {
+    try {
+      localStorage.setItem(OWNER_KEY, userId);
+    } catch {
+      // приватный режим — синк продолжает работать в рамках сессии
+    }
+  };
+
+  const pushFavorites = async (): Promise<void> => {
+    if (!import.meta.client || !syncUserId.value) return;
+    const signature = favoritesSignature(items.value);
+    if (signature === lastPushedSignature) return;
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      pushTimer = null;
+    }
+    try {
+      await $fetch('/api/my/favorites', {
+        method: 'PUT',
+        credentials: 'include',
+        body: { favorites: items.value },
+      });
+      lastPushedSignature = signature;
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status === 401) {
+        // Сессия истекла на сервере: гасим синк, локальное избранное остаётся
+        syncUserId.value = null;
+        lastPushedSignature = null;
+        return;
+      }
+      // Сеть/сервер упали — отправим при следующей мутации (signature не запомнен)
+      console.warn('[useFavorites] Не удалось сохранить избранное на сервере:', error);
+    }
+  };
+
+  const schedulePush = (): void => {
+    if (!import.meta.client || !syncUserId.value) return;
+    if (pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      pushTimer = null;
+      void pushFavorites();
+    }, PUSH_DEBOUNCE_MS);
+  };
+
   // ─── Персистентность ──────────────────────────────────────
 
   const save = () => {
@@ -105,6 +183,7 @@ function createFavorites() {
     } catch (err) {
       console.error('[useFavorites] Ошибка сохранения:', err);
     }
+    schedulePush();
   };
 
   // Автосохранение при любом изменении — никаких ручных saveFavorites()
@@ -158,6 +237,7 @@ function createFavorites() {
 
   const load = () => {
     if (!import.meta.client) return;
+    localLoaded = true;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
@@ -237,6 +317,114 @@ function createFavorites() {
     notifyChanged();
   };
 
+  /**
+   * Вход в аккаунт / загрузка страницы с живой сессией: подтянуть серверное
+   * избранное и объединить с локальным (правила — mergeFavorites в
+   * favoritesSync.ts). Вызывается из useAuth.login/register и из
+   * initializeApp после checkAuth — как handleAuthLogin в useCart.
+   */
+  const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<void> => {
+    if (!import.meta.client) return Promise.resolve();
+    const userId = user?.id != null ? String(user.id) : null;
+    if (!userId || syncUserId.value === userId) return Promise.resolve();
+    if (pullInFlight) return pullInFlight;
+
+    pullInFlight = (async () => {
+      // Локальное сохранённое ДОЛЖНО быть прочитано до merge: load откладывается
+      // до app:suspense:resolve и initializeApp может дойти до checkAuth раньше —
+      // иначе merge примет гостевое избранное за пустое.
+      if (!localLoaded) load();
+
+      let remote: SyncFavorite[] | null = null;
+      try {
+        const resp = await $fetch<{ success: boolean; favorites: unknown }>('/api/my/favorites', {
+          credentials: 'include',
+        });
+        remote = normalizeRemoteFavorites(resp?.favorites);
+      } catch (error) {
+        if ((error as { status?: number }).status === 401) return; // сессии нет
+        console.warn('[useFavorites] Не удалось загрузить избранное аккаунта:', error);
+        return; // сеть упала — подтянем при следующем входе/загрузке
+      }
+
+      // На этом устройстве уже синхронизировали ДРУГОЙ аккаунт — локальное
+      // избранное (его) не переносим в новую учётку
+      const owner = readOwner();
+      const discardLocal = owner != null && owner !== userId;
+      const localIds = new Set(items.value.map((p) => p.id));
+
+      items.value = mergeFavorites(discardLocal ? [] : items.value, remote);
+      syncUserId.value = userId;
+      writeOwner(userId);
+      save();
+
+      // Пушим только реальный дифф с сервером (пустой сервер + пустой локальный
+      // → PUT не нужен вовсе)
+      const current = favoritesSignature(items.value);
+      const remoteSignature = remote ? favoritesSignature(remote) : null;
+      if (current !== remoteSignature) {
+        lastPushedSignature = null;
+        void pushFavorites();
+      } else {
+        lastPushedSignature = current;
+      }
+
+      // Тост — только когда с сервера приехали новые товары
+      const added = (remote ?? []).filter((fav) => fav.id && !localIds.has(fav.id)).length;
+      if (added > 0) {
+        try {
+          const notify = (
+            useNuxtApp() as unknown as { $notify?: { success?: (m: string) => void } }
+          ).$notify;
+          notify?.success?.(
+            tr(
+              'favorites.syncMerged',
+              'В избранное добавлено товаров из вашего аккаунта: {count}',
+              {
+                count: added,
+              },
+            ),
+          );
+        } catch {
+          // вне Nuxt-контекста — без тоста
+        }
+      }
+    })();
+
+    pullInFlight.finally(() => {
+      pullInFlight = null;
+    });
+    return pullInFlight;
+  };
+
+  /**
+   * Выход из аккаунта: синк гасится, локальное избранное остаётся гостевым.
+   * Owner не трогаем — повторный вход в тот же аккаунт продолжит синк.
+   */
+  const handleAuthLogout = (): void => {
+    if (!import.meta.client) return;
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      pushTimer = null;
+    }
+    syncUserId.value = null;
+    lastPushedSignature = null;
+  };
+
+  // Финальный пуш при уходе со страницы/скрытии таба: debounce не дождётся
+  if (import.meta.client) {
+    const flush = () => {
+      if (!pushTimer) return;
+      clearTimeout(pushTimer);
+      pushTimer = null;
+      void pushFavorites();
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    window.addEventListener('pagehide', flush);
+  }
+
   // ─── Инициализация (только клиент) ────────────────────────
   if (import.meta.client) {
     // ⚠️ Синхронный localStorage-загруз ДО гидратации расходился с SSR:
@@ -279,5 +467,7 @@ function createFavorites() {
     toggleFavorite,
     clearAllFavorites,
     load,
+    handleAuthLogin,
+    handleAuthLogout,
   };
 }

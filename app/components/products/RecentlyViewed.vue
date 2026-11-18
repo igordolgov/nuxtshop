@@ -99,16 +99,23 @@ onMounted(() => {
   }
   // История меняется в другой вкладке — обновляемся
   window.addEventListener('storage', onStorage)
+  // Синк подтянул историю из аккаунта в ЭТОЙ вкладке — обновляемся
+  window.addEventListener('recently-viewed-updated', onSyncUpdated)
   document.addEventListener('visibilitychange', onVisibility)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('storage', onStorage)
+  window.removeEventListener('recently-viewed-updated', onSyncUpdated)
   document.removeEventListener('visibilitychange', onVisibility)
 })
 
 const onStorage = (e) => {
   if (!e || e.key === RECENTLY_VIEWED_KEY) refreshHistory()
+}
+
+const onSyncUpdated = () => {
+  refreshHistory()
 }
 
 const onVisibility = () => {

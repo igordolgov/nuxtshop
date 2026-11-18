@@ -4,6 +4,8 @@
 // server.* в словарях)
 import { serverMessageTr } from './useServerMessage';
 import { useCart } from './useCart';
+import { useFavorites } from './useFavorites';
+import { useRecentlyViewed } from './useRecentlyViewed';
 
 // In-flight дедупликация checkAuth. Только клиент: на SSR промисы нельзя
 // шарить между запросами — это утечка сессий между пользователями.
@@ -107,11 +109,18 @@ function createAuth() {
 
       if (!data.success) throw new Error(data.error || tr('auth.errLoginDefault', 'Ошибка входа'));
       updateAuthState(data.user);
-      // Синк корзины с аккаунтом: подтянуть серверную корзину и объединить
-      // с локальной гостевой (правила — mergeCarts). Не awaited: вход не ждёт
+      // Синк корзины/избранного/истории просмотров с аккаунтом: подтянуть
+      // серверные списки и объединить с локальными гостевыми (правила merge —
+      // в cartSync/favoritesSync/recentlyViewedSync). Не awaited: вход не ждёт
       // сеть — merge догонит за 1–2 запроса.
       if (import.meta.client) {
         useCart()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+        useFavorites()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+        useRecentlyViewed()
           .handleAuthLogin(data.user)
           .catch(() => {});
       }
@@ -153,9 +162,15 @@ function createAuth() {
       if (!data.success)
         throw new Error(data.error || tr('auth.errRegister', 'Ошибка регистрации'));
       updateAuthState(data.user);
-      // Новый аккаунт: серверная корзина пуста — локальная становится его корзиной
+      // Новый аккаунт: серверные списки пусты — локальные становятся его данными
       if (import.meta.client) {
         useCart()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+        useFavorites()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+        useRecentlyViewed()
           .handleAuthLogin(data.user)
           .catch(() => {});
       }
@@ -192,6 +207,8 @@ function createAuth() {
     // Ключи от старой auth-схемы — чистим на устройствах пользователей
     if (import.meta.client) {
       useCart().handleAuthLogout();
+      useFavorites().handleAuthLogout();
+      useRecentlyViewed().handleAuthLogout();
       localStorage.removeItem('user');
       localStorage.removeItem('auth-token');
       sessionStorage.removeItem('user');
