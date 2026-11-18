@@ -33,8 +33,9 @@ import {
 // композаблы ломали бы серверный tsconfig-граф.
 import {
   cartSignature,
-  mergeCarts,
   normalizeRemoteCart,
+  planCartSync,
+  type CartSyncMarker,
   type SyncableCart,
   type SyncCartItem,
   type SyncPromo,
@@ -45,6 +46,13 @@ const STORAGE_KEY = 'cart';
 // в последний раз): вход в ДРУГОЙ аккаунт на этом устройстве не переносит
 // чужую корзину в новую учётку — берём серверную корзину целиком.
 const OWNER_KEY = 'cart-owner';
+// Маркер последнего синка { userId, signature }: слепок локальной корзины,
+// который сервер уже получил (успешный PUT или adopt после pull). По нему
+// pull при загрузке страницы отличает «локаль не менялась с последнего
+// синка → принять серверную как есть» от «есть несинхронизированные
+// изменения → слить». Без маркера merge выполнялся бы при каждой
+// перезагрузке и удваивал количество (баг релиза синка).
+const SYNC_MARKER_KEY = 'cart-sync-marker';
 // Задержка пуша после мутации: склеиваем серии изменений
 // (например, +1 шт. кликами по счётчику) в один PUT.
 const PUSH_DEBOUNCE_MS = 1200;
@@ -182,6 +190,29 @@ function createCart() {
     }
   };
 
+  /** Маркер последнего синка: null — нет/битый (трактуем как «нет синка») */
+  const readSyncMarker = (): CartSyncMarker | null => {
+    try {
+      const raw = localStorage.getItem(SYNC_MARKER_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<CartSyncMarker>;
+      return typeof parsed.userId === 'string' && typeof parsed.signature === 'string'
+        ? { userId: parsed.userId, signature: parsed.signature }
+        : null;
+    } catch {
+      return null;
+    }
+  };
+
+  /** Сервер получил корзину с этой сигнатурой — запоминаем */
+  const writeSyncMarker = (userId: string, signature: string): void => {
+    try {
+      localStorage.setItem(SYNC_MARKER_KEY, JSON.stringify({ userId, signature }));
+    } catch {
+      // приватный режим — merge-ветка planCartSync остаётся безопасной
+    }
+  };
+
   const pushCart = async (): Promise<void> => {
     if (!import.meta.client || !syncUserId.value) return;
     const payload: SyncableCart = {
@@ -202,6 +233,8 @@ function createCart() {
         body: { cart: payload },
       });
       lastPushedSignature = signature;
+      // Сервер получил это состояние — обновляем маркер синка
+      if (syncUserId.value) writeSyncMarker(syncUserId.value, signature);
     } catch (error) {
       const status = (error as { status?: number }).status;
       if (status === 401) {
@@ -233,8 +266,14 @@ function createCart() {
 
   /**
    * Вход в аккаунт / загрузка страницы с живой сессией: подтянуть серверную
-   * корзину и объединить с локальной (правила — mergeCarts в cartSync.ts).
-   * Вызывается из useAuth.login/register и из initializeApp после checkAuth.
+   * корзину и принять/объединить с локальной (planCartSync в cartSync.ts).
+   * Вызывается из useAuth.login/register и из initializeApp после checkAuth —
+   * то есть при КАЖДОЙ загрузке страницы с сессией, поэтому:
+   *  - маркер синка совпадает (локаль не менялась) → adopt — серверная корзина
+   *    принимается как есть, ничего не суммируется (раньше merge-сумма при
+   *    каждой перезагрузке удваивала количество);
+   *  - маркера нет / локаль менялась (гостевые правки, сорванный PUT,
+   *    чужой аккаунт) → merge — max-слияние, идемпотентное само по себе.
    */
   const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<void> => {
     if (!import.meta.client) return Promise.resolve();
@@ -267,7 +306,7 @@ function createCart() {
       const discardLocal = owner != null && owner !== userId;
       const localIds = new Set(state.value.items.map((item) => item.id));
 
-      const merged = mergeCarts(
+      const plan = planCartSync(
         discardLocal
           ? null
           : {
@@ -276,18 +315,23 @@ function createCart() {
               deliveryMethod: state.value.deliveryMethod,
             },
         remote,
+        readSyncMarker(),
+        userId,
       );
 
-      state.value.items = merged.items;
-      state.value.promo = merged.promo;
-      state.value.deliveryMethod = merged.deliveryMethod;
+      state.value.items = plan.cart.items;
+      state.value.promo = plan.cart.promo;
+      state.value.deliveryMethod = plan.cart.deliveryMethod;
       syncUserId.value = userId;
       writeOwner(userId);
       saveCartToStorage();
       emitUpdated();
 
       // Пушим только реальный дифф с сервером (пустая серверная + пустая локальная
-      // → PUT не нужен вовсе)
+      // → PUT не нужен вовсе). Маркер синка пишем сразу, когда локальный стейт
+      // УЖЕ равен серверному (adopt и merge без диффа): серверное состояние
+      // получено. При диффе маркер запишет pushCart после успешного PUT —
+      // если PUT сорвётся, локаль останется «изменённой» и pull повторит merge.
       const current = cartSignature({
         items: state.value.items,
         promo: state.value.promo,
@@ -299,6 +343,7 @@ function createCart() {
         void pushCart();
       } else {
         lastPushedSignature = current;
+        writeSyncMarker(userId, current);
       }
 
       // Тост — только когда с сервера приехали новые позиции
@@ -327,7 +372,8 @@ function createCart() {
 
   /**
    * Выход из аккаунта: синк гасится, локальная корзина остаётся гостевой.
-   * Owner не трогаем — повторный вход в тот же аккаунт продолжит синк.
+   * Owner и маркер синка не трогаем — повторный вход в тот же аккаунт
+   * сравнит локаль с последним синком (adopt) или сольёт гостевые правки.
    */
   const handleAuthLogout = (): void => {
     if (!import.meta.client) return;

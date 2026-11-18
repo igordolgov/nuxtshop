@@ -7,7 +7,16 @@
 // позиции/промокода определены ЗДЕСЬ, а useCart их алиасит.
 //   mergeCarts         — объединение локальной и серверной корзины;
 //   normalizeRemoteCart— санитизация ответа GET /api/my/cart;
-//   cartSignature      — стабильный слепок корзины для дедупликации PUT.
+//   cartSignature      — стабильный слепок корзины для дедупликации PUT;
+//   planCartSync       — adopt/merge по маркеру последнего синка (см. ниже).
+//
+// Идемпотентность — критична: handleAuthLogin вызывается при КАЖДОЙ загрузке
+// страницы с живой сессией (initializeApp), а merge ранее уже сливал эти же
+// данные. Сумма количеств при повторном merge удваивала корзину
+// (1 → 2 → 4 → 8…, баг релиза синка) — поэтому количество одинаковой позиции
+// теперь БОЛЬШЕЕ из двух (max идемпотентен), а неизменённая с последнего
+// синка локальная корзина вообще не сливается, а принимается с сервера
+// (planCartSync, маркер в localStorage на клиенте).
 // Композабл useCart — тонкий клиентский слой вокруг этих функций
 // (тот же паттерн, что useRecentlyViewed / useFavorites).
 // ============================================
@@ -163,13 +172,18 @@ export const normalizeRemoteCart = (raw: unknown): SyncableCart | null => {
  *
  * Правила:
  *  - локальная пуста → берём серверную целиком (вход на новом устройстве);
- *  - иначе позиции объединяются по id: одна и та же → количество СУММИРУЕТСЯ
- *    с капом по складу (два устройства не удваивают товар выше остатка);
- *    снапшот позиции остаётся локальным (он заморожен в языке страницы);
+ *  - иначе позиции объединяются по id: одна и та же → количество = БОЛЬШЕЕ
+ *    из двух, с капом по складу. НЕ СУММА: merge выполняется при каждой
+ *    загрузке страницы с сессией, и сумма удваивала корзину на каждой
+ *    перезагрузке (merge(merge(L,R),R) ≠ merge(L,R)); max идемпотентен —
+ *    повторный merge ничего не меняет;
+ *  - снапшот позиции остаётся локальным (он заморожен в языке страницы);
  *    новые с сервера дописываются в конец;
  *  - промокод и способ доставки остаются локальные (сервер всё равно
  *    перепроверит промокод при заказе, а доставку выбрали на этом устройстве);
  *  - серверной корзины нет (null) → локальная без изменений.
+ *
+ * Вызов «когда сливать, а когда принимать серверное как есть» — planCartSync.
  */
 export const mergeCarts = (
   local: SyncableCart | null,
@@ -206,12 +220,15 @@ export const mergeCarts = (
       merged.push({ ...remoteItem });
       continue;
     }
-    // Один и тот же товар на двух устройствах: суммируем, но не выше склада
+    // Один и тот же товар на двух устройствах: БОЛЬШЕЕ из двух количеств,
+    // но не выше склада. Max, а не сумма: merge идемпотентен — повторный
+    // merge той же пары корзин (перезагрузка страницы, повторный вход)
+    // не меняет результат и не удваивает количество.
     const stocks = [existing.stockQuantity, remoteItem.stockQuantity].filter(
       (s): s is number => typeof s === 'number' && s > 0,
     );
-    const max = stocks.length > 0 ? Math.min(...stocks) : DEFAULT_STOCK;
-    existing.quantity = Math.min(max, existing.quantity + remoteItem.quantity);
+    const stockCap = stocks.length > 0 ? Math.min(...stocks) : DEFAULT_STOCK;
+    existing.quantity = Math.min(stockCap, Math.max(existing.quantity, remoteItem.quantity));
   }
 
   return {
@@ -238,4 +255,63 @@ export const cartSignature = (
     return sorted;
   });
   return JSON.stringify({ items, promo: cart.promo, deliveryMethod: cart.deliveryMethod });
+};
+
+/**
+ * Маркер последнего синка корзины (хранится в localStorage на клиенте):
+ * слепок локальной корзины на момент, когда сервер её уже получил
+ * (успешный PUT / adopt после pull).
+ */
+export interface CartSyncMarker {
+  userId: string;
+  signature: string;
+}
+
+/** Решение pull-а: принять серверную корзину как есть или сливать с локальной */
+export type CartSyncPlan = { mode: 'adopt' | 'merge'; cart: SyncableCart };
+
+/**
+ * Что делать с серверной корзиной при входе / загрузке страницы с сессией.
+ *
+ *  - Маркер совпадает (тот же пользователь, локальная корзина сигнатурно
+ *    не изменилась с последнего подтверждённого синка) → ADOPT: сервер —
+ *    источник истины, принимаем его корзину целиком (в т.ч. удаления и
+ *    уменьшения количества, сделанные на другом устройстве). Серверной нет
+ *    (null) → пустая корзина с локальным способом доставки.
+ *    Ничего не суммируем — именно здесь удваивалась корзина при каждой
+ *    перезагрузке.
+ *  - Маркера нет / он чужой / локальная менялась после синка (гостевые
+ *    правки, неуспешный PUT, смена аккаунта) → MERGE: mergeCarts (max,
+ *    идемпотентен), результат уйдёт на сервер PUT-ом.
+ *
+ * marker — то, что вернул клиент из localStorage (null — нет/битый).
+ */
+export const planCartSync = (
+  local: SyncableCart | null,
+  remote: SyncableCart | null,
+  marker: CartSyncMarker | null,
+  userId: string,
+): CartSyncPlan => {
+  const localCart: SyncableCart = local ?? {
+    items: [],
+    promo: '',
+    deliveryMethod: 'courier',
+  };
+
+  const unchangedSinceSync =
+    !!marker && marker.userId === userId && marker.signature === cartSignature(localCart);
+
+  if (unchangedSinceSync) {
+    // Сервер — источник истины: локальное не расходилось с последним синком.
+    // null (ключа нет — очищено на другом устройстве / истёк TTL 90 дней)
+    // → пустая корзина; выбор доставки остаётся за этим устройством.
+    const adopted: SyncableCart = remote ?? {
+      items: [],
+      promo: '',
+      deliveryMethod: localCart.deliveryMethod,
+    };
+    return { mode: 'adopt', cart: adopted };
+  }
+
+  return { mode: 'merge', cart: mergeCarts(localCart, remote) };
 };

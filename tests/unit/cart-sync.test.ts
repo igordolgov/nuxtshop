@@ -1,6 +1,6 @@
 // Тесты синка корзины с аккаунтом:
-//  - app/utils/cartSync.ts — mergeCarts / normalizeRemoteCart / cartSignature
-//    (общая логика клиента и сервера);
+//  - app/utils/cartSync.ts — mergeCarts / normalizeRemoteCart / cartSignature /
+//    planCartSync (adopt/merge по маркеру) — общая логика клиента и сервера;
 //  - server/lib/cartHelpers.ts — KV read/write поверх in-memory fallback
 //    (binдингов KV в тестах нет — см. storage-kv-fallback.test.ts).
 import { describe, expect, it } from 'vitest';
@@ -9,7 +9,9 @@ import {
   cartSignature,
   mergeCarts,
   normalizeRemoteCart,
+  planCartSync,
   SYNC_CART_MAX_ITEMS,
+  type CartSyncMarker,
   type SyncableCart,
 } from '../../app/utils/cartSync';
 import { readUserCart, writeUserCart } from '../../server/lib/cartHelpers';
@@ -156,12 +158,48 @@ describe('mergeCarts: объединение локальной и сервер�
     expect(merged.deliveryMethod).toBe('courier');
   });
 
-  it('одна и та же позиция на двух устройствах: количество суммируется с капом по складу', () => {
+  it('одна и та же позиция на двух устройствах: количество = БОЛЬШЕЕ из двух (не сумма!)', () => {
     const local = cart({ items: [item({ id: 'p1', quantity: 3, stockQuantity: 5 })] });
     const remote = cart({ items: [item({ id: 'p1', quantity: 4, stockQuantity: 5 })] });
     const merged = mergeCarts(local, remote);
     expect(merged.items).toHaveLength(1);
-    expect(merged.items[0].quantity).toBe(5); // 3 + 4, но склад 5
+    // 4 (max), НЕ 7 (сумма): merge идемпотентен, иначе каждая перезагрузка
+    // страницы с сессией удваивала корзину
+    expect(merged.items[0].quantity).toBe(4);
+  });
+
+  it('max с капом по складу: локальное количество выше склада не выживает', () => {
+    const local = cart({ items: [item({ id: 'p1', quantity: 10, stockQuantity: 5 })] });
+    const remote = cart({ items: [item({ id: 'p1', quantity: 4, stockQuantity: 5 })] });
+    const merged = mergeCarts(local, remote);
+    expect(merged.items[0].quantity).toBe(5);
+  });
+
+  it('склад неизвестен → кап 999 (как getMaxQuantity в useCart)', () => {
+    const local = cart({ items: [item({ id: 'p1', quantity: 2, stockQuantity: null })] });
+    const remote = cart({ items: [item({ id: 'p1', quantity: 500, stockQuantity: null })] });
+    expect(mergeCarts(local, remote).items[0].quantity).toBe(500);
+  });
+
+  it('идемпотентность: повторный merge с той же серверной корзиной не меняет результат (анти-удвоение)', () => {
+    // Регрессия бага релиза синка: при каждой загрузке страницы с сессией
+    // handleAuthLogin сливал уже слитую корзину с серверной — сумма удваивала
+    // количество (1 → 2 → 4 → 8). С max повторный merge — no-op.
+    const local = cart({
+      items: [item({ id: 'p1', quantity: 2 }), item({ id: 'p2', quantity: 3 })],
+      promo: { code: 'X', type: 'percent', value: 10 },
+      deliveryMethod: 'pickup',
+    });
+    const remote = cart({
+      items: [item({ id: 'p1', quantity: 1 }), item({ id: 'r1', quantity: 5 })],
+      deliveryMethod: 'post',
+    });
+    const first = mergeCarts(local, remote);
+    const second = mergeCarts(first, remote);
+    const third = mergeCarts(second, remote);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+    expect(first.items.map((i) => i.quantity)).toEqual([2, 3, 5]); // p1, p2, r1
   });
 
   it('снапшот существующей позиции остаётся локальным (заморожен в языке страницы)', () => {
@@ -171,7 +209,7 @@ describe('mergeCarts: объединение локальной и сервер�
     });
     const merged = mergeCarts(local, remote);
     expect(merged.items[0].name).toBe('Куртка (RU)');
-    expect(merged.items[0].quantity).toBe(2);
+    expect(merged.items[0].quantity).toBe(1); // max(1,1), не сумма
   });
 
   it('разные позиции: объединение, новые с сервера — в конец', () => {
@@ -216,6 +254,91 @@ describe('mergeCarts: объединение локальной и сервер�
     mergeCarts(local, remote);
     expect(local.items[0].quantity).toBe(1);
     expect(remote.items[0].quantity).toBe(2);
+  });
+});
+
+describe('planCartSync: adopt/merge по маркеру последнего синка', () => {
+  const markerFor = (userId: string, cartState: SyncableCart): CartSyncMarker => ({
+    userId,
+    signature: cartSignature(cartState),
+  });
+
+  it('маркер совпадает (локаль не менялась) → adopt: серверная корзина как есть', () => {
+    // Регрессия удвоения: перезагрузка страницы с сессией обязана ПРИНЯТЬ
+    // серверную корзину, а не сливать её с уже слитой локальной
+    const local = cart({ items: [item({ id: 'p1', quantity: 2 })] });
+    const remote = cart({ items: [item({ id: 'p1', quantity: 2 })] });
+    const plan = planCartSync(local, remote, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.cart).toEqual(remote);
+    expect(plan.cart.items[0].quantity).toBe(2); // не 4!
+  });
+
+  it('adopt при изменениях на другом устройстве: новые позиции и уменьшение количества переносятся', () => {
+    const local = cart({
+      items: [item({ id: 'p1', quantity: 3 }), item({ id: 'old', quantity: 1 })],
+    });
+    // С другого устройства: p1 уменьшили до 1, «old» удалили, добавили «new»
+    const remote = cart({
+      items: [item({ id: 'p1', quantity: 1 }), item({ id: 'new', quantity: 2 })],
+    });
+    const plan = planCartSync(local, remote, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.cart.items.map((i) => i.id)).toEqual(['p1', 'new']);
+    expect(plan.cart.items[0].quantity).toBe(1);
+  });
+
+  it('adopt при пустой серверной (очистили на другом устройстве / TTL) → пустая корзина', () => {
+    const local = cart({ items: [item({ id: 'p1' })], deliveryMethod: 'pickup' });
+    const plan = planCartSync(local, null, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.cart.items).toEqual([]);
+    expect(plan.cart.promo).toBe('');
+    expect(plan.cart.deliveryMethod).toBe('pickup'); // выбор этого устройства
+  });
+
+  it('маркера нет (первый вход на устройстве) → merge', () => {
+    const local = cart({ items: [item({ id: 'l1', quantity: 2 })] });
+    const remote = cart({ items: [item({ id: 'r1', quantity: 1 })] });
+    const plan = planCartSync(local, remote, null, 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.cart.items.map((i) => i.id)).toEqual(['l1', 'r1']);
+  });
+
+  it('локаль менялась после синка (гостевые правки, сорванный PUT) → merge', () => {
+    const synced = cart({ items: [item({ id: 'p1', quantity: 1 })] });
+    const edited = cart({
+      items: [item({ id: 'p1', quantity: 1 }), item({ id: 'guest', quantity: 2 })],
+    });
+    const remote = cart({ items: [item({ id: 'p1', quantity: 1 })] });
+    const plan = planCartSync(edited, remote, markerFor('user-1', synced), 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.cart.items.map((i) => i.id)).toEqual(['p1', 'guest']);
+  });
+
+  it('маркер чужого пользователя → merge (даже если сигнатура совпала)', () => {
+    const local = cart({ items: [item({ id: 'p1', quantity: 2 })] });
+    const remote = cart({ items: [item({ id: 'p1', quantity: 2 })] });
+    const plan = planCartSync(local, remote, markerFor('user-2', local), 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.cart.items[0].quantity).toBe(2);
+  });
+
+  it('смена аккаунта (локаль отброшена) → серверная корзина целиком', () => {
+    const remote = cart({
+      items: [item({ id: 'r1', quantity: 3 })],
+      deliveryMethod: 'post',
+    });
+    const plan = planCartSync(null, remote, null, 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.cart).toEqual(remote);
+  });
+
+  it('битый маркер (мусор в localStorage) → merge', () => {
+    const local = cart({ items: [item({ id: 'p1' })] });
+    const remote = cart({ items: [item({ id: 'p1' })] });
+    const broken: CartSyncMarker = { userId: 'user-1', signature: 'мусор' };
+    expect(planCartSync(local, remote, broken, 'user-1').mode).toBe('merge');
   });
 });
 
