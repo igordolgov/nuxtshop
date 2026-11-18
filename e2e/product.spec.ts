@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-// Счётчик корзины: десктоп — badge в шапке (.indicator), мобильный —
-// cart-badge в нижней навигации; скрытые дубли отфильтровываем
+// Счётчик корзины: десктоп — badge мини-корзины в шапке (.mini-cart-badge),
+// мобильный — cart-badge в нижней навигации; скрытые дубли отфильтровываем
 const cartBadge = (page: import('@playwright/test').Page) =>
   page
-    .locator('.indicator .badge, .mobile-nav-footer .cart-badge')
+    .locator('.mini-cart-badge, .mobile-nav-footer .cart-badge')
     .filter({ visible: true })
     .first();
 

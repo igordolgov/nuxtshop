@@ -201,15 +201,12 @@ header.app-header.sticky.top-0.z-50.border-b(
           @update:showSuggestions="onShowSuggestions"
         )
 
-      //- Корзина — десктоп (на мобильных нижнее меню)
-      .indicator.hidden(class="lg:block")
-        NuxtLink.btn.btn-ghost.btn-circle(:to="localePath('/cart')" :aria-label="$t('nav.cart')" class="w-11 h-11 min-h-0")
-          svg.h-5.w-5(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-base-content/85" stroke-width="1.75")
-            path(stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z")
-        span.badge.badge-xs.badge-primary.absolute.top-2.right-2.indicator-item.rounded-full.px-1.count-pop(
-          v-if="cartItemsCount > 0"
-          :key="cartItemsCount"
-        ) {{ cartItemsCount }}
+      //- Корзина — десктоп: мини-корзина дропдауном из иконки (состав,
+      //- счётчики, сумма без перехода на страницу — паттерн Amazon/WB).
+      //- На мобильных корзина в нижнем меню; пустая корзина / SSR —
+      //- обычная ссылка на /cart (внутри HeaderCartMenu)
+      .hidden(class="lg:block")
+        HeaderCartMenu
 
       //- Переключатель языка — на десктопе (на мобильных — раздел «Язык» в бургер-меню)
       .hidden(class="lg:block")
@@ -391,7 +388,8 @@ const isProductRoute = computed(() => {
 const { isMobile } = useMobileDetection()
 const { favoritesCount } = useFavorites()
 const { compareCount } = useCompare()
-const { totalItems } = useCart()
+//- Корзина в шапке — HeaderCartMenu (дропдаун): счётчик бейджа и состав
+//- живут в нём, Header сам данные корзины не читает
 const appState = useAppState()
 
 //- ============================================
@@ -470,7 +468,6 @@ const isAdmin = computed(() => appState.isAdmin?.value)
 //- «Админ» виден менеджеру, но админ--only пункты (новости, контент,
 //- промокоды, пользователи) остаются скрытыми (v-if="isAdmin")
 const isManager = computed(() => appState.isManager?.value)
-const cartItemsCount = computed(() => totalItems.value)
 const userName = computed(() => user.value?.name || t('header.defaultUserName'))
 //- Подсветка «Админ» в мобильном меню — тот же локализованный предикат,
 //- что и у isAdminRoute (сырой startsWith('/admin') молчал на /en и /es)

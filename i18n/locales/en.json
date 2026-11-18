@@ -339,6 +339,7 @@
     "fabAria": "Contact us"
   },
   "cart": {
+    "subtotal": "Subtotal",
     "title": "Cart",
     "empty": "Your cart is empty",
     "emptyHint": "Start shopping to add items to your cart",

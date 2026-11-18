@@ -1,13 +1,28 @@
 import { expect, test } from '@playwright/test';
 
-// Вход в корзину: десктоп — <a> на /cart в шапке, мобильный — кнопка
-// нижней навигации (openCart → navigateTo('/cart')); скрытые дубли
-// отфильтровываются по видимости.
+// Вход в корзину: десктоп — иконка в шапке (HeaderCartMenu): пустая корзина —
+// <a> на /cart, с товарами — кнопка дропдауна (на страницу ведёт «Корзина»
+// в панели); мобильный — кнопка нижней навигации (openCart →
+// navigateTo('/cart')). Скоуп header/: у футера тоже есть ссылка «Корзина»;
+// скрытые дубли отфильтровываются по видимости.
 const cartEntry = (page: import('@playwright/test').Page) =>
   page
-    .locator('a[href*="/cart"], .mobile-nav-footer button:has(path[d^="M3 3h2l.4 2"])')
+    .locator(
+      'header a[href*="/cart"], header button[aria-controls="header-mini-cart"], .mobile-nav-footer button:has(path[d^="M3 3h2l.4 2"])',
+    )
     .filter({ visible: true })
     .first();
+
+// Десктоп: после клика по иконке корзины с товарами открывается дропдаун
+// мини-корзины — на страницу корзины ведёт кнопка «Корзина» в панели.
+// Мобильный: кнопка нижней навигации ведёт на /cart напрямую.
+async function goToCartPage(page: import('@playwright/test').Page) {
+  await cartEntry(page).click();
+  if (test.info().project.name !== 'mobile') {
+    await expect(page.locator('#header-mini-cart')).toBeVisible();
+    await page.locator('#header-mini-cart .mini-cart-go-cart').click();
+  }
+}
 
 // Корзина: добавление с карточки → страница /cart показывает товар.
 // Состояние корзины живёт в localStorage и изолировано per-test —
@@ -34,15 +49,15 @@ test('товар из карточки появляется на страниц�
   await addBtn.click();
   await expect(addBtn).toBeDisabled();
 
-  // Счётчик корзины: шапка (десктоп) / нижняя навигация (мобильный)
+  // Счётчик корзины: мини-корзина в шапке (десктоп) / нижняя навигация (мобильный)
   const badge = page
-    .locator('.indicator .badge, .mobile-nav-footer .cart-badge')
+    .locator('.mini-cart-badge, .mobile-nav-footer .cart-badge')
     .filter({ visible: true })
     .first();
   await expect(badge).toBeVisible();
 
   // Страница корзины: заголовок и счётчик позиций отрисованы
-  await cartEntry(page).click();
+  await goToCartPage(page);
   await expect(page).toHaveURL(/\/cart/);
   // Пустая корзина не показывается, счётчик позиций виден
   await expect(page.locator('.empty-cart-content')).toBeHidden();

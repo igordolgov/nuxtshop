@@ -339,6 +339,7 @@
     "fabAria": "Contáctanos"
   },
   "cart": {
+    "subtotal": "Subtotal",
     "title": "Carrito",
     "empty": "El carrito está vacío",
     "emptyHint": "Empiece a comprar para añadir artículos al carrito",

@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 // товары приходят с /api/products) — щедрый таймаут на первую карточку.
 const FIRST_PRODUCT = 'a[href*="/product/"]';
 
-// Вход в корзину: десктоп — <a> на /cart в шапке (.indicator), мобильный —
+// Вход в корзину: десктоп — <a> на /cart в шапке (HeaderCartMenu), мобильный —
 // кнопка в нижней навигации (openCart → navigateTo('/cart')); скрытые
 // дубли (иконка шапки на мобильных) отфильтровываются по видимости.
 const cartEntry = (page: import('@playwright/test').Page) =>
