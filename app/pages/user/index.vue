@@ -82,6 +82,32 @@
                     span(v-if="updatingProfile") {{ $t('settings.saving') }}
                     span(v-else) {{ $t('user.saveChanges') }}
 
+          //- Telegram: канал уведомлений о поступлении заявок
+          //- «сообщить о поступлении» (см. server/lib/stockAlertNotify.ts)
+          .card.bg-base-100.shadow-sm
+            .card-body.p-4
+              h3.card-title.text-md 📲 {{ $t('user.telegramTitle') }}
+              p.text-sm.mb-2(class="text-base-content/60") {{ $t('user.telegramHint') }}
+              template(v-if="currentUser?.telegramChat")
+                .flex.items-center.gap-2
+                  span.badge.badge-success.badge-sm {{ $t('user.telegramLinked') }}
+                  span.text-xs(class="text-base-content/50") Telegram
+              template(v-else)
+                button.btn.btn-primary.btn-sm.rounded-xl.w-full(
+                  type="button"
+                  :disabled="tgLinking || Boolean(tgLinkUrl)"
+                  @click="linkTelegram"
+                )
+                  span.loading.loading-spinner.loading-xs(v-if="tgLinking")
+                  | {{ $t('user.telegramLinkBtn') }}
+                a.btn.btn-outline.btn-sm.rounded-xl.w-full.mt-2(
+                  v-if="tgLinkUrl"
+                  :href="tgLinkUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                ) {{ $t('user.telegramOpenBot') }}
+                p.text-xs.mt-2(class="text-base-content/50") {{ $t('user.telegramCodeHint') }}
+
           //- Статистика
           .card.bg-base-100.shadow-sm
             .card-body.p-4
@@ -443,6 +469,31 @@ const updateProfile = async () => {
     $notify.error(serverMessage(error, 'auth.errProfileUpdate'))
   } finally {
     updatingProfile.value = false
+  }
+}
+
+//- ── Привязка Telegram: код из POST /api/my/telegram-link → deep-link.
+//- Применит webhook (/start link-КОД в боте); после — checkAuth обновит
+//- currentUser, карточка покажет «Привязано».
+const tgLinking = ref(false)
+const tgLinkUrl = ref('')
+const linkTelegram = async () => {
+  if (tgLinking.value) return
+  tgLinking.value = true
+  try {
+    const resp = await $fetch('/api/my/telegram-link', { method: 'POST' })
+    if (resp?.success && resp.url) {
+      tgLinkUrl.value = resp.url
+      $notify.success(t('user.telegramLinkReady'))
+    } else {
+      throw new Error(resp?.message || 'no url')
+    }
+  } catch (error) {
+    console.error('[telegram-link] Ошибка:', error)
+    // Серверные коды (telegramNotConfigured/telegramUnavailable/…) → server.*
+    $notify.error(serverMessage(error, 'user.telegramLinkError'))
+  } finally {
+    tgLinking.value = false
   }
 }
 

@@ -82,9 +82,21 @@
           ) {{ $t('product.left', currentStock.stockQuantity) }}
 
       //- Нет в наличии: заявка «сообщить о поступлении» (email или телефон)
+      //- Привязанному Telegram — одна кнопка: уведомление придёт в бот
       .stock-alert(v-if="!currentStock.inStock")
         button.btn.btn-outline.btn-sm.rounded-xl.w-full(
-          v-if="alertState === 'idle'"
+          v-if="alertState === 'idle' && tgLinked"
+          type="button"
+          :disabled="alertBusy"
+          @click="submitAlert(true)"
+        )
+          span.flex.items-center.justify-center.gap-2
+            span.loading.loading-spinner.loading-xs(v-if="alertBusy")
+            svg.w-4.h-4(v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75")
+              path(stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3A6 6 0 006 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9")
+            | {{ $t('product.notifyTelegram') }}
+        button.btn.btn-outline.btn-sm.rounded-xl.w-full(
+          v-else-if="alertState === 'idle'"
           type="button"
           @click="alertState = 'form'"
         )
@@ -225,6 +237,10 @@ void emit
 const { $notify } = useNuxtApp()
 // formatPrice/formatMoney — единые из useProductUtils (валюту добавляет formatMoney, аудит F13)
 const { formatMoney, formatPrice } = useProductUtils()
+// Привязанный Telegram? (профиль → «Привязать Telegram») — канал уведомлений
+// о поступлении: заявка одной кнопкой без ввода контакта
+const appState = useAppState()
+const tgLinked = computed(() => Boolean(appState.user?.value?.telegramChat))
 
 //- ── Варианты (цвет/память/размер) ─────────────────────────────────────
 // Чистые хелперы из utils/productVariants.js; cartItems — прямой доступ
@@ -307,14 +323,20 @@ watch(
   },
 )
 
-const submitAlert = async () => {
+const submitAlert = async (opts) => {
   alertError.value = ''
-  const c = alertContact.value
-  const isEmail = c.includes('@')
-  const digits = c.replace(/\D+/g, '')
-  if (!c || (isEmail ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) : digits.length < 10)) {
-    alertError.value = t('product.notifyErrContact')
-    return
+  //- opts === true — заявка одной кнопкой для привязанного Telegram:
+  //- контакт не вводим (сервер возьмёт email аккаунта и свяжет заявку
+  //- с профилем). Обычная форма приходит как Event из @submit — falsy-ветка
+  const viaTelegram = opts === true
+  const c = viaTelegram ? '' : alertContact.value
+  if (!viaTelegram) {
+    const isEmail = c.includes('@')
+    const digits = c.replace(/\D+/g, '')
+    if (!c || (isEmail ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) : digits.length < 10)) {
+      alertError.value = t('product.notifyErrContact')
+      return
+    }
   }
   alertBusy.value = true
   try {

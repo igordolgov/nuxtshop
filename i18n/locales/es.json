@@ -196,6 +196,7 @@
     "nameFallback": "Producto",
     "zoomImage": "Ampliar imagen",
     "notifyMe": "Avisarme cuando haya stock",
+    "notifyTelegram": "Avisar por Telegram",
     "notifyHint": "Deja un email o teléfono — te escribiremos en cuanto vuelva el producto.",
     "notifyContactPh": "tu{'@'}ejemplo.com o +34 …",
     "notifySend": "Enviar",
@@ -595,6 +596,14 @@
   "user": {
     "authRequired": "Se requiere autorización",
     "editProfile": "Editar perfil",
+    "telegramTitle": "Notificaciones de Telegram",
+    "telegramHint": "Vincula tu cuenta y te avisaremos por Telegram cuando lleguen los productos de tus solicitudes.",
+    "telegramLinkBtn": "Vincular Telegram",
+    "telegramLinked": "Vinculado",
+    "telegramOpenBot": "Abrir el bot y pulsar Start",
+    "telegramCodeHint": "El enlace es válido durante 15 minutos. Tras pulsar Start en el bot, actualiza la página.",
+    "telegramLinkReady": "Enlace listo — ábrelo en Telegram",
+    "telegramLinkError": "No se pudo crear el enlace de vinculación",
     "phone": "Teléfono",
     "deliveryAddress": "Dirección de entrega",
     "saveChanges": "Guardar cambios",
@@ -708,7 +717,9 @@
     "bulkDeleteFailed": "No se pudo realizar la eliminación masiva",
     "promoInactive": "El código promocional ya no está activo",
     "promoExpired": "El código promocional ha expirado",
-    "promoLimit": "Se alcanzó el límite de usos del código"
+    "promoLimit": "Se alcanzó el límite de usos del código",
+    "telegramNotConfigured": "El bot de Telegram no está configurado — notificaciones no disponibles",
+    "telegramUnavailable": "Telegram no está disponible — inténtalo más tarde"
   },
   "products": {
     "errFavorite": "Error al actualizar favoritos",
@@ -1340,7 +1351,8 @@
       "deletedToast": "Aviso eliminado",
       "deleteError": "No se pudo eliminar el aviso",
       "deletedProduct": "producto eliminado (id {id})",
-      "productId": "id {id}"
+      "productId": "id {id}",
+      "notified": "Notificado"
     }
   },
   "compare": {

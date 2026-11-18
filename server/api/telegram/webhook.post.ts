@@ -11,13 +11,18 @@ import { getOrderById, updateOrderStatus, ORDER_STATUS_LABELS } from '../../lib/
 import { kvGetJSON, kvPutJSON } from '../../lib/storage';
 import { answerCallbackQuery, editOrderCard, getAdminUserIds } from '../../lib/telegram';
 import { handleMessage, type TelegramCommandMessage } from '../../lib/telegramCommands';
+import { handleStartMessage } from '../../lib/telegramLink';
 
 // Форма update, которую реально читает вебхук: callback_query — нажатия
 // кнопок на карточках, message — слэш-команды (см. telegramCommands.ts);
-// from нужен для whitelist-проверки отправителя
+// from нужен для whitelist-проверки отправителя, chat — для ответа
+// покупателю при привязке аккаунта (/start link-КОД, см. telegramLink.ts)
 interface TelegramUpdate {
   update_id?: number;
-  message?: TelegramCommandMessage & { from?: { id: number } };
+  message?: TelegramCommandMessage & {
+    from?: { id: number };
+    chat?: { id: string | number };
+  };
   callback_query?: {
     id: string;
     data?: string;
@@ -41,6 +46,15 @@ export default defineEventHandler(async (event) => {
   const dedupeKey = `tg:upd:${update?.update_id}`;
   if (await kvGetJSON(event, dedupeKey)) return { ok: true };
   await kvPutJSON(event, dedupeKey, true, 3600);
+
+  // ── 2б. /start покупателя: привязка аккаунта по коду из профиля —
+  // ДО whitelist, одноразовый код и есть подтверждение личности.
+  // Поглощает валидные/битые коды и приветствует не-админов;
+  // админские /start проходят дальше по командам как раньше.
+  if (update.message) {
+    const consumed = await handleStartMessage(event, env, update.message, getAdminUserIds(env));
+    if (consumed) return { ok: true };
+  }
 
   // ── 3. Whitelist: только администраторы (общий для кнопок и команд) ──
   const senderId = String(update?.callback_query?.from?.id ?? update?.message?.from?.id ?? '');

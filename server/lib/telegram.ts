@@ -78,6 +78,24 @@ export async function sendMessage(env: TelegramEnv, chatId: string | number, tex
   return callApi(env, 'sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' });
 }
 
+/**
+ * Username бота (без @) из getMe — для deep-link привязки аккаунта
+ * (https://t.me/<username>?start=link-КОД). null — токен битый или
+ * Telegram недоступен. Кэшируется вызывающей стороной (KV, endpoint).
+ */
+export async function getBotUsername(env: TelegramEnv | null | undefined): Promise<string | null> {
+  if (!env?.TELEGRAM_BOT_TOKEN) return null;
+  try {
+    const res = await fetch(`${API_BASE}/bot${env.TELEGRAM_BOT_TOKEN}/getMe`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ok?: boolean; result?: { username?: string } };
+    return data.ok && data.result?.username ? data.result.username : null;
+  } catch (error) {
+    console.error('[telegram] getMe failed:', errorText(error));
+    return null;
+  }
+}
+
 // ─── Карточки заказов ───────────────────────────────────────────────
 
 /** Клавиатура под карточкой заказа. callback_data < 64 байт — ок */

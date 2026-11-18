@@ -16,6 +16,11 @@ export interface User {
   avatar?: string;
   isActive: boolean;
   emailVerified?: boolean;
+  /** Chat id бота после привязки аккаунта (/api/my/telegram-link + /start
+   *  link-КОД в webhook). null/undefined — не привязан. Канал уведомлений
+   *  о поступлении заявок «сообщить о поступлении». */
+  telegramChat?: string | null;
+  telegramLinkedAt?: string | null;
   lastLogin: string | null;
   createdAt: string;
   updatedAt: string;

@@ -196,6 +196,7 @@
     "nameFallback": "Товар",
     "zoomImage": "Увеличить изображение",
     "notifyMe": "Сообщить о поступлении",
+    "notifyTelegram": "Уведомить в Telegram",
     "notifyHint": "Оставьте email или телефон — напишем, когда товар появится.",
     "notifyContactPh": "you{'@'}example.ru или +7 …",
     "notifySend": "Отправить",
@@ -595,6 +596,14 @@
   "user": {
     "authRequired": "Требуется авторизация",
     "editProfile": "Редактирование профиля",
+    "telegramTitle": "Telegram-уведомления",
+    "telegramHint": "Привяжите аккаунт — сообщим в Telegram, когда товары из ваших заявок «сообщить о поступлении» появятся на складе.",
+    "telegramLinkBtn": "Привязать Telegram",
+    "telegramLinked": "Привязано",
+    "telegramOpenBot": "Открыть бота и нажать Start",
+    "telegramCodeHint": "Ссылка действует 15 минут. После Start в боте обновите страницу.",
+    "telegramLinkReady": "Ссылка готова — откройте её в Telegram",
+    "telegramLinkError": "Не удалось создать ссылку привязки",
     "phone": "Телефон",
     "deliveryAddress": "Адрес доставки",
     "saveChanges": "Сохранить изменения",
@@ -708,7 +717,9 @@
     "bulkDeleteFailed": "Не удалось выполнить массовое удаление",
     "promoInactive": "Промокод больше не действует",
     "promoExpired": "Срок действия промокода истёк",
-    "promoLimit": "Лимит применений промокода исчерпан"
+    "promoLimit": "Лимит применений промокода исчерпан",
+    "telegramNotConfigured": "Telegram-бот не настроен — уведомления недоступны",
+    "telegramUnavailable": "Telegram недоступен — попробуйте позже"
   },
   "products": {
     "errFavorite": "Ошибка при обновлении избранного",
@@ -1340,7 +1351,8 @@
       "deletedToast": "Заявка удалена",
       "deleteError": "Не удалось удалить заявку",
       "deletedProduct": "товар удалён (id {id})",
-      "productId": "id {id}"
+      "productId": "id {id}",
+      "notified": "Уведомлено"
     }
   },
   "compare": {

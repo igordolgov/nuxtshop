@@ -196,6 +196,7 @@
     "nameFallback": "Product",
     "zoomImage": "Zoom image",
     "notifyMe": "Notify me when available",
+    "notifyTelegram": "Notify via Telegram",
     "notifyHint": "Leave an email or phone number — we will write as soon as the product is back.",
     "notifyContactPh": "you{'@'}example.com or +1 …",
     "notifySend": "Send",
@@ -595,6 +596,14 @@
   "user": {
     "authRequired": "Authorization required",
     "editProfile": "Edit profile",
+    "telegramTitle": "Telegram notifications",
+    "telegramHint": "Link your account and we will message you on Telegram when products from your back-in-stock requests arrive.",
+    "telegramLinkBtn": "Link Telegram",
+    "telegramLinked": "Linked",
+    "telegramOpenBot": "Open the bot and press Start",
+    "telegramCodeHint": "The link is valid for 15 minutes. After pressing Start in the bot, refresh this page.",
+    "telegramLinkReady": "Link ready — open it in Telegram",
+    "telegramLinkError": "Failed to create the linking link",
     "phone": "Phone",
     "deliveryAddress": "Delivery address",
     "saveChanges": "Save changes",
@@ -708,7 +717,9 @@
     "bulkDeleteFailed": "Failed to perform the bulk delete",
     "promoInactive": "The promo code is no longer active",
     "promoExpired": "The promo code has expired",
-    "promoLimit": "The promo code usage limit has been reached"
+    "promoLimit": "The promo code usage limit has been reached",
+    "telegramNotConfigured": "Telegram bot is not configured — notifications unavailable",
+    "telegramUnavailable": "Telegram is unavailable — try again later"
   },
   "products": {
     "errFavorite": "Failed to update favorites",
@@ -1340,7 +1351,8 @@
       "deletedToast": "Alert deleted",
       "deleteError": "Failed to delete the alert",
       "deletedProduct": "product deleted (id {id})",
-      "productId": "id {id}"
+      "productId": "id {id}",
+      "notified": "Notified"
     }
   },
   "compare": {

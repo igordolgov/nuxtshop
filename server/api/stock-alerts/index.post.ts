@@ -4,6 +4,7 @@
 // на тот же товар — успех БЕЗ записи (дедупликация). Админам уходит
 // уведомление в Telegram (best-effort: сбой сети не ломает заявку).
 import { readProducts } from '../../lib/productHelpers';
+import { getSessionUser } from '../../utils/auth';
 import {
   StockAlertValidationError,
   MAX_STOCK_ALERTS,
@@ -24,7 +25,18 @@ export default defineEventHandler(async (event) => {
       return { success: true, message: 'Готово! Сообщим, когда товар появится' };
     }
 
-    const clean = normalizeStockAlertInput(body ?? {});
+    // Авторизованный покупатель может НЕ вводить контакт — берём email
+    // аккаунта, заявка связывается с профилем (userId): уведомление о
+    // поступлении придёт в Telegram после привязки аккаунта к боту
+    // (или по совпадению email/телефона, если привяжет позже).
+    const sessionUser = await getSessionUser(event).catch(() => null);
+    const rawContact =
+      typeof body?.contact === 'string' ? body.contact.trim() : String(sessionUser?.email ?? '');
+
+    const clean = normalizeStockAlertInput({
+      productId: body?.productId,
+      contact: rawContact || sessionUser?.email || '',
+    });
 
     const products = await readProducts(event);
     const product = products.find((p) => String(p?.id) === clean.productId);
@@ -52,6 +64,9 @@ export default defineEventHandler(async (event) => {
       productId: clean.productId,
       productName: product.name,
       contact: clean.contact,
+      // Кто оставил (авторизованный) — уведомление о поступлении найдёт
+      // его Telegram по userId; null — гость (поиск по контакту)
+      userId: sessionUser?.id ?? null,
       createdAt: new Date().toISOString(),
     });
     await writeStockAlerts(event, trimmed);

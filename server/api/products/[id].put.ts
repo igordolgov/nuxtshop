@@ -15,6 +15,8 @@ import {
 import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
 import { adminActionLog } from '../../lib/logger';
+import { detectRestock, notifyRestockSubscribers } from '../../lib/stockAlertNotify';
+import { getAdminChatIds, sendMessage } from '../../lib/telegram';
 
 // Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
 // categories/gallery/variants в любом допустимом формате)
@@ -147,6 +149,28 @@ export default defineEventHandler(async (event) => {
       actor: { id: staff.id, email: staff.email, role: staff.role },
       product: { id: updated.id, name: updated.name },
     });
+
+    // ── Поступление товара: уведомляем заявки «сообщить о поступлении»
+    // (Telegram). Best-effort: сбой бота не отменяет сохранение товара.
+    const env = event.context.cloudflare?.env;
+    if (env?.TELEGRAM_BOT_TOKEN && detectRestock(existing, updated)) {
+      try {
+        const origin = getRequestURL(event).origin;
+        const { sent } = await notifyRestockSubscribers(event, env, [updated], origin);
+        if (sent > 0) {
+          // Короткая сводка админам — фидбек, что механизм работает
+          for (const chatId of getAdminChatIds(env)) {
+            await sendMessage(
+              env,
+              chatId,
+              `📤 «${updated.name}»: о поступлении уведомлено — ${sent}`,
+            );
+          }
+        }
+      } catch (e) {
+        console.warn('[stock-alerts] уведомление о поступлении не удалось:', e);
+      }
+    }
 
     return { success: true, product: updated, message: 'Товар обновлён' };
   } catch (error) {

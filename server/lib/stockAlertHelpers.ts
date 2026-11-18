@@ -21,6 +21,15 @@ export interface StockAlertItem {
   productName: string;
   /** Email или телефон покупателя. */
   contact: string;
+  /** id пользователя — заявитель авторизован (см. stock-alerts/index.post.ts):
+   *  уведомление о поступлении найдёт его Telegram по профилю
+   *  (user.telegramChat), если привязан; по контакту — если привяжет позже.
+   *  undefined/null — гость. */
+  userId?: string | null;
+  /** ISO-момент отправки уведомления о поступлении (Telegram доставлен).
+   *  undefined — заявка pending: товар не возвращался или получатель
+   *  не найден (админ видит её в списке и работает вручную). */
+  notifiedAt?: string | null;
   /** ISO-момент заявки. */
   createdAt: string;
 }

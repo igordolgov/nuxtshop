@@ -3,6 +3,8 @@ import { readProducts, writeProducts } from '../../lib/productHelpers';
 import { applyBulkPatch, normalizeIdList, parseBulkPatch } from '../../lib/bulkHelpers';
 import { requireStaff } from '../../utils/auth';
 import { adminActionLog } from '../../lib/logger';
+import { findRestockedProducts, notifyRestockSubscribers } from '../../lib/stockAlertNotify';
+import { getAdminChatIds, sendMessage } from '../../lib/telegram';
 
 // PATCH /api/products/bulk  { ids, inStock?, stockQuantity?, setCategories?/addCategories?/removeCategories? }
 // Массовое изменение: один запрос и одна запись KV на весь список
@@ -41,6 +43,28 @@ export default defineEventHandler(async (event) => {
         event,
         products.map((p) => byId.get(p.id) ?? p),
       );
+    }
+
+    // ── Поступление при массовой правке: те же уведомления заявок.
+    // Best-effort: сбой бота не отменяет сохранение.
+    const env = event.context.cloudflare?.env;
+    const restocked = findRestockedProducts(products, updated);
+    if (env?.TELEGRAM_BOT_TOKEN && restocked.length > 0) {
+      try {
+        const origin = getRequestURL(event).origin;
+        const { sent } = await notifyRestockSubscribers(event, env, restocked, origin);
+        if (sent > 0) {
+          for (const chatId of getAdminChatIds(env)) {
+            await sendMessage(
+              env,
+              chatId,
+              `📤 Массовая правка: о поступлении уведомлено — ${sent}`,
+            );
+          }
+        }
+      } catch (e) {
+        console.warn('[stock-alerts] уведомление о поступлении не удалось:', e);
+      }
     }
 
     // Массовая правка — действие с широким радиусом, логируем размах

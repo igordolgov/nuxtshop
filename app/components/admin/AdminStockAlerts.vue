@@ -39,6 +39,11 @@
         .flex.items-center.gap-2.flex-wrap
           span.font-medium.text-sm {{ a.productName || $t('admin.stockAlerts.deletedProduct', { id: a.productId }) }}
           span.badge.badge-sm.badge-ghost {{ $t('admin.stockAlerts.productId', { id: a.productId }) }}
+          //- Заявка уведомлена (товар вернулся на склад, Telegram ушёл)
+          span.badge.badge-sm.badge-success(
+            v-if="a.notifiedAt"
+            :title="formatDate(a.notifiedAt)"
+          ) {{ $t('admin.stockAlerts.notified') }}
           span.text-xs.ml-auto(class="text-base-content/50") {{ formatDate(a.createdAt) }}
         .flex.items-center.justify-between.gap-2.flex-wrap
           a.link.link-hover.text-sm.font-medium(
