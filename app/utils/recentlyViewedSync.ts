@@ -12,7 +12,14 @@
 //   normalizeRemoteRecent — санитизация ответа GET /api/my/recently-viewed
 //     и присылаемого PUT-пейлоада;
 //   mergeRecent — объединение локальной и серверной истории при входе;
-//   recentSignature — стабильный слепок для дедупликации PUT.
+//   recentSignature — стабильный слепок для дедупликации PUT;
+//   planRecentSync — adopt/merge по маркеру последнего синка (внизу).
+//
+// Идемпотентность: handleAuthLogin вызывается при КАЖДОЙ загрузке страницы
+// с живой сессией. Union по slug сам по себе дублей не создаёт, но НЕ
+// переносит удаления (очистку истории на другом устройстве) — локальная
+// копия при перезагрузке «воскрешала» записи и уходила обратно на сервер.
+// Лечится маркером, как в корзине/избранном (planRecentSync).
 // ============================================
 
 export const RECENTLY_VIEWED_KEY = 'recentlyViewed';
@@ -75,3 +82,43 @@ export const mergeRecent = (
 
 /** Стабильный слепок истории для дедупликации PUT */
 export const recentSignature = (items: string[]): string => JSON.stringify(items);
+
+/**
+ * Маркер последнего синка истории (хранится в localStorage на клиенте):
+ * слепок локального списка на момент, когда сервер его уже получил
+ * (успешный PUT / adopt после pull).
+ */
+export interface RecentSyncMarker {
+  userId: string;
+  signature: string;
+}
+
+/** Решение pull-а: принять серверную историю как есть или сливать с локальной */
+export type RecentSyncPlan = { mode: 'adopt' | 'merge'; items: string[] };
+
+/**
+ * Что делать с серверной историей при входе / загрузке страницы с сессией
+ * (те же правила, что planFavoritesSync / planCartSync):
+ *  - маркер совпадает → ADOPT: сервер — источник истины (переносит очистку
+ *    истории и новые просмотры с другого устройства); серверной нет → пусто;
+ *  - маркера нет / чужой / локальное менялось (гостевые просмотры, сорванный
+ *    PUT, смена аккаунта) → MERGE: mergeRecent (идемпотентен).
+ */
+export const planRecentSync = (
+  local: string[] | null,
+  remote: string[] | null,
+  marker: RecentSyncMarker | null,
+  userId: string,
+  max: number = RECENTLY_VIEWED_MAX,
+): RecentSyncPlan => {
+  const localItems = local ?? [];
+
+  const unchangedSinceSync =
+    !!marker && marker.userId === userId && marker.signature === recentSignature(localItems);
+
+  if (unchangedSinceSync) {
+    return { mode: 'adopt', items: remote ?? [] };
+  }
+
+  return { mode: 'merge', items: mergeRecent(localItems, remote, max) };
+};

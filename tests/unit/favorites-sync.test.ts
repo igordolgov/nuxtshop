@@ -1,6 +1,7 @@
 // Тесты синка избранного с аккаунтом:
 //  - app/utils/favoritesSync.ts — mergeFavorites / normalizeRemoteFavorites /
-//    favoritesSignature (общая логика клиента и сервера);
+//    favoritesSignature / planFavoritesSync (adopt/merge по маркеру) — общая
+//    логика клиента и сервера;
 //  - server/lib/favoritesHelpers.ts — KV read/write поверх in-memory fallback
 //    (биндингов KV в тестах нет — см. cart-sync.test.ts).
 import { describe, expect, it } from 'vitest';
@@ -9,8 +10,10 @@ import {
   favoritesSignature,
   mergeFavorites,
   normalizeRemoteFavorites,
+  planFavoritesSync,
   sanitizeFavorite,
   SYNC_FAVORITES_MAX,
+  type FavoritesSyncMarker,
   type SyncFavorite,
 } from '../../app/utils/favoritesSync';
 import { readUserFavorites, writeUserFavorites } from '../../server/lib/favoritesHelpers';
@@ -191,6 +194,79 @@ describe('favoritesSignature: слепок для дедупликации PUT',
     const b = [fav({ id: 'p2' })];
     expect(favoritesSignature(a)).not.toBe(favoritesSignature(b));
     expect(favoritesSignature(a)).not.toBe(favoritesSignature([...a, b[0]]));
+  });
+});
+
+describe('planFavoritesSync: adopt/merge по маркеру последнего синка', () => {
+  const markerFor = (userId: string, list: SyncFavorite[]): FavoritesSyncMarker => ({
+    userId,
+    signature: favoritesSignature(list),
+  });
+
+  it('регрессия «воскрешения»: удаление на другом устройстве переносится (adopt)', () => {
+    // На этом устройстве список не менялся с последнего синка; на другом
+    // товар удалили. Обязаны ПРИНЯТЬ серверный список, а не сливать —
+    // union возвращал удалённый товар при каждой перезагрузке (иногда
+    // со снапшотом со старой картинкой).
+    const local = [fav({ id: 'p1' }), fav({ id: 'p2' })];
+    const remote = [fav({ id: 'p1' })]; // p2 удалён на другом устройстве
+    const plan = planFavoritesSync(local, remote, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items.map((f) => f.id)).toEqual(['p1']);
+  });
+
+  it('adopt: серверный список принимается как есть, включая новые товары', () => {
+    const local = [fav({ id: 'p1' })];
+    const remote = [fav({ id: 'p1' }), fav({ id: 'new', addedAt: '2025-02-01T00:00:00.000Z' })];
+    const plan = planFavoritesSync(local, remote, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items.map((f) => f.id)).toEqual(['p1', 'new']);
+  });
+
+  it('adopt при пустом серверном (очистили на другом устройстве) → пустой список', () => {
+    const local = [fav({ id: 'p1' })];
+    const plan = planFavoritesSync(local, null, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items).toEqual([]);
+  });
+
+  it('маркера нет (первый вход на устройстве) → merge (union по id)', () => {
+    const local = [fav({ id: 'l1' })];
+    const remote = [fav({ id: 'r1' })];
+    const plan = planFavoritesSync(local, remote, null, 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items.map((f) => f.id).sort()).toEqual(['l1', 'r1']);
+  });
+
+  it('локальное менялось после синка (гостевые правки, сорванный PUT) → merge', () => {
+    const synced = [fav({ id: 'p1' })];
+    const edited = [fav({ id: 'p1' }), fav({ id: 'guest', addedAt: '2025-03-01T00:00:00.000Z' })];
+    const remote = [fav({ id: 'p1' })];
+    const plan = planFavoritesSync(edited, remote, markerFor('user-1', synced), 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items.map((f) => f.id).sort()).toEqual(['guest', 'p1']);
+  });
+
+  it('маркер чужого пользователя → merge (даже при совпавшей сигнатуре)', () => {
+    const local = [fav({ id: 'p1' })];
+    const remote = [fav({ id: 'p1' })];
+    const plan = planFavoritesSync(local, remote, markerFor('user-2', local), 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items.map((f) => f.id)).toEqual(['p1']);
+  });
+
+  it('смена аккаунта (локаль отброшена) → серверный список целиком', () => {
+    const remote = [fav({ id: 'r1' })];
+    const plan = planFavoritesSync(null, remote, null, 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items.map((f) => f.id)).toEqual(['r1']);
+  });
+
+  it('битый маркер (мусор в localStorage) → merge', () => {
+    const local = [fav({ id: 'p1' })];
+    const remote = [fav({ id: 'p1' })];
+    const broken: FavoritesSyncMarker = { userId: 'user-1', signature: 'мусор' };
+    expect(planFavoritesSync(local, remote, broken, 'user-1').mode).toBe('merge');
   });
 });
 

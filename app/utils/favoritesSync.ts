@@ -9,7 +9,15 @@
 //   normalizeRemoteFavorites — санитизация ответа GET /api/my/favorites
 //                              и присылаемого PUT-пейлоада;
 //   mergeFavorites        — объединение локального и серверного списков при входе;
-//   favoritesSignature    — стабильный слепок для дедупликации PUT.
+//   favoritesSignature    — стабильный слепок для дедупликации PUT;
+//   planFavoritesSync     — adopt/merge по маркеру последнего синка (внизу).
+//
+// Идемпотентность: handleAuthLogin вызывается при КАЖДОЙ загрузке страницы
+// с живой сессией. Union по id сам по себе дублей не создаёт, но НЕ переносит
+// удаления: удалённый на другом устройстве товар при каждой перезагрузке
+// «воскресал» из локальной копии и уходил обратно на сервер (баг релиза
+// синка). Лечится маркером: неизменённую с последнего синка локальную копию
+// не сливаем — принимаем серверный список как есть (planFavoritesSync).
 // ============================================
 
 /** Снапшот товара в избранном — минимум полей для карточки.
@@ -177,4 +185,51 @@ export const favoritesSignature = (items: SyncFavorite[]): string => {
     return out;
   });
   return JSON.stringify(sorted);
+};
+
+/**
+ * Маркер последнего синка избранного (хранится в localStorage на клиенте):
+ * слепок локального списка на момент, когда сервер его уже получил
+ * (успешный PUT / adopt после pull).
+ */
+export interface FavoritesSyncMarker {
+  userId: string;
+  signature: string;
+}
+
+/** Решение pull-а: принять серверный список как есть или сливать с локальным */
+export type FavoritesSyncPlan = { mode: 'adopt' | 'merge'; items: SyncFavorite[] };
+
+/**
+ * Что делать с серверным избранным при входе / загрузке страницы с сессией.
+ *
+ *  - Маркер совпадает (тот же пользователь, локальный список сигнатурно
+ *    не изменился с последнего подтверждённого синка) → ADOPT: сервер —
+ *    источник истины, принимаем его список целиком. Именно это переносит
+ *    удаления и добавления, сделанные на другом устройстве: раньше union
+ *    воскрешал удалённый товар при каждой перезагрузке (иногда со снапшотом
+ *    со старой картинкой — его заморозило другое устройство раньше).
+ *    Серверного нет (null — очищено на другом устройстве) → пустой список.
+ *  - Маркера нет / он чужой / локальное менялось после синка (гостевые
+ *    правки, сорванный PUT, смена аккаунта) → MERGE: union по id
+ *    (идемпотентен), результат уйдёт на сервер PUT-ом.
+ *
+ * marker — то, что вернул клиент из localStorage (null — нет/битый).
+ */
+export const planFavoritesSync = (
+  local: SyncFavorite[] | null,
+  remote: SyncFavorite[] | null,
+  marker: FavoritesSyncMarker | null,
+  userId: string,
+): FavoritesSyncPlan => {
+  const localItems = local ?? [];
+
+  const unchangedSinceSync =
+    !!marker && marker.userId === userId && marker.signature === favoritesSignature(localItems);
+
+  if (unchangedSinceSync) {
+    return { mode: 'adopt', items: remote ?? [] };
+  }
+
+  return { mode: 'merge', items: mergeFavorites(localItems, remote) };
 };

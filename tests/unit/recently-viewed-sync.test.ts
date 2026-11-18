@@ -1,6 +1,7 @@
 // Тесты синка истории просмотров с аккаунтом:
 //  - app/utils/recentlyViewedSync.ts — mergeRecent / normalizeRemoteRecent /
-//    recentSignature (общая логика клиента и сервера);
+//    recentSignature / planRecentSync (adopt/merge по маркеру) — общая
+//    логика клиента и сервера;
 //  - server/lib/recentlyViewedHelpers.ts — KV read/write поверх in-memory
 //    fallback (биндингов KV в тестах нет — см. cart-sync.test.ts).
 import { describe, expect, it } from 'vitest';
@@ -8,10 +9,12 @@ import type { H3Event } from 'h3';
 import {
   mergeRecent,
   normalizeRemoteRecent,
+  planRecentSync,
   recentSignature,
   RECENTLY_VIEWED_MAX,
   RECENTLY_VIEWED_KEY,
   RECENT_SLUG_MAX_LENGTH,
+  type RecentSyncMarker,
 } from '../../app/utils/recentlyViewedSync';
 import {
   readUserRecentlyViewed,
@@ -95,6 +98,67 @@ describe('recentSignature: слепок для дедупликации PUT', ()
     expect(recentSignature(['a', 'b'])).toBe(recentSignature(['a', 'b']));
     expect(recentSignature(['a', 'b'])).not.toBe(recentSignature(['b', 'a'])); // порядок = свежесть
     expect(recentSignature([])).not.toBe(recentSignature(['a']));
+  });
+});
+
+describe('planRecentSync: adopt/merge по маркеру последнего синка', () => {
+  const markerFor = (userId: string, list: string[]): RecentSyncMarker => ({
+    userId,
+    signature: recentSignature(list),
+  });
+
+  it('регрессия «воскрешения»: очистка истории на другом устройстве переносится (adopt)', () => {
+    // Локаль не менялась с последнего синка; на другом устройстве историю
+    // очистили. Обязаны принять пустую, а не сливать — union возвращал
+    // записи при каждой перезагрузке и отправлял их обратно на сервер.
+    const local = ['a', 'b'];
+    const plan = planRecentSync(local, [], markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items).toEqual([]);
+  });
+
+  it('adopt: новые просмотры с другого устройства переносятся', () => {
+    const local = ['a'];
+    const remote = ['c', 'a']; // на другом устройстве смотрели «c»
+    const plan = planRecentSync(local, remote, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items).toEqual(['c', 'a']);
+  });
+
+  it('adopt при пустом серверном (null — ключ удалён) → пустая история', () => {
+    const local = ['a'];
+    const plan = planRecentSync(local, null, markerFor('user-1', local), 'user-1');
+    expect(plan.mode).toBe('adopt');
+    expect(plan.items).toEqual([]);
+  });
+
+  it('маркера нет (первый вход на устройстве) → merge (union по slug)', () => {
+    const plan = planRecentSync(['l1'], ['r1'], null, 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items).toEqual(['l1', 'r1']);
+  });
+
+  it('локальное менялось после синка (гостевые просмотры, сорванный PUT) → merge', () => {
+    const synced = ['a'];
+    const edited = ['guest', 'a'];
+    const remote = ['a'];
+    const plan = planRecentSync(edited, remote, markerFor('user-1', synced), 'user-1');
+    expect(plan.mode).toBe('merge');
+    expect(plan.items).toEqual(['guest', 'a']);
+  });
+
+  it('маркер чужого пользователя → merge', () => {
+    const local = ['a'];
+    const plan = planRecentSync(local, ['a'], markerFor('user-2', local), 'user-1');
+    expect(plan.mode).toBe('merge');
+  });
+
+  it('битый маркер → merge; кастомный max уважается в merge-ветке', () => {
+    const broken: RecentSyncMarker = { userId: 'user-1', signature: 'мусор' };
+    expect(planRecentSync(['a'], ['b'], broken, 'user-1').mode).toBe('merge');
+    // локальный порядок + новые с сервера в конец, кап max
+    const plan = planRecentSync(['a', 'b', 'c'], ['d'], broken, 'user-1', 2);
+    expect(plan.items).toEqual(['a', 'b']);
   });
 });
 

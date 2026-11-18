@@ -6,9 +6,9 @@
 // Новые товары добавляются сверху — порядок стабилен между перезагрузками.
 //
 // Синк с аккаунтом (тот же паттерн, что в useCart): debounce-push на
-// PUT /api/my/favorites после мутаций, pull+merge при входе/загрузке с
-// сессией, гашение при выходе/401. Чистая логика merge/санитизации —
-// app/utils/favoritesSync.ts (общая с сервером).
+// PUT /api/my/favorites после мутаций, pull (adopt/merge по маркеру) при
+// входе/загрузке с сессией, гашение при выходе/401. Чистая логика
+// merge/санитизации — app/utils/favoritesSync.ts (общая с сервером).
 // ============================================
 
 import { ref, computed, watch } from 'vue';
@@ -19,8 +19,9 @@ import { tr } from './tr';
 // подключается сервером (favoritesHelpers).
 import {
   favoritesSignature,
-  mergeFavorites,
   normalizeRemoteFavorites,
+  planFavoritesSync,
+  type FavoritesSyncMarker,
   type SyncFavorite,
 } from '../utils/favoritesSync';
 
@@ -31,6 +32,11 @@ const LEGACY_KEYS = ['userFavorites'];
 // в последний раз): вход в ДРУГОЙ аккаунт на этом устройстве не переносит
 // чужое избранное в новую учётку — берём серверный список целиком.
 const OWNER_KEY = 'favorites-owner';
+// Маркер последнего синка { userId, signature }: слепок локального списка,
+// который сервер уже получил (успешный PUT или adopt после pull). Без него
+// union-merge при каждой перезагрузке «воскрешал» удалённый на другом
+// устройстве товар (баг релиза синка).
+const SYNC_MARKER_KEY = 'favorites-sync-marker';
 // Задержка пуша после мутации: склеиваем серии изменений в один PUT
 const PUSH_DEBOUNCE_MS = 1200;
 
@@ -137,6 +143,29 @@ function createFavorites() {
     }
   };
 
+  /** Маркер последнего синка: null — нет/битый (трактуем как «нет синка») */
+  const readSyncMarker = (): FavoritesSyncMarker | null => {
+    try {
+      const raw = localStorage.getItem(SYNC_MARKER_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<FavoritesSyncMarker>;
+      return typeof parsed.userId === 'string' && typeof parsed.signature === 'string'
+        ? { userId: parsed.userId, signature: parsed.signature }
+        : null;
+    } catch {
+      return null;
+    }
+  };
+
+  /** Сервер получил список с этой сигнатурой — запоминаем */
+  const writeSyncMarker = (userId: string, signature: string): void => {
+    try {
+      localStorage.setItem(SYNC_MARKER_KEY, JSON.stringify({ userId, signature }));
+    } catch {
+      // приватный режим — merge-ветка planFavoritesSync остаётся безопасной
+    }
+  };
+
   const pushFavorites = async (): Promise<void> => {
     if (!import.meta.client || !syncUserId.value) return;
     const signature = favoritesSignature(items.value);
@@ -152,6 +181,8 @@ function createFavorites() {
         body: { favorites: items.value },
       });
       lastPushedSignature = signature;
+      // Сервер получил это состояние — обновляем маркер синка
+      if (syncUserId.value) writeSyncMarker(syncUserId.value, signature);
     } catch (error) {
       const status = (error as { status?: number }).status;
       if (status === 401) {
@@ -319,9 +350,15 @@ function createFavorites() {
 
   /**
    * Вход в аккаунт / загрузка страницы с живой сессией: подтянуть серверное
-   * избранное и объединить с локальным (правила — mergeFavorites в
+   * избранное и принять/объединить с локальным (planFavoritesSync в
    * favoritesSync.ts). Вызывается из useAuth.login/register и из
-   * initializeApp после checkAuth — как handleAuthLogin в useCart.
+   * initializeApp после checkAuth — то есть при КАЖДОЙ загрузке страницы с
+   * сессией, поэтому:
+   *  - маркер синка совпадает (локаль не менялась) → adopt — серверный список
+   *    принимается как есть; именно это переносит удаления с других
+   *    устройств (раньше union «воскрешал» удалённые товары);
+   *  - маркера нет / локаль менялась (гостевые правки, сорванный PUT,
+   *    чужой аккаунт) → merge — union по id, идемпотентный сам по себе.
    */
   const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<void> => {
     if (!import.meta.client) return Promise.resolve();
@@ -353,13 +390,23 @@ function createFavorites() {
       const discardLocal = owner != null && owner !== userId;
       const localIds = new Set(items.value.map((p) => p.id));
 
-      items.value = mergeFavorites(discardLocal ? [] : items.value, remote);
+      const plan = planFavoritesSync(
+        discardLocal ? null : items.value,
+        remote,
+        readSyncMarker(),
+        userId,
+      );
+
+      items.value = plan.items;
       syncUserId.value = userId;
       writeOwner(userId);
-      save();
+      save(); // watch(items) тоже вызовет save — идемпотентно, двойная запись не страшна
 
       // Пушим только реальный дифф с сервером (пустой сервер + пустой локальный
-      // → PUT не нужен вовсе)
+      // → PUT не нужен вовсе). Маркер синка пишем сразу, когда локальный стейт
+      // УЖЕ равен серверному (adopt и merge без диффа): серверное состояние
+      // получено. При диффе маркер запишет pushFavorites после успешного PUT —
+      // если PUT сорвётся, локаль останется «изменённой» и pull повторит merge.
       const current = favoritesSignature(items.value);
       const remoteSignature = remote ? favoritesSignature(remote) : null;
       if (current !== remoteSignature) {
@@ -367,6 +414,7 @@ function createFavorites() {
         void pushFavorites();
       } else {
         lastPushedSignature = current;
+        writeSyncMarker(userId, current);
       }
 
       // Тост — только когда с сервера приехали новые товары
@@ -399,7 +447,8 @@ function createFavorites() {
 
   /**
    * Выход из аккаунта: синк гасится, локальное избранное остаётся гостевым.
-   * Owner не трогаем — повторный вход в тот же аккаунт продолжит синк.
+   * Owner и маркер синка не трогаем — повторный вход в тот же аккаунт
+   * сравнит локаль с последним синком (adopt) или сольёт гостевые правки.
    */
   const handleAuthLogout = (): void => {
     if (!import.meta.client) return;

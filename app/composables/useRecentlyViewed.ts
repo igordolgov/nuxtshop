@@ -10,26 +10,33 @@
 //
 // Синк с аккаунтом (тот же паттерн, что в useCart/useFavorites):
 // debounce-push на PUT /api/my/recently-viewed после мутаций истории,
-// pull+merge при входе/загрузке с сессией, гашение при выходе/401.
-// Чистая логика merge/санитизации — app/utils/recentlyViewedSync.ts
-// (общая с сервером). Константы ключа/лимита каноничны там же.
+// pull (adopt/merge по маркеру) при входе/загрузке с сессией, гашение при
+// выходе/401. Чистая логика merge/санитизации —
+// app/utils/recentlyViewedSync.ts (общая с сервером). Константы ключа/лимита
+// каноничны там же.
 //
 // pushRecent — чистая функция (юнит-тесты без localStorage):
 // повторы поднимают товар наверх, длина ограничена RECENTLY_VIEWED_MAX.
 // ============================================
 
 import {
-  mergeRecent,
   normalizeRemoteRecent,
+  planRecentSync,
   recentSignature,
   RECENTLY_VIEWED_KEY,
   RECENTLY_VIEWED_MAX,
+  type RecentSyncMarker,
 } from '../utils/recentlyViewedSync';
 
 // Совместимость: потребители импортировали константы отсюда
 export { RECENTLY_VIEWED_KEY, RECENTLY_VIEWED_MAX };
 
 const OWNER_KEY = 'recently-viewed-owner';
+// Маркер последнего синка { userId, signature }: слепок локальной истории,
+// который сервер уже получил (успешный PUT или adopt после pull). Без него
+// union-merge при каждой перезагрузке «воскрешал» очищенную на другом
+// устройстве историю (баг релиза синка).
+const SYNC_MARKER_KEY = 'recently-viewed-sync-marker';
 // Задержка пуша после мутации: склеиваем серии изменений в один PUT
 const PUSH_DEBOUNCE_MS = 1200;
 
@@ -89,6 +96,29 @@ const writeOwner = (userId: string): void => {
   }
 };
 
+/** Маркер последнего синка: null — нет/битый (трактуем как «нет синка») */
+const readSyncMarker = (): RecentSyncMarker | null => {
+  try {
+    const raw = localStorage.getItem(SYNC_MARKER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<RecentSyncMarker>;
+    return typeof parsed.userId === 'string' && typeof parsed.signature === 'string'
+      ? { userId: parsed.userId, signature: parsed.signature }
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Сервер получил историю с этой сигнатурой — запоминаем */
+const writeSyncMarker = (userId: string, signature: string): void => {
+  try {
+    localStorage.setItem(SYNC_MARKER_KEY, JSON.stringify({ userId, signature }));
+  } catch {
+    // приватный режим — merge-ветка planRecentSync остаётся безопасной
+  }
+};
+
 const pushRecentList = async (): Promise<void> => {
   if (!import.meta.client || !syncUserId) return;
   const list = readStoredSlugs();
@@ -105,6 +135,8 @@ const pushRecentList = async (): Promise<void> => {
       body: { recentlyViewed: list },
     });
     lastPushedSignature = signature;
+    // Сервер получил это состояние — обновляем маркер синка
+    if (syncUserId) writeSyncMarker(syncUserId, signature);
   } catch (error) {
     const status = (error as { status?: number }).status;
     if (status === 401) {
@@ -129,9 +161,12 @@ const schedulePush = (): void => {
 
 /**
  * Вход в аккаунт / загрузка страницы с живой сессией: подтянуть серверную
- * историю и объединить с локальной (правила — mergeRecent в
+ * историю и принять/объединить с локальной (planRecentSync в
  * recentlyViewedSync.ts). Вызывается из useAuth.login/register и из
- * initializeApp после checkAuth — как handleAuthLogin в useCart.
+ * initializeApp после checkAuth — при КАЖДОЙ загрузке страницы с сессией:
+ *  - маркер совпадает (локаль не менялась) → adopt — серверная история
+ *    как есть (переносит очистку/просмотры с других устройств;
+ *  - маркера нет / локаль менялась → merge (идемпотентный union по slug).
  */
 const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<void> => {
   if (!import.meta.client) return Promise.resolve();
@@ -157,10 +192,15 @@ const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<
     // историю (его) не переносим в новую учётку
     const owner = readOwner();
     const discardLocal = owner != null && owner !== userId;
-    const merged = mergeRecent(discardLocal ? [] : readStoredSlugs(), remote);
+    const plan = planRecentSync(
+      discardLocal ? null : readStoredSlugs(),
+      remote,
+      readSyncMarker(),
+      userId,
+    );
 
     try {
-      window.localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(merged));
+      window.localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(plan.items));
     } catch {
       // переполнение квоты / приватный режим — история не критична
     }
@@ -168,14 +208,17 @@ const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<
     writeOwner(userId);
 
     // Пушим только реальный дифф с сервером (пустой сервер + пустая локальная
-    // → PUT не нужен вовсе)
-    const current = recentSignature(merged);
+    // → PUT не нужен вовсе). Маркер синка пишем сразу, когда локальная история
+    // УЖЕ равна серверной (adopt и merge без диффа); при диффе маркер запишет
+    // pushRecentList после успешного PUT — сорвётся, pull повторит merge.
+    const current = recentSignature(plan.items);
     const remoteSignature = remote ? recentSignature(remote) : null;
     if (current !== remoteSignature) {
       lastPushedSignature = null;
       void pushRecentList();
     } else {
       lastPushedSignature = current;
+      writeSyncMarker(userId, current);
     }
 
     // Полоса «Недавно смотрели» в ЭТОЙ вкладке перечитывает localStorage
@@ -195,7 +238,8 @@ const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<
 
 /**
  * Выход из аккаунта: синк гасится, локальная история остаётся гостевой.
- * Owner не трогаем — повторный вход в тот же аккаунт продолжит синк.
+ * Owner и маркер синка не трогаем — повторный вход в тот же аккаунт
+ * сравнит локаль с последним синком (adopt) или сольёт гостевые просмотры.
  */
 const handleAuthLogout = (): void => {
   if (!import.meta.client) return;
