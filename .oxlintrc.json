@@ -6,5 +6,12 @@
     "no-console": "off",
     "no-debugger": "error"
   },
-  "ignorePatterns": ["node_modules", ".nuxt", ".output", "dist", "**/*.pug"]
+  "ignorePatterns": [
+    "node_modules",
+    ".nuxt",
+    ".output",
+    "dist",
+    "**/*.pug",
+    "worker-configuration.d.ts"
+  ]
 }
