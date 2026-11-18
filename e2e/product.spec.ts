@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForHydration } from './helpers';
 
 // Счётчик корзины: десктоп — badge мини-корзины в шапке (.mini-cart-badge),
 // мобильный — cart-badge в нижней навигации; скрытые дубли отфильтровываем
@@ -20,6 +21,11 @@ async function openFirstProduct(page: import('@playwright/test').Page) {
   await card.click();
   await expect(page).toHaveURL(/\/product\//);
   await expect(page.locator('.product-info h1')).toBeVisible();
+
+  // Гидрация ДО кликов по кнопкам (см. helpers.waitForHydration):
+  // на холодном воркере клик по CTA уходит до монтирования Vue и
+  // кнопка не становится disabled (упало на 45b0158 на копии CU)
+  await waitForHydration(page);
 }
 
 test('карточка: название, цена, блок характеристик', async ({ page }) => {

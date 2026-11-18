@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForHydration } from './helpers';
 
 // Вход в корзину: десктоп — иконка в шапке (HeaderCartMenu): пустая корзина —
 // <a> на /cart, с товарами — кнопка дропдауна (на страницу ведёт «Корзина»
@@ -37,6 +38,11 @@ async function openFirstProduct(page: import('@playwright/test').Page) {
   await card.click();
   await expect(page).toHaveURL(/\/product\//);
   await expect(page.locator('.product-info h1')).toBeVisible();
+
+  // Гидрация ДО клика по кнопке добавления (см. helpers.waitForHydration):
+  // на холодном воркере клик уходит до монтирования Vue — кнопка не
+  // становится disabled, бейдж не появляется
+  await waitForHydration(page);
 }
 
 test('товар из карточки появляется на странице корзины', async ({ page }) => {
