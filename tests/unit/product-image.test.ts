@@ -28,7 +28,9 @@ describe('productSrcset — 400w+800w для локальных фото кат�
   });
 
   it('Unsplash-URL с явным w= админа → undefined (размер задан сознательно)', () => {
-    expect(productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500')).toBeUndefined();
+    expect(
+      productSrcset('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500'),
+    ).toBeUndefined();
   });
 
   it('мусор на входе → undefined, атрибут не выводится', () => {

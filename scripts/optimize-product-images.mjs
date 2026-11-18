@@ -36,7 +36,8 @@ async function loadSharp() {
 
 const sharp = await loadSharp();
 
-const list = (dir) => readdirSync(dir).filter((f) => f.endsWith('.webp') && statSync(join(dir, f)).isFile());
+const list = (dir) =>
+  readdirSync(dir).filter((f) => f.endsWith('.webp') && statSync(join(dir, f)).isFile());
 
 let beforeTotal = 0;
 let afterTotal = 0;
@@ -75,6 +76,8 @@ await processDir(FULL_DIR, { maxWidth: FULL_MAX_WIDTH, quality: FULL_QUALITY });
 await processDir(SMALL_DIR, { maxWidth: undefined, quality: SMALL_QUALITY });
 
 const kb = (n) => `${Math.round(n / 1024)} KB`;
-console.log(`optimize-product-images: было ${kb(beforeTotal)}, стало ${kb(afterTotal)} ` +
-  `(−${Math.round(((beforeTotal - afterTotal) / Math.max(beforeTotal, 1)) * 100)}%)`);
+console.log(
+  `optimize-product-images: было ${kb(beforeTotal)}, стало ${kb(afterTotal)} ` +
+    `(−${Math.round(((beforeTotal - afterTotal) / Math.max(beforeTotal, 1)) * 100)}%)`,
+);
 console.log(`  записано ${written}, без изменений ${skipped}, приведено к 800w ${downscaled}`);
