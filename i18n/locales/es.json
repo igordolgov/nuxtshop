@@ -197,7 +197,7 @@
     "zoomImage": "Ampliar imagen",
     "notifyMe": "Avisarme cuando haya stock",
     "notifyTelegram": "Avisar por Telegram",
-    "notifyHint": "Deja un email o teléfono — te escribiremos en cuanto vuelva el producto.",
+    "notifyHint": "Deja un email o teléfono — te avisaremos cuando vuelva. Lo más rápido es por Telegram: vincula tu cuenta en el perfil.",
     "notifyContactPh": "tu{'@'}ejemplo.com o +34 …",
     "notifySend": "Enviar",
     "notifyDone": "¡Listo! Te avisaremos cuando vuelva el producto",
@@ -1352,7 +1352,9 @@
       "deleteError": "No se pudo eliminar el aviso",
       "deletedProduct": "producto eliminado (id {id})",
       "productId": "id {id}",
-      "notified": "Notificado"
+      "notified": "Notificado",
+      "noTelegram": "Sin Telegram",
+      "noTelegramHint": "El cliente no vinculó Telegram — escríbale manualmente con el contacto cuando haya stock"
     }
   },
   "compare": {

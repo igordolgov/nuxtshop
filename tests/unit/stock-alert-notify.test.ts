@@ -19,13 +19,20 @@ vi.mock('../../server/lib/storage', () => ({
 const sendMessageMock = vi.fn(async () => true);
 vi.mock('../../server/lib/telegram', () => ({
   sendMessage: (...args: unknown[]) => sendMessageMock(...(args as [])),
+  getAdminChatIds: (env: { TELEGRAM_ADMIN_CHAT_ID?: string } | null | undefined) =>
+    (env?.TELEGRAM_ADMIN_CHAT_ID ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
 }));
 
 import {
   detectRestock,
   findRestockedProducts,
+  formatRestockAdminSummary,
   isAvailable,
   notifyRestockSubscribers,
+  reportRestockToAdmins,
   resolveAlertChat,
 } from '../../server/lib/stockAlertNotify';
 import { writeStockAlerts, type StockAlertItem } from '../../server/lib/stockAlertHelpers';
@@ -188,7 +195,7 @@ describe('notifyRestockSubscribers', () => {
     expect(stored.find((a) => a.id === 'a3')?.notifiedAt).toBeFalsy();
   });
 
-  it('не найден chat → заявка остаётся pending, счётчики честные', async () => {
+  it('не найден chat → заявка остаётся pending, счётчики честные, контакт в pendingContacts', async () => {
     seed(
       [
         alert({ id: 'a1', productId: 'p1', contact: 'ghost@x.ru' }),
@@ -196,7 +203,7 @@ describe('notifyRestockSubscribers', () => {
       ],
       linked,
     );
-    const { sent, pending } = await notifyRestockSubscribers(
+    const { sent, pending, pendingContacts } = await notifyRestockSubscribers(
       event,
       ENV_OK,
       [product({ id: 'p1', inStock: true })],
@@ -204,6 +211,8 @@ describe('notifyRestockSubscribers', () => {
     );
     expect(sent).toBe(1);
     expect(pending).toBe(1);
+    // контакт недоставленной заявки попадает в сводку админу
+    expect(pendingContacts).toEqual(['ghost@x.ru']);
     const stored = (kvStore.get('data:stock-alerts') as StockAlertItem[]) ?? [];
     expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeFalsy();
   });
@@ -234,13 +243,17 @@ describe('notifyRestockSubscribers', () => {
     seed([alert({ id: 'a1', productId: 'p1', contact: 'ivan@x.ru' })], linked);
     expect(
       await notifyRestockSubscribers(event, null, [product({ id: 'p1', inStock: true })], 'x'),
-    ).toEqual({ sent: 0, pending: 0 });
-    expect(await notifyRestockSubscribers(event, ENV_OK, [], 'x')).toEqual({ sent: 0, pending: 0 });
+    ).toEqual({ sent: 0, pending: 0, pendingContacts: [] });
+    expect(await notifyRestockSubscribers(event, ENV_OK, [], 'x')).toEqual({
+      sent: 0,
+      pending: 0,
+      pendingContacts: [],
+    });
     const empty: StockAlertItem[] = [];
     kvStore.set('data:stock-alerts', empty);
     expect(
       await notifyRestockSubscribers(event, ENV_OK, [product({ id: 'p1', inStock: true })], 'x'),
-    ).toEqual({ sent: 0, pending: 0 });
+    ).toEqual({ sent: 0, pending: 0, pendingContacts: [] });
   });
 
   it('сбой отправки одной из заявок: sent меньше, падавшая остаётся pending', async () => {
@@ -271,5 +284,71 @@ describe('writeStockAlerts — sanity мока KV', () => {
     const a = alert({ id: 'z1', productId: 'p1', contact: 'a@b.ru' });
     await writeStockAlerts(event, [a]);
     expect((kvStore.get('data:stock-alerts') as StockAlertItem[])[0].id).toBe('z1');
+  });
+});
+
+describe('formatRestockAdminSummary', () => {
+  it('одиночный товар, есть отправленные: заголовок + счётчик, без «⚠️» и «📭»', () => {
+    const text = formatRestockAdminSummary({ names: ['Кроссовки'], sent: 2, pendingContacts: [] });
+    expect(text).toContain('📤 «Кроссовки» снова в наличии');
+    expect(text).toContain('✅ Уведомлено в Telegram: 2');
+    expect(text).not.toContain('⚠️');
+    expect(text).not.toContain('📭');
+  });
+
+  it('заявок нет: тихая строка «новых заявок нет» — админ видит, что механизм сработал', () => {
+    const text = formatRestockAdminSummary({ names: ['Часы'], sent: 0, pendingContacts: [] });
+    expect(text).toContain('📭 Новых заявок о поступлении нет');
+  });
+
+  it('есть недоставленные: контакты для ручной связи, кап 3 + «+N ещё»', () => {
+    const text = formatRestockAdminSummary({
+      names: ['Кроссовки'],
+      sent: 1,
+      pendingContacts: ['a@x.ru', 'b@x.ru', 'c@x.ru', 'd@x.ru', 'e@x.ru'],
+    });
+    expect(text).toContain('⚠️ Без привязки Telegram — свяжитесь вручную:');
+    expect(text).toContain('a@x.ru, b@x.ru, c@x.ru');
+    expect(text).toContain('(+2 ещё)');
+    expect(text).not.toContain('d@x.ru');
+  });
+
+  it('массовая правка: список названий с капом и «+N ещё»', () => {
+    const text = formatRestockAdminSummary({
+      names: ['A', 'B', 'C', 'D', 'E'],
+      sent: 0,
+      pendingContacts: ['ghost@x.ru'],
+    });
+    expect(text).toContain('📤 Товары снова в наличии (5)');
+    expect(text).toContain('«A», «B», «C» +2 ещё');
+    expect(text).toContain('ghost@x.ru');
+  });
+
+  it('HTML-экранирование названий и контактов (parse_mode HTML у бота)', () => {
+    const text = formatRestockAdminSummary({
+      names: ['Наушники <Pro>'],
+      sent: 0,
+      pendingContacts: ['a<b@x.ru'],
+    });
+    expect(text).toContain('&lt;Pro&gt;');
+    expect(text).toContain('a&lt;b@x.ru');
+  });
+});
+
+describe('reportRestockToAdmins', () => {
+  it('шлёт сводку во все админ-чаты из TELEGRAM_ADMIN_CHAT_ID', async () => {
+    await reportRestockToAdmins(
+      { TELEGRAM_BOT_TOKEN: 't', TELEGRAM_ADMIN_CHAT_ID: '111, 222' },
+      'сводка',
+    );
+    expect(sendMessageMock).toHaveBeenCalledTimes(2);
+    expect(sendMessageMock.mock.calls[0][1]).toBe('111');
+    expect(sendMessageMock.mock.calls[1][1]).toBe('222');
+    expect(sendMessageMock.mock.calls[0][2]).toBe('сводка');
+  });
+
+  it('нет TELEGRAM_ADMIN_CHAT_ID — тихий no-op', async () => {
+    await reportRestockToAdmins({ TELEGRAM_BOT_TOKEN: 't' }, 'сводка');
+    expect(sendMessageMock).not.toHaveBeenCalled();
   });
 });

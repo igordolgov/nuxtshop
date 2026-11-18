@@ -17,7 +17,7 @@
 import type { H3Event } from 'h3';
 import { readStockAlerts, writeStockAlerts, type StockAlertItem } from './stockAlertHelpers';
 import { readUsers, type User } from './userHelpers';
-import { sendMessage, type TelegramEnv } from './telegram';
+import { getAdminChatIds, sendMessage, type TelegramEnv } from './telegram';
 import { formatMoney } from '../../store.config';
 
 /** Минимальный набор полей товара, нужный для решения об уведомлении */
@@ -98,6 +98,64 @@ export interface RestockNotifyResult {
   sent: number;
   /** Сколько осталось без уведомления (нет привязки/чата) */
   pending: number;
+  /** Контакты недоставленных заявок — попадают в сводку админу
+   *  («свяжитесь вручную»). Без них тишина при sent=0 выглядела
+   *  как поломка механизма. */
+  pendingContacts: string[];
+}
+
+const SUMMARY_NAME_LIMIT = 3;
+const SUMMARY_CONTACT_LIMIT = 3;
+
+export interface RestockSummaryInput {
+  /** Названия товаров, вернувшихся в наличие (1 — одиночное сохранение) */
+  names: string[];
+  sent: number;
+  pendingContacts: string[];
+}
+
+/**
+ * Сводка админам о поступлении — ЧИСТАЯ функция (покрыта тестами).
+ * Отправляется всегда при переходе «нет → есть», даже когда уведомить
+ * некого: админ должен видеть, что механизм сработал, и что делать
+ * дальше (написать вручную тем, кто без привязки Telegram).
+ */
+export function formatRestockAdminSummary(input: RestockSummaryInput): string {
+  const names = input.names.map((n) => escapeHtml(n)).filter(Boolean);
+  const lines: string[] = [];
+
+  if (names.length === 1) {
+    lines.push(`📤 «${names[0]}» снова в наличии`);
+  } else {
+    const shown = names.slice(0, SUMMARY_NAME_LIMIT);
+    const rest = names.length - shown.length;
+    lines.push(
+      `📤 Товары снова в наличии (${names.length})`,
+      `📦 ${shown.map((n) => `«${n}»`).join(', ')}${rest > 0 ? ` +${rest} ещё` : ''}`,
+    );
+  }
+
+  if (input.sent === 0 && input.pendingContacts.length === 0) {
+    lines.push('📭 Новых заявок о поступлении нет');
+    return lines.join('\n');
+  }
+
+  if (input.sent > 0) lines.push(`✅ Уведомлено в Telegram: ${input.sent}`);
+  if (input.pendingContacts.length > 0) {
+    const shown = input.pendingContacts.slice(0, SUMMARY_CONTACT_LIMIT).map(escapeHtml);
+    const rest = input.pendingContacts.length - shown.length;
+    lines.push(
+      `⚠️ Без привязки Telegram — свяжитесь вручную: ${shown.join(', ')}${rest > 0 ? ` (+${rest} ещё)` : ''}`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/** Сводку отправляем во все админ-чаты (TELEGRAM_ADMIN_CHAT_ID). */
+export async function reportRestockToAdmins(env: TelegramEnv, text: string): Promise<void> {
+  for (const chatId of getAdminChatIds(env)) {
+    await sendMessage(env, chatId, text);
+  }
 }
 
 /**
@@ -111,21 +169,26 @@ export async function notifyRestockSubscribers(
   origin: string,
 ): Promise<RestockNotifyResult> {
   if (!env?.TELEGRAM_BOT_TOKEN || products.length === 0) {
-    return { sent: 0, pending: 0 };
+    return { sent: 0, pending: 0, pendingContacts: [] };
   }
 
   const alerts = await readStockAlerts(event);
   const byProduct = new Map(products.map((p) => [String(p.id), p]));
   const targets = alerts.filter((a) => !a.notifiedAt && byProduct.has(String(a.productId)));
-  if (targets.length === 0) return { sent: 0, pending: 0 };
+  if (targets.length === 0) return { sent: 0, pending: 0, pendingContacts: [] };
 
   const users = await readUsers(event);
   const notifiedIds = new Set<string>();
+  const pendingContacts: string[] = [];
   let sent = 0;
 
   for (const alert of targets) {
     const chat = resolveAlertChat(alert, users);
-    if (!chat) continue;
+    if (!chat) {
+      // Заявку не доставить (нет привязки) — контакт админу в сводку
+      pendingContacts.push(String(alert.contact ?? ''));
+      continue;
+    }
 
     const product = byProduct.get(String(alert.productId))!;
     const price = typeof product.price === 'number' ? formatMoney(product.price) : '';
@@ -149,5 +212,5 @@ export async function notifyRestockSubscribers(
     );
   }
 
-  return { sent, pending: targets.length - sent };
+  return { sent, pending: targets.length - sent, pendingContacts };
 }

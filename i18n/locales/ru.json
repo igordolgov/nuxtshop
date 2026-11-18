@@ -197,7 +197,7 @@
     "zoomImage": "Увеличить изображение",
     "notifyMe": "Сообщить о поступлении",
     "notifyTelegram": "Уведомить в Telegram",
-    "notifyHint": "Оставьте email или телефон — напишем, когда товар появится.",
+    "notifyHint": "Оставьте email или телефон — сообщим, когда товар появится. Быстрее всего уведомление придёт в Telegram: привяжите аккаунт в профиле.",
     "notifyContactPh": "you{'@'}example.ru или +7 …",
     "notifySend": "Отправить",
     "notifyDone": "Готово! Сообщим, когда товар появится",
@@ -1352,7 +1352,9 @@
       "deleteError": "Не удалось удалить заявку",
       "deletedProduct": "товар удалён (id {id})",
       "productId": "id {id}",
-      "notified": "Уведомлено"
+      "notified": "Уведомлено",
+      "noTelegram": "Нет Telegram",
+      "noTelegramHint": "Покупатель не привязал Telegram — после поступления напишите ему вручную по контакту"
     }
   },
   "compare": {

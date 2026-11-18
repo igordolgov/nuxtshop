@@ -197,7 +197,7 @@
     "zoomImage": "Zoom image",
     "notifyMe": "Notify me when available",
     "notifyTelegram": "Notify via Telegram",
-    "notifyHint": "Leave an email or phone number — we will write as soon as the product is back.",
+    "notifyHint": "Leave an email or phone — we will let you know when it is back. Fastest is Telegram: link your account in your profile.",
     "notifyContactPh": "you{'@'}example.com or +1 …",
     "notifySend": "Send",
     "notifyDone": "Done! We will let you know when the product is back",
@@ -1352,7 +1352,9 @@
       "deleteError": "Failed to delete the alert",
       "deletedProduct": "product deleted (id {id})",
       "productId": "id {id}",
-      "notified": "Notified"
+      "notified": "Notified",
+      "noTelegram": "No Telegram",
+      "noTelegramHint": "The customer has not linked Telegram — reach out manually using the contact after the restock"
     }
   },
   "compare": {

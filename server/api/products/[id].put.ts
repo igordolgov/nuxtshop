@@ -15,8 +15,12 @@ import {
 import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
 import { adminActionLog } from '../../lib/logger';
-import { detectRestock, notifyRestockSubscribers } from '../../lib/stockAlertNotify';
-import { getAdminChatIds, sendMessage } from '../../lib/telegram';
+import {
+  detectRestock,
+  formatRestockAdminSummary,
+  notifyRestockSubscribers,
+  reportRestockToAdmins,
+} from '../../lib/stockAlertNotify';
 
 // Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
 // categories/gallery/variants в любом допустимом формате)
@@ -151,22 +155,23 @@ export default defineEventHandler(async (event) => {
     });
 
     // ── Поступление товара: уведомляем заявки «сообщить о поступлении»
-    // (Telegram). Best-effort: сбой бота не отменяет сохранение товара.
+    // (Telegram) и ВСЕГДА шлём админам сводку — даже при sent=0: раньше
+    // тишина выглядела как поломка (заявок нет / нет привязки Telegram —
+    // в сводке будет видно и контакты для ручной связи).
+    // Best-effort: сбой бота не отменяет сохранение товара.
     const env = event.context.cloudflare?.env;
     if (env?.TELEGRAM_BOT_TOKEN && detectRestock(existing, updated)) {
       try {
         const origin = getRequestURL(event).origin;
-        const { sent } = await notifyRestockSubscribers(event, env, [updated], origin);
-        if (sent > 0) {
-          // Короткая сводка админам — фидбек, что механизм работает
-          for (const chatId of getAdminChatIds(env)) {
-            await sendMessage(
-              env,
-              chatId,
-              `📤 «${updated.name}»: о поступлении уведомлено — ${sent}`,
-            );
-          }
-        }
+        const result = await notifyRestockSubscribers(event, env, [updated], origin);
+        await reportRestockToAdmins(
+          env,
+          formatRestockAdminSummary({
+            names: [updated.name ?? ''],
+            sent: result.sent,
+            pendingContacts: result.pendingContacts,
+          }),
+        );
       } catch (e) {
         console.warn('[stock-alerts] уведомление о поступлении не удалось:', e);
       }

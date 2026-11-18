@@ -44,6 +44,12 @@
             v-if="a.notifiedAt"
             :title="formatDate(a.notifiedAt)"
           ) {{ $t('admin.stockAlerts.notified') }}
+          //- Pending без привязки: уведомить некуда, после поступления —
+          //- вручную по контакту
+          span.badge.badge-sm.badge-warning(
+            v-else-if="a.telegramReady === false"
+            :title="$t('admin.stockAlerts.noTelegramHint')"
+          ) {{ $t('admin.stockAlerts.noTelegram') }}
           span.text-xs.ml-auto(class="text-base-content/50") {{ formatDate(a.createdAt) }}
         .flex.items-center.justify-between.gap-2.flex-wrap
           a.link.link-hover.text-sm.font-medium(
