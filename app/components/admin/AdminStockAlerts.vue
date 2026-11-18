@@ -39,17 +39,18 @@
         .flex.items-center.gap-2.flex-wrap
           span.font-medium.text-sm {{ a.productName || $t('admin.stockAlerts.deletedProduct', { id: a.productId }) }}
           span.badge.badge-sm.badge-ghost {{ $t('admin.stockAlerts.productId', { id: a.productId }) }}
-          //- Заявка уведомлена (товар вернулся на склад, Telegram ушёл)
+          //- Заявка уведомлена (товар вернулся на склад, Telegram/email ушли)
           span.badge.badge-sm.badge-success(
             v-if="a.notifiedAt"
             :title="formatDate(a.notifiedAt)"
           ) {{ $t('admin.stockAlerts.notified') }}
-          //- Pending без привязки: уведомить некуда, после поступления —
+          //- Pending без канала: уведомить некуда (нет Telegram-привязки,
+          //- email-контакта или Resend не настроен) — после поступления
           //- вручную по контакту
           span.badge.badge-sm.badge-warning(
-            v-else-if="a.telegramReady === false"
-            :title="$t('admin.stockAlerts.noTelegramHint')"
-          ) {{ $t('admin.stockAlerts.noTelegram') }}
+            v-else-if="a.notifyReady === false"
+            :title="$t('admin.stockAlerts.noChannelHint')"
+          ) {{ $t('admin.stockAlerts.noChannel') }}
           span.text-xs.ml-auto(class="text-base-content/50") {{ formatDate(a.createdAt) }}
         .flex.items-center.justify-between.gap-2.flex-wrap
           a.link.link-hover.text-sm.font-medium(

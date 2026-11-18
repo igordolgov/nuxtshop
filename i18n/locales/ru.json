@@ -1406,8 +1406,8 @@
       "deletedProduct": "товар удалён (id {id})",
       "productId": "id {id}",
       "notified": "Уведомлено",
-      "noTelegram": "Нет Telegram",
-      "noTelegramHint": "Покупатель не привязал Telegram — после поступления напишите ему вручную по контакту"
+      "noChannel": "Нет канала",
+      "noChannelHint": "Ни Telegram-привязки, ни email-подписки — после поступления напишите покупателю вручную по контакту"
     }
   },
   "compare": {

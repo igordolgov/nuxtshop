@@ -1406,8 +1406,8 @@
       "deletedProduct": "product deleted (id {id})",
       "productId": "id {id}",
       "notified": "Notified",
-      "noTelegram": "No Telegram",
-      "noTelegramHint": "The customer has not linked Telegram — reach out manually using the contact after the restock"
+      "noChannel": "No channel",
+      "noChannelHint": "Neither a linked Telegram nor an email subscription — reach out manually using the contact after the restock"
     }
   },
   "compare": {

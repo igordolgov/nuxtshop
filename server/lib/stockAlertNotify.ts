@@ -3,15 +3,18 @@
 // Триггер — сохранение товара в админке (PUT /api/products/[id] и
 // PATCH /api/products/bulk): ловим переход «не в наличии → в наличии».
 //
-// Канал — Telegram: каждому заявителю с привязанным аккаунтом
-// (user.telegramChat) уходит сообщение. Заявка связывается с аккаунтом:
-//   1. явно — alert.userId (авторизованный заявитель);
-//   2. по контакту — email (точное совпадение без регистра) или телефон
-//      (последние 10 цифр), если заявитель позже привязал аккаунт.
-// Заявки без найденного chat остаются pending — админ видит их в списке
+// Каналы (в порядке приоритета):
+//   1. Telegram — заявителю с привязанным аккаунтом (user.telegramChat).
+//      Заявка связывается с аккаунтом:
+//        1a. явно — alert.userId (авторизованный заявитель);
+//        1b. по контакту — email (точное совпадение без регистра) или
+//            телефон (последние 10 цифр), если привязал аккаунт позже.
+//   2. Email (Resend) — если Telegram не нашёлся/не ушёл, а в заявке
+//      оставлен email и настроен Resend (RESEND_API_KEY + RESEND_FROM).
+// Заявки без канала доставки остаются pending — админ видит их в списке
 // и связывается вручную (прежний сценарий).
 //
-// Best-effort: сбой Telegram никогда не ломает сохранение товара —
+// Best-effort: сбой Telegram/Resend никогда не ломает сохранение товара —
 // caller оборачивает вызов в try/catch (см. products/[id].put.ts).
 
 import type { H3Event } from 'h3';
@@ -19,6 +22,15 @@ import { readStockAlerts, writeStockAlerts, type StockAlertItem } from './stockA
 import { readUsers, type User } from './userHelpers';
 import { getAdminChatIds, sendMessage, type TelegramEnv } from './telegram';
 import { formatMoney } from '../../store.config';
+import {
+  isEmailContact,
+  isResendConfigured,
+  sendRestockEmail,
+  type ResendEnv,
+} from './resendEmail';
+
+/** Окружение для рассылки о поступлении: Telegram и/или Resend. */
+export type RestockNotifyEnv = TelegramEnv & ResendEnv;
 
 /** Минимальный набор полей товара, нужный для решения об уведомлении */
 export interface RestockCandidate {
@@ -94,9 +106,11 @@ function escapeHtml(str: unknown): string {
 }
 
 export interface RestockNotifyResult {
-  /** Сколько заявок реально уведомили (sendMessage вернул успех) */
+  /** Сколько заявок уведомили в Telegram (sendMessage вернул успех) */
   sent: number;
-  /** Сколько осталось без уведомления (нет привязки/чата) */
+  /** Сколько заявок уведомили письмом через Resend */
+  sentEmail: number;
+  /** Сколько осталось без уведомления (ни один канал не сработал) */
   pending: number;
   /** Контакты недоставленных заявок — попадают в сводку админу
    *  («свяжитесь вручную»). Без них тишина при sent=0 выглядела
@@ -111,6 +125,8 @@ export interface RestockSummaryInput {
   /** Названия товаров, вернувшихся в наличие (1 — одиночное сохранение) */
   names: string[];
   sent: number;
+  /** Письмён доставлено через Resend (0/undefined — строки «email» нет) */
+  sentEmail?: number;
   pendingContacts: string[];
 }
 
@@ -118,7 +134,7 @@ export interface RestockSummaryInput {
  * Сводка админам о поступлении — ЧИСТАЯ функция (покрыта тестами).
  * Отправляется всегда при переходе «нет → есть», даже когда уведомить
  * некого: админ должен видеть, что механизм сработал, и что делать
- * дальше (написать вручную тем, кто без привязки Telegram).
+ * дальше (написать вручную тем, кого уведомить не удалось).
  */
 export function formatRestockAdminSummary(input: RestockSummaryInput): string {
   const names = input.names.map((n) => escapeHtml(n)).filter(Boolean);
@@ -135,17 +151,20 @@ export function formatRestockAdminSummary(input: RestockSummaryInput): string {
     );
   }
 
-  if (input.sent === 0 && input.pendingContacts.length === 0) {
+  if (input.sent === 0 && !input.sentEmail && input.pendingContacts.length === 0) {
     lines.push('📭 Новых заявок о поступлении нет');
     return lines.join('\n');
   }
 
   if (input.sent > 0) lines.push(`✅ Уведомлено в Telegram: ${input.sent}`);
+  if (input.sentEmail && input.sentEmail > 0) {
+    lines.push(`✉️ Уведомлено по email: ${input.sentEmail}`);
+  }
   if (input.pendingContacts.length > 0) {
     const shown = input.pendingContacts.slice(0, SUMMARY_CONTACT_LIMIT).map(escapeHtml);
     const rest = input.pendingContacts.length - shown.length;
     lines.push(
-      `⚠️ Без привязки Telegram — свяжитесь вручную: ${shown.join(', ')}${rest > 0 ? ` (+${rest} ещё)` : ''}`,
+      `⚠️ Уведомить не удалось — свяжитесь вручную: ${shown.join(', ')}${rest > 0 ? ` (+${rest} ещё)` : ''}`,
     );
   }
   return lines.join('\n');
@@ -159,49 +178,92 @@ export async function reportRestockToAdmins(env: TelegramEnv, text: string): Pro
 }
 
 /**
+ * Есть ли у заявки канал доставки: Telegram-привязка ИЛИ email-контакт
+ * при настроенном Resend. Используется списком заявок в админке
+ * (бейдж «нет канала» у pending-заявок).
+ */
+export function alertHasChannel(
+  alert: StockAlertItem,
+  users: User[],
+  env: RestockNotifyEnv | null | undefined,
+): boolean {
+  if (resolveAlertChat(alert, users) !== null) return true;
+  return isEmailContact(alert.contact) && isResendConfigured(env);
+}
+
+/**
  * Рассылает уведомления о поступлении по pending-заявкам перечисленных
- * товаров и ставит им notifiedAt. Возвращает счётчики.
+ * товаров и ставит им notifiedAt. Каналы: Telegram → email (Resend).
+ * Возвращает счётчики.
  */
 export async function notifyRestockSubscribers(
   event: H3Event,
-  env: TelegramEnv | null | undefined,
+  env: RestockNotifyEnv | null | undefined,
   products: RestockCandidate[],
   origin: string,
 ): Promise<RestockNotifyResult> {
-  if (!env?.TELEGRAM_BOT_TOKEN || products.length === 0) {
-    return { sent: 0, pending: 0, pendingContacts: [] };
-  }
+  const zeros: RestockNotifyResult = { sent: 0, sentEmail: 0, pending: 0, pendingContacts: [] };
+  // Guard сужает env до определённого для остальных проверок каналов
+  if (!env || products.length === 0) return zeros;
+
+  const telegramReady = Boolean(env.TELEGRAM_BOT_TOKEN);
+  const emailReady = isResendConfigured(env);
+  if (!telegramReady && !emailReady) return zeros;
 
   const alerts = await readStockAlerts(event);
   const byProduct = new Map(products.map((p) => [String(p.id), p]));
   const targets = alerts.filter((a) => !a.notifiedAt && byProduct.has(String(a.productId)));
-  if (targets.length === 0) return { sent: 0, pending: 0, pendingContacts: [] };
+  if (targets.length === 0) return zeros;
 
   const users = await readUsers(event);
   const notifiedIds = new Set<string>();
   const pendingContacts: string[] = [];
   let sent = 0;
+  let sentEmail = 0;
+
+  const restockPayload = (product: RestockCandidate) => {
+    const price = typeof product.price === 'number' ? formatMoney(product.price) : '';
+    return {
+      name: String(product.name ?? ''),
+      price,
+      url: product.slug ? `${origin}/${product.slug}` : origin,
+    };
+  };
+
+  const telegramText = (product: RestockCandidate) => {
+    const price = typeof product.price === 'number' ? formatMoney(product.price) : '';
+    const url = product.slug ? `${origin}/${product.slug}` : origin;
+    return (
+      `🎉 Товар снова в наличии!\n\n` +
+      `📦 <b>«${escapeHtml(product.name)}»</b>${price ? ` — ${price}` : ''}\n` +
+      `👉 ${url}`
+    );
+  };
 
   for (const alert of targets) {
+    const product = byProduct.get(String(alert.productId))!;
     const chat = resolveAlertChat(alert, users);
-    if (!chat) {
-      // Заявку не доставить (нет привязки) — контакт админу в сводку
-      pendingContacts.push(String(alert.contact ?? ''));
+
+    // 1. Telegram: привязка аккаунта найдена — пробуем мгновенное сообщение.
+    if (chat && telegramReady && (await sendMessage(env, chat, telegramText(product)))) {
+      notifiedIds.add(alert.id);
+      sent++;
       continue;
     }
 
-    const product = byProduct.get(String(alert.productId))!;
-    const price = typeof product.price === 'number' ? formatMoney(product.price) : '';
-    const url = product.slug ? `${origin}/${product.slug}` : origin;
-    const text =
-      `🎉 Товар снова в наличии!\n\n` +
-      `📦 <b>«${escapeHtml(product.name)}»</b>${price ? ` — ${price}` : ''}\n` +
-      `👉 ${url}`;
-
-    if (await sendMessage(env, chat, text)) {
-      notifiedIds.add(alert.id);
-      sent++;
+    // 2. Email-фолбэк: Telegram не нашёлся ИЛИ не ушёл (сеть/битый чат),
+    //    а заявка оставлена с email и настроен Resend.
+    if (emailReady && isEmailContact(alert.contact)) {
+      if (await sendRestockEmail(env, String(alert.contact).trim(), restockPayload(product))) {
+        notifiedIds.add(alert.id);
+        sentEmail++;
+        continue;
+      }
     }
+
+    // 3. Ничего не ушло: заявка остаётся pending. Контакт админу —
+    //    в сводку («свяжитесь вручную»).
+    if (!chat) pendingContacts.push(String(alert.contact ?? ''));
   }
 
   if (notifiedIds.size > 0) {
@@ -212,5 +274,5 @@ export async function notifyRestockSubscribers(
     );
   }
 
-  return { sent, pending: targets.length - sent, pendingContacts };
+  return { sent, sentEmail, pending: targets.length - sent - sentEmail, pendingContacts };
 }

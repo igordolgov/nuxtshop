@@ -1406,8 +1406,8 @@
       "deletedProduct": "producto eliminado (id {id})",
       "productId": "id {id}",
       "notified": "Notificado",
-      "noTelegram": "Sin Telegram",
-      "noTelegramHint": "El cliente no vinculó Telegram — escríbale manualmente con el contacto cuando haya stock"
+      "noChannel": "Sin canal",
+      "noChannelHint": "Ni Telegram vinculado ni suscripción por correo — escríbale manualmente con el contacto cuando haya stock"
     }
   },
   "compare": {

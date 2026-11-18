@@ -170,12 +170,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // ── Поступление товара: уведомляем заявки «сообщить о поступлении»
-    // (Telegram) и ВСЕГДА шлём админам сводку — даже при sent=0: раньше
-    // тишина выглядела как поломка (заявок нет / нет привязки Telegram —
-    // в сводке будет видно и контакты для ручной связи).
-    // Best-effort: сбой бота не отменяет сохранение товара.
+    // (Telegram, при настройке Resend — ещё и email) и ВСЕГДА шлём админам
+    // сводку — даже при sent=0: раньше тишина выглядела как поломка
+    // (заявок нет / нет канала доставки — в сводке будет видно и контакты
+    // для ручной связи).
+    // Best-effort: сбой бота/Resend не отменяет сохранение товара.
     const env = event.context.cloudflare?.env;
-    if (env?.TELEGRAM_BOT_TOKEN && detectRestock(existing, updated)) {
+    if ((env?.TELEGRAM_BOT_TOKEN || env?.RESEND_API_KEY) && detectRestock(existing, updated)) {
       try {
         const origin = getRequestURL(event).origin;
         const result = await notifyRestockSubscribers(event, env, [updated], origin);
@@ -184,6 +185,7 @@ export default defineEventHandler(async (event) => {
           formatRestockAdminSummary({
             names: [updated.name ?? ''],
             sent: result.sent,
+            sentEmail: result.sentEmail,
             pendingContacts: result.pendingContacts,
           }),
         );

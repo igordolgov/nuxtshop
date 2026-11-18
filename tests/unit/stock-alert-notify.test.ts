@@ -1,6 +1,8 @@
 // Тесты back-in-stock: переход «не в наличии → в наличии», разрешение
 // chat id заявки (по userId и по контакту), рассылка notifyRestockSubscribers
-// (мок KV + мок telegram — файл самодостаточный, по образцу bought-together).
+// (мок KV + моки telegram/resend — файл самодостаточный, по образцу
+// bought-together). Resend-помощники (isEmailContact/isResendConfigured)
+// берём РЕАЛЬНЫЕ — мокаем только сетевой sendRestockEmail.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const kvStore = new Map<string, unknown>();
@@ -26,7 +28,18 @@ vi.mock('../../server/lib/telegram', () => ({
       .filter(Boolean),
 }));
 
+// Мок resend: чистые функции — реальные, мокаем только отправку
+const sendRestockEmailMock = vi.fn(async () => true);
+vi.mock('../../server/lib/resendEmail', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../server/lib/resendEmail')>();
+  return {
+    ...actual,
+    sendRestockEmail: (...args: unknown[]) => sendRestockEmailMock(...(args as [])),
+  };
+});
+
 import {
+  alertHasChannel,
   detectRestock,
   findRestockedProducts,
   formatRestockAdminSummary,
@@ -42,6 +55,11 @@ import type { Product } from '../../server/lib/productHelpers';
 const event = {} as never;
 
 const ENV_OK = { TELEGRAM_BOT_TOKEN: 'test-token' } as const;
+const ENV_RESEND = {
+  RESEND_API_KEY: 're_test',
+  RESEND_FROM: 'Магазин <noreply@shop.example>',
+} as const;
+const ENV_BOTH = { ...ENV_OK, ...ENV_RESEND };
 
 const user = (over: Partial<User> & { id: string }): User =>
   ({
@@ -79,6 +97,8 @@ beforeEach(() => {
   kvStore.clear();
   sendMessageMock.mockClear();
   sendMessageMock.mockImplementation(async () => true);
+  sendRestockEmailMock.mockClear();
+  sendRestockEmailMock.mockImplementation(async () => true);
 });
 
 describe('isAvailable / detectRestock', () => {
@@ -153,6 +173,39 @@ describe('resolveAlertChat', () => {
   });
 });
 
+describe('alertHasChannel', () => {
+  const users: User[] = [user({ id: 'u1', email: 'ivan@x.ru', telegramChat: '111' })];
+
+  it('Telegram-привязка — канал есть даже без Resend', () => {
+    expect(
+      alertHasChannel(alert({ id: 'a1', productId: 'p1', contact: 'ivan@x.ru' }), users, {}),
+    ).toBe(true);
+  });
+
+  it('email-контакт — канал только при настроенном Resend', () => {
+    expect(
+      alertHasChannel(alert({ id: 'a2', productId: 'p1', contact: 'ghost@x.ru' }), users, {}),
+    ).toBe(false);
+    expect(
+      alertHasChannel(
+        alert({ id: 'a3', productId: 'p1', contact: 'ghost@x.ru' }),
+        users,
+        ENV_RESEND,
+      ),
+    ).toBe(true);
+  });
+
+  it('телефон без привязки — канала нет даже с Resend', () => {
+    expect(
+      alertHasChannel(
+        alert({ id: 'a4', productId: 'p1', contact: '+7 999 123-45-67' }),
+        users,
+        ENV_BOTH,
+      ),
+    ).toBe(false);
+  });
+});
+
 describe('notifyRestockSubscribers', () => {
   const seed = (alerts: StockAlertItem[], users: User[]) => {
     kvStore.set('data:stock-alerts', structuredClone(alerts));
@@ -174,7 +227,7 @@ describe('notifyRestockSubscribers', () => {
       linked,
     );
     const p = product({ id: 'p1', inStock: true, slug: 'tovar-p1' });
-    const { sent, pending } = await notifyRestockSubscribers(
+    const { sent, sentEmail, pending } = await notifyRestockSubscribers(
       event,
       ENV_OK,
       [p],
@@ -182,8 +235,10 @@ describe('notifyRestockSubscribers', () => {
     );
 
     expect(sent).toBe(2);
+    expect(sentEmail).toBe(0);
     expect(pending).toBe(0);
     expect(sendMessageMock).toHaveBeenCalledTimes(2);
+    expect(sendRestockEmailMock).not.toHaveBeenCalled(); // Telegram справился
     // в тексте: имя, цена, ссылка на карточку
     const text = sendMessageMock.mock.calls[0][2] as string;
     expect(text).toContain('Товар');
@@ -195,26 +250,77 @@ describe('notifyRestockSubscribers', () => {
     expect(stored.find((a) => a.id === 'a3')?.notifiedAt).toBeFalsy();
   });
 
-  it('не найден chat → заявка остаётся pending, счётчики честные, контакт в pendingContacts', async () => {
-    seed(
-      [
-        alert({ id: 'a1', productId: 'p1', contact: 'ghost@x.ru' }),
-        alert({ id: 'a2', productId: 'p1', contact: 'ivan@x.ru' }),
-      ],
-      linked,
-    );
-    const { sent, pending, pendingContacts } = await notifyRestockSubscribers(
+  it('гость с email при настроенном Resend: письмо вместо Telegram', async () => {
+    seed([alert({ id: 'a1', productId: 'p1', contact: 'ghost@x.ru' })], linked);
+    const { sent, sentEmail, pending, pendingContacts } = await notifyRestockSubscribers(
       event,
-      ENV_OK,
+      ENV_BOTH,
       [product({ id: 'p1', inStock: true })],
       'https://shop.dev',
     );
-    expect(sent).toBe(1);
-    expect(pending).toBe(1);
-    // контакт недоставленной заявки попадает в сводку админу
-    expect(pendingContacts).toEqual(['ghost@x.ru']);
+    expect(sent).toBe(0);
+    expect(sentEmail).toBe(1);
+    expect(pending).toBe(0);
+    expect(pendingContacts).toEqual([]);
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(sendRestockEmailMock).toHaveBeenCalledTimes(1);
+    // адресат и содержимое письма
+    const [envArg, toArg, payloadArg] = sendRestockEmailMock.mock.calls[0] as [
+      unknown,
+      string,
+      { name: string; price: string; url: string },
+    ];
+    expect((envArg as { RESEND_API_KEY?: string }).RESEND_API_KEY).toBe('re_test');
+    expect(toArg).toBe('ghost@x.ru');
+    expect(payloadArg.name).toBe('Товар');
+    expect(payloadArg.url).toBe('https://shop.dev/tovar');
+
     const stored = (kvStore.get('data:stock-alerts') as StockAlertItem[]) ?? [];
-    expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeFalsy();
+    expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeTruthy();
+  });
+
+  it('гость с email БЕЗ Resend: заявка pending, контакт в pendingContacts', async () => {
+    seed([alert({ id: 'a1', productId: 'p1', contact: 'ghost@x.ru' })], linked);
+    const { sent, sentEmail, pending, pendingContacts } = await notifyRestockSubscribers(
+      event,
+      ENV_OK, // только Telegram
+      [product({ id: 'p1', inStock: true })],
+      'x',
+    );
+    expect(sent).toBe(0);
+    expect(sentEmail).toBe(0);
+    expect(pending).toBe(1);
+    expect(pendingContacts).toEqual(['ghost@x.ru']);
+    expect(sendRestockEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('телефон без привязки: email-фолбэк не применяется (нет email)', async () => {
+    seed([alert({ id: 'a1', productId: 'p1', contact: '+7 999 123-45-67' })], linked);
+    const { sentEmail, pending } = await notifyRestockSubscribers(
+      event,
+      ENV_BOTH,
+      [product({ id: 'p1', inStock: true })],
+      'x',
+    );
+    expect(sentEmail).toBe(0);
+    expect(pending).toBe(1);
+    expect(sendRestockEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('Telegram упал, контакт email: уходит письмо (фолбэк), notifiedAt ставится', async () => {
+    seed([alert({ id: 'a1', productId: 'p1', contact: 'ivan@x.ru' })], linked);
+    sendMessageMock.mockImplementation(async () => false);
+    const { sent, sentEmail, pending } = await notifyRestockSubscribers(
+      event,
+      ENV_BOTH,
+      [product({ id: 'p1', inStock: true })],
+      'x',
+    );
+    expect(sent).toBe(0);
+    expect(sentEmail).toBe(1);
+    expect(pending).toBe(0);
+    const stored = (kvStore.get('data:stock-alerts') as StockAlertItem[]) ?? [];
+    expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeTruthy();
   });
 
   it('уже уведомлённые не повторяются', async () => {
@@ -233,19 +339,30 @@ describe('notifyRestockSubscribers', () => {
       event,
       ENV_OK,
       [product({ id: 'p1', inStock: true })],
-      'https://shop.dev',
+      'x',
     );
     expect(sent).toBe(0);
     expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(sendRestockEmailMock).not.toHaveBeenCalled();
   });
 
-  it('нет токена/нет заявок — тихий no-op', async () => {
+  it('нет ни одного канала/нет заявок — тихий no-op', async () => {
     seed([alert({ id: 'a1', productId: 'p1', contact: 'ivan@x.ru' })], linked);
     expect(
       await notifyRestockSubscribers(event, null, [product({ id: 'p1', inStock: true })], 'x'),
-    ).toEqual({ sent: 0, pending: 0, pendingContacts: [] });
+    ).toEqual({ sent: 0, sentEmail: 0, pending: 0, pendingContacts: [] });
+    // один Resend без Telegram — рассылка идёт
+    expect(
+      await notifyRestockSubscribers(
+        event,
+        ENV_RESEND,
+        [product({ id: 'p1', inStock: true })],
+        'x',
+      ),
+    ).toEqual({ sent: 0, sentEmail: 1, pending: 0, pendingContacts: [] });
     expect(await notifyRestockSubscribers(event, ENV_OK, [], 'x')).toEqual({
       sent: 0,
+      sentEmail: 0,
       pending: 0,
       pendingContacts: [],
     });
@@ -253,7 +370,7 @@ describe('notifyRestockSubscribers', () => {
     kvStore.set('data:stock-alerts', empty);
     expect(
       await notifyRestockSubscribers(event, ENV_OK, [product({ id: 'p1', inStock: true })], 'x'),
-    ).toEqual({ sent: 0, pending: 0, pendingContacts: [] });
+    ).toEqual({ sent: 0, sentEmail: 0, pending: 0, pendingContacts: [] });
   });
 
   it('сбой отправки одной из заявок: sent меньше, падавшая остаётся pending', async () => {
@@ -277,6 +394,22 @@ describe('notifyRestockSubscribers', () => {
     expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeTruthy();
     expect(stored.find((a) => a.id === 'a2')?.notifiedAt).toBeFalsy();
   });
+
+  it('письмо тоже упало (Telegram не найден, Resend настроен): pending + контакт в сводке', async () => {
+    seed([alert({ id: 'a1', productId: 'p1', contact: 'ghost@x.ru' })], linked);
+    sendRestockEmailMock.mockImplementation(async () => false);
+    const { sentEmail, pending, pendingContacts } = await notifyRestockSubscribers(
+      event,
+      ENV_BOTH,
+      [product({ id: 'p1', inStock: true })],
+      'x',
+    );
+    expect(sentEmail).toBe(0);
+    expect(pending).toBe(1);
+    expect(pendingContacts).toEqual(['ghost@x.ru']);
+    const stored = (kvStore.get('data:stock-alerts') as StockAlertItem[]) ?? [];
+    expect(stored.find((a) => a.id === 'a1')?.notifiedAt).toBeFalsy();
+  });
 });
 
 describe('writeStockAlerts — sanity мока KV', () => {
@@ -296,6 +429,29 @@ describe('formatRestockAdminSummary', () => {
     expect(text).not.toContain('📭');
   });
 
+  it('email-рассылка: строка «Уведомлено по email», без строки Telegram', () => {
+    const text = formatRestockAdminSummary({
+      names: ['Кроссовки'],
+      sent: 0,
+      sentEmail: 3,
+      pendingContacts: [],
+    });
+    expect(text).toContain('✉️ Уведомлено по email: 3');
+    expect(text).not.toContain('Telegram');
+    expect(text).not.toContain('⚠️');
+  });
+
+  it('оба канала: обе строки счётчиков', () => {
+    const text = formatRestockAdminSummary({
+      names: ['Кроссовки'],
+      sent: 1,
+      sentEmail: 2,
+      pendingContacts: [],
+    });
+    expect(text).toContain('✅ Уведомлено в Telegram: 1');
+    expect(text).toContain('✉️ Уведомлено по email: 2');
+  });
+
   it('заявок нет: тихая строка «новых заявок нет» — админ видит, что механизм сработал', () => {
     const text = formatRestockAdminSummary({ names: ['Часы'], sent: 0, pendingContacts: [] });
     expect(text).toContain('📭 Новых заявок о поступлении нет');
@@ -307,7 +463,7 @@ describe('formatRestockAdminSummary', () => {
       sent: 1,
       pendingContacts: ['a@x.ru', 'b@x.ru', 'c@x.ru', 'd@x.ru', 'e@x.ru'],
     });
-    expect(text).toContain('⚠️ Без привязки Telegram — свяжитесь вручную:');
+    expect(text).toContain('⚠️ Уведомить не удалось — свяжитесь вручную:');
     expect(text).toContain('a@x.ru, b@x.ru, c@x.ru');
     expect(text).toContain('(+2 ещё)');
     expect(text).not.toContain('d@x.ru');

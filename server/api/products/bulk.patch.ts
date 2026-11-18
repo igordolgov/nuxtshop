@@ -50,12 +50,13 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    // ── Поступление при массовой правке: те же уведомления заявок +
-    // сводка админам ВСЕГДА (даже sent=0 — видно, кому связываться вручную).
-    // Best-effort: сбой бота не отменяет сохранение.
+    // ── Поступление при массовой правке: те же уведомления заявок
+    // (Telegram, при настройке Resend — ещё и email) + сводка админам
+    // ВСЕГДА (даже sent=0 — видно, кому связываться вручную).
+    // Best-effort: сбой бота/Resend не отменяет сохранение.
     const env = event.context.cloudflare?.env;
     const restocked = findRestockedProducts(products, updated);
-    if (env?.TELEGRAM_BOT_TOKEN && restocked.length > 0) {
+    if ((env?.TELEGRAM_BOT_TOKEN || env?.RESEND_API_KEY) && restocked.length > 0) {
       try {
         const origin = getRequestURL(event).origin;
         const result = await notifyRestockSubscribers(event, env, restocked, origin);
@@ -64,6 +65,7 @@ export default defineEventHandler(async (event) => {
           formatRestockAdminSummary({
             names: restocked.map((p) => p.name ?? ''),
             sent: result.sent,
+            sentEmail: result.sentEmail,
             pendingContacts: result.pendingContacts,
           }),
         );
