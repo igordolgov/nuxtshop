@@ -11,6 +11,21 @@ test('переключатель языка открывает меню и ве�
 
   await page.goto('/');
 
+  // ГИДРАЦИЯ: кнопка и меню есть уже в SSR-HTML, Playwright успевает
+  // кликнуть ДО монтирования Vue — клик проглатывается, v-show не
+  // переключается и меню остаётся hidden. Стабильно воспроизводится
+  // в CI сразу после деплоя: воркер холодный, гидрация запаздывает
+  // (упало на d237b5f, 3 ретрая подряд). Ждём __vue_app__ — Vue 3
+  // кладёт инстанс приложения на контейнер #__nuxt при mount().
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('#__nuxt');
+      return !!el && '__vue_app__' in el;
+    },
+    undefined,
+    { timeout: 20_000 },
+  );
+
   const menu = page.locator('ul.locale-menu');
   await expect(menu).toBeAttached({ timeout: 10_000 });
 
