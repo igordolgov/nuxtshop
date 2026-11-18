@@ -15,6 +15,7 @@ import {
 import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
 import { adminActionLog } from '../../lib/logger';
+import { diffProduct, recordProductHistory } from '../../lib/productHistory';
 import {
   detectRestock,
   formatRestockAdminSummary,
@@ -153,6 +154,20 @@ export default defineEventHandler(async (event) => {
       actor: { id: staff.id, email: staff.email, role: staff.role },
       product: { id: updated.id, name: updated.name },
     });
+
+    // ── История изменений (аудит в KV, переживает рецикл изолята):
+    // построчный дифф полей до/после. Пустой дифф не пишем —
+    // сохранение без реальных правок («пересохранил») — шум в журнале.
+    const historyChanges = diffProduct(existing, updated);
+    if (historyChanges.length > 0) {
+      await recordProductHistory(event, {
+        id: updated.id,
+        actor: { id: staff.id, email: staff.email, role: staff.role },
+        action: 'updated',
+        productName: updated.name,
+        changes: historyChanges,
+      });
+    }
 
     // ── Поступление товара: уведомляем заявки «сообщить о поступлении»
     // (Telegram) и ВСЕГДА шлём админам сводку — даже при sent=0: раньше

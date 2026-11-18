@@ -338,6 +338,37 @@
             )
             p.text-xs.mt-1(class="text-base-content/50") {{ $t('admin.characteristics.fallbackHint') }}
 
+      //- История изменений (аудит): грузится лениво при первом раскрытии;
+      //! после сохранения кэш сбрасывается (см. watch isOpen) — при
+      //! следующем раскрытии список придёт уже с новой записью
+      details.border.border-base-300.rounded-lg.mt-2.group(@toggle="onHistoryToggle")
+        summary.cursor-pointer.list-none.px-3.py-2.text-sm.font-medium.flex.items-center.justify-between
+          span {{ $t('admin.history.title') }}
+          svg.w-4.h-4.transition-transform(
+            class="text-base-content/75 group-open:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"
+          )
+            path(stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7")
+        .px-3.py-3.border-t.border-base-300
+          .flex.items-center.justify-center.py-2(v-if="historyLoading")
+            span.loading.loading-spinner.loading-sm
+          p.text-xs.opacity-60(v-else-if="historyError") {{ historyError }}
+          p.text-xs.opacity-60(v-else-if="history.length === 0") {{ $t('admin.history.empty') }}
+          ul.space-y-2(v-else)
+            li(v-for="entry in history" :key="entry.ts")
+              .flex.flex-wrap.items-center(class="gap-1 mb-0.5 text-xs")
+                span.badge.badge-xs(
+                  :class="entry.action === 'created' ? 'badge-success' : entry.action === 'deleted' ? 'badge-error' : 'badge-ghost'"
+                ) {{ $t('admin.history.action.' + entry.action) }}
+                span(class="text-xs opacity-70") {{ formatHistoryDate(entry.ts) }}
+                span(class="text-xs opacity-50 truncate max-w-40") {{ entry.actor?.email }}
+              ul.ml-4.list-disc(v-if="entry.changes.length" class="text-xs")
+                li(v-for="ch in entry.changes" :key="ch.field" class="marker:text-base-content/40")
+                  span.font-medium {{ historyFieldLabel(ch.field) }}:
+                  |  {{ formatHistoryValue(ch.field, ch.from) }}
+                  span(class="opacity-40") →
+                  |  {{ formatHistoryValue(ch.field, ch.to) }}
+
       //- Прогресс-бар
       .mt-2(v-if="uploadProgress > 0 && uploadProgress < 100")
         .w-full.bg-gray-200.rounded-full.h-1
@@ -374,11 +405,13 @@
 // Изображения ресайзятся на клиенте в WebP (useImageResize).
 // ============================================
 import { mergeSpecRows, toSpecPairs } from '~/utils/specTranslations'
+// Цена в истории — в валюте витрины (₽/$), как в таблице товаров
+import { formatMoney } from '../../../store.config'
 
 const { updateProduct } = useProducts()
 const { resizeToWebp } = useImageResize()
 const notify = useNotifyQueue()
-const { t } = useI18n()
+const { t, te, locale } = useI18n()
 
 const props = defineProps({
   isOpen: Boolean,
@@ -661,6 +694,58 @@ const handleSubmit = async () => {
   }
 }
 
+// ── История изменений (аудит из KV через GET /api/products/:id/history)
+// Ленивая загрузка при первом раскрытии блока «История»; кэш сбрасывается
+// при закрытии модалки (watch isOpen) — после сохранения список перечитается
+// уже с новой записью.
+const history = ref([])
+const historyLoading = ref(false)
+const historyError = ref('')
+// id товара, для которого данные уже загружены (строка — id в API строка)
+const historyLoadedFor = ref(null)
+
+const loadHistory = async () => {
+  const id = props.product?.id
+  if (!id || historyLoading.value) return
+  historyLoading.value = true
+  historyError.value = ''
+  try {
+    const resp = await $fetch(`/api/products/${id}/history`)
+    history.value = Array.isArray(resp?.history) ? resp.history : []
+  } catch {
+    // ofetch кладёт тело в error.data — но здесь достаточно общей фразы
+    historyError.value = t('admin.history.loadFailed')
+  } finally {
+    historyLoading.value = false
+    historyLoadedFor.value = String(id)
+  }
+}
+
+// Первое раскрытие details → GET; повторные раскрытия берут уже загруженное
+const onHistoryToggle = (e) => {
+  if (e?.target?.open && historyLoadedFor.value !== String(props.product?.id ?? '')) {
+    loadHistory()
+  }
+}
+
+// Метка поля: перевод admin.history.field.<field>, нет ключа — сырое имя
+// (страховка для новых полей без переводов)
+const historyFieldLabel = (field) =>
+  te(`admin.history.field.${field}`) ? t(`admin.history.field.${field}`) : field
+
+const formatHistoryValue = (field, value) => {
+  if (value === null || value === undefined || value === '') return '—'
+  if (field === 'price' || field === 'oldPrice') return formatMoney(Number(value))
+  if (Array.isArray(value)) return value.map((v) => String(v)).join(' · ')
+  return String(value)
+}
+
+const formatHistoryDate = (ts) => {
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return ts
+  return d.toLocaleString(locale.value, { dateStyle: 'short', timeStyle: 'short' })
+}
+
 const clearMainImage = () => {
   if (form.value) form.value.image = ''
   if (mainImageInput.value) mainImageInput.value.value = ''
@@ -744,6 +829,11 @@ watch(() => props.isOpen, (newVal) => {
     characteristicPairsEn.value = []
     characteristicPairsEs.value = []
     specPrefilled.value = { en: false, es: false }
+    // Кэш истории сбрасывается: после сохранения/правки другого товара
+    // список должен перечитаться с сервера
+    history.value = []
+    historyError.value = ''
+    historyLoadedFor.value = null
     if (mainImageInput.value) mainImageInput.value.value = ''
     if (galleryInput.value) galleryInput.value.value = ''
   } else {

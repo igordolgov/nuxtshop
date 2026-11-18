@@ -713,6 +713,7 @@
     "productCreateFailed": "No se pudo añadir el producto",
     "productUpdateFailed": "No se pudo actualizar el producto",
     "productDeleteFailed": "No se pudo eliminar el producto",
+    "productHistoryFailed": "No se pudo cargar el historial del producto",
     "bulkUpdateFailed": "No se pudo realizar la actualización masiva",
     "bulkDeleteFailed": "No se pudo realizar la eliminación masiva",
     "promoInactive": "El código promocional ya no está activo",
@@ -1244,6 +1245,39 @@
       "addBtn": "Añadir variante",
       "maxReached": "Máximo — {n}",
       "baseHint": "La primera fila = variante base: el catálogo muestra su precio y existencias"
+    },
+    "history": {
+      "title": "Historial de cambios",
+      "empty": "Aún no hay cambios",
+      "loadFailed": "No se pudo cargar el historial",
+      "action": {
+        "created": "Creado",
+        "updated": "Actualizado",
+        "deleted": "Eliminado"
+      },
+      "field": {
+        "name": "Nombre",
+        "description": "Descripción",
+        "price": "Precio",
+        "oldPrice": "Precio anterior",
+        "image": "Imagen principal",
+        "stockQuantity": "Existencias",
+        "categories": "Categorías",
+        "gallery": "Galería",
+        "characteristics": "Características",
+        "characteristicsEn": "Características (EN)",
+        "characteristicsEs": "Características (ES)",
+        "variants": "Variantes",
+        "variantName": "Eje de variantes",
+        "variantNameEn": "Eje de variantes (EN)",
+        "variantNameEs": "Eje de variantes (ES)",
+        "nameEn": "Nombre (EN)",
+        "nameEs": "Nombre (ES)",
+        "descriptionEn": "Descripción (EN)",
+        "descriptionEs": "Descripción (ES)",
+        "categoriesEn": "Categorías (EN)",
+        "categoriesEs": "Categorías (ES)"
+      }
     },
     "characteristics": {
       "sectionTitle": "Características ({n})",

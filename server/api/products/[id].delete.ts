@@ -2,6 +2,7 @@
 import { readProducts, writeProducts } from '../../lib/productHelpers';
 import { requireStaff } from '../../utils/auth';
 import { adminActionLog } from '../../lib/logger';
+import { recordProductHistory } from '../../lib/productHistory';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,6 +36,16 @@ export default defineEventHandler(async (event) => {
       action: 'PRODUCT_DELETED',
       actor: { id: staff.id, email: staff.email, role: staff.role },
       product: { id: deleted.id, name: deleted.name },
+    });
+
+    // История изменений: запись «удалён». Ключ KV НЕ удаляем —
+    // история товара читается и после удаления (кто и когда).
+    await recordProductHistory(event, {
+      id: deleted.id,
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      action: 'deleted',
+      productName: deleted.name,
+      changes: [],
     });
 
     // Картинки data-URI живут внутри JSON товара — отдельная очистка файлов не нужна

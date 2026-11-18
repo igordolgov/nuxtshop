@@ -3,6 +3,7 @@ import { readProducts, writeProducts } from '../../lib/productHelpers';
 import { applyBulkPatch, normalizeIdList, parseBulkPatch } from '../../lib/bulkHelpers';
 import { requireStaff } from '../../utils/auth';
 import { adminActionLog } from '../../lib/logger';
+import { diffProduct, recordProductHistory } from '../../lib/productHistory';
 import {
   findRestockedProducts,
   formatRestockAdminSummary,
@@ -78,6 +79,23 @@ export default defineEventHandler(async (event) => {
       updatedCount: updated.length,
       fields: Object.keys(patch).filter((k) => k !== 'hasChanges'),
     });
+
+    // ── История изменений по каждому товару: дифф до/после массовой
+    // правки. products ещё держит СТАРЫЕ объекты (writeProducts собрал
+    // новый массив, не мутируя старый) — сравниваем с updated.
+    const oldById = new Map(products.map((p) => [p.id, p]));
+    for (const p of updated) {
+      const changes = diffProduct(oldById.get(p.id) ?? null, p);
+      if (changes.length > 0) {
+        await recordProductHistory(event, {
+          id: p.id,
+          actor: { id: staff.id, email: staff.email, role: staff.role },
+          action: 'updated',
+          productName: p.name,
+          changes,
+        });
+      }
+    }
 
     return {
       success: true,

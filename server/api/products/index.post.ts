@@ -23,6 +23,7 @@ import {
 import { requireStaff } from '../../utils/auth';
 import { processImage, processGallery } from '../../lib/imageStorage';
 import { adminActionLog } from '../../lib/logger';
+import { recordProductHistory } from '../../lib/productHistory';
 
 // Тело запроса: строгие поля + произвольные (нормализаторы сами разбирают
 // categories/gallery/variants в любом допустимом формате)
@@ -121,6 +122,15 @@ export default defineEventHandler(async (event) => {
       action: 'PRODUCT_CREATED',
       actor: { id: staff.id, email: staff.email, role: staff.role },
       product: { id: newProduct.id, name: newProduct.name },
+    });
+
+    // История изменений (аудит в KV): первая запись — «создан»
+    await recordProductHistory(event, {
+      id: newProduct.id,
+      actor: { id: staff.id, email: staff.email, role: staff.role },
+      action: 'created',
+      productName: newProduct.name,
+      changes: [],
     });
 
     return { success: true, product: newProduct, message: 'Товар успешно добавлен' };

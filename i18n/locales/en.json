@@ -713,6 +713,7 @@
     "productCreateFailed": "Failed to add the product",
     "productUpdateFailed": "Failed to update the product",
     "productDeleteFailed": "Failed to delete the product",
+    "productHistoryFailed": "Failed to load product history",
     "bulkUpdateFailed": "Failed to perform the bulk update",
     "bulkDeleteFailed": "Failed to perform the bulk delete",
     "promoInactive": "The promo code is no longer active",
@@ -1244,6 +1245,39 @@
       "addBtn": "Add variant",
       "maxReached": "Maximum — {n}",
       "baseHint": "First row = base variant: the catalog shows its price and stock"
+    },
+    "history": {
+      "title": "Change history",
+      "empty": "No changes yet",
+      "loadFailed": "Failed to load history",
+      "action": {
+        "created": "Created",
+        "updated": "Updated",
+        "deleted": "Deleted"
+      },
+      "field": {
+        "name": "Name",
+        "description": "Description",
+        "price": "Price",
+        "oldPrice": "Old price",
+        "image": "Main image",
+        "stockQuantity": "Stock",
+        "categories": "Categories",
+        "gallery": "Gallery",
+        "characteristics": "Characteristics",
+        "characteristicsEn": "Characteristics (EN)",
+        "characteristicsEs": "Characteristics (ES)",
+        "variants": "Variants",
+        "variantName": "Variant axis",
+        "variantNameEn": "Variant axis (EN)",
+        "variantNameEs": "Variant axis (ES)",
+        "nameEn": "Name (EN)",
+        "nameEs": "Name (ES)",
+        "descriptionEn": "Description (EN)",
+        "descriptionEs": "Description (ES)",
+        "categoriesEn": "Categories (EN)",
+        "categoriesEs": "Categories (ES)"
+      }
     },
     "characteristics": {
       "sectionTitle": "Specifications ({n})",

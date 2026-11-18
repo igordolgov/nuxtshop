@@ -713,6 +713,7 @@
     "productCreateFailed": "Не удалось добавить товар",
     "productUpdateFailed": "Не удалось обновить товар",
     "productDeleteFailed": "Не удалось удалить товар",
+    "productHistoryFailed": "Не удалось загрузить историю товара",
     "bulkUpdateFailed": "Не удалось выполнить массовое обновление",
     "bulkDeleteFailed": "Не удалось выполнить массовое удаление",
     "promoInactive": "Промокод больше не действует",
@@ -1244,6 +1245,39 @@
       "addBtn": "Добавить вариант",
       "maxReached": "Максимум — {n}",
       "baseHint": "Первая строка = базовый вариант: каталог показывает его цену и остаток"
+    },
+    "history": {
+      "title": "История изменений",
+      "empty": "Пока нет изменений",
+      "loadFailed": "Не удалось загрузить историю",
+      "action": {
+        "created": "Создан",
+        "updated": "Изменён",
+        "deleted": "Удалён"
+      },
+      "field": {
+        "name": "Название",
+        "description": "Описание",
+        "price": "Цена",
+        "oldPrice": "Цена до скидки",
+        "image": "Главное фото",
+        "stockQuantity": "Остаток",
+        "categories": "Категории",
+        "gallery": "Галерея",
+        "characteristics": "Характеристики",
+        "characteristicsEn": "Характеристики (EN)",
+        "characteristicsEs": "Характеристики (ES)",
+        "variants": "Варианты",
+        "variantName": "Ось вариантов",
+        "variantNameEn": "Ось вариантов (EN)",
+        "variantNameEs": "Ось вариантов (ES)",
+        "nameEn": "Название (EN)",
+        "nameEs": "Название (ES)",
+        "descriptionEn": "Описание (EN)",
+        "descriptionEs": "Описание (ES)",
+        "categoriesEn": "Категории (EN)",
+        "categoriesEs": "Категории (ES)"
+      }
     },
     "characteristics": {
       "sectionTitle": "Характеристики ({n})",
