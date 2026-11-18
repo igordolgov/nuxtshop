@@ -23,6 +23,7 @@ import {
 } from './useFilters';
 import { useAuth } from './useAuth';
 import { useFavorites } from './useFavorites';
+import { useCart } from './useCart';
 import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
 import { computed, watch } from 'vue';
 
@@ -327,6 +328,13 @@ function createAppState() {
       }
 
       await auth.checkAuth();
+      // Синк корзины с аккаунтом при загрузке с живой сессией (смена
+      // устройства/перезагрузка). Не awaited: не блокирует инициализацию.
+      if (import.meta.client && auth.isAuthenticated.value && auth.user.value) {
+        useCart()
+          .handleAuthLogin(auth.user.value)
+          .catch(() => {});
+      }
       // Каталогные фильтры — в исходное, поиск НЕ трогаем: здесь мог
       // быть уже восстановленный из ?search= запрос (index.vue), и
       // resetFilters() затирал его в сетке при заполненном поле

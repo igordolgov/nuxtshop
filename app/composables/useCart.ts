@@ -27,36 +27,39 @@ import {
   firstVariant,
   type ProductVariantLike,
 } from '../utils/productVariants';
+// Синк корзины с аккаунтом: чистая логика merge/санитизации (общая с сервером).
+// cartSync — полностью автономный модуль (без импортов из composables): он же
+// подключается сервером (cartHelpers), и любые ссылки на DOM-зависимые
+// композаблы ломали бы серверный tsconfig-граф.
+import {
+  cartSignature,
+  mergeCarts,
+  normalizeRemoteCart,
+  type SyncableCart,
+  type SyncCartItem,
+  type SyncPromo,
+} from '../utils/cartSync';
 
 const STORAGE_KEY = 'cart';
+// Владелец локальной корзины (id пользователя, с которым она синхронизирована
+// в последний раз): вход в ДРУГОЙ аккаунт на этом устройстве не переносит
+// чужую корзину в новую учётку — берём серверную корзину целиком.
+const OWNER_KEY = 'cart-owner';
+// Задержка пуша после мутации: склеиваем серии изменений
+// (например, +1 шт. кликами по счётчику) в один PUT.
+const PUSH_DEBOUNCE_MS = 1200;
 
 const DELIVERY_METHOD_IDS: DeliveryMethodId[] = ['courier', 'pickup', 'post'];
 
-/** Позиция корзины — снапшот товара, замороженный при добавлении */
-export interface CartItem {
-  id: string;
-  name: string;
-  variantId?: string | number | null;
-  variantName?: string | null;
-  description?: string;
-  price: number;
-  currentPrice?: number | null;
-  originalPrice?: number | null;
-  quantity: number;
-  image?: string;
-  category?: string | null;
-  stockQuantity?: number | null;
-  inStock?: boolean;
-  discount?: number;
-  slug?: string | null;
-}
+/**
+ * Позиция корзины — снапшот товара, замороженный при добавлении.
+ * Каноническая форма — SyncCartItem в utils/cartSync.ts (его же валидация
+ * хранит на сервере); здесь алиас ради совместимости всех импортов CartItem.
+ */
+export type CartItem = SyncCartItem;
 
 /** Применённый промокод: валидация на сервере, скидка пересчитывается локально */
-export interface AppliedPromo {
-  code: string;
-  type: 'percent' | 'fixed';
-  value: number;
-}
+export type AppliedPromo = SyncPromo;
 
 /** Товар, который можно положить в корзину (витринный снапшот) */
 export interface CartProductInput {
@@ -150,6 +153,205 @@ function createCart() {
   });
 
   const loaded = ref(false);
+
+  // ─── Синк с аккаунтом ───────────────────────────────────
+  // id пользователя, с которым корзина синхронизируется в ЭТОЙ сессии
+  // (null — гость: только localStorage, никаких запросов к /api/my/cart).
+  const syncUserId = ref<string | null>(null);
+  let pushTimer: ReturnType<typeof setTimeout> | null = null;
+  // Слепок последнего удачно отправленного состояния: не гоняем одинаковые
+  // корзины при каждом изменении (PUT только на реальные диффы).
+  let lastPushedSignature: string | null = null;
+  // Дедупликация pull при входе (login-страница + initializeApp могут
+  // вызвать handleAuthLogin почти одновременно).
+  let pullInFlight: Promise<void> | null = null;
+
+  const readOwner = (): string | null => {
+    try {
+      return localStorage.getItem(OWNER_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const writeOwner = (userId: string): void => {
+    try {
+      localStorage.setItem(OWNER_KEY, userId);
+    } catch {
+      // приватный режим — синк продолжает работать в рамках сессии
+    }
+  };
+
+  const pushCart = async (): Promise<void> => {
+    if (!import.meta.client || !syncUserId.value) return;
+    const payload: SyncableCart = {
+      items: state.value.items,
+      promo: state.value.promo,
+      deliveryMethod: state.value.deliveryMethod,
+    };
+    const signature = cartSignature(payload);
+    if (signature === lastPushedSignature) return;
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      pushTimer = null;
+    }
+    try {
+      await $fetch('/api/my/cart', {
+        method: 'PUT',
+        credentials: 'include',
+        body: { cart: payload },
+      });
+      lastPushedSignature = signature;
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status === 401) {
+        // Сессия истекла на сервере: гасим синк, локальная корзина остаётся
+        syncUserId.value = null;
+        lastPushedSignature = null;
+        return;
+      }
+      // Сеть/сервер упали — отправим при следующей мутации (signature не запомнен)
+      console.warn('[useCart] Не удалось сохранить корзину на сервере:', error);
+    }
+  };
+
+  const schedulePush = (): void => {
+    if (!import.meta.client || !syncUserId.value) return;
+    if (pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      pushTimer = null;
+      void pushCart();
+    }, PUSH_DEBOUNCE_MS);
+  };
+
+  /** Стандартная реакция на мутацию корзины: localStorage + UI + сервер */
+  const markMutated = (): void => {
+    saveCartToStorage();
+    emitUpdated();
+    schedulePush();
+  };
+
+  /**
+   * Вход в аккаунт / загрузка страницы с живой сессией: подтянуть серверную
+   * корзину и объединить с локальной (правила — mergeCarts в cartSync.ts).
+   * Вызывается из useAuth.login/register и из initializeApp после checkAuth.
+   */
+  const handleAuthLogin = (user: { id?: string | number | null } | null): Promise<void> => {
+    if (!import.meta.client) return Promise.resolve();
+    const userId = user?.id != null ? String(user.id) : null;
+    if (!userId || syncUserId.value === userId) return Promise.resolve();
+    if (pullInFlight) return pullInFlight;
+
+    pullInFlight = (async () => {
+      // Локальное сохранённое ДОЛЖНО быть прочитано до merge: initializeApp
+      // может дойти до checkAuth раньше, чем отработает fetchCart после
+      // suspense:resolve — иначе merge примет гостевую корзину за пустую,
+      // а отложенный fetchCart затрёт результат своим стейтом.
+      if (!loaded.value) fetchCart();
+
+      let remote: SyncableCart | null = null;
+      try {
+        const resp = await $fetch<{ success: boolean; cart: unknown }>('/api/my/cart', {
+          credentials: 'include',
+        });
+        remote = normalizeRemoteCart(resp?.cart);
+      } catch (error) {
+        if ((error as { status?: number }).status === 401) return; // сессии нет
+        console.warn('[useCart] Не удалось загрузить корзину аккаунта:', error);
+        return; // сеть упала — подтянем при следующем входе/загрузке
+      }
+
+      // На этом устройстве уже синхронизировали ДРУГОЙ аккаунт — локальную
+      // корзину (его) не переносим в новую учётку
+      const owner = readOwner();
+      const discardLocal = owner != null && owner !== userId;
+      const localIds = new Set(state.value.items.map((item) => item.id));
+
+      const merged = mergeCarts(
+        discardLocal
+          ? null
+          : {
+              items: state.value.items,
+              promo: state.value.promo,
+              deliveryMethod: state.value.deliveryMethod,
+            },
+        remote,
+      );
+
+      state.value.items = merged.items;
+      state.value.promo = merged.promo;
+      state.value.deliveryMethod = merged.deliveryMethod;
+      syncUserId.value = userId;
+      writeOwner(userId);
+      saveCartToStorage();
+      emitUpdated();
+
+      // Пушим только реальный дифф с сервером (пустая серверная + пустая локальная
+      // → PUT не нужен вовсе)
+      const current = cartSignature({
+        items: state.value.items,
+        promo: state.value.promo,
+        deliveryMethod: state.value.deliveryMethod,
+      });
+      const remoteSignature = remote ? cartSignature(remote) : null;
+      if (current !== remoteSignature) {
+        lastPushedSignature = null;
+        void pushCart();
+      } else {
+        lastPushedSignature = current;
+      }
+
+      // Тост — только когда с сервера приехали новые позиции
+      const added = (remote?.items ?? []).filter((item) => !localIds.has(item.id)).length;
+      if (added > 0) {
+        try {
+          const notify = (
+            useNuxtApp() as unknown as { $notify?: { success?: (m: string) => void } }
+          ).$notify;
+          notify?.success?.(
+            tr('cart.syncMerged', 'В корзину добавлено товаров из вашего аккаунта: {count}', {
+              count: added,
+            }),
+          );
+        } catch {
+          // вне Nuxt-контекста — без тоста
+        }
+      }
+    })();
+
+    pullInFlight.finally(() => {
+      pullInFlight = null;
+    });
+    return pullInFlight;
+  };
+
+  /**
+   * Выход из аккаунта: синк гасится, локальная корзина остаётся гостевой.
+   * Owner не трогаем — повторный вход в тот же аккаунт продолжит синк.
+   */
+  const handleAuthLogout = (): void => {
+    if (!import.meta.client) return;
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      pushTimer = null;
+    }
+    syncUserId.value = null;
+    lastPushedSignature = null;
+  };
+
+  // Финальный пуш при уходе со страницы/скрытии таба: debounce не дождётся
+  if (import.meta.client) {
+    const flush = () => {
+      if (!pushTimer) return;
+      clearTimeout(pushTimer);
+      pushTimer = null;
+      void pushCart();
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    window.addEventListener('pagehide', flush);
+  }
 
   // ─── Computed ─────────────────────────────────────────────
 
@@ -322,8 +524,7 @@ function createCart() {
       });
     }
 
-    saveCartToStorage();
-    emitUpdated();
+    markMutated();
     console.log('➕ Товар добавлен, всего:', totalItems.value);
     return true;
   };
@@ -349,21 +550,19 @@ function createCart() {
       state.value.items = state.value.items.filter((i) => i.id !== itemId);
     }
 
-    saveCartToStorage();
-    emitUpdated();
+    markMutated();
   };
 
   const removeFromCart = async (itemId: string): Promise<void> => {
     state.value.items = state.value.items.filter((i) => i.id !== itemId);
-    saveCartToStorage();
-    emitUpdated();
+    markMutated();
   };
 
   const clearCart = async (): Promise<void> => {
     state.value.items = [];
     state.value.promo = '';
-    saveCartToStorage();
-    emitUpdated();
+    // Синк отдаст на сервер пустую корзину — там ключ удаляется
+    markMutated();
   };
 
   /**
@@ -374,6 +573,7 @@ function createCart() {
     if (!DELIVERY_METHOD_IDS.includes(methodId)) return;
     state.value.deliveryMethod = methodId;
     saveCartToStorage();
+    schedulePush();
   };
 
   interface PromoValidateResponse {
@@ -424,8 +624,7 @@ function createCart() {
       value: resp.promo.value,
     };
     state.value.error = '';
-    saveCartToStorage();
-    emitUpdated();
+    markMutated();
     return true;
   };
 
@@ -453,8 +652,7 @@ function createCart() {
         return true;
       }
       state.value.promo = '';
-      saveCartToStorage();
-      emitUpdated();
+      markMutated();
       return false;
     } catch {
       return true;
@@ -463,8 +661,7 @@ function createCart() {
 
   const removePromoCode = async (): Promise<void> => {
     state.value.promo = '';
-    saveCartToStorage();
-    emitUpdated();
+    markMutated();
   };
 
   const proceedToCheckout = async (): Promise<void> => {
@@ -541,6 +738,9 @@ function createCart() {
     revalidatePromo,
     removePromoCode,
     fetchCart,
+    // Синк с аккаунтом (вызывает useAuth: login/register/logout, initializeApp)
+    handleAuthLogin,
+    handleAuthLogout,
     proceedToCheckout,
     getMaxQuantity,
     getProductUrl,

@@ -3,6 +3,7 @@
 // и serverMessageTr (composables/useServerMessage.ts: серверные коды →
 // server.* в словарях)
 import { serverMessageTr } from './useServerMessage';
+import { useCart } from './useCart';
 
 // In-flight дедупликация checkAuth. Только клиент: на SSR промисы нельзя
 // шарить между запросами — это утечка сессий между пользователями.
@@ -106,6 +107,14 @@ function createAuth() {
 
       if (!data.success) throw new Error(data.error || tr('auth.errLoginDefault', 'Ошибка входа'));
       updateAuthState(data.user);
+      // Синк корзины с аккаунтом: подтянуть серверную корзину и объединить
+      // с локальной гостевой (правила — mergeCarts). Не awaited: вход не ждёт
+      // сеть — merge догонит за 1–2 запроса.
+      if (import.meta.client) {
+        useCart()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+      }
       return data;
     } catch (error) {
       // ofetch бросает FetchError: сервер кладёт code в data.data — серверный
@@ -144,6 +153,12 @@ function createAuth() {
       if (!data.success)
         throw new Error(data.error || tr('auth.errRegister', 'Ошибка регистрации'));
       updateAuthState(data.user);
+      // Новый аккаунт: серверная корзина пуста — локальная становится его корзиной
+      if (import.meta.client) {
+        useCart()
+          .handleAuthLogin(data.user)
+          .catch(() => {});
+      }
       return data;
     } catch (error) {
       // Серверные коды (missingFields/emailFormat/nameLength/…) → server.*
@@ -176,6 +191,7 @@ function createAuth() {
 
     // Ключи от старой auth-схемы — чистим на устройствах пользователей
     if (import.meta.client) {
+      useCart().handleAuthLogout();
       localStorage.removeItem('user');
       localStorage.removeItem('auth-token');
       sessionStorage.removeItem('user');
