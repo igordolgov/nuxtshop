@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 // Каталог должен успеть догрузиться после гидратации (SSR отдаёт каркас,
 // товары приходят с /api/products) — щедрый таймаут на первую карточку.
-const FIRST_PRODUCT = 'a[href*="/product/"]';
+const FIRST_PRODUCT = 'a[href*="/product/"]:not([href*="/product/test"])';
 
 // Вход в корзину: десктоп — <a> на /cart в шапке (HeaderCartMenu), мобильный —
 // кнопка в нижней навигации (openCart → navigateTo('/cart')); скрытые

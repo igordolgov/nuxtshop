@@ -12,7 +12,10 @@ const cartBadge = (page: import('@playwright/test').Page) =>
 // сид-товары стабильны, но каталог может редактироваться из админки).
 async function openFirstProduct(page: import('@playwright/test').Page) {
   await page.goto('/');
-  const card = page.locator('a[href*="/product/"]').first();
+  // :not([href*="/product/test"]) — пропускаем «тестовые» товары из
+  // экспериментов в админке (кейс 2026-11-18: тестовый товар в каталоге
+  // CU с битой картинкой и карточкой 404 ломал клик по первой карточке).
+  const card = page.locator('a[href*="/product/"]:not([href*="/product/test"])').first();
   await card.waitFor({ state: 'visible', timeout: 15_000 });
   await card.click();
   await expect(page).toHaveURL(/\/product\//);
