@@ -1,4 +1,5 @@
 // server/api/product/[slug].ts
+import { getBoughtTogetherProducts } from '../../lib/boughtTogetherHelpers';
 import { getProductBySlug, getSimilarProducts } from '../../lib/productHelpers';
 import {
   approvedReviews,
@@ -37,6 +38,11 @@ export default defineEventHandler(async (event) => {
 
     const similarProducts = await getSimilarProducts(event, product, 4);
 
+    // «Часто покупают вместе» (Amazon FBT): товары из одних заказов с
+    // текущим. Пустой массив — совместных покупок ещё не было, витрина
+    // блок не рисует. Тот же запрос, что и похожие: один KV-read заказов.
+    const boughtTogether = await getBoughtTogetherProducts(event, product, 3);
+
     // Одобренные отзывы товара: блок на карточке + aggregateRating в JSON-LD
     // (звёзды в выдаче поисковиков). Не прошедшие модерацию — не видны.
     // publicReviewView скрывает helpfulBy (id пользователей): наружу — только
@@ -62,6 +68,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       product,
+      boughtTogether,
       similarProducts,
       reviews,
       ratingSummary: ratingSummaryValue,

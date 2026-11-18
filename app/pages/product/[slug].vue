@@ -83,17 +83,30 @@
               @add-to-cart="addToCartHandler"
             )
 
-          //- Похожие товары: на мобиле — ПОСЛЕ описания, на десктопе —
-          //- ПОД ГАЛЕРЕЕЙ в левой колонке (grid-area similar,
-          //- Ozon-паттерн 38e76bd). Один экземпляр на оба брейкпоинта
-          SimilarProducts(
-            v-if="product && similarProducts.length > 0"
-            class="similar-slot"
-            :products="similarProducts"
-            :is-in-cart="(item) => isInCart(item.id)"
-            @toggle-favorite="toggleSimilarFavorite"
-            @add-to-cart="addSimilarToCart"
+          //- Левая колонка под галереей (grid-area similar): «Часто
+          //- покупают вместе» над «Похожими», один экземпляр на оба
+          //- брейкпоинта (на мобиле колонка — после описания).
+          //- ВАЖНО: у wrapper один grid-area — два блока с классом
+          //- similar-slot наложились бы друг на друга
+          .similar-slot(
+            v-if="product && (boughtTogether.length > 0 || similarProducts.length > 0)"
           )
+            //- «Часто покупают вместе»: товары из одних заказов (считает
+            //- API /api/product/[slug] → boughtTogether); без данных скрыт
+            BoughtTogether(
+              v-if="boughtTogether.length > 0"
+              :products="boughtTogether"
+              @add-selected="addBoughtTogetherToCart"
+            )
+
+            //- Похожие товары: ...
+            SimilarProducts(
+              v-if="similarProducts.length > 0"
+              :products="similarProducts"
+              :is-in-cart="(item) => isInCart(item.id)"
+              @toggle-favorite="toggleSimilarFavorite"
+              @add-to-cart="addSimilarToCart"
+            )
 
     //- Недавно смотрели: localStorage клиента, SSR не рендерит;
     //- текущий товар исключается
@@ -331,6 +344,10 @@ const similarProducts = computed(() => {
     .slice(0, 4)
 })
 
+// «Часто покупают вместе»: считает сервер (/api/product/[slug] →
+// boughtTogether); пусто — совместных покупок ещё не было
+const boughtTogether = computed(() => responseData.value?.boughtTogether ?? [])
+
 const isFavorite = computed(() => {
   if (!product.value) return false
   return appState.isFavorite(product.value.id)
@@ -397,6 +414,26 @@ const addSimilarToCart = async (item) => {
   } catch {
     $notify.error(t('product.cartAddErrorLong'))
   }
+}
+
+// ─── «Часто покупают вместе»: выбранные чекбоксы — пачкой в корзину ──
+// Паттерн repeatOrder (user/orders.vue): добавляем что есть, часть может
+// закончиться между рендером и кликом — сообщаем частичный успех
+const addBoughtTogetherToCart = async (items) => {
+  const list = items ?? []
+  if (list.length === 0) return
+  let added = 0
+  for (const item of list) {
+    try {
+      await addToCart(item)
+      added++
+    } catch {
+      // позиция могла закончиться — идём дальше
+    }
+  }
+  if (added === list.length) $notify.success(t('product.fbtAdded'))
+  else if (added > 0) $notify.info(t('user.addedPartial', { added, total: list.length }))
+  else $notify.error(t('product.cartAddErrorLong'))
 }
 
 // ─── Прокрутка: окно И внутренний контейнер ─────────────────────────
