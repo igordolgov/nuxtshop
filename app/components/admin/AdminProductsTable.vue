@@ -36,7 +36,7 @@
                 )
               th.w-14 {{ $t('admin.products.colPhoto') }}
               th {{ $t('admin.products.colName') }}
-              th.w-20.text-right {{ $t('admin.products.colPrice') }}
+              th.w-28.text-right {{ $t('admin.products.colPrice') }}
               th.w-24 {{ $t('admin.products.colCategories') }}
               th.w-20 {{ $t('admin.products.colStock') }}
               th.w-20 {{ $t('admin.products.colActions') }}
@@ -77,7 +77,9 @@
                 .text-xs.opacity-50(v-if="loc(product).description" class="mt-0.5") 
                   | {{ truncate(loc(product).description, 50) }}
 
-              td.text-right
+              //- whitespace-nowrap: «1 234 567 ₽» не переносится на вторую строку —
+              //- колонка подстраивается под самую длинную цену, а не ломает её
+              td.text-right.whitespace-nowrap
                 .font-semibold {{ formatMoney(product.price) }}
 
               td

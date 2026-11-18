@@ -2,7 +2,10 @@
 // просмотров (pushRecent) без localStorage; сам композабл тонкий
 // клиентский слой вокруг неё.
 import { describe, expect, it } from 'vitest';
-import { RECENTLY_VIEWED_MAX, pushRecent } from '../../app/composables/useRecentlyViewed';
+// RECENTLY_VIEWED_MAX каноничен в utils (композабл его не реэкспортирует),
+// pushRecent — из композабла
+import { RECENTLY_VIEWED_MAX } from '../../app/utils/recentlyViewedSync';
+import { pushRecent } from '../../app/composables/useRecentlyViewed';
 
 describe('pushRecent', () => {
   it('добавляет slug наверх списка', () => {

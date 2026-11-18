@@ -12,7 +12,6 @@ import {
   planRecentSync,
   recentSignature,
   RECENTLY_VIEWED_MAX,
-  RECENTLY_VIEWED_KEY,
   RECENT_SLUG_MAX_LENGTH,
   type RecentSyncMarker,
 } from '../../app/utils/recentlyViewedSync';
@@ -20,9 +19,6 @@ import {
   readUserRecentlyViewed,
   writeUserRecentlyViewed,
 } from '../../server/lib/recentlyViewedHelpers';
-// Реэкспорт констант из композабла должен остаться совместимым (потребители
-// импортируют их отсюда)
-import { RECENTLY_VIEWED_KEY as KEY_FROM_COMPOSABLE } from '../../app/composables/useRecentlyViewed';
 
 const bareEvent = {} as H3Event;
 
@@ -199,9 +195,5 @@ describe('server/lib/recentlyViewedHelpers: чтение и запись (in-mem
     expect(await readUserRecentlyViewed(bareEvent, 'user-5')).toBeNull();
     await kvPutJSON(bareEvent, 'recently-viewed:user-6', 'строка вместо объекта');
     expect(await readUserRecentlyViewed(bareEvent, 'user-6')).toBeNull();
-  });
-
-  it('ключ истории каноничен: реэкспорт композабла совпадает', () => {
-    expect(KEY_FROM_COMPOSABLE).toBe(RECENTLY_VIEWED_KEY);
   });
 });

@@ -28,8 +28,9 @@ import {
   type RecentSyncMarker,
 } from '../utils/recentlyViewedSync';
 
-// Совместимость: потребители импортировали константы отсюда
-export { RECENTLY_VIEWED_KEY, RECENTLY_VIEWED_MAX };
+// Константы НЕ реэкспортируются отсюда: каноничные объявления живут в
+// app/utils/recentlyViewedSync.ts, а Nuxt авто-импортирует их в компоненты
+// напрямую. Дубль реэкспорта давал dev-предупреждение «Duplicated imports».
 
 const OWNER_KEY = 'recently-viewed-owner';
 // Маркер последнего синка { userId, signature }: слепок локальной истории,
