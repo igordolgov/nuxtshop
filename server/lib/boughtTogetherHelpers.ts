@@ -81,11 +81,14 @@ export async function getBoughtTogetherProducts(
   event: H3Event,
   current: Product,
   limit = 3,
+  allProducts?: Product[],
 ): Promise<Product[]> {
   const orders = await readOrders(event);
   const top = computeBoughtTogether(orders, String(current.id), limit);
   if (top.length === 0) return [];
-  const products = await readProducts(event);
+  // allProducts: переиспользование уже прочитанного каталога (карточка
+  // товара читает KV один раз на весь ответ) — см. productHelpers.
+  const products = allProducts ?? (await readProducts(event));
   const byId = new Map(products.map((p) => [String(p.id), p] as const));
   const result: Product[] = [];
   for (const { productId } of top) {

@@ -718,8 +718,15 @@ export function applyLocalizedPatch<ProductType extends object>(
   return result as ProductType;
 }
 
-export async function getProductBySlug(event: H3Event, slugOrId: string): Promise<Product | null> {
-  const products = await readProducts(event);
+export async function getProductBySlug(
+  event: H3Event,
+  slugOrId: string,
+  allProducts?: Product[],
+): Promise<Product | null> {
+  // allProducts: переиспользование уже прочитанного каталога (карточка
+  // товара отдаёт один массив KV-read и слагу, и «Похожим» — вместо
+  // повторного чтения на каждый вызов).
+  const products = allProducts ?? (await readProducts(event));
   return products.find((p) => p.slug === slugOrId || String(p.id) === slugOrId) ?? null;
 }
 
@@ -727,9 +734,10 @@ export async function getSimilarProducts(
   event: H3Event,
   current: Product,
   limit = 4,
+  allProducts?: Product[],
 ): Promise<Product[]> {
   if (!current.categories?.length) return [];
-  const products = await readProducts(event);
+  const products = allProducts ?? (await readProducts(event));
   return products
     .filter(
       (p) =>

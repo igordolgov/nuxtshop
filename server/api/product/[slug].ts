@@ -1,21 +1,38 @@
 // server/api/product/[slug].ts
 import { getBoughtTogetherProducts } from '../../lib/boughtTogetherHelpers';
-import { getProductBySlug, getSimilarProducts } from '../../lib/productHelpers';
+import {
+  getProductBySlug,
+  getSimilarProducts,
+  readProducts,
+  type Product,
+} from '../../lib/productHelpers';
 import {
   approvedReviews,
   publicReviewView,
   ratingSummary,
   readReviews,
+  type RatingSummary,
 } from '../../lib/reviewHelpers';
 import { getSessionUser } from '../../utils/auth';
 import { buildProductJsonLd, resolveSiteUrl } from '../../lib/seoHelpers';
 import { localizedProduct } from '../../lib/localizedProduct';
+import {
+  PRODUCT_CARD_JSON_LD_LOCALES,
+  readProductCardEdgeCache,
+  writeProductCardEdgeCache,
+} from '../../lib/productEdgeCache';
 
-// Локали, для которых карточка отдаёт локализованный JSON-LD (name,
-// description, category, canonical offers.url с префиксом). Передаётся
-// страницей товара (?lang=…): сам API-маршрут без префикса, своей
-// локали у него нет. ru — дефолт и для битых значений.
-const JSON_LD_LOCALES = new Set(['en', 'es']);
+// Витринный ответ карточки: тип-договор для edge-кэша (JSON туда-обратно,
+// анонимный ответ одинаков для всех гостей — см. productEdgeCache).
+type ProductCardPayload = {
+  success: true;
+  product: Product;
+  boughtTogether: Product[];
+  similarProducts: Product[];
+  reviews: ReturnType<typeof publicReviewView>[];
+  ratingSummary: RatingSummary;
+  jsonLd: Record<string, unknown>;
+};
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,7 +41,22 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Не указан идентификатор товара' });
     }
 
-    const product = await getProductBySlug(event, slugOrId);
+    // Edge-кэш витринного ответа: холодный изолят читал из KV каталог,
+    // заказы и отзывы (до 5 чтений) — TTFB корневого документа доходил до
+    // ~1,8 с (Lighthouse mobile). Cache API коло переживает смерть
+    // изолята; только анонимы — у залогиненных ответ персональный
+    // (likedByMe в отзывах), они читают KV как раньше. См. productEdgeCache.
+    const cachedCard = await readProductCardEdgeCache<ProductCardPayload>(event, slugOrId);
+    if (cachedCard) {
+      setHeader(event, 'x-product-card-cache', 'hit');
+      return cachedCard;
+    }
+    setHeader(event, 'x-product-card-cache', 'miss');
+
+    // Одно чтение каталога на весь ответ: слаг, «Похожие» и «Часто
+    // покупают вместе» раньше читали KV независимо (до 3 раз на запрос).
+    const allProducts = await readProducts(event);
+    const product = await getProductBySlug(event, slugOrId, allProducts);
     if (!product) {
       throw createError({ statusCode: 404, message: 'Товар не найден' });
     }
@@ -32,16 +64,18 @@ export default defineEventHandler(async (event) => {
     // Локализация JSON-LD под префикс страницы (/en/product/… запрашивает
     // ?lang=en): бот видит name/category/canonical того же языка, что и
     // SSR-HTML. Витринные поля остаются полными (клиент локализует сам).
+    // Набор локали — общий с ключом edge-кэша (PRODUCT_CARD_JSON_LD_LOCALES):
+    // ключ и содержимое ответа не могут разойтись.
     const langParam = String(getQuery(event).lang ?? '');
-    const jsonLdLocale = JSON_LD_LOCALES.has(langParam) ? langParam : 'ru';
+    const jsonLdLocale = PRODUCT_CARD_JSON_LD_LOCALES.has(langParam) ? langParam : 'ru';
     const productView = localizedProduct(product, jsonLdLocale);
 
-    const similarProducts = await getSimilarProducts(event, product, 4);
+    const similarProducts = await getSimilarProducts(event, product, 4, allProducts);
 
     // «Часто покупают вместе» (Amazon FBT): товары из одних заказов с
     // текущим. Пустой массив — совместных покупок ещё не было, витрина
     // блок не рисует. Тот же запрос, что и похожие: один KV-read заказов.
-    const boughtTogether = await getBoughtTogetherProducts(event, product, 3);
+    const boughtTogether = await getBoughtTogetherProducts(event, product, 3, allProducts);
 
     // Одобренные отзывы товара: блок на карточке + aggregateRating в JSON-LD
     // (звёзды в выдаче поисковиков). Не прошедшие модерацию — не видны.
@@ -65,7 +99,7 @@ export default defineEventHandler(async (event) => {
       { localePrefix: jsonLdLocale },
     );
 
-    return {
+    const payload: ProductCardPayload = {
       success: true,
       product,
       boughtTogether,
@@ -74,6 +108,12 @@ export default defineEventHandler(async (event) => {
       ratingSummary: ratingSummaryValue,
       jsonLd,
     };
+
+    // Витринный ответ анонимов — в edge-кэш на TTL (успешные ответы;
+    // у залогиненных write молча пропустит — см. productEdgeCache).
+    await writeProductCardEdgeCache(event, slugOrId, payload);
+
+    return payload;
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
     console.error('Ошибка получения товара:', error);
