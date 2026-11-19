@@ -10,18 +10,28 @@
 //    управление страницей (vite-pwa autoUpdate + skipWaiting): без
 //    reload страница продолжает жить на старых ассетах, пока её
 //    вручную не закроешь. Guard-и от ложных перезагрузок:
-//    - первые 3 секунды после загрузки (первый контроль страницы
-//      свежим SW — это нормальный первый визит, не обновление);
+//    - страница НЕ была под контролем SW на момент загрузки
+//      (controller === null → это первый визит; активация и claim
+//      страницы свежим SW — норма, а не обновление, reload не нужен).
+//      Раньше здесь был таймер «3 секунды», но workbox при первом
+//      визите прекеширует ~700 КБ ассетов — на медленных сетях
+//      активация заканчивается ПОЗЖЕ трёх секунд, и первый визит
+//      перезагружался (Lighthouse ловил двойную загрузку страницы:
+//      TBT ×2, второй документ на ~5-й секунде);
 //    - флаг в sessionStorage: одна перезагрузка на вкладку.
 export default defineNuxtPlugin(() => {
   if (!('serviceWorker' in navigator)) return;
 
   const RELOADED_KEY = 'sw-autoreloaded';
 
+  // Читается ДО регистрации SW (см. offline-init): если SW уже управлял
+  // страницей на момент загрузки, только его смена считается обновлением.
+  const wasControlledAtStart = navigator.serviceWorker.controller !== null;
+
   if (!sessionStorage.getItem(RELOADED_KEY)) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!wasControlledAtStart) return;
       if (sessionStorage.getItem(RELOADED_KEY)) return;
-      if (performance.now() < 3000) return;
       sessionStorage.setItem(RELOADED_KEY, '1');
       window.location.reload();
     });
