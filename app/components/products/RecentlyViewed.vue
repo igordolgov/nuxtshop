@@ -15,7 +15,7 @@ section.recently-viewed(
 )
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.mb-2(class="lg:mb-3")
-      h2#recently-viewed-title.text-xl.font-semibold.text-base-content(class="lg:text-2xl") {{ $t('product.recentlyViewed') }}
+      h2#recently-viewed-title.my-4.text-xl.font-semibold.text-base-content(class="lg:text-2xl") {{ $t('product.recentlyViewed') }}
       button.clear-link.btn.btn-ghost.btn-xs.rounded-lg(
         class="text-base-content/75"
         type="button"
@@ -27,7 +27,7 @@ section.recently-viewed(
     //- tabindex=0: скроллируемая область фокусируется с клавиатуры
     //- (WCAG 2.1 / стрелки и пробел скроллят сфокусированную ленту)
     .recent-strip.flex.gap-2.overflow-x-auto.pb-1(
-      class="lg:gap-3 -mx-2 px-2 lg:mx-0 lg:px-0 snap-x"
+      class="lg:gap-3 -mx-2 lg:mx-0 px-2 lg:px-0 snap-x"
       tabindex="0"
     )
       //- Плитка: ширина фиксированная (shrink-0) — сжимаются ТОЛЬКО краем
@@ -37,7 +37,7 @@ section.recently-viewed(
         :key="item.id"
         :to="getProductUrl(item)"
         prefetch
-        class="shrink-0 snap-start w-28 sm:w-32 lg:w-36 bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-all duration-300"
+        class="bg-base-100 shadow-sm hover:shadow-md border border-base-200 w-28 sm:w-32 lg:w-36 transition-all duration-300 snap-start shrink-0"
       )
         figure.aspect-square.bg-base-200.overflow-hidden.shrink-0
           NuxtImg.w-full.h-full.object-cover.transition-transform.duration-300(

@@ -22,7 +22,7 @@
   попадает. Без данных блок не рендерится (v-if ставит страница). -->
 <template lang="pug">
 .bought-together(
-        class="mt-3 px-2 lg:mt-4 lg:px-3"
+        class="mt-3 lg:mt-4 px-2 lg:px-3"
 )
                 h2.text-xl.font-semibold.mb-1(class="lg:text-2xl") {{ $t('product.boughtTogether') }}
                 //- Источник списка — реальные заказы, а не «похожесть» товаров:
@@ -34,7 +34,7 @@
                         //- на lg помещается вся (3 позиции — лимит API)
                         .fbt-list.flex.items-start.gap-4(
                                 ref="fbtListEl"
-                                class="overflow-x-auto lg:overflow-visible"
+                                class="overflow-x-auto"
                         )
                                 label.fbt-item.flex.items-center.gap-2.shrink-0.cursor-pointer(
                                         v-for="item in localizedProducts"
