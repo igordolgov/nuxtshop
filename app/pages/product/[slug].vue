@@ -92,10 +92,13 @@
             v-if="product && (boughtTogether.length > 0 || similarProducts.length > 0)"
           )
             //- «Часто покупают вместе»: товары из одних заказов (считает
-            //- API /api/product/[slug] → boughtTogether); без данных скрыт
+            //- API /api/product/[slug] → boughtTogether); без данных скрыт.
+            //- current — сам товар карточки с ценой ВЫБРАННОГО варианта:
+            //- он первая позиция блока и входит в «итого» (Amazon FBT)
             BoughtTogether(
               v-if="boughtTogether.length > 0"
               :products="boughtTogether"
+              :current="currentFbt"
               @add-selected="addBoughtTogetherToCart"
             )
 
@@ -348,6 +351,22 @@ const similarProducts = computed(() => {
 // boughtTogether); пусто — совместных покупок ещё не было
 const boughtTogether = computed(() => responseData.value?.boughtTogether ?? [])
 
+// ─── «Часто покупают вместе»: текущий товар как первая позиция ──────
+// Цена — ВЫБРАННОГО варианта (variantPrice), картинка — варианта, если
+// у него своя (как в галерее); имя — локализованное. Смена варианта
+// автоматически меняет «итого» блока.
+const currentFbt = computed(() => {
+  const p = product.value
+  if (!p) return null
+  return {
+    id: String(p.id),
+    name: productView.value?.name ?? p.name,
+    price: variantPrice(p, selectedVariant.value),
+    image: selectedVariant.value?.image ?? p.image ?? null,
+    inStock: selectedStock.value.inStock,
+  }
+})
+
 const isFavorite = computed(() => {
   if (!product.value) return false
   return appState.isFavorite(product.value.id)
@@ -418,12 +437,31 @@ const addSimilarToCart = async (item) => {
 
 // ─── «Часто покупают вместе»: выбранные чекбоксы — пачкой в корзину ──
 // Паттерн repeatOrder (user/orders.vue): добавляем что есть, часть может
-// закончиться между рендером и кликом — сообщаем частичный успех
+// закончиться между рендером и кликом — сообщаем частичный успех.
+// Текущий товар входит в «итого» блока — добавляем его ПЕРВЫМ, тем же
+// вариантом, что выбран на странице; если он уже в корзине — без дубля
+// (isInCart), иначе количество выросло бы незаметно для покупателя.
 const addBoughtTogetherToCart = async (items) => {
-  const list = items ?? []
-  if (list.length === 0) return
+  const companions = items ?? []
+  let attempted = 0
   let added = 0
-  for (const item of list) {
+
+  const currentReady =
+    product.value &&
+    selectedStock.value.inStock &&
+    !isInCart(product.value.id, selectedVariantId.value)
+  if (currentReady) {
+    attempted++
+    try {
+      await addToCart(product.value, selectedVariant.value)
+      added++
+    } catch {
+      // не добавился — продолжаем по доп. товарам
+    }
+  }
+
+  for (const item of companions) {
+    attempted++
     try {
       await addToCart(item)
       added++
@@ -431,8 +469,16 @@ const addBoughtTogetherToCart = async (items) => {
       // позиция могла закончиться — идём дальше
     }
   }
-  if (added === list.length) $notify.success(t('product.fbtAdded'))
-  else if (added > 0) $notify.info(t('user.addedPartial', { added, total: list.length }))
+
+  if (attempted === 0) {
+    // Добавлять нечего: текущий уже в корзине и ни один доп. не выбран
+    if (product.value && isInCart(product.value.id, selectedVariantId.value)) {
+      $notify.info(t('product.alreadyInCart'))
+    }
+    return
+  }
+  if (added === attempted) $notify.success(t('product.fbtAdded'))
+  else if (added > 0) $notify.info(t('user.addedPartial', { added, total: attempted }))
   else $notify.error(t('product.cartAddErrorLong'))
 }
 
