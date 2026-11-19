@@ -3,14 +3,16 @@
   одних заказов (считает сервер в /api/product/[slug] → boughtTogether).
   Размещение — левая колонка карточки под галереей (grid-area similar,
   wrapper в pages/product/[slug].vue), над «Похожими».
-  Amazon-паттерн: ПЕРВАЯ позиция — сам текущий товар (чекбокс отмечен и
-  заблокирован — как у Amazon, убрать его нельзя), «Итого» = цена текущего
-  товара (с выбранным вариантом — пропс current собирает страница) +
-  отмеченные доп. товары. Кнопка «Добавить выбранные» отдаёт странице
-  только доп. товары (add-selected) — текущий она добавляет сама, тем же
-  вариантом, что и главная кнопка «В корзину». Доп. товары: всё доступное
-  выбрано по умолчанию; недоступное (нет на складе) — чекбокс выключен и
-  в итог не попадает. Без данных блок не рендерится (v-if ставит страница). -->
+  Лента — ТОЛЬКО доп. товары: текущий товар плиткой не показывается (он
+  и так герой страницы; по отзыву покупателя «тот же товар» в списке
+  выглядел дублем). «Итого» = цена текущего товара (выбранный вариант,
+  если в наличии — пропс current собирает страница) + отмеченные доп.;
+  под суммой — расшифровка «ваш товар X + выбранные Y». Кнопка добавляет
+  всё из «Итого»: текущий товар страницей первым (тем же вариантом, что
+  и главная кнопка «В корзину», без дубля — isInCart) и отмеченные доп.
+  Доп. товары: всё доступное выбрано по умолчанию; недоступное (нет на
+  складе) — чекбокс выключен и в итог не попадает. Без данных блок не
+  рендерится (v-if ставит страница). -->
 <template lang="pug">
 .bought-together(
         class="mt-3 px-2 lg:mt-4 lg:px-3"
@@ -23,36 +25,6 @@
                         .fbt-list.flex.items-start.gap-4(
                                 class="overflow-x-auto lg:overflow-visible"
                         )
-                                //- Текущий товар: чекбокс отмечен и заблокирован —
-                                //- позиция всегда в «итого» (Amazon FBT), клик по нему
-                                //- ничего не переключает
-                                .fbt-item.flex.items-center.gap-2.shrink-0(
-                                        v-if="current && current.name"
-                                )
-                                        input.checkbox.checkbox-primary.checkbox-sm(
-                                                type="checkbox"
-                                                :checked="current.inStock"
-                                                :disabled="true"
-                                                :aria-label="current.name"
-                                        )
-                                        NuxtImg.fbt-img.w-14.h-14.rounded.object-cover.shrink-0(
-                                                :src="getValidImageUrl(current.image)"
-                                                :srcset="productSrcset(getValidImageUrl(current.image))"
-                                                :sizes="productSrcset(getValidImageUrl(current.image)) ? '(max-width: 767px) 30vw, 56px' : undefined"
-                                                :alt="current.name"
-                                                @error="handleImageError"
-                                                draggable="false"
-                                                loading="lazy"
-                                                :width="400"
-                                                :height="300"
-                                        )
-                                        .flex.flex-col.min-w-0(class="gap-0.5")
-                                                span.text-xs.font-medium.text-base-content.line-clamp-2 {{ current.name }}
-                                                span.text-sm.font-bold.text-primary {{ formatMoney(current.price) }}
-                                                span.text-xs(
-                                                        :class="current.inStock ? 'text-success' : 'text-error'"
-                                                ) {{ current.inStock ? $t('product.inStock') : $t('product.soldOut') }}
-
                                 label.fbt-item.flex.items-center.gap-2.shrink-0.cursor-pointer(
                                         v-for="item in localizedProducts"
                                         :key="item.id"
@@ -85,11 +57,16 @@
                         .divider.my-2
 
                         //- Итого: текущий товар (если в наличии) + отмеченные доп.
-                        //- Копия Amazon «Total price / Add all»
+                        //- Под суммой — расшифровка: текущий товар в ленте не
+                        //- показан, без неё сумма выглядела бы необъяснимой
                         .flex.items-center.justify-between.gap-3
-                                .flex.items-baseline.gap-2.min-w-0
-                                        span.text-sm.opacity-70 {{ $t('product.fbtTotal') }}:
-                                        span.font-bold.text-primary.text-lg {{ formatMoney(total) }}
+                                .flex.flex-col.min-w-0(class="gap-0.5")
+                                        .flex.items-baseline.gap-2
+                                                span.text-sm.opacity-70 {{ $t('product.fbtTotal') }}:
+                                                span.font-bold.text-primary.text-lg {{ formatMoney(total) }}
+                                        span.text-xs.opacity-60(
+                                                v-if="current && current.inStock"
+                                        ) {{ $t('product.fbtTotalHint', { current: formatMoney(current.price), rest: formatMoney(companionsTotal) }) }}
                                 button.btn.btn-sm.btn-primary.rounded-xl(
                                         :disabled="!canAdd"
                                         @click="onAddSelected"
@@ -128,16 +105,18 @@ const selectedItems = computed(() =>
         localizedProducts.value.filter((item) => selectedIds.value.includes(String(item.id))),
 )
 
+// Сумма отмеченных доп. товаров (цена «от» базового — как на кнопке
+// карточки; точную сумму считает сервер при заказе)
+const companionsTotal = computed(() =>
+        selectedItems.value.reduce((sum, item) => sum + (Number(item.price) || 0), 0),
+)
+
 // Итог по блоку: текущий товар (цена выбранного варианта, если в наличии)
-// + отмеченные доп. товары (цена «от» базового — как на кнопке карточки;
-// точную сумму считает сервер при заказе)
+// + отмеченные доп. товары. Расшифровка состава — в шаблоне под суммой.
 const total = computed(() => {
         const currentSum =
                 props.current && props.current.inStock ? Number(props.current.price) || 0 : 0
-        return (
-                currentSum +
-                selectedItems.value.reduce((sum, item) => sum + (Number(item.price) || 0), 0)
-        )
+        return currentSum + companionsTotal.value
 })
 
 // Кнопка активна, пока есть что добавить: текущий товар в наличии (его
