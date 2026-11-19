@@ -53,7 +53,11 @@ export default defineNuxtPlugin((nuxtApp) => {
   if (!dsn) return;
 
   const start = () => {
-    import('~/sentry.client.init')
+    // Двухшаговый импорт (плагин → крошечный мост → init+SDK): прямой
+    // динамический импорт из entry заставил бы Nuxt preload-ить SDK
+    // в HTML — см. app/sentry.loader.ts.
+    import('~/sentry.loader')
+      .then(({ loadSentryInit }) => loadSentryInit())
       .then(({ initSentryClient }) => {
         reporter = initSentryClient({
           dsn,
