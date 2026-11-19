@@ -3,8 +3,13 @@
 // элементов (кнопка «наверх», нижняя CTA карточки товара).
 // Режим 'position' — фикс жалобы «кнопка Наверх не всегда появляется
 // при скроллинге вниз»: дальше порога видна в ЛЮБОМ направлении.
+// scrollProgressOf — доля прокрутки (0..1) для кольца прогресса
+// кнопки «наверх».
 import { describe, expect, it } from 'vitest';
-import { decideFloatingVisibility } from '../../app/composables/useScrollDirection';
+import {
+  decideFloatingVisibility,
+  scrollProgressOf,
+} from '../../app/composables/useScrollDirection';
 
 describe('decideFloatingVisibility — режим position (кнопка «наверх», atTop: hide)', () => {
   const opts = { follow: 'position' as const, atTop: 'hide' as const, threshold: 200 };
@@ -60,5 +65,29 @@ describe('decideFloatingVisibility — режим direction (нижняя CTA т
   it('порог дрожания строгий: |delta| = 7 уже переключает', () => {
     expect(decideFloatingVisibility({ ...opts, top: 307, baseline: 300 })).toBe(false);
     expect(decideFloatingVisibility({ ...opts, top: 293, baseline: 300 })).toBe(true);
+  });
+});
+
+describe('scrollProgressOf — кольцо прогресса кнопки «наверх»', () => {
+  it('доля прокрутки считается по переполнению контейнера', () => {
+    expect(scrollProgressOf({ top: 0, room: 1000 })).toBe(0);
+    expect(scrollProgressOf({ top: 250, room: 1000 })).toBeCloseTo(0.25);
+    expect(scrollProgressOf({ top: 1000, room: 1000 })).toBe(1);
+  });
+
+  it('плоский или горизонтальный контейнер (room <= 0) — прогресса нет', () => {
+    expect(scrollProgressOf({ top: 100, room: 0 })).toBeNull();
+    expect(scrollProgressOf({ top: 100, room: -50 })).toBeNull();
+  });
+
+  it('выход за диапазон зажимается в 0..1', () => {
+    expect(scrollProgressOf({ top: -5, room: 1000 })).toBe(0);
+    expect(scrollProgressOf({ top: 1500, room: 1000 })).toBe(1);
+  });
+
+  it('NaN/Infinity от layout-метрики — прогресса нет (null)', () => {
+    expect(scrollProgressOf({ top: Number.NaN, room: 1000 })).toBeNull();
+    expect(scrollProgressOf({ top: 0, room: Number.POSITIVE_INFINITY })).toBeNull();
+    expect(scrollProgressOf({ top: Number.NEGATIVE_INFINITY, room: 1000 })).toBeNull();
   });
 });

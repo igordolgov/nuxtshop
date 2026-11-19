@@ -25,6 +25,18 @@
 // rAF-троттлинг: scroll стреляет десятки раз за кадр на мобильных.
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 
+/**
+ * Чистая: доля вертикальной прокрутки контейнера/страницы (0..1).
+ * Кольцо прогресса кнопки «наверх» (ScrollToTop) рисует её прямо по
+ * границе кнопки. null — прокрутки нет: плоский или горизонтальный
+ * контейнер (переполнение <= 0), а также NaN/Infinity — их отдаёт
+ * layout-метрика при SSR-восстановлении или скрытых элементах.
+ */
+export const scrollProgressOf = ({ top, room }: { top: number; room: number }): number | null => {
+  if (!Number.isFinite(top) || !Number.isFinite(room) || room <= 0) return null;
+  return Math.min(1, Math.max(0, top / room));
+};
+
 export type ScrollFollowMode = 'direction' | 'position';
 
 /**
@@ -70,6 +82,10 @@ export interface ScrollDirectionOptions {
   /** 'direction' (по умолчанию) — видимость по направлению прокрутки;
    *  'position' — видна всегда дальше threshold (классика «наверх») */
   follow?: ScrollFollowMode;
+  /** Цели-исключения: скролл таких элементов — не «прокрутка страницы».
+   *  Кнопка «наверх» передаёт сюда модалки/диалоги: иначе их внутренний
+   *  скролл вспыхивал бы плавающей кнопкой поверх контента модалки. */
+  ignoreTarget?: (el: Element) => boolean;
 }
 
 export const useScrollDirection = ({
@@ -77,6 +93,7 @@ export const useScrollDirection = ({
   atTop = 'show',
   minOverflow = 4,
   follow = 'direction',
+  ignoreTarget,
 }: ScrollDirectionOptions = {}) => {
   // Начальное состояние = поведение «у верха страницы»: CTA товара
   // видна сразу (кнопка покупки), кнопка «наверх» — скрыта до первого
@@ -114,7 +131,9 @@ export const useScrollDirection = ({
   };
 
   const onScroll = (event?: Event) => {
-    const top = scrollTopOf(event?.target);
+    const target = event?.target;
+    if (target instanceof Element && ignoreTarget?.(target)) return;
+    const top = scrollTopOf(target);
     if (top == null) return;
     pendingTop = top;
     if (!raf) raf = requestAnimationFrame(apply);
