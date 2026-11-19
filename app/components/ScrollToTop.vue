@@ -20,8 +20,8 @@ button.scroll-to-top-btn(
     circle(cx="22", cy="22", r="20", ref="ringEl")
   svg.scroll-icon(
     viewBox="0 0 24 24",
-    width="20",
-    height="20",
+    width="22",
+    height="22",
     fill="currentColor",
     aria-hidden="true"
   )
@@ -136,8 +136,8 @@ const scrollToTop = () => {
   position: fixed;
   right: 20px;
   bottom: 76px; /* под кнопкой мессенджеров (MessengerFab, 20+48+8) */
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,16 +149,33 @@ const scrollToTop = () => {
   margin: 0;
   touch-action: manipulation;
 
-  /* «Матовое стекло»: полупрозрачная подложка темы + размытие.
-     Токены daisyUI (base-100/base-content/primary) — сами темы
-     corporate/business задают цвета, отдельных правил под темы
-     и prefers-color-scheme больше не нужно. */
-  background: color-mix(in oklab, var(--color-base-100) 65%, transparent);
-  color: color-mix(in oklab, var(--color-base-content) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-base-content) 14%, transparent);
-  -webkit-backdrop-filter: blur(10px) saturate(1.3);
-  backdrop-filter: blur(10px) saturate(1.3);
-  box-shadow: 0 4px 14px color-mix(in oklab, var(--color-base-content) 14%, transparent);
+  /* Объёмное стекло: полупрозрачная подложка темы (в среднем ~45%,
+     текст под кнопкой просвечивает наполовину), свет идёт сверху слева —
+     диагональный градиент + спекулярный блик (::before) + внутренние
+     блики-кромки и полутени в box-shadow. Токены daisyUI задают цвет
+     поверхности; белые/чёрные альфы в бликах/тенях — физика стекла,
+     одинаково работает в corporate и business. */
+  background: linear-gradient(
+    155deg,
+    color-mix(in oklab, var(--color-base-100) 52%, transparent) 0%,
+    color-mix(in oklab, var(--color-base-100) 36%, transparent) 50%,
+    color-mix(in oklab, var(--color-base-100) 44%, transparent) 100%
+  );
+  color: color-mix(in oklab, var(--color-base-content) 85%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 18%, transparent);
+  /* blur 3px — стекло ощущается, но текст под кнопкой остаётся
+     наполовину читаем (жёстче blur «съедал» текст в кашу) */
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
+  backdrop-filter: blur(3px) saturate(1.1);
+  box-shadow:
+    0 6px 20px color-mix(in oklab, var(--color-base-content) 16%, transparent),
+    0 2px 5px color-mix(in oklab, var(--color-base-content) 12%, transparent),
+    /* блик: светлые кромки сверху и слева */
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 1px 0 0 rgb(255 255 255 / 0.16),
+    /* полутень: нижняя внутренняя кромка уходит в тень */
+    inset 0 -2px 5px rgb(0 0 0 / 0.12),
+    inset 0 -1px 0 rgb(0 0 0 / 0.08);
 
   /* стартовое состояние — невидимо и сдвинуто */
   opacity: 0;
@@ -168,9 +185,24 @@ const scrollToTop = () => {
   transition:
     opacity 0.25s ease,
     transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    background 0.15s ease,
     color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+/* Спекулярный блик — глянцевое пятно света сверху слева; лежит
+   ПОД кольцом прогресса и иконкой (::before — первый в отрисовке) */
+.scroll-to-top-btn::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: radial-gradient(
+    110% 80% at 30% 16%,
+    rgb(255 255 255 / 0.32) 0%,
+    rgb(255 255 255 / 0.07) 42%,
+    transparent 65%
+  );
+  pointer-events: none;
 }
 
 .scroll-to-top-btn.is-visible {
@@ -180,14 +212,32 @@ const scrollToTop = () => {
 }
 
 .scroll-to-top-btn:hover {
-  background: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  background: linear-gradient(
+    155deg,
+    color-mix(in oklab, var(--color-base-100) 70%, transparent) 0%,
+    color-mix(in oklab, var(--color-base-100) 52%, transparent) 50%,
+    color-mix(in oklab, var(--color-base-100) 62%, transparent) 100%
+  );
   color: var(--color-base-content);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px color-mix(in oklab, var(--color-base-content) 20%, transparent);
+  box-shadow:
+    0 8px 24px color-mix(in oklab, var(--color-base-content) 20%, transparent),
+    0 3px 7px color-mix(in oklab, var(--color-base-content) 14%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    inset 1px 0 0 rgb(255 255 255 / 0.2),
+    inset 0 -2px 5px rgb(0 0 0 / 0.12),
+    inset 0 -1px 0 rgb(0 0 0 / 0.08);
 }
 
 .scroll-to-top-btn:active {
+  /* «Нажалось»: тень под кнопкой сжимается, внутренняя полутень
+     переворачивается вниз-вверх — стекло утоплено */
   transform: translateY(0) scale(0.94);
+  box-shadow:
+    0 2px 8px color-mix(in oklab, var(--color-base-content) 14%, transparent),
+    inset 0 2px 6px rgb(0 0 0 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -1px 0 rgb(255 255 255 / 0.25);
 }
 
 .scroll-to-top-btn:focus {
@@ -233,8 +283,8 @@ const scrollToTop = () => {
   .scroll-to-top-btn {
     right: 32px;
     bottom: 96px;
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
   }
 }
 
