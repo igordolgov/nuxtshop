@@ -24,9 +24,9 @@
     "@nuxt/icon": "^2.6.3",
     "@nuxt/image": "^2.2.1",
     "@nuxtjs/i18n": "^10.6.0",
-    "@sentry/nuxt": "^11.13.0",
+    "@sentry/nuxt": "^11.15.0",
     "@tailwindcss/vite": "^4.3.5",
-    "@vite-pwa/nuxt": "^2.0.1",
+    "@vite-pwa/nuxt": "^2.0.2",
     "@vueuse/core": "^15.0.0",
     "daisyui": "^5.8.1",
     "h3": "^1.15.11",
@@ -42,7 +42,7 @@
     "@playwright/test": "^1.65.1",
     "@types/node": "^26.6.6",
     "cross-env": "^10.1.0",
-    "knip": "^6.45.1",
+    "knip": "^6.46.1",
     "markuplint": "^5.6.1",
     "nuxt": "4.6.4",
     "oxfmt": "^0.79.0",
@@ -50,9 +50,9 @@
     "pug": "^3.0.4",
     "typescript": "7.0.2",
     "vite-plugin-remove-console": "^2.2.0",
-    "vitest": "^5.1.0",
+    "vitest": "^5.1.1",
     "vue": "^3.5.45",
-    "wrangler": "^4.164.0"
+    "wrangler": "^4.165.0"
   },
   "packageManager": "pnpm@12.6.0"
 }
