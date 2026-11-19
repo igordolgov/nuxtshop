@@ -5,14 +5,18 @@
   wrapper в pages/product/[slug].vue), над «Похожими».
   Лента — ТОЛЬКО доп. товары: текущий товар плиткой не показывается (он
   и так герой страницы; по отзыву покупателя «тот же товар» в списке
-  выглядел дублем). «Итого» = цена текущего товара (выбранный вариант,
-  если в наличии — пропс current собирает страница) + отмеченные доп.;
-  под суммой — расшифровка «ваш товар X + выбранные Y». Кнопка добавляет
-  всё из «Итого»: текущий товар страницей первым (тем же вариантом, что
-  и главная кнопка «В корзину», без дубля — isInCart) и отмеченные доп.
-  Доп. товары: всё доступное выбрано по умолчанию; недоступное (нет на
-  складе) — чекбокс выключен и в итог не попадает. Без данных блок не
-  рендерится (v-if ставит страница). -->
+  выглядел дублем). На мобиле в ленте видно 1–1,5 позиции, а скроллбар
+  скрыт до первой прокрутки — поэтому лента сама «подглядывает»:
+  каждые несколько секунд плавно показывает середину следующего товара
+  и возвращается к началу (пока пользователь не начал скроллить сам),
+  плюс скроллбар сделан всегда видимым. «Итого» = цена текущего товара
+  (выбранный вариант, если в наличии — пропс current собирает страница)
+  + отмеченные доп.; под суммой — расшифровка «ваш товар X + выбранные
+  Y». Кнопка добавляет всё из «Итого»: текущий товар страницей первым
+  (тем же вариантом, что и главная кнопка «В корзину», без дубля —
+  isInCart) и отмеченные доп. Доп. товары: всё доступное выбрано по
+  умолчанию; недоступное (нет на складе) — чекбокс выключен и в итог не
+  попадает. Без данных блок не рендерится (v-if ставит страница). -->
 <template lang="pug">
 .bought-together(
         class="mt-3 px-2 lg:mt-4 lg:px-3"
@@ -23,6 +27,7 @@
                         //- Горизонтальная лента чекбокс-позиций: на мобиле скроллится,
                         //- на lg помещается вся (3 позиции — лимит API)
                         .fbt-list.flex.items-start.gap-4(
+                                ref="fbtListEl"
                                 class="overflow-x-auto lg:overflow-visible"
                         )
                                 label.fbt-item.flex.items-center.gap-2.shrink-0.cursor-pointer(
@@ -130,6 +135,75 @@ const onAddSelected = () => {
         emit('add-selected', selectedItems.value)
 }
 
+// ─── Подсказка «дальше есть ещё товары» ────────────────────────────
+// На мобиле в ленте видно 1–1,5 позиции, а оверлей-скроллбар скрыт до
+// первой прокрутки — не понятно, что список скроллится (отзыв покупателя).
+// Пока пользователь сам не начал скроллить, лента каждые несколько секунд
+// сама плавно показывает середину следующего (скрытого) товара и
+// возвращается к началу. Только если лента реально переполнена (на lg
+// всё видно); prefers-reduced-motion и фоновая вкладка анимацию отключают.
+const fbtListEl = ref(null)
+let hintStopped = false
+let hintCycleTimer = null
+let hintStepTimers = []
+
+const stopScrollHint = () => {
+        hintStopped = true
+        if (hintCycleTimer) {
+                clearTimeout(hintCycleTimer)
+                hintCycleTimer = null
+        }
+        hintStepTimers.forEach(clearTimeout)
+        hintStepTimers = []
+}
+
+// Целевая прокрутка: середина первого товара, чья середина за правым
+// краем видимой области («до середины следующего товара»), с зазором
+// 12px и без выхода за максимум ленты. 0 — подглядывать не за чем.
+const peekTarget = (el) => {
+        const hidden = Array.from(el.children).find(
+                (child) => child.offsetLeft + child.offsetWidth / 2 > el.scrollLeft + el.clientWidth,
+        )
+        if (!hidden) return 0
+        const maxLeft = el.scrollWidth - el.clientWidth
+        const target = hidden.offsetLeft + hidden.offsetWidth / 2 - el.clientWidth + 12
+        return Math.min(maxLeft, Math.max(0, target))
+}
+
+const scheduleScrollHint = (delay = 4200) => {
+        if (hintStopped) return
+        clearTimeout(hintCycleTimer)
+        hintCycleTimer = setTimeout(() => {
+                const el = fbtListEl.value
+                if (!el || hintStopped || document.hidden) return
+                const target = peekTarget(el)
+                if (target > el.scrollLeft + 4) {
+                        el.scrollTo({ left: target, behavior: 'smooth' })
+                        hintStepTimers.push(
+                                setTimeout(() => {
+                                        if (!hintStopped) el.scrollTo({ left: 0, behavior: 'smooth' })
+                                }, 1400),
+                        )
+                }
+                scheduleScrollHint()
+        }, delay)
+}
+
+onMounted(() => {
+        const el = fbtListEl.value
+        if (!el || el.scrollWidth <= el.clientWidth + 4) return
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+        if (reduced) return
+        scheduleScrollHint(2600)
+        // Любой ручной жест (тап, свайп, колесо, перетаскивание скроллбара)
+        // — и подсказка выключается навсегда
+        el.addEventListener('touchstart', stopScrollHint, { passive: true })
+        el.addEventListener('wheel', stopScrollHint, { passive: true })
+        el.addEventListener('mousedown', stopScrollHint)
+})
+
+onBeforeUnmount(stopScrollHint)
+
 // formatMoney — единая из useProductUtils (валюту добавляет formatMoney);
 // productSrcset — автоимпорт из app/utils/productImage.ts
 const { formatMoney } = useProductUtils()
@@ -164,5 +238,19 @@ const handleImageError = (event) => {
 /* Тонкий скроллбар у ленты позиций на мобиле */
 .fbt-list {
         scrollbar-width: thin;
+}
+/* Скроллбар ленты ВСЕГДА виден: iOS/Safari скрывают оверлей-скроллбар
+   до первой прокрутки — без подсказки не видно, что список скроллится.
+   Chrome 121+ и Firefox берут scrollbar-width: thin (webkit-стили при
+   этом игнорируются, там полоса и так тонкая и постоянная). */
+.fbt-list::-webkit-scrollbar {
+        height: 6px;
+}
+.fbt-list::-webkit-scrollbar-track {
+        background: transparent;
+}
+.fbt-list::-webkit-scrollbar-thumb {
+        background: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+        border-radius: 999px;
 }
 </style>
