@@ -309,6 +309,19 @@ export default defineNuxtConfig({
     provider: 'iconify',
     collections: ['heroicons', 'mdi'],
     componentName: 'Icon',
+    // SVG-режим вместо дефолтного CSS. В CSS-режиме клиент тянет
+    // css-runtime-механику (генерация mask-CSS из @iconify/utils): чанк
+    // ~32 КБ raw / ~12 КБ transfer префетчился на каждой витринной
+    // странице и не исполнялся (Lighthouse: 90% unused JavaScript).
+    // В SVG-режиме: SSR рисует инлайн-<svg> из скан-бандла (на сервере
+    // initClientBundle(addIcon) — те же данные, API не нужен), иконка
+    // кладётся в payload → гидрация без запросов; на клиенте для
+    // SPA-переходов работает тот же бандл. css-runtime и fat-зависимости
+    // уходят из графа совсем, вместо них — тонкий svg-рендерер
+    // (@iconify/vue). Динамические имена (админские kpi.icon), которых
+    // нет в скан-бандле, как и раньше, добираются через
+    // fallbackToApi → /api/_nuxt_icon.
+    mode: 'svg',
     clientBundle: {
       scan: true,
       sizeLimitKb: 256,
