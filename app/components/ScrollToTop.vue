@@ -33,6 +33,8 @@ const props = defineProps({
   threshold: { type: Number, default: 200 },
 })
 
+const route = useRoute()
+
 //- Режим 'position' (классика «кнопки наверх»): видна всегда, когда
 //- страница/каталог прокручены дальше threshold, в любом направлении.
 //- Прежний режим 'direction' (WB/Ozon: вниз — скрыть, вверх — показать)
@@ -44,7 +46,7 @@ const props = defineProps({
 //- ignoreTarget — модалки: их внутренний скролл — не «прокрутка
 //- страницы», иначе кнопка всплывала поверх открытой модалки (в админке
 //- перекрывала контент: формы товара, групповые операции).
-const { isVisible } = useScrollDirection({
+const { isVisible, reset } = useScrollDirection({
   threshold: props.threshold,
   atTop: 'hide',
   follow: 'position',
@@ -110,6 +112,28 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll, { capture: true })
   if (raf) cancelAnimationFrame(raf)
 })
+
+//- ─── Смена маршрута: контекст прошлой страницы умер ─────────────
+//- Кнопка живёт в layout и переживает навигацию. На главной каталог
+//- прокручивается внутренним контейнером (.products-container): окно
+//- остаётся на нуле, и при переходе на карточку товара scroll-событие
+//- может не прийти вовсе — Chrome стреляет scroll-reset при отцеплении
+//- прокрученного контейнера, Safari/Firefox не обязаны (баг: «открыл
+//- товар — кнопка наверх осталась»). Сбрасываем видимость в стартовое
+//- состояние (atTop) и пересчитываем кольцо по окну. Если router
+//- восстановил прокрутку страницы (кнопка «назад»), его scrollTo
+//- выстрелит событием, и кнопка вернётся сама. Слушаем path, а не
+//- fullPath: смена ?search=… на той же главной — тот же контейнер
+//- скролла, кнопка должна продолжать отражать его состояние.
+watch(
+  () => route.path,
+  () => {
+    reset()
+    pendingTarget = window
+    lastContext = null
+    applyProgress()
+  },
+)
 
 const scrollToTop = () => {
   const behavior =
