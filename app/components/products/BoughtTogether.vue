@@ -21,7 +21,10 @@
 .bought-together(
         class="mt-3 px-2 lg:mt-4 lg:px-3"
 )
-                h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") {{ $t('product.boughtTogether') }}
+                h2.text-xl.font-semibold.mb-1(class="lg:text-2xl") {{ $t('product.boughtTogether') }}
+                //- Источник списка — реальные заказы, а не «похожесть» товаров:
+                //- подпись снимает вопрос «откуда этот список» (отзыв покупателя)
+                p.text-xs.opacity-60.mb-2 {{ $t('product.boughtTogetherHint') }}
 
                 .card.bg-base-100.shadow-md.rounded-box.p-3(class="lg:p-4")
                         //- Горизонтальная лента чекбокс-позиций: на мобиле скроллится,
@@ -170,7 +173,31 @@ const peekTarget = (el) => {
         return Math.min(maxLeft, Math.max(0, target))
 }
 
-const scheduleScrollHint = (delay = 4200) => {
+// ── Анимация прокрутки с отскоком (easeOutBack): лента вылетает чуть
+// дальше цели и мягко «доезжает» обратно — движение читается как
+// намеренная подсказка. Возврат — easeOutCubic (быстрый старт, мягкий
+// конец без удара о край).
+const easeOutBack = (t) => {
+        const c1 = 1.70158
+        const c3 = c1 + 1
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
+}
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+
+// rAF-анимация scrollLeft: behavior:'smooth' не даёт управлять кривой,
+// а отскок нужен именно на пике подглядывания
+const animateScroll = (el, from, to, duration, ease) => {
+        const start = performance.now()
+        const step = (now) => {
+                if (hintStopped) return
+                const t = Math.min(1, (now - start) / duration)
+                el.scrollLeft = from + (to - from) * ease(t)
+                if (t < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+}
+
+const scheduleScrollHint = (delay = 6000) => {
         if (hintStopped) return
         clearTimeout(hintCycleTimer)
         hintCycleTimer = setTimeout(() => {
@@ -178,11 +205,11 @@ const scheduleScrollHint = (delay = 4200) => {
                 if (!el || hintStopped || document.hidden) return
                 const target = peekTarget(el)
                 if (target > el.scrollLeft + 4) {
-                        el.scrollTo({ left: target, behavior: 'smooth' })
+                        animateScroll(el, el.scrollLeft, target, 900, easeOutBack)
                         hintStepTimers.push(
                                 setTimeout(() => {
-                                        if (!hintStopped) el.scrollTo({ left: 0, behavior: 'smooth' })
-                                }, 1400),
+                                        if (!hintStopped) animateScroll(el, el.scrollLeft, 0, 800, easeOutCubic)
+                                }, 1600),
                         )
                 }
                 scheduleScrollHint()
@@ -194,7 +221,7 @@ onMounted(() => {
         if (!el || el.scrollWidth <= el.clientWidth + 4) return
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
         if (reduced) return
-        scheduleScrollHint(2600)
+        scheduleScrollHint(3000)
         // Любой ручной жест (тап, свайп, колесо, перетаскивание скроллбара)
         // — и подсказка выключается навсегда
         el.addEventListener('touchstart', stopScrollHint, { passive: true })
@@ -235,22 +262,25 @@ const handleImageError = (event) => {
         -webkit-box-orient: vertical;
         overflow: hidden;
 }
-/* Тонкий скроллбар у ленты позиций на мобиле */
+/* Тонкий скроллбар у ленты позиций на мобиле; padding-bottom опускает
+   полосу ниже плиток, чтобы она не липла к тексту */
 .fbt-list {
         scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklab, var(--color-primary) 60%, transparent) transparent;
+        padding-bottom: 10px;
 }
-/* Скроллбар ленты ВСЕГДА виден: iOS/Safari скрывают оверлей-скроллбар
-   до первой прокрутки — без подсказки не видно, что список скроллится.
-   Chrome 121+ и Firefox берут scrollbar-width: thin (webkit-стили при
-   этом игнорируются, там полоса и так тонкая и постоянная). */
+/* Скроллбар ленты ВСЕГДА виден и ГОЛУБОЙ (цвет primary темы): iOS/Safari
+   скрывают оверлей-скроллбар до первой прокрутки — без подсказки не видно,
+   что список скроллится. Chrome 121+ и Firefox берут scrollbar-width/
+   scrollbar-color выше (webkit-стили при этом игнорируются). */
 .fbt-list::-webkit-scrollbar {
-        height: 6px;
+        height: 7px;
 }
 .fbt-list::-webkit-scrollbar-track {
         background: transparent;
 }
 .fbt-list::-webkit-scrollbar-thumb {
-        background: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+        background: color-mix(in oklab, var(--color-primary) 60%, transparent);
         border-radius: 999px;
 }
 </style>

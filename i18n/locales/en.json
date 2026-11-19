@@ -173,6 +173,7 @@
     "unknown": "Unknown",
     "similar": "Similar products:",
     "boughtTogether": "Frequently bought together",
+    "boughtTogetherHint": "based on the store's real orders",
     "fbtTotal": "Total",
     "fbtTotalHint": "your item {current} + selected {rest}",
     "fbtAddSelected": "Add to cart",

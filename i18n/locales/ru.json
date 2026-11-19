@@ -173,6 +173,7 @@
     "unknown": "Неизвестно",
     "similar": "Похожие товары:",
     "boughtTogether": "С этим товаром покупают",
+    "boughtTogetherHint": "по данным реальных заказов магазина",
     "fbtTotal": "Итого",
     "fbtTotalHint": "ваш товар {current} + выбранные {rest}",
     "fbtAddSelected": "Добавить в корзину",
