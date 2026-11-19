@@ -7,9 +7,12 @@
   и так герой страницы; по отзыву покупателя «тот же товар» в списке
   выглядел дублем). На мобиле в ленте видно 1–1,5 позиции, а скроллбар
   скрыт до первой прокрутки — поэтому лента сама «подглядывает»:
-  каждые несколько секунд плавно показывает середину следующего товара
-  и возвращается к началу (пока пользователь не начал скроллить сам),
-  плюс скроллбар сделан всегда видимым. «Итого» = цена текущего товара
+  каждые ~6 с разыгрывает сценку «лук и резиновая стенка» — медленно
+  тянется до середины следующего товара (натягивание тетивы), замирает
+  на полной натяжке, резко срывается назад, ударяется о левый край и
+  несколько раз упруго отскакивает от него с затуханием; так — пока
+  пользователь не начал скроллить сам. Плюс скроллбар всегда виден.
+  «Итого» = цена текущего товара
   (выбранный вариант, если в наличии — пропс current собирает страница)
   + отмеченные доп.; под суммой — расшифровка «ваш товар X + выбранные
   Y». Кнопка добавляет всё из «Итого»: текущий товар страницей первым
@@ -141,14 +144,25 @@ const onAddSelected = () => {
 // ─── Подсказка «дальше есть ещё товары» ────────────────────────────
 // На мобиле в ленте видно 1–1,5 позиции, а оверлей-скроллбар скрыт до
 // первой прокрутки — не понятно, что список скроллится (отзыв покупателя).
-// Пока пользователь сам не начал скроллить, лента каждые несколько секунд
-// сама плавно показывает середину следующего (скрытого) товара и
-// возвращается к началу. Только если лента реально переполнена (на lg
-// всё видно); prefers-reduced-motion и фоновая вкладка анимацию отключают.
+// Пока пользователь сам не начал скроллить, лента каждые ~6 секунд
+// разыгрывает сценку «лук и резиновая стенка» (формулировка покупателя):
+// медленно тянется до середины следующего товара (натягивание тетивы),
+// замирает на полной натяжке, затем резко срывается назад, ударяется
+// о левый край и несколько раз упруго отскакивает от него с затуханием.
+// Отскок от стенки рисуется transform'ом контента (scrollLeft не бывает
+// отрицательным). Только если лента реально переполнена (на lg всё
+// видно); prefers-reduced-motion и фоновая вкладка анимацию отключают.
 const fbtListEl = ref(null)
 let hintStopped = false
 let hintCycleTimer = null
 let hintStepTimers = []
+
+// Сжатие у «стенки» — CSS-переменная на контейнере, дети сдвигаются
+// transform'ом (по умолчанию 0 — вне анимации ничего не двигается)
+const resetWallSquish = () => {
+        const el = fbtListEl.value
+        if (el) el.style.setProperty('--fbt-squish', '0px')
+}
 
 const stopScrollHint = () => {
         hintStopped = true
@@ -158,6 +172,7 @@ const stopScrollHint = () => {
         }
         hintStepTimers.forEach(clearTimeout)
         hintStepTimers = []
+        resetWallSquish()
 }
 
 // Целевая прокрутка: середина первого товара, чья середина за правым
@@ -173,19 +188,7 @@ const peekTarget = (el) => {
         return Math.min(maxLeft, Math.max(0, target))
 }
 
-// ── Анимация прокрутки с отскоком (easeOutBack): лента вылетает чуть
-// дальше цели и мягко «доезжает» обратно — движение читается как
-// намеренная подсказка. Возврат — easeOutCubic (быстрый старт, мягкий
-// конец без удара о край).
-const easeOutBack = (t) => {
-        const c1 = 1.70158
-        const c3 = c1 + 1
-        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
-}
-const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
-
-// rAF-анимация scrollLeft: behavior:'smooth' не даёт управлять кривой,
-// а отскок нужен именно на пике подглядывания
+// rAF-анимация scrollLeft с произвольной кривой
 const animateScroll = (el, from, to, duration, ease) => {
         const start = performance.now()
         const step = (now) => {
@@ -193,6 +196,33 @@ const animateScroll = (el, from, to, duration, ease) => {
                 const t = Math.min(1, (now - start) / duration)
                 el.scrollLeft = from + (to - from) * ease(t)
                 if (t < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+}
+
+// «Натягивание тетивы»: медленный разгон и плавная остановка на натяжке
+const easeInOutSine = (t) => -(Math.cos(Math.PI * t) - 1) / 2
+// «Отпускание»: разгон по пути к стенке
+const easeInQuad = (t) => t * t
+
+// Удар о «резиновую стенку»: контент сжимается у левого края (translateX
+// в минус — scrollLeft в минус не умеет) и упруго отпружинивает,
+// колебания затухают: -A·e^(−λt)·sin(ωt). В конце и при остановке — сброс.
+const bounceOffWall = (el) => {
+        const amplitude = 22 // глубина первого сжатия, px
+        const decay = 2.6 // скорость затухания, 1/с
+        const omega = 28 // частота, рад/с (полволны ≈ 112 мс)
+        const duration = 1100 // мс — дальше колебания меньше пикселя
+        const start = performance.now()
+        const step = (now) => {
+                const t = (now - start) / 1000
+                if (hintStopped || t * 1000 >= duration) {
+                        resetWallSquish()
+                        return
+                }
+                const offset = -amplitude * Math.exp(-decay * t) * Math.sin(omega * t)
+                el.style.setProperty('--fbt-squish', `${offset.toFixed(2)}px`)
+                requestAnimationFrame(step)
         }
         requestAnimationFrame(step)
 }
@@ -205,11 +235,19 @@ const scheduleScrollHint = (delay = 6000) => {
                 if (!el || hintStopped || document.hidden) return
                 const target = peekTarget(el)
                 if (target > el.scrollLeft + 4) {
-                        animateScroll(el, el.scrollLeft, target, 900, easeOutBack)
+                        // Натяжка: 0 → цель медленно (2.2 с); замирание на полной
+                        // натяжке (350 мс); отпускание: резкий срыв к началу
+                        // (180 мс) и серия затухающих отскоков от стенки
+                        animateScroll(el, el.scrollLeft, target, 2200, easeInOutSine)
                         hintStepTimers.push(
                                 setTimeout(() => {
-                                        if (!hintStopped) animateScroll(el, el.scrollLeft, 0, 800, easeOutCubic)
-                                }, 1600),
+                                        if (!hintStopped) animateScroll(el, el.scrollLeft, 0, 180, easeInQuad)
+                                }, 2550),
+                        )
+                        hintStepTimers.push(
+                                setTimeout(() => {
+                                        if (!hintStopped) bounceOffWall(el)
+                                }, 2730),
                         )
                 }
                 scheduleScrollHint()
@@ -268,6 +306,12 @@ const handleImageError = (event) => {
         scrollbar-width: thin;
         scrollbar-color: color-mix(in oklab, var(--color-primary) 60%, transparent) transparent;
         padding-bottom: 10px;
+}
+/* Отскок от «резиновой стенки»: на время анимации дети ленты сдвигаются
+   переменной --fbt-squish (сжатие у левого края и отпружинивание);
+   вне анимации переменная 0 — transform не виден */
+.fbt-list .fbt-item {
+        transform: translateX(var(--fbt-squish, 0px));
 }
 /* Скроллбар ленты ВСЕГДА виден и ГОЛУБОЙ (цвет primary темы): iOS/Safari
    скрывают оверлей-скроллбар до первой прокрутки — без подсказки не видно,
