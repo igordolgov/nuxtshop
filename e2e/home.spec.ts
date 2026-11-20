@@ -5,11 +5,11 @@ import { expect, test } from '@playwright/test';
 const FIRST_PRODUCT = 'a[href*="/product/"]:not([href*="/product/test"])';
 
 // Вход в корзину: десктоп — <a> на /cart в шапке (HeaderCartMenu), мобильный —
-// кнопка в нижней навигации (openCart → navigateTo('/cart')); скрытые
-// дубли (иконка шапки на мобильных) отфильтровываются по видимости.
+// пункт нижней навигации (NuxtLink <a> на /cart; раньше button c openCart);
+// скрытые дубли (иконка шапки на мобильных) отфильтровываются по видимости.
 const cartEntry = (page: import('@playwright/test').Page) =>
   page
-    .locator('a[href*="/cart"], .mobile-nav-footer button:has(path[d^="M3 3h2l.4 2"])')
+    .locator('a[href*="/cart"], .mobile-nav-footer :is(a, button):has(path[d^="M3 3h2l.4 2"])')
     .filter({ visible: true })
     .first();
 

@@ -3,13 +3,13 @@ import { waitForHydration } from './helpers';
 
 // Вход в корзину: десктоп — иконка в шапке (HeaderCartMenu): пустая корзина —
 // <a> на /cart, с товарами — кнопка дропдауна (на страницу ведёт «Корзина»
-// в панели); мобильный — кнопка нижней навигации (openCart →
-// navigateTo('/cart')). Скоуп header/: у футера тоже есть ссылка «Корзина»;
-// скрытые дубли отфильтровываются по видимости.
+// в панели); мобильный — пункт нижней навигации (NuxtLink <a> на /cart;
+// раньше был button c openCart). Скоуп header/: у футера тоже есть ссылка
+// «Корзина»; скрытые дубли отфильтровываются по видимости.
 const cartEntry = (page: import('@playwright/test').Page) =>
   page
     .locator(
-      'header a[href*="/cart"], header button[aria-controls="header-mini-cart"], .mobile-nav-footer button:has(path[d^="M3 3h2l.4 2"])',
+      'header a[href*="/cart"], header button[aria-controls="header-mini-cart"], .mobile-nav-footer :is(a, button):has(path[d^="M3 3h2l.4 2"])',
     )
     .filter({ visible: true })
     .first();
