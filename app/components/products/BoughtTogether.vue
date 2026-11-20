@@ -30,11 +30,19 @@
                 p.text-xs.opacity-60.mb-2 {{ $t('product.boughtTogetherHint') }}
 
                 .card.bg-base-100.shadow-md.rounded-box.p-3(class="lg:p-4")
-                        //- Горизонтальная лента чекбокс-позиций: на мобиле скроллится,
-                        //- на lg помещается вся (3 позиции — лимит API)
+                        //- Горизонтальная лента чекбокс-позиций: на мобиле скроллится
+                        //- тачем, на десктопе — мышью (драг + вертикальное колесо,
+                        //- у краёв скролл уходит странице); на lg может не
+                        //- помещаться вся
                         .fbt-list.flex.items-start.gap-4(
                                 ref="fbtListEl"
                                 class="overflow-x-auto"
+                                :class="{ 'is-scrollable': isScrollable, 'is-dragging': isDragging }"
+                                @pointerdown="onListPointerDown"
+                                @pointermove="onListPointerMove"
+                                @pointerup="onListPointerUp"
+                                @pointercancel="onListPointerUp"
+                                @wheel="onListWheel"
                         )
                                 label.fbt-item.flex.items-center.gap-2.shrink-0.cursor-pointer(
                                         v-for="item in localizedProducts"
@@ -157,6 +165,108 @@ let hintStopped = false
 let hintCycleTimer = null
 let hintStepTimers = []
 
+// ─── Десктоп: лента листается мышью ────────────────────────────────
+// 1) Драг (зажать и тянуть) — Pointer Events только для мыши (на таче
+//    нативный свайп и так работает). Классический паттерн слайдеров:
+//    до порога 6px это обычный клик (чекбокс переключается), после —
+//    включаем pointer capture (тяга продолжается за пределами ленты),
+//    а click после драга гасим, иначе чекбокс переключался бы на отпускании.
+//    Драг не стартует с input/button/link — их поведение остаётся нативным.
+// 2) Вертикальное колесо/тачпад крутит ленту горизонтально; у краёв
+//    (и над лентой, которой некуда крутить) скролл уходит странице —
+//    перехват только когда лента реально переполнена и есть куда крутить.
+//    Горизонтальный сдвиг тачпада (deltaX) остаётся нативным.
+const isScrollable = ref(false)
+const isDragging = ref(false)
+
+const DRAG_THRESHOLD = 6 // px, меньше которого жест — клик, не драг
+
+let dragPointerId = null
+let dragStartX = 0
+let dragStartScroll = 0
+let dragMoved = false
+let dragCaptured = false
+
+const updateScrollable = () => {
+        const el = fbtListEl.value
+        if (!el) return
+        isScrollable.value = el.scrollWidth > el.clientWidth + 4
+}
+
+// После реального драга click всё равно прилетает (down/up на одном
+// элементе) — гасим один ближайший click на capture-фазе
+const clickTrap = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+}
+const suppressClickAfterDrag = () => {
+        const el = fbtListEl.value
+        if (!el) return
+        el.addEventListener('click', clickTrap, { capture: true, once: true })
+        setTimeout(() => el.removeEventListener('click', clickTrap, { capture: true }), 350)
+}
+
+const onListPointerDown = (e) => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return
+        if (e.target.closest('input, button, a')) return
+        const el = fbtListEl.value
+        if (!el || el.scrollWidth <= el.clientWidth + 4) return
+        dragPointerId = e.pointerId
+        dragStartX = e.clientX
+        dragStartScroll = el.scrollLeft
+        dragMoved = false
+        dragCaptured = false
+}
+
+const onListPointerMove = (e) => {
+        if (dragPointerId === null || e.pointerId !== dragPointerId) return
+        const el = fbtListEl.value
+        if (!el) return
+        const dx = e.clientX - dragStartX
+        if (!dragMoved) {
+                if (Math.abs(dx) < DRAG_THRESHOLD) return
+                dragMoved = true
+                dragCaptured = true
+                try {
+                        el.setPointerCapture(dragPointerId)
+                } catch {
+                        // элемент мог размонтироваться mid-жест — drag завершится на pointerup
+                }
+                isDragging.value = true
+                stopScrollHint()
+        }
+        e.preventDefault()
+        el.scrollLeft = dragStartScroll - dx
+}
+
+const onListPointerUp = (e) => {
+        if (dragPointerId === null || e.pointerId !== dragPointerId) return
+        const el = fbtListEl.value
+        if (dragCaptured && el?.hasPointerCapture?.(dragPointerId)) {
+                el.releasePointerCapture(dragPointerId)
+        }
+        if (dragMoved) suppressClickAfterDrag()
+        dragPointerId = null
+        dragCaptured = false
+        dragMoved = false
+        isDragging.value = false
+}
+
+const onListWheel = (e) => {
+        const el = fbtListEl.value
+        if (!el) return
+        stopScrollHint()
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+        if (el.scrollWidth <= el.clientWidth + 4) return
+        // deltaMode 1 (Firefox, «строки») — каждый «тик» ≈ 24px
+        const delta = e.deltaMode === 1 ? e.deltaY * 24 : e.deltaY
+        const max = el.scrollWidth - el.clientWidth
+        const canScroll = delta > 0 ? el.scrollLeft < max - 1 : el.scrollLeft > 1
+        if (!canScroll) return
+        e.preventDefault()
+        el.scrollLeft += delta
+}
+
 // Сжатие у «стенки» — CSS-переменная на контейнере, дети сдвигаются
 // transform'ом (по умолчанию 0 — вне анимации ничего не двигается)
 const resetWallSquish = () => {
@@ -255,19 +365,23 @@ const scheduleScrollHint = (delay = 6000) => {
 }
 
 onMounted(() => {
+        updateScrollable()
+        window.addEventListener('resize', updateScrollable, { passive: true })
         const el = fbtListEl.value
         if (!el || el.scrollWidth <= el.clientWidth + 4) return
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
         if (reduced) return
         scheduleScrollHint(3000)
         // Любой ручной жест (тап, свайп, колесо, перетаскивание скроллбара)
-        // — и подсказка выключается навсегда
+        // — и подсказка выключается навсегда; wheel гасится в onListWheel
         el.addEventListener('touchstart', stopScrollHint, { passive: true })
-        el.addEventListener('wheel', stopScrollHint, { passive: true })
         el.addEventListener('mousedown', stopScrollHint)
 })
 
-onBeforeUnmount(stopScrollHint)
+onBeforeUnmount(() => {
+        window.removeEventListener('resize', updateScrollable)
+        stopScrollHint()
+})
 
 // formatMoney — единая из useProductUtils (валюту добавляет formatMoney);
 // productSrcset — автоимпорт из app/utils/productImage.ts
@@ -292,6 +406,20 @@ const handleImageError = (event) => {
 <style scoped>
 .bought-together {
         width: 100%;
+        /* Секция не выделяется: драг ленты мышью не должен рисовать
+           выделение текста (запрос покупателя), курсор указывает на
+           «листаемость», а не на редактируемость */
+        user-select: none;
+        -webkit-user-select: none;
+}
+/* Курсор «рука» — только когда лента реально переполнена и её можно
+   листать; is-dragging — сжатая ладонь на время перетаскивания */
+.fbt-list.is-scrollable {
+        cursor: grab;
+}
+.fbt-list.is-dragging,
+.fbt-list.is-dragging * {
+        cursor: grabbing;
 }
 .line-clamp-2 {
         display: -webkit-box;
