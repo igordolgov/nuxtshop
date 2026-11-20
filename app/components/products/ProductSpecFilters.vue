@@ -1,25 +1,25 @@
 <!-- app/components/products/ProductSpecFilters.vue — фасетные фильтры по
-     характеристикам (паттерн WB/Ozon): сворачиваемые группы <details> с
-     чипами значений и счётчиками; длинные списки ЗНАЧЕНИЙ внутри группы
-     сворачиваются кнопкой с числом «Ещё {n}» — на тач-экранах иначе
-     непонятно, есть ли ещё ниже. Сами ГРУППЫ лимита больше не имеют
-     («первые 4 + Показать ещё» удалено): рендерятся все. На десктопе
-     переполнение гасит внутренний скролл списка; на мобильном (flow)
-     список растекается в единый плоский скролл панели — вложенные
-     скролл-окна на таче «зависают». Скроллбар — рельса AppScrollArea:
-     видна ВСЕГДА, пока список не помещается (нативная полоса на
-     мобильных/новых Chrome исчезает при простое и наезжает на шевроны
-     групп и кнопки «Ещё N»), и не перекрывает контент — зона под неё
-     зарезервирована правым padding вьюпорта. Значения группы — лениво,
-     только у открытой (группы с выбранными значениями открываются
-     сами — isOpen): SSR/DOM заметно меньше при сотнях групп. Секция
-     монтируется только при выбранных категориях (гейт v-if в
-     ProductFilter — десктоп-сайдбар и мобильная панель): без категорий
-     не выводятся ни заголовок, ни группы. Фасеты и счётчики считает
-     useFilters (buildSpecFacets) по базовой выборке каталога: выбор
-     внутри одной характеристики — ИЛИ, между характеристиками — И;
-     выбор в одной группе не обнуляет счётчики других. Используется в
-     ProductFilter (десктоп-сайдбар и мобильная панель фильтров). -->
+    характеристикам (паттерн WB/Ozon): сворачиваемые группы <details> с
+    чипами значений и счётчиками; длинные списки ЗНАЧЕНИЙ внутри группы
+    сворачиваются кнопкой с числом «Ещё {n}» — на тач-экранах иначе
+    непонятно, есть ли ещё ниже. Сами ГРУППЫ лимита больше не имеют
+    («первые 4 + Показать ещё» удалено): рендерятся все. На десктопе
+    переполнение гасит внутренний скролл списка; на мобильном (flow)
+    список растекается в единый плоский скролл панели — вложенные
+    скролл-окна на таче «зависают». Скроллбар — рельса AppScrollArea:
+    видна ВСЕГДА, пока список не помещается (нативная полоса на
+    мобильных/новых Chrome исчезает при простое и наезжает на шевроны
+    групп и кнопки «Ещё N»), и не перекрывает контент — зона под неё
+    зарезервирована правым padding вьюпорта. Значения группы — лениво,
+    только у открытой (группы с выбранными значениями открываются
+    сами — isOpen): SSR/DOM заметно меньше при сотнях групп. Секция
+    монтируется только при выбранных категориях (гейт v-if в
+    ProductFilter — десктоп-сайдбар и мобильная панель): без категорий
+    не выводятся ни заголовок, ни группы. Фасеты и счётчики считает
+    useFilters (buildSpecFacets) по базовой выборке каталога: выбор
+    внутри одной характеристики — ИЛИ, между характеристиками — И;
+    выбор в одной группе не обнуляет счётчики других. Используется в
+    ProductFilter (десктоп-сайдбар и мобильная панель фильтров). -->
 <template lang="pug">
 .product-spec-filters
   //- Шапка липнет к верху скролла (bg — чипы не просвечивают под ней):
@@ -49,15 +49,15 @@
       :open="isOpen(group)"
       @toggle="onToggle(group, $event)"
     )
-      summary.spec-summary.flex.items-center.justify-between.cursor-pointer.text-sm.font-medium.text-base-content(
-        class="py-2 select-none gap-2 md:py-1.5"
+      summary.spec-summary.flex.items-center.justify-left.cursor-pointer.text-sm.font-medium.text-base-content(
+        class="gap-2 py-2 md:py-0.5 select-none"
       )
         span.truncate.min-w-0 {{ specLabel(group.label) }}
         span.inline-flex.items-center.flex-shrink-0(class="gap-1.5")
-          span.spec-total.badge.badge-sm.font-normal(
-            class="bg-base-200 text-base-content/60 border-none"
-          ) {{ group.productCount }}
-          svg.spec-chevron.w-3.h-3.flex-shrink-0(
+          //- span.spec-total.badge.badge-sm.font-normal(
+          //-   class="bg-base-200 border-none text-base-content/60"
+          //- ) {{ group.productCount }}
+          svg.spec-chevron.w-3.h-3.mr-2.flex-shrink-0(
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -66,12 +66,12 @@
           )
             path(stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7")
 
-      .spec-values.flex.flex-wrap.gap-1(class="pb-2 pt-0.5" v-if="isOpen(group)")
-        label.spec-chip.cursor-pointer.inline-flex.items-center.px-2.rounded-full.border.text-xs.font-medium.transition-colors(
+      .spec-values.flex.flex-wrap.gap-1(class="pt-0.5 pb-2" v-if="isOpen(group)")
+        label.spec-chip.cursor-pointer.inline-flex.items-center.px-2.rounded-full.border.text-xs.font-semibold.transition-colors(
           v-for="entry in visibleValues(group)"
           :key="entry.value"
           :class="isChecked(group.label, entry.value) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'border-base-content/60'",
-          class="py-0.5 hover:border-primary hover:text-primary"
+          class="py-0.5 hover:border-primary hover:text-white"
         )
           input.hidden(
             type="checkbox"
@@ -79,7 +79,7 @@
             @change="toggle(group.label, entry.value)"
           )
           span.whitespace-nowrap {{ entry.value }}
-          span.spec-value-count(class="ml-1 opacity-55") {{ entry.count }}
+          //- span.spec-value-count(class="opacity-55 ml-1") ({{ entry.count }})
 
         button.spec-more.btn.btn-xs.btn-ghost.rounded-full(
           v-if="group.values.length > VISIBLE_VALUES"

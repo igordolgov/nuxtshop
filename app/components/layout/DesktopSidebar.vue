@@ -10,7 +10,7 @@
     (и передавал isMobile вместо ориентации — след рефакторингов). -->
 <template lang="pug">
 aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm
-  .sidebar-inner(class="h-full flex flex-col overflow-hidden")
+  .sidebar-inner(class="flex flex-col h-full overflow-hidden")
     //- Тело: ProductFilter (цена, категории, характеристики).
     //- Единственный скроллящийся регион — .vertical-layout внутри
     .sidebar-body(class="flex-1 min-h-0")
@@ -31,7 +31,7 @@ aside.desktop-sidebar.bg-base-100.rounded-box.shadow-sm
 
     //- «Только в наличии» закреплён внизу сайдбара — всегда виден,
     //- как в мобильной панели (паттерн маркетплейсов)
-    .sidebar-quick(class="flex-shrink-0 border-t border-base-200 px-1 py-1")
+    .sidebar-quick(class="px-1 py-1 border-base-200 border-t shrink-0")
       ProductQuickFilters(
         :filters="filters"
         @change="handleQuickFilter"

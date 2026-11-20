@@ -1,14 +1,14 @@
 <!-- app/pages/admin/analytics.vue — аналитика продаж для админки:
-     выручка и заказы по дням (CSS-график без библиотек), топ товаров,
-     статусы, доставка/оплата. Данные — /api/admin/analytics (KV orders),
-     выручка считается по не-отменённым заказам (семантика сервера).
-     Стили повторяют дашборд (stat-card / panel / row-item). -->
+    выручка и заказы по дням (CSS-график без библиотек), топ товаров,
+    статусы, доставка/оплата. Данные — /api/admin/analytics (KV orders),
+    выручка считается по не-отменённым заказам (семантика сервера).
+    Стили повторяют дашборд (stat-card / panel / row-item). -->
 <template lang="pug">
 .admin-analytics.mobile-nav-safe
   Header
   main.container.mx-auto.px-3.py-4(class="sm:px-4 lg:px-6")
     //- Шапка: заголовок, окно периода, обновление
-    .flex.flex-col.gap-3(class="sm:flex-row sm:items-center sm:justify-between")
+    .flex.flex-col.gap-3(class="sm:flex-row sm:justify-between sm:items-center")
       .flex.items-center.gap-3
         .dash-avatar
           icon(name="heroicons:chart-bar" size="22")
@@ -16,7 +16,7 @@
           h1.text-xl.font-bold.text-base-content {{ $t('admin.analytics.title') }}
           p.dash-sub {{ $t('admin.analytics.subtitle', { days: period }) }}
       .flex.items-center.gap-2
-        .join
+        .join.gap-x-2
           button.join-item.btn.btn-sm.rounded-xl(
             v-for="p in periods" :key="p.days"
             type="button"
