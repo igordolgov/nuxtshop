@@ -193,6 +193,8 @@
 </template>
 
 <script setup>
+//- admin-only daisyUI-компоненты (dropdown/file-input/table): см. app/assets/css/admin.css
+import '~/assets/css/admin.css'
 import MobileNavFooter from '~/components/layout/MobileNavFooter.vue'
 import AdminEditUserModal from '~/components/admin/AdminEditUserModal.vue'
 

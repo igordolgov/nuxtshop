@@ -5,6 +5,8 @@
 </template>
 
 <script setup>
+//- admin-only daisyUI-компоненты (dropdown/file-input/table): см. app/assets/css/admin.css
+import '~/assets/css/admin.css'
 // Используем middleware для защиты админ-роута
 definePageMeta({
   middleware: 'manager-auth'

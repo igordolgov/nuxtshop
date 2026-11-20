@@ -1,0 +1,35 @@
+/* app/assets/css/admin.css — daisyUI-компоненты, нужные ТОЛЬКО админке.
+   ─────────────────────────────────────────────────────────────────
+   Зачем: entry.css (глобальный) грузится на каждой странице витрины,
+   но dropdown / file-input / table есть только в /admin/** (аудит
+   использования токенов по шаблонам, 2026-11). exclude в main.css
+   убирает их из entry.css, а этот файл догружает только на админ-
+   страницах (импорт в каждом app/pages/admin/*.vue — CSS-чанк
+   создаётся один, Nuxt линкует его лишь при загрузке админ-чанков).
+
+   Механика (Tailwind v4 + daisyUI 5.8):
+   · @import utilities.css source(none) — компилятор Tailwind для этого
+     файла БЕЗ theme-переменных и preflight: они уже в entry.css, а
+     компоненты daisyUI ссылаются на var(--color-*) в рантайме и
+     разрешатся от :root/[data-theme] entry.css;
+   · @source inline(...) — точный список классов вместо сканирования:
+     только использованные в админке модификаторы, без мёртвых
+     (dropdown-left/right/hover, file-input-bordered, table-pin-* и т.п.);
+   · themes: false — без дубля блоков тем; include — имена компонентов
+     daisyUI 5.8 (fileinput без дефиса, ср. класс file-input).
+
+   Слой каскада совпадает с entry.css: компоненты попадают в
+   @layer daisyui.l1.l2.l3 — приоритеты unchanged.
+
+   При добавлении в админку новых daisyUI-классов: дополнить
+   @source inline(...) (и include, если новый компонент), иначе стиль
+   не применится. При использовании компонента на витрине — убрать его
+   из exclude в main.css и удалить из этого файла. */
+@import 'tailwindcss/utilities.css' source(none);
+
+@source inline('dropdown dropdown-end dropdown-bottom dropdown-open dropdown-content file-input file-input-xs table table-zebra');
+
+@plugin "daisyui" {
+  themes: false;
+  include: dropdown, fileinput, table;
+}

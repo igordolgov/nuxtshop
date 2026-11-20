@@ -542,6 +542,8 @@
 </style>
 
 <script setup>
+//- admin-only daisyUI-компоненты (dropdown/file-input/table): см. app/assets/css/admin.css
+import '~/assets/css/admin.css'
 //- Валюта — единый formatMoney из store.config (₽ / $ по конфигу витрины)
 import { formatMoney } from '../../../store.config'
 import Header from '~/components/layout/Header.vue'

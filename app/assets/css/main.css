@@ -7,17 +7,27 @@
   themes:
     corporate --default,
     business --prefersdark;
-  /* Мёртвые компоненты: Tailwind v4 сканирует app/** как плоский текст,
-     и идентификаторы из JS/TS-логики (проп validator в ProductCard,
-     ключ chat в карте иконок contacts, переменные diff/progress в
-     utils/composables, prop steps в CheckoutStepper, filter в админских
-     обработчиках) вытягивают CSS daisyUI-компонентов, которых в DOM
-     НЕТ НИГДЕ (проверено grep'ом по шаблонам admin+shop и по
-     classList, 2026-11): 11.4 КБ raw / 1.9 КБ gzip в entry.css — доля
-     неиспользуемого CSS в Lighthouse. exclude — штатный механизм
-     daisyUI 5.7; при появлении реальной потребности в компоненте —
-     просто убрать имя из списка. */
-  exclude: steps, mask, filter, chat, validator, stack, diff, progress, timeline;
+  /* Мёртвые и admin-only компоненты: Tailwind v4 сканирует app/** как
+     плоский текст, и идентификаторы из JS/TS-логики (проп validator в
+     ProductCard, ключ chat в карте иконок contacts, переменные
+     diff/progress в utils/composables, prop steps в CheckoutStepper,
+     filter в админских обработчиках) вытягивают CSS daisyUI-компонентов,
+     которых в DOM нет. Аудит токенов entry.css по шаблонам admin+shop и
+     classList (2026-11), две группы:
+     1) мёртвые ВЕЗДЕ (11.4 КБ raw): steps, mask, filter, chat,
+        validator, stack, diff, progress, timeline; второй проход тем же
+        методом: footer (SiteFooter использует кастомные классы),
+        fab (MessengerFab — свои fab-menu/fab-row), tab (role="tab" и
+        переменная JS — не CSS-классы), hero (слово в комментарии);
+     2) только в админке (9.7 КБ raw): dropdown, fileinput (класс
+        file-input), table — CSS для них в app/assets/css/admin.css,
+        который грузится только на /admin/**.
+     exclude — штатный механизм daisyUI 5.8; при появлении реальной
+     потребности в компоненте — убрать имя из списка (для группы 2 —
+     также перенести из admin.css). */
+  exclude:
+    steps, mask, filter, chat, validator, stack, diff, progress, timeline, footer, fab, tab, hero,
+    dropdown, fileinput, table;
 }
 
 /* ─── Токены, ОДИНАКОВЫЕ на обеих темах ────────────────────────────
