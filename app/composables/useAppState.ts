@@ -204,9 +204,25 @@ function createAppState() {
     filters.handleSearchUpdate('');
   }
 
+  //- Применённый поиск (маркетплейс-паттерн): подсказки в панели живут
+  //- на ВВОДЕ (посимвольно, без фильтрации сетки), а сетка каталога
+  //- фильтруется только по «применённому» запросу — Enter, «Показать все
+  //- результаты» или восстановление из ?search=. Так один и тот же товар
+  //- не дублируется в панели и в сетке одновременно (WB/Ozon/Amazon:
+  //- страница под инпутом не реагирует на посимвольный ввод).
+  function applySearchQuery(value: string): void {
+    searchQuery.value = value;
+    filters.handleSearchUpdate(value);
+    hideSuggestions();
+  }
+
   function performSearchAction(): void {
     filters.handleSearchUpdate(searchQuery.value);
     hideSuggestions();
+    // Маркетплейс-паттерн (WB/Ozon/Amazon): запрос применился (Enter или
+    // «Показать все результаты») — сетка результатов показывается от верха,
+    // иначе пользователь при скролле вниз остаётся глубоко в старом списке
+    scrollToProductsTop();
   }
 
   function showAllResults(): void {
@@ -300,20 +316,11 @@ function createAppState() {
     }
   });
 
-  // Глобальный запрос → фильтр каталога. immediate: при гидратации
-  // useState поднимается из payload (например, восстановленный из
-  // ?search= запрос) — внутренний ref фильтра стартует с '' и без
-  // этой синхронизации сетка рендерится без фильтра (расходится
-  // с SSR-HTML и с заполненным полем поиска в шапке)
-  watch(
-    searchQuery,
-    (newQuery) => {
-      if (newQuery !== filters.searchQuery.value) {
-        filters.handleSearchUpdate(newQuery);
-      }
-    },
-    { immediate: true },
-  );
+  //- Синхронизация «ввод → фильтр каталога» УБРАНА: посимвольный ввод
+  //- больше не фильтрует сетку (см. applySearchQuery). Восстановление
+  //- ?search= из URL при заходе/гидратации делает index.vue через
+  //- applySearchQuery — фильтр применяется явно, SSR-HTML и сетка
+  //- остаются согласованными.
 
   // ─── Инициализация ───────────────────────────────────────
   async function initializeApp(): Promise<void> {
@@ -355,9 +362,10 @@ function createAppState() {
     }
   }
 
+  //- ВВОД в строку поиска: только стейт подсказок — сетка не трогается
+  //- (применение — applySearchQuery / performSearch)
   function setSearchQuery(value: string): void {
     searchQuery.value = value;
-    filters.handleSearchUpdate(value);
   }
 
   function resetAppState(): void {
@@ -396,6 +404,7 @@ function createAppState() {
       showSuggestionsPanel,
       hideSuggestions,
       resetSearch,
+      applySearchQuery,
       performSearch: performSearchAction,
       showAllResults,
       getHighlightedText,

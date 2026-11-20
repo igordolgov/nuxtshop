@@ -67,6 +67,7 @@
     "categories": "Категории",
     "selected": "Выбраны: {n}",
     "showAll": "Показать все",
+    "showAllResults": "Показать все результаты",
     "categoriesEmpty": "Категории не найдены",
     "specFilters": "Характеристики",
     "specEmpty": "Нет характеристик для фильтрации",

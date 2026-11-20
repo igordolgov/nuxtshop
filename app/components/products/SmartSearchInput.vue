@@ -1,6 +1,13 @@
 <!-- app/components/products/SmartSearchInput.vue -->
+<!-- Панель подсказок — паттерн маркетплейсов (WB/Ozon/Amazon):
+     ввод → ТОЛЬКО компактная панель (фото + название + цена), сетка под
+     инпутом на посимвольный ввод не реагирует (не дублирует подсказки);
+     переход на товар — по клику на подсказку (канонический slug);
+     полный поиск — Enter или «Показать все результаты (N)» в футере.
+     Подсветка совпадений в панели — ЖИРНЫМ без заливки (Amazon/Ozon):
+     жёлтые <mark> по всему тексту — шум; в карточках сетки подсветки нет. -->
 <template lang="pug">
-.search-container.border.rounded-lg(
+.search-container.border.rounded-lg.relative(
   class="border-secondary/60 w-full"
   ref="searchContainer"
 )
@@ -62,31 +69,51 @@
             .loading.loading-spinner.loading-xs
             span.text-sm.ml-2(class="text-base-content/70") {{ $t('catalog.searching') }}
           
-          //- Результаты
+          //- Результаты: фото + название + цена (паттерн WB/Ozon/Amazon)
           template(v-if="filteredSuggestions.length > 0 && queryHasMinLength")
-            button.suggestion-item.w-full.text-left.p-2.border-b(
-              class="hover:bg-base-300 border-base-200 last:border-b-0"
+            button.suggestion-item.w-full.text-left.p-2.border-b.flex.items-center.gap-3(
+              class="hover:bg-base-200 border-base-200 last:border-b-0"
               v-for="(item, index) in filteredSuggestions"
               :key="item.id"
-              :class="localActiveSuggestionIndex === index ? 'bg-base-300' : ''"
-              @mousedown="selectSuggestion(item)"
+              :class="localActiveSuggestionIndex === index ? 'bg-base-200' : ''"
+              @mousedown.prevent.stop="selectSuggestion(item)"
               @mouseenter="updateActiveIndex(index)"
               type="button"
             )
-              .item-details
-                .item-name.font-medium.text-sm.mb-1(
+              img.item-thumb.w-10.h-10.rounded-md.object-cover.bg-base-200.shrink-0(
+                v-if="itemThumbUrl(item)"
+                :src="itemThumbUrl(item)"
+                :alt="''"
+                loading="lazy"
+                decoding="async"
+              )
+              .item-thumb-placeholder.w-10.h-10.rounded-md.bg-base-200.shrink-0.flex.items-center.justify-center(
+                v-else
+              )
+                svg.w-5.h-5(viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-base-content/30" aria-hidden="true")
+                  path(stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5m10.5-11.25h.008v.008h-.008zm.375 0a.375.375 0 1 1-.75 0a.375.375 0 0 1 .75 0a.375.375 0 1 1-.75 0")
+              .item-details.min-w-0.flex-1
+                .item-name.text-sm.leading-snug.line-clamp-2(
                   v-html="getHighlightedText(item.name)"
                 )
-                .item-category.text-xs.mb-1(
-                  v-if="item.category"
-                  v-html="getHighlightedText(item.category)"
-                  class="text-base-content/70"
-                )
-                .item-description.text-xs.line-clamp-2(
-                  v-if="item.description"
-                  v-html="getHighlightedText(item.description)"
-                  class="text-base-content/50"
-                )
+              .item-price.text-sm.font-semibold.shrink-0(
+                class="text-base-content"
+              ) {{ formatMoney(item.price) }}
+          
+          //- Футер панели: полный поиск по запросу (маркетплейс-паттерн:
+          //- Enter = «Показать все результаты»). Виден только при совпадениях:
+          //- клик применяет поиск к сетке каталога (фильтрует карточки и
+          //- закрывает панель) — до этого сетка не реагирует на ввод
+          button.show-all-results.w-full.text-left.px-3.flex.items-center.justify-between.gap-2(
+            v-if="filteredSuggestions.length > 0 && queryHasMinLength"
+            class="hover:bg-base-200 bg-base-100 border-t border-base-200 py-2.5"
+            type="button"
+            @mousedown.prevent.stop="onShowAllClick"
+          )
+            span.text-sm.font-medium {{ $t('catalog.showAllResults') }}
+            span.badge.badge-sm.badge-primary.rounded-full(
+              v-if="totalResults > filteredSuggestions.length"
+            ) {{ $t('catalog.itemsCount', totalResults) }}
           
           //- Введите ещё
           .suggestion-item.text-center.p-3.italic(
@@ -156,8 +183,7 @@ const emit = defineEmits([
   'resetSearch',
   'update:activeSuggestionIndex',
   'update:showSuggestions',
-  'search',
-  'selectProduct'
+  'search'
 ])
 
 //- ============================================
@@ -331,7 +357,6 @@ const handleEnter = (event) => {
   if (localActiveSuggestionIndex.value >= 0 && suggestions[localActiveSuggestionIndex.value]) {
     const selected = suggestions[localActiveSuggestionIndex.value]
     emit('suggestionSelected', selected)
-    emit('selectProduct', selected)
     closeSuggestionsPanel()
     searchInput.value?.blur()
   } else {
@@ -342,11 +367,23 @@ const handleEnter = (event) => {
 }
 
 const selectSuggestion = (suggestion) => {
+  //- ОДИН emit (раньше был ещё 'selectProduct' с тем же обработчиком:
+  //- два router.push подряд, vue-router отменял первый — гонка
+  //- с resetSearch убивала навигацию, клик «не вёл» на товар)
   emit('suggestionSelected', suggestion)
-  emit('selectProduct', suggestion)
   isPanelMouseDown.value = false
   closeSuggestionsPanel()
   searchInput.value?.blur()
+}
+
+//- Футер «Показать все результаты»: применяет поиск (родитель —
+//- appState.performSearch на главной, оверлей — переход к /?search=)
+//- и закрывает панель, как Enter
+const onShowAllClick = () => {
+  hasPerformedSearch.value = true
+  closeSuggestionsPanel()
+  searchInput.value?.blur()
+  emit('performSearch')
 }
 
 const updateActiveIndex = (index) => {
@@ -378,6 +415,25 @@ const getHighlightedText = (text) => {
     return highlightText(text, localSearchQuery.value)
   }
   return text
+}
+
+//- Цена в подсказке — единый форматтер витрины (₽/$ из store.config)
+const { formatMoney } = useProductUtils()
+
+//- Миниатюра подсказки — те же 400w-версии, что рисует сетка карточек
+//- (candidates 400w из productSrcset): URL уже в кэше браузера —
+//- панель подсказок не грузит НОВЫЕ картинки (40px слот)
+const LOCAL_SMALL_IMAGE_RE = /^\/images\/products\/(photo-\d+-[a-f0-9]+)\.webp$/
+const itemThumbUrl = (item) => {
+  const url = item?.image
+  if (!url || url === 'null' || url === 'undefined') return null
+  if (url.startsWith('data:')) return url
+  if (url.startsWith('photo-')) return withImageFormat(`https://images.unsplash.com/${url}`, 400)
+  if (url.startsWith('http')) return withImageFormat(url, 400)
+  const m = url.match(LOCAL_SMALL_IMAGE_RE)
+  if (m) return `/images/products/small/${m[1]}.webp`
+  if (url.startsWith('/')) return url
+  return `/images/${url}`
 }
 
 const handleClickOutside = (event) => {
@@ -458,6 +514,25 @@ onUnmounted(() => {
    здесь было мёртвым: oklch(var(--wa)) — канальные переменные
    daisyUI 3/4, в daisyUI 5 не существуют, значение невалидно). */
 
+/* В ПАНЕЛИ подсказок подсветка — жирным БЕЗ заливки (паттерн
+   Amazon/Ozon: жёлтые <mark> по названию/описанию — шум, а с
+   макетом «фото + название + цена» заливка рвёт строку).
+   Глобальное жёлтое правило остаётся админке и прочим <mark>. */
+.suggestions-panel :deep(.search-highlight) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-weight: 700;
+}
+
+/* Миниатюра: она чуть вылезает по высоте строки при 2-строчном
+   названии — фиксируем пропорции и обрезку (object-cover уже в классе) */
+.item-thumb,
+.item-thumb-placeholder {
+  align-self: flex-start;
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.15s ease, transform 0.15s ease;
@@ -469,14 +544,9 @@ onUnmounted(() => {
   transform: translateY(-8px);
 }
 
-@media (max-width: 640px) {
-  .suggestions-panel {
-    position: fixed;
-    top: 54px;
-    left: 6px;
-    right: 6px;
-    max-height: 70vh;
-    margin-top: 0;
-  }
-}
+/* Панель подсказок на мобильных больше НЕ fixed с хардкодом top:54px:
+   тот сдвиг был верен для старой однострочной шапки, а при двухстрочной
+   (строка 2 — сам поиск) панель накрывала поле ввода. Теперь контейнер
+   position:relative — absolute top-full ставит панель ровно под инпутом
+   и в шапке главной, и в полноэкранном оверлее карточки товара. */
 </style>

@@ -67,6 +67,7 @@
     "categories": "Categories",
     "selected": "Selected: {n}",
     "showAll": "Show all",
+    "showAllResults": "Show all results",
     "categoriesEmpty": "No categories found",
     "specFilters": "Characteristics",
     "specEmpty": "No characteristics to filter",

@@ -197,8 +197,8 @@ header.app-header.sticky.top-0.z-50.border-b(
           :suggestions="searchSuggestions"
           :hasSuggestions="hasSearchSuggestions"
           :activeSuggestionIndex="activeSuggestionIndex"
+          :totalResults="totalResults"
           @search="onSearch"
-          @selectProduct="onSuggestionSelected"
           @update:searchQuery="onSearchQueryUpdate"
           @suggestionSelected="onSuggestionSelected"
           @performSearch="onPerformSearch"
@@ -265,8 +265,8 @@ header.app-header.sticky.top-0.z-50.border-b(
           :suggestions="searchSuggestions"
           :hasSuggestions="hasSearchSuggestions"
           :activeSuggestionIndex="activeSuggestionIndex"
+          :totalResults="totalResults"
           @search="onSearch"
-          @selectProduct="onSuggestionSelected"
           @update:searchQuery="onSearchQueryUpdate"
           @suggestionSelected="onSuggestionSelected"
           @performSearch="onPerformSearch"
@@ -407,6 +407,8 @@ const showSuggestions = computed(() => appState.search?.showSuggestions?.value ?
 const searchSuggestions = computed(() => appState.search?.suggestions?.value ?? [])
 const hasSearchSuggestions = computed(() => appState.search?.hasSuggestions?.value ?? false)
 const activeSuggestionIndex = computed(() => appState.search?.activeSuggestionIndex?.value ?? -1)
+//- Всего совпадений по запросу (футер панели: «Показать все результаты (N)»)
+const totalResults = computed(() => appState.search?.totalResults?.value ?? 0)
 const allProducts = computed(() => appState.products?.value || [])
 
 //- Ленивая загрузка товаров для подсказок на «чужих» страницах
@@ -431,11 +433,25 @@ const onPerformSearch = () => {
   appState.search?.performSearch?.()
 }
 
-//- Подсказка → карточка товара + сброс поиска
+//- Подсказка → карточка товара (маркетплейс-паттерн: клик по подсказке
+//- ведёт на товар, поиск остаётся «применённым» — возврат «Назад»
+//- возвращает к результатам).
+//-
+//- Почему БЕЗ resetSearch() после navigateTo (гонка, найденная трассировкой):
+//- SmartSearchInput раньше эмитил И 'suggestionSelected', И 'selectProduct'
+//- (оба бинда на этот обработчик) → два router.push подряд; vue-router 5
+//- мгновенно отменяет первый (code 8 «cancelled»), await резолвился сразу →
+//- resetSearch() звался ДО завершения навигации → сброс query дёргал
+//- watcher URL-синка (router.replace('/')) → отменял и второй push.
+//- Итог: клик «никуда не вёл». Теперь: панель закрывается, ввод
+//- возвращается к применённому запросу (URL не меняется — ни одного
+//- параллельного navigateTo нет), навигация одна и по каноническому
+//- SLUG (/product/<id> требовал серверный 301 для канонизации).
 const onSuggestionSelected = async (item) => {
-  if (!item) return
-  await navigateTo(`/product/${item.id}`)
-  appState.search?.resetSearch?.()
+  if (!item?.slug) return
+  appState.setSearchQuery(appState.searchQuery?.value ?? '')
+  appState.search?.hideSuggestions?.()
+  await navigateTo(localePath(`/product/${item.slug}`))
 }
 
 const onResetSearch = () => appState.search?.resetSearch?.()

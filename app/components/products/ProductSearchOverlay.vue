@@ -43,8 +43,8 @@ Teleport(to="body")
             :suggestions="searchSuggestions"
             :hasSuggestions="hasSearchSuggestions"
             :activeSuggestionIndex="activeSuggestionIndex"
+            :totalResults="totalResults"
             @search="onSearch"
-            @selectProduct="onSuggestionSelected"
             @update:searchQuery="onSearchQueryUpdate"
             @suggestionSelected="onSuggestionSelected"
             @performSearch="onPerformSearch"
@@ -85,6 +85,8 @@ const showSuggestions = computed(() => appState.search?.showSuggestions?.value ?
 const searchSuggestions = computed(() => appState.search?.suggestions?.value ?? [])
 const hasSearchSuggestions = computed(() => appState.search?.hasSuggestions?.value ?? false)
 const activeSuggestionIndex = computed(() => appState.search?.activeSuggestionIndex?.value ?? -1)
+//- Всего совпадений (футер панели: «Показать все результаты (N)»)
+const totalResults = computed(() => appState.search?.totalResults?.value ?? 0)
 const allProducts = computed(() => appState.products?.value || [])
 
 if (import.meta.client) {
@@ -122,12 +124,17 @@ const onPerformSearch = () => {
   navigateTo(localePath({ path: '/', query: { search: q } }))
 }
 
-//- Подсказка → карточка товара + сброс поиска (как в шапке)
+//- Подсказка → карточка товара: та же логика, что в Header.vue —
+//- канонический SLUG, без resetSearch() после navigateTo (гонка
+//- отменяла навигацию: двойной emit → router.replace('/') из URL-синка).
+//- Оверлей закрывается, ввод возвращается к применённому запросу;
+//- «Назад» возвращает к результатам из ?search= (index.vue восстановит)
 const onSuggestionSelected = async (item) => {
-  if (!item) return
+  if (!item?.slug) return
   close()
-  await navigateTo(`/product/${item.id}`)
-  appState.search?.resetSearch?.()
+  appState.setSearchQuery(appState.searchQuery?.value ?? '')
+  appState.search?.hideSuggestions?.()
+  await navigateTo(localePath(`/product/${item.slug}`))
 }
 
 //- Открытие: фокус в поле (клавиатура сразу); закрытие: панель подсказок

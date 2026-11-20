@@ -22,7 +22,7 @@
     LazyMobileFiltersPanel.mobile-filters(
       class="md:hidden"
       v-if="showMobileFilters"
-      :searchQuery="searchQuery"
+      :searchQuery="appliedSearchQuery"
       :categories="categories"
       :specFacets="specFacets"
       :filters="filters"
@@ -47,7 +47,7 @@
       template(v-else)
         LazyDesktopSidebar.sidebar-area(
           v-if="!isMobile"
-          :searchQuery="searchQuery"
+          :searchQuery="appliedSearchQuery"
           :categories="categories"
           :specFacets="specFacets"
           :filters="filters"
@@ -72,11 +72,14 @@
               @update:sort="handleSortUpdate"
             )
             //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу гидратации
+            //- searchQuery — ПРИМЕНЁННЫЙ запрос (строка «Найдено N по запросу…»,
+            //- пустое состояние): подсветка в карточках не нужна — сетка это
+            //- страница результатов (маркетплейсы подсветку в карточках не выводят)
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
               :isMobile="isMobile"
-              :searchQuery="searchQuery"
+              :searchQuery="appliedSearchQuery"
               :activeFiltersCount="activeFiltersCount"
               useInfiniteScroll
               :pageSize="20"
@@ -154,6 +157,11 @@ const showSuggestions = computed(() => getState('search.showSuggestions', false)
 const searchSuggestions = computed(() => getState('search.suggestions', []))
 const hasSearchSuggestions = computed(() => getState('search.hasSuggestions', false))
 const activeSuggestionIndex = computed(() => getState('search.activeSuggestionIndex', -1))
+//- ПРИМЕНЁННЫЙ поиск (сетка фильтруется им, URL отражает его). Ввод в
+//- строке (search.query) подсказкам — сетка реагирует только на
+//- «применённый» запрос (Enter/«Показать все»/?search=), иначе один и тот
+//- же товар дублируется в панели подсказок и в карточках под инпутом
+const appliedSearchQuery = computed(() => getState('searchQuery', ''))
 const categories = computed(() => getState('categories', []))
 const filters = computed(() => getState('filters', {}))
 //- Фасеты характеристик (useFilters → buildSpecFacets): группы с счётчиками
@@ -226,25 +234,34 @@ const isHomePage = computed(() => route.path === localePath('/'))
 const urlSearchQuery = () =>
   typeof route.query.search === 'string' ? route.query.search : ''
 
-//- URL → state: восстановление запроса при заходе на главную
+//- URL → state: восстановление запроса при заходе на главную.
+//- Через applySearchQuery (а не setSearchQuery): ?search= — это
+//- ПРИМЕНЁННЫЙ запрос — сетка должна быть отфильтрована и на SSR,
+//- и при гидратации; поле ввода получает тот же текст.
 watch(
   () => urlSearchQuery(),
   (fromUrl) => {
     if (!isHomePage.value) return
-    if ((appState.search?.query?.value ?? '') !== fromUrl) {
-      appState.setSearchQuery(fromUrl)
+    if (
+      (appState.search?.query?.value ?? '') !== fromUrl ||
+      (appState.searchQuery?.value ?? '') !== fromUrl
+    ) {
+      appState.search?.applySearchQuery?.(fromUrl)
     }
   },
   { immediate: true },
 )
 
-//- state → URL: поиск на главной всегда читаем из адресной строки
+//- state → URL: адрес отражает ПРИМЕНЁННЫЙ запрос (источник истины —
+//- сетка), а не посимвольный ввод: URL дёргался на каждую букву,
+//- и при возврате «Назад» восстанавливался промежуточный текст.
+//- Маркетплейс-паттерн: URL меняется при подаче запроса (Enter/«Показать все»)
 watch(
-  () => appState.search?.query?.value ?? '',
-  (q) => {
+  () => appState.searchQuery?.value ?? '',
+  (applied) => {
     if (!import.meta.client || !isHomePage.value) return
-    if (q === urlSearchQuery()) return
-    router.replace({ query: { ...route.query, search: q || undefined } })
+    if (applied === urlSearchQuery()) return
+    router.replace({ query: { ...route.query, search: applied || undefined } })
   },
 )
 
@@ -252,7 +269,9 @@ const performSearch = () => appState.search?.performSearch?.()
 
 const resetSearch = () => appState.search?.resetSearch?.()
 
-const clearSearch = () => appState.setSearchQuery('')
+//- «Очистить» в строке результатов: сбрасывает и ввод, и применённый
+//- поиск (сетка возвращается к полному каталогу, URL теряет ?search=)
+const clearSearch = () => appState.search?.applySearchQuery?.('')
 
 const handleFiltersUpdate = (newFilters) => appState.handleFiltersUpdate(newFilters)
 
@@ -272,10 +291,9 @@ const updateShowSuggestions = (value) => {
 
 const handleSuggestionSelected = async (suggestion) => {
   try {
-    await router.push(localePath(`/product/${suggestion.id}`))
+    await router.push(localePath(`/product/${suggestion.slug}`))
   } catch {
-    appState.setSearchQuery(suggestion.name)
-    appState.search?.performSearch?.()
+    appState.search?.applySearchQuery?.(suggestion.name)
   }
 }
 
@@ -314,7 +332,7 @@ const resetFilters = async () => {
     onlyFavorites: false,
     specs: {},
   })
-  appState.setSearchQuery('')
+  appState.search?.applySearchQuery?.('')
 
   if (currentSort.field) {
     appState.handleSortUpdate(currentSort)

@@ -2,7 +2,6 @@
 <template lang="pug">
 .card.product-card.p-0.bg-base-100.relative.group.overflow-hidden.rounded-2xl.border(
   class="border-base-300 hover:border-primary/30"
-  :class="{ 'has-search-highlight': hasSearchHighlight }"
 )
   //- Дефицитный остаток: бейдж на фото при ≤ LOW_STOCK_THRESHOLD шт.
   //- (срочность покупки; обилие на складе бейджем не подсвечиваем).
@@ -77,17 +76,19 @@
         )
 
       .card-body.relative.p-3.gap-y-1
-        //- Название товара
+        //- Название товара (без подсветки поиска: сетка — страница
+        //- результатов; жёлтые mark в карточках — шум, маркетплейсы
+        //- (WB/Ozon/Amazon) в результатах их не выводят)
         h2.card-title.min-h-9.text-sm.font-semibold.text-base-content.line-clamp-2.leading-snug(
           class="lg:min-h-10 lg:text-base"
         )
-          span(v-html="highlightedName")
+          span {{ product.name }}
 
         //- Описание товара
         p.line-clamp-2.leading-snug.text-xs(
           class="lg:text-sm text-base-content/75"
         )
-          span(v-html="highlightedDescription")
+          span {{ product.description }}
 
         //- Рейтинг: ★ средняя · N отзывов (только с одобренными отзывами;
         //- данные приходят с /api/products вместе с товаром — без pop-in)
@@ -127,10 +128,6 @@ const props = defineProps({
   product: {
     type: Object,
     required: true
-  },
-  searchQuery: {
-    type: String,
-    default: ''
   },
   index: {
     type: Number,
@@ -288,40 +285,11 @@ const onImageError = () => {
 }
 
 //- ============================================
-//- Подсветка поиска - оптимизированная
-//- ============================================
-const queryValid = computed(() => props.searchQuery?.trim().length >= 2)
-
-const highlightedName = computed(() => {
-  if (!queryValid.value || !props.product?.name) return props.product?.name || ''
-  return highlightText(props.product.name, props.searchQuery)
-})
-
-const highlightedDescription = computed(() => {
-  if (!queryValid.value || !props.product?.description) return props.product?.description || ''
-  return highlightText(props.product.description, props.searchQuery)
-})
-
-const hasSearchHighlight = computed(() => {
-  if (!queryValid.value) return false
-  const q = props.searchQuery.toLowerCase()
-  return props.product?.name?.toLowerCase().includes(q) ||
-         props.product?.description?.toLowerCase().includes(q)
-})
-
-//- ============================================
 //- Методы
 //- ============================================
 // formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
 // formatMoney — раньше здесь была вторая реализация, риск «₽ ₽», аудит F13)
 const { formatMoney, formatPrice } = useProductUtils()
-
-const highlightText = (text, query) => {
-  if (!text || !query) return text
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const regex = new RegExp(`(${escaped})`, 'gi')
-  return text.replace(regex, '<mark>$1</mark>')
-}
 
 const toggleFavorite = () => {
   app.toggleFavorite(props.product)
@@ -390,12 +358,9 @@ const toggleFavorite = () => {
   transform: scale(1.04);
 }
 
-/* Стиль самой подсветки (mark) — глобальный, см. main.css:
-   «Подсветка найденного в поиске». */
-
-.has-search-highlight {
-  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent) !important;
-}
+/* Подсветка поиска в карточках убрана (сетка — страница результатов,
+   жёлтый mark в названии/описании — шум). Бывший .has-search-highlight
+   (рамка primary у совпавшей карточки) удалён вместе с механикой. */
 
 /* Доступность */
 button:focus-visible,
