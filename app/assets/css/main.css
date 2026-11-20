@@ -19,15 +19,19 @@
         методом: footer (SiteFooter использует кастомные классы),
         fab (MessengerFab — свои fab-menu/fab-row), tab (role="tab" и
         переменная JS — не CSS-классы), hero (слово в комментарии);
-     2) только в админке (9.7 КБ raw): dropdown, fileinput (класс
-        file-input), table — CSS для них в app/assets/css/admin.css,
-        который грузится только на /admin/**.
+     2) только в админке (19.2 КБ raw): dropdown, fileinput (класс
+        file-input), table, menu (на витрине «menu» — только ARIA
+        role/aria-haspopup и кастомные fab-menu/mobile-menu-item/
+        locale-menu; daisyUI .menu — в AdminProductsDropdowns и
+        analytics) — CSS для них в app/assets/css/admin.css,
+        который грузится только на /admin/**. stats НЕ выносится:
+        нужен на витрине в /user (stats-horizontal).
      exclude — штатный механизм daisyUI 5.8; при появлении реальной
      потребности в компоненте — убрать имя из списка (для группы 2 —
      также перенести из admin.css). */
   exclude:
     steps, mask, filter, chat, validator, stack, diff, progress, timeline, footer, fab, tab, hero,
-    dropdown, fileinput, table;
+    dropdown, fileinput, table, menu;
 }
 
 /* ─── Токены, ОДИНАКОВЫЕ на обеих темах ────────────────────────────

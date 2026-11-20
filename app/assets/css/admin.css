@@ -1,8 +1,11 @@
 /* app/assets/css/admin.css — daisyUI-компоненты, нужные ТОЛЬКО админке.
    ─────────────────────────────────────────────────────────────────
    Зачем: entry.css (глобальный) грузится на каждой странице витрины,
-   но dropdown / file-input / table есть только в /admin/** (аудит
-   использования токенов по шаблонам, 2026-11). exclude в main.css
+   но dropdown / file-input / table / menu есть только в /admin/**
+   (аудит использования токенов по шаблонам, 2026-11; menu — на витрине
+   только ARIA role/aria-haspopup и кастомные fab-menu/mobile-menu-item/
+   locale-menu, сам класс .menu — в AdminProductsDropdowns и analytics;
+   stats остался в entry.css — используется в /user). exclude в main.css
    убирает их из entry.css, а этот файл догружает только на админ-
    страницах (импорт в каждом app/pages/admin/*.vue — CSS-чанк
    создаётся один, Nuxt линкует его лишь при загрузке админ-чанков).
@@ -27,9 +30,9 @@
    из exclude в main.css и удалить из этого файла. */
 @import 'tailwindcss/utilities.css' source(none);
 
-@source inline('dropdown dropdown-end dropdown-bottom dropdown-open dropdown-content file-input file-input-xs table table-zebra');
+@source inline('dropdown dropdown-end dropdown-bottom dropdown-open dropdown-content file-input file-input-xs table table-zebra menu');
 
 @plugin "daisyui" {
   themes: false;
-  include: dropdown, fileinput, table;
+  include: dropdown, fileinput, table, menu;
 }
