@@ -62,16 +62,18 @@
         //- searchQuery обязателен вниз: без него ProductCardGrid не
         //- подсвечивает совпадения в названии/описании (регресс:
         //- проп приходил в секцию и терялся, до карточек не доходил)
-        ProductCard.product-card.card-enter(
+        //- ProductCardGrid напрямую (было ProductCard): обёртка была
+        //- динамическим :is, который ВСЕГДА возвращал ProductCardGrid
+        //- (ветка list закомментирована) — 30 лишних инстансов-посредников
+        //- на гидратации главной. Кнопки избранного/сравнения Grid ведёт
+        //- сам через appState, emits-проводка была мёртвой.
+        ProductCardGrid.product-card.card-enter(
           v-for="(product, index) in visibleProducts"
           :key="product.id"
           :product="product"
           :index="index"
           :style="{ '--card-i': index % 12 }"
-          :viewMode="isMobile ? 'list' : 'grid'"
           :searchQuery="searchQuery"
-          @toggleFavorite="$emit('toggleFavorite', $event)"
-          @addToCart="$emit('addToCart', $event)"
         )
 
         //- Скелетоны подгрузки следующей страницы
@@ -139,11 +141,9 @@ const props = defineProps({
 })
 
 // ==========================================
-// Emits
+// Emits (используются в шаблоне через $emit)
 // ==========================================
-const emit = defineEmits([
-  'toggleFavorite',
-  'addToCart',
+defineEmits([
   'resetFilters',
   'refreshProducts',
   'clearSearch',
@@ -348,7 +348,9 @@ const reset = async () => {
 // ==========================================
 
 watch(
-  () => props.products,
+  () => props.products,  // замена массива (фильтр/поиск/сортировка). deep не нужен:
+  // смысл вотчера — новые id; инплейс-мутации (isFavorite в useProducts)
+  // id не меняют, а глубокий обход 30×~20 полей вешался на каждый setup
   async (newProducts, oldProducts) => {
     const newIds = newProducts?.map((p) => p.id).join(',')
     const oldIds = oldProducts?.map((p) => p.id).join(',')
@@ -362,7 +364,7 @@ watch(
       await reset()
     }
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 )
 
 watch(

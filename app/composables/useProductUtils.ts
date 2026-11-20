@@ -9,6 +9,12 @@ import {
 
 const NO_IMAGE = '/images/no-image.svg';
 
+// Форматтер цены — модульный singleton: конструктор Intl.NumberFormat
+// дорогой, а formatPrice/formatMoney вызываются на КАЖДОЙ карточке
+// каталога (30+ раз только на гидрации главной; локаль/валюта —
+// константы build'а из store.config, реактивности не требуют)
+const priceFormatter = new Intl.NumberFormat(CURRENCY_NUMBER_LOCALE[STORE_CURRENCY] ?? 'ru-RU');
+
 export const useProductUtils = () => {
   /**
    * Возвращает URL картинки или заглушку.
@@ -27,8 +33,7 @@ export const useProductUtils = () => {
    * Символ валюты клеит formatMoney — в шаблонах руками ₽/$ не писать
    * (аудит F13: вторая реализация с валютой давала «₽ ₽»).
    */
-  const formatPrice = (price: number): string =>
-    new Intl.NumberFormat(CURRENCY_NUMBER_LOCALE[STORE_CURRENCY] ?? 'ru-RU').format(price);
+  const formatPrice = (price: number): string => priceFormatter.format(price);
 
   /** Символ активной валюты витрины ('₽' / '$') — для подписей-плейсхолдеров. */
   const currencySymbol = (): string => CURRENCY_SYMBOL[STORE_CURRENCY] ?? STORE_CURRENCY;

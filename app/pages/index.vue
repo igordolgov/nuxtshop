@@ -81,8 +81,6 @@
               useInfiniteScroll
               :pageSize="20"
               :maxRendered="30"
-              @toggleFavorite="toggleFavorite"
-              @addToCart="addToCart"
               @resetFilters="resetFilters"
               @refreshProducts="refreshProducts"
               @clearSearch="clearSearch"
@@ -108,7 +106,6 @@
 <script setup>
 import { useAppState } from '@/composables/useAppState'
 import { useMobileDetection } from '@/composables/useMobileDetection'
-import { useCart } from '@/composables/useCart'
 // Счётчик активных фасетов характеристик (чипы/пилюля «Фильтры N»)
 import { countActiveSpecFilters } from '@/utils/specFacets'
 import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
@@ -121,7 +118,6 @@ const { isMobile } = useMobileDetection()
 const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
-const { addToCart } = useCart()
 const appState = useAppState()
 
 //- ============================================
@@ -290,8 +286,6 @@ const toggleMobileFilters = () => {
 const closeMobileFilters = () => {
   showMobileFilters.value = false
 }
-
-const toggleFavorite = (productId) => appState.toggleFavorite(productId)
 
 const refreshProducts = async () => {
   try {

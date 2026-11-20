@@ -19,6 +19,10 @@
   //- Кнопка избранного (fav-pop — упругий «поп» при добавлении, main.css).
   //- 40px (size-10) — тач-минимум, раньше 32px (аудит F7).
   //- bg-heart (токен main.css): глубокий красный на обеих темах
+  //- Иконка инлайн-SVG (было <Icon>: 30 инстансов компонента на главной
+  //- гидратации дороже статовой разметки; @nuxt/icon в SVG-режиме
+  //- вставляет тот же heroicons 24×24): solid/outline — два path одного
+  //- силуэта сердца из @iconify-json/heroicons, переключение v-if.
   button.favorite-btn(
     class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
     :class="[isFavorite ? 'bg-heart text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
@@ -26,9 +30,9 @@
     :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
     :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
   )
-    icon(:name="isFavorite ? 'heroicons:heart-solid' : 'heroicons:heart'",
-      size="22"
-    )
+    svg(viewBox="0 0 24 24" width="22" height="22" aria-hidden="true")
+      path(v-if="isFavorite" fill="currentColor" d="m11.645 20.91l-.007-.003l-.022-.012l-.082-.045q-.108-.06-.301-.173a25.2 25.2 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25C2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052A5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25c0 3.925-2.438 7.111-4.739 9.256a25 25 0 0 1-4.244 3.17a15 15 0 0 1-.383.219l-.022.012l-.007.004l-.003.001a.75.75 0 0 1-.704 0z")
+      path(v-else fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.687-4.5c-1.936 0-3.598 1.126-4.313 2.733c-.715-1.607-2.377-2.733-4.312-2.733C5.098 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12")
 
   //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2.5rem + зазор)
   button.compare-btn(
@@ -38,7 +42,8 @@
     :title="$t('compare.toggleAria')",
     :aria-label="$t('compare.toggleAria')"
   )
-    icon(name="heroicons:arrows-right-left", size="18")
+    svg(viewBox="0 0 24 24" width="18" height="18" aria-hidden="true")
+      path(fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5")
 
   //- Ссылка на товар
   .card-content
@@ -51,7 +56,8 @@
         .placeholder.absolute.inset-0.flex.items-center.justify-center(
           v-if="showMissingImage"
         )
-          icon(name="heroicons:photo" size="32" class="text-base-300")
+          svg(viewBox="0 0 24 24" width="32" height="32" class="text-base-300" aria-hidden="true")
+            path(fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5m10.5-11.25h.008v.008h-.008zm.375 0a.375.375 0 1 1-.75 0a.375.375 0 0 1 .75 0")
 
         //- Изображение
         //- srcset 400w+800w: карточка рисует ~180-300 CSS px (aspect-square),
@@ -161,9 +167,17 @@ const isLowStock = computed(() => {
 //- Средняя оценка в локали пользователя (4,5 в ru/es, 4.5 в en);
 //- ProductReviews на карточке товара использует тот же приём
 const { t, locale } = useI18n()
-const numberFormat = computed(() =>
-  new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 })
-)
+//- Формат числа кэшируется по локали: конструктор Intl.NumberFormat
+//- дорогой, а форматирование в карточке вызывается на каждой гидрации
+//- (было: new на каждый вызов × 30 карточек)
+const numberFormatCache = new Map()
+const numberFormat = computed(() => {
+  const loc = locale.value
+  if (!numberFormatCache.has(loc)) {
+    numberFormatCache.set(loc, new Intl.NumberFormat(loc, { maximumFractionDigits: 1 }))
+  }
+  return numberFormatCache.get(loc)
+})
 const ratingAverage = computed(() =>
   numberFormat.value.format(props.product?.rating?.average ?? 0)
 )
