@@ -105,11 +105,28 @@ describe('buildSpecFacets', () => {
     expect(facets.some((g) => g.label === 'Цвет')).toBe(true);
   });
 
-  it('одно значение не у всех (часть без характеристики) — группа видна', () => {
+  it('единственное значение скрывает группу, даже если заполнена не у всех', () => {
     const products = [p('1', { Бренд: 'Xiaomi' }), p('2', { Бренд: 'Xiaomi' }), p('3')];
     const facets = buildSpecFacets(products);
-    const brand = facets.find((g) => g.label === 'Бренд');
-    expect(brand?.values).toEqual([{ value: 'Xiaomi', count: 2 }]);
+    expect(facets.some((g) => g.label === 'Бренд')).toBe(false);
+  });
+
+  it('пример «Умные часы»: подхарактеристики с одним вариантом скрыты, двухвариантные видны', () => {
+    const products = [
+      p('w1', {
+        'Материал корпуса': 'Алюминий',
+        GPS: 'GPS + ГЛОНАСС',
+        'Режимы тренировок': 'Бег, плавание',
+        Цвет: 'чёрный',
+      }),
+      p('w2', { 'Материал корпуса': 'Алюминий', Цвет: 'белый' }),
+      p('w3', { 'Материал корпуса': 'Алюминий' }),
+    ];
+    const facets = buildSpecFacets(products);
+    expect(facets.some((g) => g.label === 'Материал корпуса')).toBe(false);
+    expect(facets.some((g) => g.label === 'GPS')).toBe(false);
+    expect(facets.some((g) => g.label === 'Режимы тренировок')).toBe(false);
+    expect(facets.some((g) => g.label === 'Цвет')).toBe(true);
   });
 
   it('однообразная группа с выбранным значением видна — галочку можно снять', () => {
@@ -122,7 +139,7 @@ describe('buildSpecFacets', () => {
   it('сортировка групп — по охвату товаров, значения — по счётчику', () => {
     const products = [
       p('1', { Редкое: 'A', Частое: 'x' }),
-      p('2', { Частое: 'x' }),
+      p('2', { Редкое: 'B', Частое: 'x' }),
       p('3', { Частое: 'y' }),
     ];
     const facets = buildSpecFacets(products);
