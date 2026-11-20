@@ -1,5 +1,11 @@
 <template lang="pug">
 .product-info
+  //- lg:sticky — buy-box остаётся на экране при прокрутке левой колонки
+  //- («Похожие», «Часто покупают вместе», Ozon-паттерн). Страница скроллится
+  //- окном ([slug].vue: overflow-y visible у контейнера) — sticky ссылается
+  //- на окно. Грид-ячейка info растягивается на обе строки сетки, карточка
+  //- едет по ней; top ниже дна sticky-крошек (header + 46) не даёт
+  //- карточке задвигаться под них. До lg не липнем: на мобиле своя CTA
   .card.bg-base-100(class="lg:shadow-none")
     //- На мобильном зазоры плотнее (8px вместо 12px): цена попадает в
     //- первый экран, а заголовок «Характеристики» перестаёт прятаться
@@ -390,6 +396,10 @@ const formatDate = (dateString) => {
 <style scoped>
 .product-info {
   width: 100%;
+  /* 100% высоты грид-ячейки (она растягивается на обе строки сетки):
+  без этого корень сжимается до высоты карточки, у sticky buy-box
+  нулевой запас хода и он не липнет вовсе */
+  height: 100%;
 }
 
 /* «Товар закончился»: НЕПРОЗРАЧНАЯ нейтральная кнопка. daisyUI красит
@@ -403,6 +413,16 @@ const formatDate = (dateString) => {
 
 details > summary::-webkit-details-marker {
   display: none;
+}
+
+/* Sticky buy-box (lg+): top = низ sticky-крошек + зазор 12px.
+   Крошки прилипают на (header-height − 4) и высотой ~34 → их дно =
+   header-height + 30, карточка покоится на header-height + 46 */
+@media (min-width: 1024px) {
+  .product-info > .card {
+    position: sticky;
+    top: calc(var(--header-height, 104px) + 46px);
+  }
 }
 
 /* Стрелка-раскрывашка: поворот делает утилита group-open:rotate-180 на svg

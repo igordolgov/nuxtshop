@@ -81,7 +81,7 @@
               :class="{ 'cursor-zoom-in': isDesktop }"
               @load="onMainImageLoad(index, $event)"
               @error="(e) => handleImageError(e, index)"
-              @click="isDesktop ? openZoom(index) : null"
+              @click="onMainImageClick(index)"
               draggable="false"
               decoding="async"
               :fetchpriority="index === 0 ? 'high' : 'low'"
@@ -161,10 +161,36 @@
 
   Teleport(to="body")
     Transition(name="fade")
-      .zoom-modal(v-if="isZoomOpen")
-        button.close-btn(type="button" @click="closeZoom" :aria-label="$t('catalog.close')")
+      //- Диалог просмотра фото: role/aria-modal для скринридеров, фокус
+      //- при открытии переносится на крест (см. watch в script), Esc работает.
+      .zoom-modal(v-if="isZoomOpen" role="dialog" aria-modal="true" :aria-label="productName || $t('product.nameFallback')")
+        button.close-btn(ref="closeBtnRef" type="button" @click="closeZoom" :aria-label="$t('catalog.close')")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
+
+        //- Счётчик «2/5» — как в галерее: в модалке видно, какое фото открыто
+        .modal-counter(v-if="gallery.length > 1" aria-hidden="true") {{ currentIndex + 1 }}/{{ gallery.length }}
+
+        //- Стрелки листания — только ≥lg (на мобиле есть свайп): те же
+        //- стили, что у галереи (.image-nav-btn), fixed поверх зум-контейнера.
+        //- ВНЕ .zoom-container: pointerdown внутри контейнера запускает
+        //- жест пан/тап — тап по стрелке закрывал бы модалку одиночным тапом
+        button.image-nav-btn.modal-nav.modal-nav-prev(
+          v-if="gallery.length > 1"
+          type="button"
+          @click.stop="zoomPrev"
+          :aria-label="$t('product.prevImage')"
+        )
+          svg.w-6.h-6.text-white.opacity-80(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
+            path(stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7")
+        button.image-nav-btn.modal-nav.modal-nav-next(
+          v-if="gallery.length > 1"
+          type="button"
+          @click.stop="zoomNext"
+          :aria-label="$t('product.nextImage')"
+        )
+          svg.w-6.h-6.text-white.opacity-80(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
+            path(stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7")
 
         .image-loader(v-if="zoomLoading")
           .loading.loading-spinner.loading-lg.text-white
@@ -232,7 +258,7 @@ const { isDesktop } = useMobileDetection()
 const {
   imageWrapper, slidesContainer, currentIndex, slideOffset, fallbackImage, loadingStates,
   isSwiping, isDragging,
-  getValidImageUrl, goToImage, nextImage, prevImage,
+  getValidImageUrl, goToImage, nextImage, prevImage, wasRecentlyDragged,
   handleImageLoad, handleImageError,
   handleTouchStart, handleTouchMove, handleTouchEnd,
   handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave,
@@ -275,6 +301,35 @@ const {
   handleZoomPointerDown, handleZoomPointerMove, handleZoomPointerUp,
   handleZoomPointerCancel, handleZoomWheel,
 } = useImageZoom({ gallery: () => props.gallery, currentIndex, resolveUrl: getValidImageUrl, fallbackImage })
+
+//- Клик по главному фото (десктоп) открывает зум. После свайпа/драга
+//- слайдера click всё равно прилетает — гасим его (wasRecentlyDragged),
+//- иначе модалка открывалась сразу после перетаскивания фото.
+const onMainImageClick = (index) => {
+  if (!isDesktop.value) return
+  if (wasRecentlyDragged()) return
+  openZoom(index)
+}
+
+//- Стрелки в зум-модалке: openZoom двигает общий currentIndex —
+//- слайд галереи под модалкой едет синхронно
+const zoomPrev = () => openZoom((currentIndex.value - 1 + props.gallery.length) % props.gallery.length)
+const zoomNext = () => openZoom((currentIndex.value + 1) % props.gallery.length)
+
+//- Фокус-менеджмент диалога: при открытии фокус на крест (Esc рядом,
+//- скринридер анонсирует диалог), при закрытии — возврат на кнопку зума
+const closeBtnRef = ref(null)
+let lastFocused = null
+watch(isZoomOpen, async (open) => {
+  if (open) {
+    lastFocused = document.activeElement
+    await nextTick()
+    closeBtnRef.value?.focus?.()
+  } else {
+    lastFocused?.focus?.()
+    lastFocused = null
+  }
+})
 </script>
 
 <style scoped>
@@ -370,7 +425,10 @@ const {
 }
 .image-nav-btn:hover {
   opacity: 1;
-  transform: scale(1.1);
+  /* translateY(-50%) дублирует utility-класс позиции: hover-правило
+     (unlayered scoped CSS) перекрывает transform утилиты, и без явного
+     translateY стрелка при наведении «прыгала» вниз на полвысоты */
+  transform: translateY(-50%) scale(1.1);
 }
 /* Стрелки листания — только десктоп (lg+): на телефоне есть свайп и
    точки, а полупрозрачные круги поверх фото загромождают кадр и
@@ -427,8 +485,10 @@ const {
 }
 .close-btn {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  /* safe-area: в PWA на устройствах с вырезом крест не должен
+     прилипать к скруглённому углу экрана */
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
   z-index: 1000;
   width: 48px;
   height: 48px;
@@ -442,12 +502,54 @@ const {
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
+.close-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
 .close-btn svg {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 .close-btn:active {
   background: rgba(255, 255, 255, 0.4);
   transform: scale(0.95);
+}
+
+/* Счётчик «2/5» в модалке: тот же стиль, что у галерейного .image-counter,
+   но fixed к экрану диалога. Слева сверху — не пересекается со стрелками
+   и крестом, привычное место после галереи */
+.modal-counter {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 16px;
+  z-index: 1000;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Стрелки листания в модалке: стили кнопки .image-nav-btn (размер/фон/
+   hover наследуются), позиционирование — fixed к экрану диалога.
+   z-index 60 — НАД .zoom-container (z-50): контейнер растянут на весь
+   экран, меньший z спрятал бы кнопки под ним. На <lg стрелки скрывает
+   уже существующее media-правило .image-nav-btn (на мобиле — свайп).
+   top: calc(50% - 20px) центрирует 40px-кнопку без transform —
+   hover-масштаб тогда не сбивает позицию */
+.modal-nav {
+  position: fixed;
+  top: calc(50% - 20px);
+  z-index: 60;
+}
+.modal-nav-prev {
+  left: 12px;
+}
+.modal-nav-next {
+  right: 12px;
 }
 .image-loader {
   position: fixed;
@@ -471,8 +573,11 @@ const {
   -webkit-user-select: none;
 }
 .modal-zoom-image {
-  max-width: 95vw;
-  max-height: 95vh;
+  /* Ограничение размера в одном месте (было 95vw/95vh здесь и 100%
+     инлайном из zoomStyle — инлайн всегда выигрывал, CSS был мёртвым):
+     fit-размер = весь экран, «увеличение» на мобиле не меньше галереи */
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   touch-action: none;
   will-change: transform;

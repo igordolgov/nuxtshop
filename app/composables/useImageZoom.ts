@@ -52,10 +52,10 @@ export function useImageZoom(options: ImageZoomOptions) {
   let tapTimer: ReturnType<typeof setTimeout> | null = null;
   let lastTap = { time: 0, x: 0, y: 0 };
 
+  // maxWidth/maxHeight переехали в CSS (.modal-zoom-image): инлайн 100%
+  // перекрывал dead-CSS 95vw/95vh — ограничение размера теперь в одном месте.
   const zoomStyle = computed(() => ({
     transform: `translate(${zoomTranslate.value.x}px, ${zoomTranslate.value.y}px) scale(${zoomScale.value})`,
-    maxWidth: '100%',
-    maxHeight: '100%',
   }));
 
   // ─── Открытие / закрытие ─────────────────────────────────────────────────
@@ -69,9 +69,19 @@ export function useImageZoom(options: ImageZoomOptions) {
     gestureMode = 'none';
     isGestureActive.value = false;
     lastTap = { time: 0, x: 0, y: 0 };
-    zoomImageUrl.value = resolveUrl(gallery()[imageIndex]);
+    // Спиннер — только когда URL реально меняется: при повторном открытии
+    // той же картинки (свайп туда-обратно, стрелки) src не меняется и
+    // события load не будет — оставшийся true zoomLoading навсегда
+    // заблокировал бы жесты (pointerdown выходит рано при zoomLoading).
+    // Синхронизация currentIndex: листание в модалке (свайп/стрелки/клавиши)
+    // обязано двигать слайд галереи под модалкой — иначе после закрытия
+    // галерея показывала бы прежнее фото. Раньше openZoom менял только URL:
+    // рассинхрон был невидим (счётчика в модалке не существовало).
+    if (imageIndex !== currentIndex.value) currentIndex.value = imageIndex;
+    const url = resolveUrl(gallery()[imageIndex]);
+    zoomLoading.value = url !== zoomImageUrl.value;
+    zoomImageUrl.value = url;
     isZoomOpen.value = true;
-    zoomLoading.value = true;
     zoomScale.value = 1;
     zoomTranslate.value = { x: 0, y: 0 };
     document.body.style.overflow = 'hidden';
@@ -83,7 +93,10 @@ export function useImageZoom(options: ImageZoomOptions) {
     gestureMode = 'none';
     isGestureActive.value = false;
     isZoomOpen.value = false;
-    zoomImageUrl.value = '';
+    // URL НЕ очищаем: img живёт ещё 0.2 с fade-out Transition, и пустой
+    // src заставлял фото исчезать мгновенно, до конца анимации закрытия.
+    // Новый openZoom всегда пишет актуальный URL; сброс масштаба даёт
+    // аккуратный «отъезд» фото в рамку одновременно с fade (iOS-паттерн).
     zoomScale.value = 1;
     zoomTranslate.value = { x: 0, y: 0 };
     document.body.style.overflow = '';
@@ -96,15 +109,18 @@ export function useImageZoom(options: ImageZoomOptions) {
   };
 
   // ─── Геометрия трансформации ─────────────────────────────────────────────
-  //- Размер картинки в layout-пикселях (без учёта transform):
-  //- getBoundingClientRect возвращает уже масштабированный бокс,
-  //- поэтому делим на текущий масштаб.
+  //- Размер картинки в layout-пикселях (без учёта transform).
+  //- offsetWidth/offsetHeight — именно layout-размер: НЕ зависят ни от
+  //- transform, ни от идущей CSS-transition. Прежний замер через
+  //- getBoundingClientRect (с делением на масштаб) во время 0.25-секундной
+  //- zoom-anim возвращал интерполированный (заниженный) бокс →
+  //- clampTranslate считал границы от неверного размера: сразу после зума
+  //- пан «замерзал» у центра (допустимый сдвиг схлопывался в 0), а при
+  //- быстром колесе картинка уезжала за пределы допустимой области.
   const measureLayout = () => {
     const el = zoomImageRef.value;
-    if (!el?.getBoundingClientRect) return { w: 0, h: 0 };
-    const rect = el.getBoundingClientRect();
-    const s = zoomScale.value || 1;
-    return { w: rect.width / s, h: rect.height / s };
+    if (!el) return { w: 0, h: 0 };
+    return { w: el.offsetWidth || 0, h: el.offsetHeight || 0 };
   };
 
   //- Пределы сдвига: масштабированная картинка не должна покидать экран.
@@ -329,8 +345,21 @@ export function useImageZoom(options: ImageZoomOptions) {
     zoomAround(zoomScale.value * factor, { x: event.clientX, y: event.clientY });
   };
 
+  // Клавиатура: Esc — закрыть; ←/→ — листание на масштабе fit (в зуме
+  // стрелки оставлены скроллу, листать в этот момент не ожидается).
+  // Листание синхронно двигает слайд галереи: currentIndex общий.
   const handleZoomKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && isZoomOpen.value) closeZoom();
+    if (!isZoomOpen.value) return;
+    const many = gallery().length > 1;
+    if (event.key === 'Escape') {
+      closeZoom();
+    } else if (event.key === 'ArrowRight' && many && zoomScale.value <= ZOOM_MIN + 0.001) {
+      event.preventDefault();
+      openZoom((currentIndex.value + 1) % gallery().length);
+    } else if (event.key === 'ArrowLeft' && many && zoomScale.value <= ZOOM_MIN + 0.001) {
+      event.preventDefault();
+      openZoom((currentIndex.value - 1 + gallery().length) % gallery().length);
+    }
   };
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────

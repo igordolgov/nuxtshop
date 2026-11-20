@@ -572,10 +572,18 @@ watch(() => route.params.slug, () => {
   }
 }
 
+/* Прокрутка страницы товара — ОКНО (контейнер без капа высоты никогда
+  не переполняется: scrollHeight == clientHeight на всех брейкпоинтах —
+  архитектура «внутреннего скролла» осталась от старого capped-лейаута).
+  overflow-y: visible + overflow-x: clip (clip, в отличие от hidden/auto,
+  НЕ создаёт scroll-контейнер): страница скроллится окном как раньше,
+  а sticky buy-box в правой колонке получает корректный scrollport — окно.
+  С overflow-y: auto sticky-элементы внутри ссылались бы на никогда
+  не скроллящийся контейнер и не липли вовсе */
 .flex-1.overflow-auto {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: visible;
+  overflow-x: clip;
 }
 
 /* Нижний воздух на мобильных: фиксированная CTA (52px + зазор) + нижняя

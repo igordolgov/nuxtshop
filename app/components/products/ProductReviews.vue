@@ -3,8 +3,10 @@
     Отправка: POST /api/reviews → уходит на модерацию (approved:false),
     на витрине появится после публикации в /admin/reviews. -->
 <template lang="pug">
-//- id="reviews": якорь для ссылки-сводки рейтинга из ProductInfo
-.product-reviews.px-2.pb-15(class="lg:mt-2 lg:pb-3", id="reviews")
+//- id="reviews": якорь для ссылки-сводки рейтинга из ProductInfo.
+//- mt-3: на мобиле секция была прижата к «Похожим товарам» вплотную (lg:mt-2
+//- действовал только от 1024px) — заголовок «Отзывы» лип к нижней карточке
+.product-reviews.px-2.pb-15.mt-3(class="lg:mt-2 lg:pb-3", id="reviews")
   .container.mx-auto.px-2(class="lg:px-4")
     .flex.items-center.justify-between.gap-2.flex-wrap.mb-2
       .flex.items-center.gap-2.flex-wrap

@@ -13,7 +13,7 @@
 )
                 h2.text-xl.font-semibold.mb-2(class="lg:mb-3 lg:text-2xl") {{ $t('product.similar') }}
                 
-                .grid.grid-cols-2.gap-1(
+                .grid.grid-cols-2.gap-2(
                         class="lg:gap-3 sm:grid-cols-3 lg:grid-cols-4"
                 )
                         .similar-product-card(
@@ -71,7 +71,7 @@
 
                                         //- Ссылка на товар
                                         NuxtLink.flex-1.flex.flex-col(:to="getProductUrl(item)" prefetch)
-                                                figure.p-1.pt-0.flex.justify-center.items-center(class="lg:h-40")
+                                                figure.p-2.pt-0.flex.justify-center.items-center(class="lg:h-40")
                                                         NuxtImg.rounded-box.w-full.object-cover.max-w-full(
                                                                 :src="getValidImageUrl(item.image)"
                                                                 :srcset="productSrcset(getValidImageUrl(item.image))"
@@ -83,14 +83,20 @@
                                                                 :height="300"
                                                         )
                                                 
-                                                .card-body.p-1.flex-1.flex.flex-col
+                                                .card-body.p-2.flex-1.flex.flex-col
                                                         .flex-1
                                                                 h3.card-title.text-xs.font-semibold.text-base-content.line-clamp-2.mb-1(class="lg:text-sm") {{ item.name }}
                                                                 p.text-xs.text-base-content.opacity-70.line-clamp-2.max-h-10(class="lg:text-xs") {{ item.description }}
                                                         
-                                                .flex.items-center.justify-between.-mt-1.border-t.border-base-200
-                                                                .text-md.font-bold.text-primary {{ formatMoney(item.price) }}
-                                                                .text-xs(
+                                                //- Цена + статус: были в одном ряду justify-between — на узкой
+                                                //- карточке (длинная цена, «Нет в наличии») ряд ломался:
+                                                //- цена рвалась посреди числа, статус врезался в неё.
+                                                //- flex-wrap: умещается — статус справа; не умещается —
+                                                //- аккуратно на вторую строку. Цена nowrap — не рвётся.
+                                                //- text-md не существует в Tailwind — был неявный 16px.
+                                                .flex.flex-wrap.items-baseline.justify-between.mt-1.pt-1.border-t.border-base-200(class="gap-x-1.5 gap-y-0.5")
+                                                                .font-bold.text-primary.shrink-0.whitespace-nowrap(class="text-base lg:text-lg") {{ formatMoney(item.price) }}
+                                                                .text-xs.shrink-0(
                                                                         :class="item.inStock ? 'text-success' : 'text-error'"
                                                                 ) {{ item.inStock ? $t('product.inStock') : $t('product.outOfStock') }}
 </template>

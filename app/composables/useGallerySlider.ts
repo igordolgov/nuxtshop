@@ -33,6 +33,14 @@ export function useGallerySlider(options: GallerySliderOptions) {
   const dragStartX = ref(0);
   const currentDragOffset = ref(0);
 
+  //- Подавление клика после жеста: mouseup/touchend свайпа не отменяют
+  //- синтезированный click — без guard'а клик по картинке сразу после
+  //- перетаскивания слайда мышью открывал зум-модалку. Окно 400 мс
+  //- перекрывает любой сценарий «отпустил — click прилетел».
+  const lastDragEndAt = ref(0);
+  let gestureMoved = false;
+  const wasRecentlyDragged = () => Date.now() - lastDragEndAt.value < 400;
+
   const getValidImageUrl = (url: string): string => {
     if (!url) return fallbackImage;
     if (url.startsWith('data:')) return url;
@@ -99,11 +107,13 @@ export function useGallerySlider(options: GallerySliderOptions) {
     if (gallery().length <= 1) return;
     touchStartX.value = event.touches[0].clientX;
     isSwiping.value = true;
+    gestureMoved = false;
   };
 
   const handleTouchMove = (event: TouchEvent) => {
     if (!isSwiping.value || gallery().length <= 1) return;
     const diff = event.touches[0].clientX - touchStartX.value;
+    if (Math.abs(diff) > 8) gestureMoved = true;
     if (imageWrapper.value) {
       const width = imageWrapper.value.getBoundingClientRect().width;
       const maxOffset = (gallery().length - 1) * width;
@@ -114,6 +124,7 @@ export function useGallerySlider(options: GallerySliderOptions) {
   const handleTouchEnd = async (event: TouchEvent) => {
     if (!isSwiping.value) return;
     const diff = (event.changedTouches?.[0]?.clientX || 0) - touchStartX.value;
+    if (gestureMoved) lastDragEndAt.value = Date.now();
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
         await prevImage();
@@ -133,12 +144,14 @@ export function useGallerySlider(options: GallerySliderOptions) {
     isDragging.value = true;
     dragStartX.value = event.clientX;
     currentDragOffset.value = slideOffset.value;
+    gestureMoved = false;
     event.preventDefault();
   };
 
   const handleMouseMove = (event: MouseEvent) => {
     if (!isDragging.value) return;
     const diff = event.clientX - dragStartX.value;
+    if (Math.abs(diff) > 5) gestureMoved = true;
     if (imageWrapper.value) {
       const width = imageWrapper.value.getBoundingClientRect().width;
       const maxOffset = (gallery().length - 1) * width;
@@ -149,6 +162,7 @@ export function useGallerySlider(options: GallerySliderOptions) {
   const handleMouseUp = async (event: MouseEvent) => {
     if (!isDragging.value) return;
     const diff = event.clientX - dragStartX.value;
+    if (gestureMoved) lastDragEndAt.value = Date.now();
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
         await prevImage();
@@ -163,6 +177,7 @@ export function useGallerySlider(options: GallerySliderOptions) {
 
   const handleMouseLeave = async () => {
     if (isDragging.value) {
+      if (gestureMoved) lastDragEndAt.value = Date.now();
       isDragging.value = false;
       await updateSlidePosition();
     }
@@ -243,5 +258,6 @@ export function useGallerySlider(options: GallerySliderOptions) {
     handleMouseMove,
     handleMouseUp,
     handleMouseLeave,
+    wasRecentlyDragged,
   };
 }
