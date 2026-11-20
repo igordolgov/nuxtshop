@@ -159,7 +159,9 @@ const scrollToTop = () => {
 .scroll-to-top-btn {
   position: fixed;
   right: 20px;
-  bottom: 76px; /* под кнопкой мессенджеров (MessengerFab, 20+48+8) */
+  /* 24px: MessengerFab отключён (default.vue) — прежний 76px оставлял
+     кнопку висеть над пустым местом (след удалённой кнопки мессенджеров) */
+  bottom: 24px;
   width: 48px;
   height: 48px;
   display: flex;
@@ -295,11 +297,12 @@ const scrollToTop = () => {
 }
 
 /* Адаптив */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .scroll-to-top-btn {
     right: 16px;
-    /* 148px — над кнопкой мессенджеров (92px) и мобильным футером */
-    bottom: 148px;
+    /* Над нижней навигацией (var ставит main.css); на карточке товара
+       — ещё и над CTA «В корзину» (--scrolltop-bottom больше) */
+    bottom: var(--scrolltop-bottom, 72px);
   }
 }
 

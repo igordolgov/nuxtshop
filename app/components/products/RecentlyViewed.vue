@@ -25,10 +25,13 @@ section.recently-viewed(
     //- Лента: на мобиле выходит за паддинг контейнера (px-2) — плитки
     //- скроллятся от края до края экрана; на lg — в пределах контейнера.
     //- tabindex=0: скроллируемая область фокусируется с клавиатуры
-    //- (WCAG 2.1 / стрелки и пробел скроллят сфокусированную ленту)
+    //- (WCAG 2.1 / стрелки и пробел скроллят сфокусированную ленту).
+    //- role=region + aria-label: СК объявляет область по имени, а не «группа»
     .recent-strip.flex.gap-2.overflow-x-auto.pb-1(
       class="lg:gap-3 -mx-2 lg:mx-0 px-2 lg:px-0 snap-x"
       tabindex="0"
+      role="region"
+      :aria-label="$t('product.recentlyViewed')"
     )
       //- Плитка: ширина фиксированная (shrink-0) — сжимаются ТОЛЬКО краем
       //- ленты, а не сеткой; скроллбар скрыт CSS-ом ниже
@@ -163,8 +166,9 @@ const getValidImageUrl = (url) => {
   return fallbackImage
 }
 
-// Цена с валютой — единый formatMoney из store.config (₽ / $ по конфигу витрины)
-import { formatMoney } from '../../../store.config'
+// Цена с валютой — единый форматтер витрины useProductUtils (как в
+// карточках/SortBar): прямой импорт из store.config был вторым источником правды
+const { formatMoney } = useProductUtils()
 
 const formatPrice = (price) => formatMoney(price)
 

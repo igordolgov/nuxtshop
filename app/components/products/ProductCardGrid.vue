@@ -287,9 +287,10 @@ const onImageError = () => {
 //- ============================================
 //- Методы
 //- ============================================
-// formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
-// formatMoney — раньше здесь была вторая реализация, риск «₽ ₽», аудит F13)
-const { formatMoney, formatPrice } = useProductUtils()
+// formatMoney — единый из useProductUtils (валюту добавляет formatMoney —
+// раньше здесь была вторая реализация, риск «₽ ₽», аудит F13).
+// formatPrice не используется в сетке — деструктурировать нечего
+const { formatMoney } = useProductUtils()
 
 const toggleFavorite = () => {
   app.toggleFavorite(props.product)

@@ -52,7 +52,8 @@
     "logout": "Log Out",
     "login": "Sign In",
     "logoutSuccess": "You have been signed out",
-    "language": "Language"
+    "language": "Language",
+    "closeMenu": "Close menu"
   },
   "catalog": {
     "title": "Catalog",
@@ -108,7 +109,9 @@
     "noProducts": "No products available",
     "tryChangeFilters": "Try changing the filters",
     "nothingForQuery": "Nothing found for \"{query}\"",
-    "searchProducts": "Search products..."
+    "searchProducts": "Search products...",
+    "minPriceLabel": "Minimum price",
+    "maxPriceLabel": "Maximum price"
   },
   "common": {
     "loading": "Loading...",
@@ -172,7 +175,7 @@
     "statusUnavailable": "Unavailable",
     "dateAdded": "Date added",
     "unknown": "Unknown",
-    "similar": "Similar products:",
+    "similar": "Similar products",
     "boughtTogether": "Frequently bought together",
     "boughtTogetherHint": "based on the store's real orders",
     "fbtTotal": "Total",

@@ -55,7 +55,7 @@
               v-if="baseDiscount",
               class="text-base-content/45 text-lg sm:text-xl"
             ) {{ formatMoney(product.oldPrice) }}
-            //- Плашка скидки: единый вид с ProductCardGrid/ProductCardList
+            //- Плашка скидки: единый вид с ProductCardGrid
             span.shrink-0(
               v-if="baseDiscount",
               class="inline-flex items-center bg-red-700 px-1.5 pt-px pb-0.5 rounded-md font-bold text-white text-base leading-5"

@@ -1,13 +1,21 @@
 <!-- components/products/ProductsSection.vue — секция каталога:
-    пагинация с infinite scroll (IntersectionObserver), упрощённая
-    виртуализация, скелетоны при первой загрузке и подгрузке,
-    4 колонки в landscape — чистым CSS (см. style). -->
+    пагинация с infinite scroll (IntersectionObserver, root=вьюпорт),
+    окно рендера (расширяется догрузками), скелетоны при первой
+    загрузке, 4 колонки в landscape — чистым CSS (см. style).
+    Окно рендера растит только вниз (усечение сверху не нужно при
+    текущем размере каталога: окно уже >= всех товаров) — если каталог
+    вырастет до сотен позиций, вернуться к вопросу об усечении. -->
 <template lang="pug">
 //- Нижний отступ секции не нужен: на главной products-container уже даёт
 //- «воздух» под фиксированной навигацией (padding-bottom 60px+12px на
 //- мобильных). Раньше здесь был ещё pb-12 — суммарно ~137px пустоты
 //- под последним рядом карточек (жалоба «много лишнего пространства»).
 .products-section
+  //- h1 витрины — визуально скрыт: сетку называет «Каталог» (i18n),
+  //- дизайн строки-пилюли не меняет. Раньше первый заголовок в DOM —
+  //- h2 названия первой карточки: структура заголовков без корня (a11y/SEO)
+  h1.sr-only {{ $t('catalog.title') }}
+
   //- Первая загрузка: скелетон-сетка вместо спиннера
   .initial-skeleton(v-if="isLoadingInitial")
     .products-grid(:class="gridClasses")
@@ -31,9 +39,11 @@
           Icon(name="mdi:close" size="16")
           | {{ $t('cart.clear') }}
 
-    //- Пустое состояние
+    //- Пустое состояние (role=status: СК анонсирует «ничего не найдено»
+    //- после применения фильтра/поиска без перевода фокуса)
     .empty-state.py-16.text-center(
       v-if="!displayedProducts.length && !isLoading"
+      role="status"
     )
       Icon.empty-icon(name="mdi:package-variant" size="64")
       h3.text-xl.font-medium.mb-2 {{ $t('product.notFound') }}
@@ -49,8 +59,11 @@
       v-if="displayedProducts.length > 0"
       ref="containerRef"
     )
+      //- Счётчик «Показано N из M» — только пока есть что догружать:
+      //- в конце списка его заменяет «Вы просмотрели все N» (раньше
+      //- оба висели одновременно — дважды одно и то же)
       .products-counter.text-sm.text-base-content.opacity-60.mb-0.py-1(
-        v-if="!searchQuery"
+        v-if="!searchQuery && hasMore"
       )
         | {{ $t('catalog.shownOf', { n: visibleProducts.length, total: displayedProducts.length }) }}
 
@@ -89,6 +102,7 @@
 
       .end-of-list.text-center.py-2.text-sm.opacity-60(
         v-if="!hasMore && displayedProducts.length > 0"
+        role="status"
       )
         | {{ $t('catalog.viewedAll', { n: displayedProducts.length }) }}
 
@@ -151,7 +165,6 @@ defineEmits([
 // ==========================================
 // Constants
 // ==========================================
-const ESTIMATED_ITEM_HEIGHT = 280
 
 // ==========================================
 // State
@@ -171,8 +184,6 @@ const hasMore = ref(true)
 
 const visibleProducts = ref([])
 const startIndex = ref(0)
-const isScrolling = ref(false)
-let scrollTimeout = null
 
 const loadError = ref(null)
 
@@ -239,20 +250,18 @@ const updateVisibleProducts = () => {
   visibleProducts.value = displayedProducts.value.slice(startIndex.value, endIndex)
 }
 
-// ⚙️ НАСТРОЙКА: длительность показа скелетонов подгрузки, мс
-const LOAD_MORE_DELAY_MS = 300
-
 const loadMore = async () => {
   if (isLoadingMore.value || !hasMore.value) return
 
   isLoadingMore.value = true
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, LOAD_MORE_DELAY_MS))
-
     // Расширяем окно рендера на одну «страницу» и проверяем,
     // покрыли ли мы весь список (в терминах той же windowSize,
-    // что использует updateVisibleProducts)
+    // что использует updateVisibleProducts). Искусственной задержки
+    // НЕТ: товары уже в памяти (весь каталог загружен appState),
+    // сетка расширяется синхронно — скелетоны догрузки остаются
+    // только для честно асинхронных кейсов
     windowSize.value += props.pageSize
 
     const total = displayedProducts.value.length
@@ -269,24 +278,6 @@ const loadMore = async () => {
   }
 }
 
-const cleanupTopItems = () => {
-  if (!containerRef.value || isScrolling.value || startIndex.value === 0) return
-
-  const scrollTop = containerRef.value.scrollTop
-  const scrolledItems = Math.floor(scrollTop / ESTIMATED_ITEM_HEIGHT)
-  const newStartIndex = Math.max(0, scrolledItems - 5)
-
-  if (newStartIndex !== startIndex.value && newStartIndex > 0) {
-    const oldStartIndex = startIndex.value
-    startIndex.value = newStartIndex
-
-    const scrollDiff = (newStartIndex - oldStartIndex) * ESTIMATED_ITEM_HEIGHT
-    containerRef.value.scrollTop = scrollTop - scrollDiff
-
-    updateVisibleProducts()
-  }
-}
-
 const setupObserver = () => {
   if (!import.meta.client || !sentinelRef.value) return
 
@@ -294,6 +285,14 @@ const setupObserver = () => {
     observer.value.disconnect()
   }
 
+  // root:null — ВЬЮПОРТ. Настоящий скролл-контейнер — .products-container
+  // на странице (index.vue), и он НЕ находится между сантинелом и
+  // .products-wrapper: при root=обёртке пересечение сантинела с
+  // обёрткой не меняется при скролле НИКОГДА (оба — потомки одного
+  // потока, едут вместе) — observer срабатывал один раз при
+  // монтировании, и при каталоге >50 товаров остальное молча не
+  // подгружалось. Вьюпорт-режим честен: промежуточные скролл-контейнеры
+  // режут прямоугольник цели по спецификации IntersectionObserver
   observer.value = new IntersectionObserver(
     async ([entry]) => {
       if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
@@ -301,24 +300,13 @@ const setupObserver = () => {
       }
     },
     {
-      root: containerRef.value || null,
+      root: null,
       rootMargin: '300px',
       threshold: 0,
     },
   )
 
   observer.value.observe(sentinelRef.value)
-}
-
-const handleScroll = () => {
-  isScrolling.value = true
-
-  if (scrollTimeout) clearTimeout(scrollTimeout)
-
-  scrollTimeout = setTimeout(() => {
-    isScrolling.value = false
-    cleanupTopItems()
-  }, 150)
 }
 
 const reset = async () => {
@@ -385,23 +373,11 @@ onMounted(() => {
   setTimeout(() => {
     setupObserver()
   }, 100)
-
-  if (containerRef.value) {
-    containerRef.value.addEventListener('scroll', handleScroll, { passive: true })
-  }
 })
 
 onUnmounted(() => {
   if (observer.value) {
     observer.value.disconnect()
-  }
-
-  if (containerRef.value) {
-    containerRef.value.removeEventListener('scroll', handleScroll)
-  }
-
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
   }
 })
 

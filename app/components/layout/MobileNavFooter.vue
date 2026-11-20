@@ -17,9 +17,12 @@
 div
   footer.mobile-nav-footer.border-t(class="border-base-300")
     nav.nav-items(:aria-label="$t('nav.mainNav')")
-      button.nav-item(
-        type="button"
-        @click="openHome"
+      //- Пункты — настоящие ссылки (NuxtLink): средняя кнопка мыши / «открыть
+      //- в новой вкладке» / чтение списка ссылок СК, prefetch. Раньше были
+      //- button c navigateTo — переходы работали, семантика ссылок нет.
+      //- Локали через localePath (на /en и /es сырой путь вёл на русский)
+      NuxtLink.nav-item(
+        :to="localePath('/')"
         :class="{ 'is-active': activeHome }"
         :aria-current="activeHome ? 'page' : undefined"
       )
@@ -28,9 +31,8 @@ div
             path(d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", stroke="currentColor", stroke-width="2")
         span.nav-label {{ $t('nav.home') }}
 
-      button.nav-item(
-        type="button"
-        @click="openCart"
+      NuxtLink.nav-item(
+        :to="localePath('/cart')"
         :class="{ 'is-active': activeCart }"
         :aria-current="activeCart ? 'page' : undefined"
       )
@@ -44,9 +46,8 @@ div
           ) {{ cartItemsCount > 99 ? '99+' : cartItemsCount }}
         span.nav-label {{ $t('nav.cart') }}
 
-      button.nav-item(
-        type="button"
-        @click="openFavorites"
+      NuxtLink.nav-item(
+        :to="localePath('/favorites')"
         :class="{ 'is-active': activeFavorites }"
         :aria-current="activeFavorites ? 'page' : undefined"
       )
@@ -60,9 +61,8 @@ div
           ) {{ displayFavoritesCount > 99 ? '99+' : displayFavoritesCount }}
         span.nav-label {{ $t('nav.favorites') }}
 
-      button.nav-item(
-        type="button"
-        @click="openAuth"
+      NuxtLink.nav-item(
+        :to="localePath(isAuthenticated ? '/user' : '/auth/login')"
         :class="{ 'is-active': activeAuth }"
         :aria-current="activeAuth ? 'page' : undefined"
       )
@@ -220,7 +220,13 @@ div
   color: var(--color-base-content);
   position: relative;
   min-height: 0;
+  /* Ссылка: без подчёркивания (визуал кнопки прежний) */
+  text-decoration: none;
+  /* Один переход: и нажим-отклик, и hover-подсветка (раньше два
+     правила .nav-item перебивали transition друг друга — подсветка
+     становилась мгновенной) */
   transition:
+    transform 0.15s ease-out,
     color 0.2s ease,
     background-color 0.2s ease;
 }
@@ -233,8 +239,9 @@ div
   }
 }
 
+/* Нажим-отклик: тап по вкладке «пружинит» (transform-only, без repaint) */
 .nav-item:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .nav-icon {
@@ -260,13 +267,8 @@ div
   flex-shrink: 0;
 }
 
-/* Нажим-отклик: тап по вкладке «пружинит» (transform-only, без repaint) */
-.nav-item {
-  transition: transform 0.15s ease-out;
-}
-.nav-item:active {
-  transform: scale(0.9);
-}
+/* Нажим-отклик: тап по вкладке «пружинит» — слит с базой выше
+   (второе .nav-item перебивало transition и :active) */
 
 /* Активная вкладка — цвет из темы (раньше был хардкод #3389d4).
    Цвет текста — с гарантированным контрастом на тинте 34% primary:
@@ -455,11 +457,7 @@ const displayFavoritesCount = computed(() => favoritesCount.value || 0)
 const cartItemsCount = computed(() => totalItems.value || 0)
 const isAuthenticated = computed(() => appState.isAuthenticated.value)
 
-// Навигация нижнего меню сохраняет префикс локали (на /en и /es сырой путь
-// вернул бы посетителя на русский — см. useLocalePath; localePath объявлен
-// выше, рядом с active*-вычислениями)
-const openHome = () => navigateTo(localePath('/'))
-const openCart = () => navigateTo(localePath('/cart'))
-const openFavorites = () => navigateTo(localePath('/favorites'))
-const openAuth = () => navigateTo(localePath(isAuthenticated.value ? '/user' : '/auth/login'))
+// Активные вкладки и их локализованные ссылки — выше (NuxtLink :to);
+// обработчики openHome/openCart/openFavorites/openAuth удалены вместе
+// с кнопками: ссылкам navigateTo не нужен
 </script>

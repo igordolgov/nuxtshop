@@ -52,7 +52,8 @@
     "logout": "Выйти",
     "login": "Войти",
     "logoutSuccess": "Вы успешно вышли из системы",
-    "language": "Язык"
+    "language": "Язык",
+    "closeMenu": "Закрыть меню"
   },
   "catalog": {
     "title": "Каталог",
@@ -108,7 +109,9 @@
     "noProducts": "Товары отсутствуют",
     "tryChangeFilters": "Попробуйте изменить параметры фильтрации",
     "nothingForQuery": "По запросу «{query}» ничего не найдено",
-    "searchProducts": "Поиск товаров..."
+    "searchProducts": "Поиск товаров...",
+    "minPriceLabel": "Минимальная цена",
+    "maxPriceLabel": "Максимальная цена"
   },
   "common": {
     "loading": "Загрузка...",
@@ -172,7 +175,7 @@
     "statusUnavailable": "Недоступен",
     "dateAdded": "Дата добавления",
     "unknown": "Неизвестно",
-    "similar": "Похожие товары:",
+    "similar": "Похожие товары",
     "boughtTogether": "С этим товаром покупают",
     "boughtTogetherHint": "по данным реальных заказов магазина",
     "fbtTotal": "Итого",

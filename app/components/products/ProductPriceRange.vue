@@ -48,6 +48,7 @@
           :max="maxPrice"
           :step="100"
           :value="inputMinValue"
+          :aria-label="$t('catalog.minPriceLabel')"
           @input="handleInputMin"
           @blur="applyInputs"
           @keydown.enter.prevent="applyInputs"
@@ -63,6 +64,7 @@
           :max="maxPrice"
           :step="100"
           :value="inputMaxValue"
+          :aria-label="$t('catalog.maxPriceLabel')"
           @input="handleInputMax"
           @blur="applyInputs"
           @keydown.enter.prevent="applyInputs"
@@ -91,6 +93,15 @@
         :style="{ left: thumbLeftStyle }"
         @mousedown="startDrag('min', $event)"
         @touchstart="startDrag('min', $event)"
+        tabindex="0"
+        role="slider"
+        aria-orientation="horizontal"
+        :aria-label="$t('catalog.minPriceLabel')"
+        :aria-valuemin="minPrice"
+        :aria-valuemax="maxPrice"
+        :aria-valuenow="roundToHundredForDisplay(sliderMin)"
+        :aria-valuetext="formatMoney(roundToHundredForDisplay(sliderMin))"
+        @keydown="onThumbKeydown('min', $event)"
       )
         .thumb-indicator.absolute.inset-0.bg-primary.rounded-full
       
@@ -100,6 +111,15 @@
         :style="{ left: thumbRightStyle }"
         @mousedown="startDrag('max', $event)"
         @touchstart="startDrag('max', $event)"
+        tabindex="0"
+        role="slider"
+        aria-orientation="horizontal"
+        :aria-label="$t('catalog.maxPriceLabel')"
+        :aria-valuemin="minPrice"
+        :aria-valuemax="maxPrice"
+        :aria-valuenow="roundToHundredForDisplay(sliderMax)"
+        :aria-valuetext="formatMoney(roundToHundredForDisplay(sliderMax))"
+        @keydown="onThumbKeydown('max', $event)"
       )
         .thumb-indicator.absolute.inset-0.bg-primary.rounded-full
     
@@ -353,6 +373,49 @@ const handleSliderClick = (event) => {
   applyInputs()
 }
 
+// ── Клавиатурное управление ползунками (WCAG 2.1.1) ───────────────
+// Стрелки ±100 (шаг инпутов), Shift+стрелки ±1000, Home/End — к краям.
+// Ползунок — div с role="slider": фокус+стрелки дают полный доступ
+// без переделки дизайна на нативные input[type=range]
+const KEYBOARD_STEP = 100
+
+const onThumbKeydown = (thumb, event) => {
+  const { key } = event
+  const step = event.shiftKey ? KEYBOARD_STEP * 10 : KEYBOARD_STEP
+  const isMin = thumb === 'min'
+
+  let target = null
+
+  if (key === 'ArrowLeft' || key === 'ArrowDown') {
+    target = (isMin ? sliderMin.value : sliderMax.value) - step
+  } else if (key === 'ArrowRight' || key === 'ArrowUp') {
+    target = (isMin ? sliderMin.value : sliderMax.value) + step
+  } else if (key === 'Home') {
+    target = isMin ? props.minPrice : Math.min(props.maxPrice, sliderMin.value + KEYBOARD_STEP)
+  } else if (key === 'End') {
+    target = isMin
+      ? Math.max(props.minPrice, sliderMax.value - KEYBOARD_STEP)
+      : props.maxPrice
+  } else {
+    return
+  }
+
+  event.preventDefault()
+
+  if (isMin) {
+    sliderMin.value = Math.max(props.minPrice, Math.min(target, sliderMax.value - KEYBOARD_STEP))
+  } else {
+    sliderMax.value = Math.min(props.maxPrice, Math.max(target, sliderMin.value + KEYBOARD_STEP))
+  }
+
+  // Синхронизируем инпуты и отдаём наверх (как по окончании драга)
+  inputMin.value = sliderMin.value
+  inputMax.value = sliderMax.value
+  inputMinValue.value = inputMin.value === props.minPrice ? '' : inputMin.value.toString()
+  inputMaxValue.value = inputMax.value === props.maxPrice ? '' : inputMax.value.toString()
+  applyInputs()
+}
+
 // Обработчики для инпутов
 const handleInputMin = (e) => {
   // Сохраняем введенное значение без авто-округляния
@@ -522,8 +585,19 @@ defineExpose({ resetPriceRange })
 }
 
 .price-inputs input:focus {
+  /* Фокус-индикатор ценовых полей: был hsl(var(--p)/0.2) — канальная
+     переменная daisyUI 3/4, в daisyUI 5 НЕ существует → box-shadow
+     невалиден, фокус на полях был не виден вовсе. color-mix по
+     готовому токену --color-primary (как в SmartSearchInput) */
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--p) / 0.2);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 25%, transparent);
+}
+
+/* Клавиатурный фокус на ползунках: кольцо по токену темы,
+   не мешает drag-виду (hover/active масштабирование прежнее) */
+.slider-thumb:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Стили для слайдера */
@@ -577,12 +651,10 @@ defineExpose({ resetPriceRange })
   cursor: pointer;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-  .mode-switcher {
-    display: none;
-  }
-}
+/* Ручной ввод доступен И на мобильных: раньше переключатель
+   «Слайдер/Вручную» скрывался CSS-ом на <768px — на телефоне остаётся
+   только слайдер, точный ввод с клавиатуры был недостижим
+   (два маленьких чипа не ломают вертикальный ритм панели) */
 
 @media (hover: none) and (pointer: coarse) {
   .slider-thumb {

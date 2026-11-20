@@ -1,8 +1,9 @@
 <!-- components/news/NewsLatest.vue — блок «Последние новости» на главной.
-     Данные — GET /api/news (KV data:news), уже отсортированы свежие
-     сверху; берём первые 3. SSR: useAsyncData отрабатывает на сервере,
-     тизеры попадают в HTML и payload без мигания. Пустой ответ или
-     ошибка API — блок просто не рендерится (главная не ломается).
+     Данные приходят ПРОПОМ из index.vue (используется один awaited-фетч
+     catalog-load: каталог и /api/news стартуют параллельно — раньше они
+     шли серией, каждая фаза — своё KV-чтение в TTFB). Компонент
+     презентационный: локализует и рендерит тизеры, сам ничего не качает.
+     Пустой массив (сбой API) — блок не рендерится, главная не ломается.
      Клик по карточке — /news?news=<id>: витрина открывает эту новость
      в модалке. Мобайл — горизонтальная лента со snap (паттерн WB/Ozon),
      md+ — сетка в 3 колонки. -->
@@ -25,12 +26,17 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
       :aria-label="item.title"
     )
       .card-media
-        NuxtImg(
+        //- plain <img>, как в ProductCardGrid: NuxtImg «съедает» imgix-style
+        //- sizes ((max-width:…) 220px, 33vw → 33vw), ломая выбор файла на мобиле
+        img(
           v-if="item.image"
           :src="item.image.replace('/products/', '/products/small/')"
+          :srcset="newsSrcset(item.image)"
+          :sizes="newsSrcset(item.image) ? '(max-width: 767px) 220px, 33vw' : undefined"
           width="400" height="300"
           :alt="item.title"
           loading="lazy"
+          decoding="async"
         )
         .media-placeholder(v-else :class="`placeholder-${newsTone(item.category)}`")
           svg(width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true")
@@ -59,37 +65,25 @@ import type { NewsItem } from '~/utils/news'
 type NewsTeaser = Pick<NewsItem, 'id' | 'date' | 'category' | 'title' | 'excerpt' | 'image'> &
   Partial<Pick<NewsItem, 'titleEn' | 'titleEs' | 'excerptEn' | 'excerptEs'>>
 
-// SSR: сервер вызывает внутренний роут /api/news (сид при пустом KV)
-// и кладёт тизеры в payload — гидратация рендерит их сразу.
-// transform срезает ответ ДО сериализации в payload: без него на главной
-// лежал весь каталог новостей с полными текстами и товарами (~47 kB,
-// NUXT_E8006 в dev-консоли), а блок рендерит только тизеры первых 3.
-const { data } = await useAsyncData('news-latest', (): Promise<{ news: NewsTeaser[] }> =>
-  $fetch<{ success: boolean; news: NewsItem[] }>('/api/news').then((res) => ({
-    news: (res.news ?? []).slice(0, 3).map((n) => ({
-      id: n.id,
-      date: n.date,
-      category: n.category,
-      title: n.title,
-      titleEn: n.titleEn,
-      titleEs: n.titleEs,
-      excerpt: n.excerpt,
-      excerptEn: n.excerptEn,
-      excerptEs: n.excerptEs,
-      image: n.image,
-    })),
-  })),
-)
+//- Тизеры приходят пропом из index.vue (catalog-load, SSR) — не фетчим
+const props = defineProps({
+  news: { type: Array as PropType<NewsTeaser[]>, default: () => [] },
+})
 
 const { t } = useI18n()
 // Локаль витрины из URL (раньше здесь была неопределённая переменная —
 // даты блока всегда рендерились по-русски даже на /en и /es)
 const locale = useStoreLocale()
 
-// Первые 3 новости уже отобраны при загрузке — payload минимален
+// Локализованные копии (имя/выдержка в языке страницы)
 const items = computed<NewsTeaser[]>(() =>
-  (data.value?.news ?? []).map((n) => localizedNews(n, locale.value)),
+  (props.news ?? []).map((n) => localizedNews(n, locale.value)),
 )
+
+//- srcset для фото новости: тот же ряд 400w/800w, что у карточек товаров
+//- (локальные пути /images/products/... и Unsplash-URL); для прочих
+//- форматов — undefined, атрибут не выводится, src прежний
+const newsSrcset = (image: unknown) => productSrcset(image)
 </script>
 
 <style scoped>

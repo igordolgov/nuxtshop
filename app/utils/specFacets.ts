@@ -168,6 +168,68 @@ export const countActiveSpecFilters = (selected: SpecSelection = {}): number => 
     .length;
 };
 
+// ── Счётчик активных фильтров (единый источник правды) ──────────────────
+//
+// Один алгоритм для ВСЕХ бейджей витрины (пилюля ProductSortBar и
+// пустое состояние ProductsSection). Раньше страница и SortBar считали
+// по-разному: цена, равная полному диапазону каталога, для страницы —
+// «не фильтр», для SortBar — активный фильтр → бейджи расходились.
+
+/** Структурный тип фильтров каталога (нужны только перечисленные поля). */
+export interface ActiveFiltersSource {
+  categories?: string[];
+  onlyInStock?: boolean;
+  onlyFavorites?: boolean;
+  specs?: SpecSelection;
+  priceRange?: { min?: number | null; max?: number | null };
+}
+
+/** Структурный тип фактического диапазона цен каталога. */
+export interface PriceRangeSource {
+  min?: number | null;
+  max?: number | null;
+}
+
+/**
+ * Является ли ценовой фильтр АКТИВНЫМ: сужает фактический диапазон каталога.
+ * Диапазон, совпадающий с границами каталога, ничего не фильтрует —
+ * «не фильтр» (бейдж и чип согласованы).
+ */
+export const isPriceFilterActive = (
+  priceRange: ActiveFiltersSource['priceRange'],
+  actual: PriceRangeSource | null | undefined,
+): boolean => {
+  const min = priceRange?.min;
+  const max = priceRange?.max;
+  if (min === null || min === undefined) {
+    if (max === null || max === undefined) return false;
+    return max < (actual?.max ?? Infinity);
+  }
+  if (min > (actual?.min ?? -Infinity)) return true;
+  return max !== null && max !== undefined && max < (actual?.max ?? Infinity);
+};
+
+/**
+ * Сколько фильтров сейчас активно: категория, «в наличии», «избранное»,
+ * каждая группа характеристик и ценовой фильтр (если реально сужает
+ * диапазон каталога — см. isPriceFilterActive).
+ */
+export const countActiveFilters = (
+  filters: ActiveFiltersSource | null | undefined,
+  actualPriceRange: PriceRangeSource | null | undefined,
+): number => {
+  if (!filters || typeof filters !== 'object') return 0;
+
+  let count = 0;
+  if (filters.categories?.length > 0) count++;
+  if (filters.onlyInStock) count++;
+  if (filters.onlyFavorites) count++;
+  count += countActiveSpecFilters(filters.specs);
+  if (isPriceFilterActive(filters.priceRange, actualPriceRange)) count++;
+
+  return count;
+};
+
 /**
  * Spec-выбор, разрешённый при текущем категорийном фильтре.
  *

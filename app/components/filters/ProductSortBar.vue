@@ -10,8 +10,8 @@
 .sort-bar.flex.items-center.gap-2.flex-wrap(
   class="py-1"
 )
-  //- Кнопка «Фильтры» — на мобильных открывает панель. На десктопе
-  //- (≥1025px) прячется: там фильтры уже в левой панели-сайдбаре,
+  //- Кнопка «Фильтры» — на мобильных и ПЛАНШЕТАХ открывает панель.
+  //- На десктопе (≥1024px) прячется: там фильтры уже в левой панели-сайдбаре,
   //- дублировать их кнопкой не нужно
   button.filter-pill.btn.btn-sm.rounded-full.filters-toggle-btn(
     type="button"
@@ -64,7 +64,10 @@
 </template>
 
 <script setup>
-import { countActiveSpecFilters } from '~/utils/specFacets'
+import {
+  countActiveFilters,
+  isPriceFilterActive,
+} from '~/utils/specFacets'
 
 const { t } = useI18n()
 //- Пилюля фильтров+сортировки. События родителю:
@@ -107,19 +110,13 @@ const onSortChange = (e) => {
   emit('update:sort', { field, order })
 }
 
-//- Счётчик активных фильтров
-const activeFiltersCount = computed(() => {
-  const f = props.filters ?? {}
-  let count = 0
-  if (f.categories?.length > 0) count++
-  if (f.onlyInStock) count++
-  if (f.onlyFavorites) count++
-  const min = f.priceRange?.min
-  const max = f.priceRange?.max
-  if ((min !== null && min !== undefined) || (max !== null && max !== undefined)) count++
-  count += countActiveSpecFilters(f.specs)
-  return count
-})
+//- Счётчик активных фильтров — ТОТ ЖЕ хелпер, что у страницы
+//- (utils/specFacets): раньше два независимых подсчёта расходились —
+//- цена, равная полному диапазону каталога, здесь считалась фильтром,
+//- на странице — нет (бейджи бились)
+const activeFiltersCount = computed(() =>
+  countActiveFilters(props.filters, props.priceRange),
+)
 
 //- Чипы
 const activeChips = computed(() => {
@@ -134,12 +131,17 @@ const activeChips = computed(() => {
 
   const min = f.priceRange?.min
   const max = f.priceRange?.max
-  if (min !== null && min !== undefined && max !== null && max !== undefined) {
-    chips.push({ key: 'price', label: `${formatMoney(min)} – ${formatMoney(max)}` })
-  } else if (min !== null && min !== undefined) {
-    chips.push({ key: 'price', label: `${t('catalog.from')} ${formatMoney(min)}` })
-  } else if (max !== null && max !== undefined) {
-    chips.push({ key: 'price', label: `${t('catalog.to')} ${formatMoney(max)}` })
+  //- Чип цены — только когда фильтр реально сужает диапазон каталога
+  //- (та же логика, что у счётчика): «от 0 до максимума» — не фильтр,
+  //- чип-пустышка вводил в заблуждение
+  if (isPriceFilterActive(f.priceRange, props.priceRange)) {
+    if (min !== null && min !== undefined && max !== null && max !== undefined) {
+      chips.push({ key: 'price', label: `${formatMoney(min)} – ${formatMoney(max)}` })
+    } else if (min !== null && min !== undefined) {
+      chips.push({ key: 'price', label: `${t('catalog.from')} ${formatMoney(min)}` })
+    } else if (max !== null && max !== undefined) {
+      chips.push({ key: 'price', label: `${t('catalog.to')} ${formatMoney(max)}` })
+    }
   }
 
   if (f.onlyInStock) chips.push({ key: 'onlyInStock', label: t('product.inStock') })
@@ -180,10 +182,11 @@ const removeChip = (chip) => {
 </script>
 
 <style scoped>
-/* Десктоп (≥1025px — брейкпоинт появления .sidebar-area в index.vue):
-   фильтры уже показываются в левой панели, кнопка-дубль лишняя.
-   Специфичность .filters-toggle-btn[data-v] перекрывает display у .btn */
-@media (min-width: 1025px) {
+/* Десктоп (≥1024px — Tailwind lg, ЕДИНЫЙ брейкпоинт появления
+   .sidebar-area в index.vue): фильтры уже показываются в левой панели,
+   кнопка-дубль лишняя. Специфичность .filters-toggle-btn[data-v]
+   перекрывает display у .btn */
+@media (min-width: 1024px) {
   .filters-toggle-btn {
     display: none;
   }
@@ -229,10 +232,6 @@ const removeChip = (chip) => {
   color: var(--color-primary);
 }
 
-.sort-pill select:focus {
-  outline: none;
-}
-
 .sort-pill select {
   min-width: 9.5rem;      /* всегда влезает «Сначала новые» */
   height: 2.25rem;        /* ровно с пилюлей «Фильтры» */
@@ -240,6 +239,8 @@ const removeChip = (chip) => {
   border: 1px solid var(--color-base-300);
 }
 
+/* Фокус: гасим стандартный outline, но оставляем видимый индикатор
+   (рамка в primary — клавиатурный пользователь видит позицию) */
 .sort-pill select:focus {
   outline: none;
   border-color: var(--color-primary);

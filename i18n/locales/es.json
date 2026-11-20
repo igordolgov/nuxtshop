@@ -52,7 +52,8 @@
     "logout": "Cerrar sesión",
     "login": "Iniciar sesión",
     "logoutSuccess": "Ha cerrado la sesión correctamente",
-    "language": "Idioma"
+    "language": "Idioma",
+    "closeMenu": "Cerrar menú"
   },
   "catalog": {
     "title": "Catálogo",
@@ -108,7 +109,9 @@
     "noProducts": "No hay productos disponibles",
     "tryChangeFilters": "Prueba a cambiar los filtros",
     "nothingForQuery": "No se ha encontrado nada para «{query}»",
-    "searchProducts": "Buscar productos..."
+    "searchProducts": "Buscar productos...",
+    "minPriceLabel": "Precio mínimo",
+    "maxPriceLabel": "Precio máximo"
   },
   "common": {
     "loading": "Cargando...",
@@ -172,7 +175,7 @@
     "statusUnavailable": "No disponible",
     "dateAdded": "Fecha de alta",
     "unknown": "Desconocido",
-    "similar": "Productos similares:",
+    "similar": "Productos similares",
     "boughtTogether": "Comprados juntos con frecuencia",
     "boughtTogetherHint": "según los pedidos reales de la tienda",
     "fbtTotal": "Total",

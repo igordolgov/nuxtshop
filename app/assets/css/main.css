@@ -56,6 +56,9 @@
   10001  лайтбокс отзывов
   1000   тосты (useNotifyQueue)
   100    зум галереи
+  70     мобильная панель фильтров (MobileFiltersPanel): выше нижней
+         навигации (60) — подвал панели с кнопкой «Показать N»
+         не перекрывается
   60     нижняя навигация + CTA карточки товара
   50     шапка (Header) и её дропдауны
   45     крошки карточки товара: выше контента (≤30), ниже шапки —
@@ -92,6 +95,18 @@
 @media (max-width: 1023.98px) {
   :root {
     --header-height: 104px;
+  }
+
+  /* ScrollToTop на мобильных: над нижней навигацией (60px) + отступ.
+     На карточке товара — ещё и над CTA «В корзину» (52px + отступы
+     ≈ 58px): атрибут data-header-compact ставит страница /product/**.
+     Значения читает ScrollToTop.vue (bottom: var(--scrolltop-bottom)) */
+  :root {
+    --scrolltop-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 12px);
+  }
+
+  html[data-header-compact='true'] {
+    --scrolltop-bottom: calc(var(--mobile-nav-height, 60px) + var(--safe-area-bottom, 0px) + 70px);
   }
 
   /* Страница товара: строки поиска в шапке нет (иконка поиска — в

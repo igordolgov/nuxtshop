@@ -8,15 +8,23 @@
     они «зависают»: свайп умирает на границе вложенного окна, а свайпы
     вне окна не скроллят ничего. ⚠️ Панель — flex-колонка на всю
     высоту: тело получает остаток высоты и скроллится, шапка/подвал
-    зафиксированы. -->
+    зафиксированы.
+    Модальная семантика (role=dialog aria-modal=true) подтверждена
+    поведением: фокус при открытии — на кнопку закрытия, Tab не уходит
+    за пределы панели (trap), Escape закрывает, после закрытия фокус
+    возвращается на кнопку «Фильтры» (index.vue → closeMobileFilters).
+    close получает payload «фильтры менялись?» — родитель решает,
+    скроллить ли каталог к началу результатов. -->
 <template lang="pug">
-.mobile-filters-wrapper(class="md:hidden")
+.mobile-filters-wrapper(class="lg:hidden")
   .mobile-filters-overlay(@click="handleClose")
 
   .mobile-filters-panel(
+    ref="panelRef"
     role="dialog"
     aria-modal="true"
     :aria-label="$t('catalog.filtersAria')"
+    @keydown="onPanelKeydown"
   )
     //- Шапка панели (safe-area-top — статус-бар в standalone-PWA)
     .filters-header.flex.items-center.justify-between.gap-2(
@@ -31,6 +39,7 @@
       h2.text-sm.font-semibold.text-base-content.truncate {{ $t('catalog.filtersTitle') }}
 
       button.btn.btn-ghost.btn-sm.btn-circle(
+        ref="closeButtonRef"
         type="button"
         :aria-label="$t('catalog.close')"
         @click="handleClose"
@@ -69,10 +78,12 @@
       )
 
     //- Подвал: главная кнопка с счётчиком (паттерн WB) — всегда видна,
-    //- скроллится только тело панели
+    //- скроллится только тело панели. aria-live: счётчик меняется
+    //- «вживую» под пальцем — СК анонсирует новый результат без фокуса
     .filters-footer(class="bg-base-100 border-base-300 border-t")
       button.btn.btn-primary.w-full.rounded-xl(
         type="button"
+        aria-live="polite"
         @click="handleApplyAndClose"
       )
         span {{ $t('catalog.showCount', filteredCount) }}
@@ -90,7 +101,7 @@
 .mobile-filters-wrapper {
   position: fixed;
   inset: 0;
-  /* Выше нижней навигации (z-60, см. карту z-index в MobileNavFooter):
+  /* Выше нижней навигации (z-60, см. карту z-index в main.css):
     иначе nav перекрывает подвал панели с кнопкой «Показать N» */
   z-index: 70;
   display: flex;
@@ -190,25 +201,87 @@ const emit = defineEmits([
   'close',
   'update:filters',
   'reset-filters',
-  'scroll-to-top',
 ])
 
 //- Русские формы слова «товар» теперь через vue-i18n plural
 //- (catalog.showCount + pluralRules ru в i18n/i18n.config.ts)
 
-const handleClose = () => {
-  emit('close')
-  setTimeout(() => emit('scroll-to-top'), 150)
+const panelRef = ref(null)
+const closeButtonRef = ref(null)
+
+//- Снимок фильтров на момент открытия: скролл каталога наверх после
+//- закрытия — ТОЛЬКО если фильтры изменились. Пользователь открыл панель,
+//- ничего не тронул и закрыл — возвращается на то же место списка
+//- (раньше его всегда отбрасывало к первому товару)
+const initialFiltersJson = ref('')
+
+const filtersChanged = () => JSON.stringify(props.filters ?? {}) !== initialFiltersJson.value
+
+const closeAndMaybeScroll = () => {
+  //- РЕШЕНИЕ О скролле — В РОДИТЕЛЕ (payload в close): откладывать emit
+  //- на setTimeout внутри РАЗМОНТИРУЮЩЕГОСЯ компонента ненадёжно —
+  //- Vue в процессе leave-перехода уже отвязал vnode, emit терялся,
+  //- и скролл к результатам не срабатывал. Родитель получает
+  //- «фильтры менялись?» синхронно и сам решает
+  emit('close', filtersChanged())
 }
 
-const handleApplyAndClose = () => {
-  emit('close')
-  setTimeout(() => emit('scroll-to-top'), 150)
-}
+const handleClose = () => closeAndMaybeScroll()
+
+const handleApplyAndClose = () => closeAndMaybeScroll()
 
 const handleReset = () => {
   emit('reset-filters')
 }
+
+//- ── Модальная клавиатура ──────────────────────────────────────────
+//- Escape — на document: фокус может стоять на body (клик мимо
+//- фокусируемого). Tab-trap — на панели (keydown всплывает от кнопок).
+const onDocKeydown = (event) => {
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    closeAndMaybeScroll()
+  }
+}
+
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
+const onPanelKeydown = (event) => {
+  if (event.key !== 'Tab') return
+
+  const focusable = Array.from(panelRef.value?.querySelectorAll(FOCUSABLE_SELECTOR) ?? []).filter(
+    (el) => !el.disabled && el.offsetParent !== null,
+  )
+  if (focusable.length === 0) return
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const current = document.activeElement
+
+  if (event.shiftKey && (current === first || !panelRef.value.contains(current))) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && (current === last || !panelRef.value.contains(current))) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+onMounted(() => {
+  initialFiltersJson.value = JSON.stringify(props.filters ?? {})
+
+  if (import.meta.client) {
+    document.addEventListener('keydown', onDocKeydown)
+    // Фокус внутрь диалога: СК объявляет панель, Tab работает с первого нажатия
+    nextTick(() => closeButtonRef.value?.focus())
+  }
+})
+
+onUnmounted(() => {
+  if (import.meta.client) {
+    document.removeEventListener('keydown', onDocKeydown)
+  }
+})
 
 //- Быстрый фильтр (в наличии/избранное) из закреплённого блока:
 //- обновляем ОДИН ключ в снимке фильтров и отдаём наверх — как это

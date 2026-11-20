@@ -26,7 +26,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           type="button"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
-          :aria-label="$t('header.openMenu')"
+          :aria-label="isMobileMenuOpen ? $t('header.closeMenu') : $t('header.openMenu')"
           class="w-11 h-11 min-h-0"
           data-fly-compare
           @click="toggleMobileMenu"
@@ -186,8 +186,10 @@ header.app-header.sticky.top-0.z-50.border-b(
       //- Поиск — только десктоп (на мобильных строка 2). На админ-страницах
       //- скрыт: там свой поиск по каталогу, витринный только путает.
       //- На карточке товара тоже скрыт: поиск — иконка в действиях
-      //- карточки (ProductInfo), открывает полноэкранный ProductSearchOverlay
-      .search-desktop.hidden(class="md:block lg:w-64 xl:w-80" v-if="!isAdminRoute && !isProductRoute")
+      //- карточки (ProductInfo), открывает полноэкранный ProductSearchOverlay.
+      //- md:w-52: без явной ширины на планшетах 768–1023px контейнер
+      //- сжимался до ширины контента (только иконка) — поле ввода пропадало
+      .search-desktop.hidden(class="md:block md:w-52 lg:w-64 xl:w-80" v-if="!isAdminRoute && !isProductRoute")
         SmartSearchInput(
           :products="allProducts"
           :isActive="true"
@@ -284,29 +286,6 @@ header.app-header.sticky.top-0.z-50.border-b(
 .app-header {
   padding-top: var(--safe-area-top, 0px);
   transform: translateZ(0);
-}
-
-.filters-icon {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.filters-badge {
-  position: absolute;
-  top: -6px;
-  right: -8px;
-  background: var(--color-primary);
-  color: white;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  border: 2px solid var(--color-base-100);
 }
 
 /* ─── Бейдж сравнения на бургер-кнопке («синяя точка») ──────────────

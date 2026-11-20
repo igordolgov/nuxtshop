@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSpecFacets,
   clampSpecSelection,
+  countActiveFilters,
   countActiveSpecFilters,
   filterBySpecSelection,
+  isPriceFilterActive,
 } from '../../app/utils/specFacets';
 
 const p = (
@@ -217,5 +219,74 @@ describe('clampSpecSelection', () => {
     expect(clampSpecSelection(['Планшеты'], undefined)).toEqual({});
     expect(clampSpecSelection(['Планшеты'], null)).toEqual({});
     expect(clampSpecSelection(['Планшеты'], 42 as never)).toEqual({});
+  });
+});
+
+// ── Единый счётчик активных фильтров (пилюля SortBar и страница) ─────────
+
+describe('isPriceFilterActive', () => {
+  const actual = { min: 1000, max: 50000 };
+
+  it('пустой/не заданный диапазон — не активен', () => {
+    expect(isPriceFilterActive(undefined, actual)).toBe(false);
+    expect(isPriceFilterActive({}, actual)).toBe(false);
+    expect(isPriceFilterActive({ min: null, max: null }, actual)).toBe(false);
+    expect(isPriceFilterActive(null, actual)).toBe(false);
+  });
+
+  it('диапазон, совпадающий с каталогом, — НЕ фильтр (ничего не сужает)', () => {
+    expect(isPriceFilterActive({ min: 1000, max: 50000 }, actual)).toBe(false);
+  });
+
+  it('сужение любой границы — активен', () => {
+    expect(isPriceFilterActive({ min: 5000, max: 50000 }, actual)).toBe(true);
+    expect(isPriceFilterActive({ min: 1000, max: 20000 }, actual)).toBe(true);
+    expect(isPriceFilterActive({ min: 5000, max: 20000 }, actual)).toBe(true);
+  });
+
+  it('нижняя граница поднята, верхняя не задана — активен', () => {
+    expect(isPriceFilterActive({ min: 5000 }, actual)).toBe(true);
+  });
+
+  it('верхняя граница опущена, нижняя не задана — активен', () => {
+    expect(isPriceFilterActive({ min: null, max: 20000 }, actual)).toBe(true);
+    expect(isPriceFilterActive({ max: 20000 }, actual)).toBe(true);
+  });
+
+  it('без фактического диапазона любое явное значение — активен', () => {
+    expect(isPriceFilterActive({ min: 0, max: 100000 }, undefined)).toBe(true);
+  });
+});
+
+describe('countActiveFilters', () => {
+  const actual = { min: 0, max: 100000 };
+
+  it('пустые фильтры — 0', () => {
+    expect(countActiveFilters(null, actual)).toBe(0);
+    expect(countActiveFilters(undefined, actual)).toBe(0);
+    expect(countActiveFilters({}, actual)).toBe(0);
+    expect(countActiveFilters({ categories: [], onlyInStock: false, specs: {} }, actual)).toBe(0);
+  });
+
+  it('категория/наличие/избранное — по единице', () => {
+    expect(countActiveFilters({ categories: ['Телефоны'] }, actual)).toBe(1);
+    expect(countActiveFilters({ onlyInStock: true }, actual)).toBe(1);
+    expect(countActiveFilters({ onlyFavorites: true }, actual)).toBe(1);
+    expect(
+      countActiveFilters({ categories: ['x'], onlyInStock: true, onlyFavorites: true }, actual),
+    ).toBe(3);
+  });
+
+  it('каждая группа характеристик — единица (значения внутри — ИЛИ)', () => {
+    expect(countActiveFilters({ specs: { Цвет: ['синий'] } }, actual)).toBe(1);
+    expect(countActiveFilters({ specs: { Цвет: ['синий', 'красный'] } }, actual)).toBe(1);
+    expect(countActiveFilters({ specs: { Цвет: ['синий'], Бренд: ['Samsung'] } }, actual)).toBe(2);
+    // группа с пустым массивом значений не считается
+    expect(countActiveFilters({ specs: { Цвет: [] } }, actual)).toBe(0);
+  });
+
+  it('цена, совпадающая с каталогом, не считается (согласовано с чипом SortBar)', () => {
+    expect(countActiveFilters({ priceRange: { min: 0, max: 100000 } }, actual)).toBe(0);
+    expect(countActiveFilters({ priceRange: { min: 5000, max: 100000 } }, actual)).toBe(1);
   });
 });

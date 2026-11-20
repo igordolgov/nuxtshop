@@ -37,6 +37,13 @@
       @input="handleInput"
       type="text"
       :placeholder="$t('catalog.search')"
+      :aria-label="$t('catalog.search')"
+      autocomplete="off"
+      enterkeyhint="search"
+      role="combobox"
+      :aria-expanded="panelOpenForAria"
+      :aria-controls="listboxId"
+      :aria-activedescendant="activeDescendantId"
       @focus="handleFocus"
       @blur="handleBlur"
       @keydown="handleKeydown"
@@ -69,12 +76,21 @@
             .loading.loading-spinner.loading-xs
             span.text-sm.ml-2(class="text-base-content/70") {{ $t('catalog.searching') }}
           
-          //- Результаты: фото + название + цена (паттерн WB/Ozon/Amazon)
-          template(v-if="filteredSuggestions.length > 0 && queryHasMinLength")
+          //- Результаты: фото + название + цена (паттерн WB/Ozon/Amazon).
+          //- Список — role=listbox с id: input role=combobox ссылается на
+          //- него (aria-controls) и на активный вариант (aria-activedescendant)
+          .suggestions-listbox(
+            v-if="filteredSuggestions.length > 0 && queryHasMinLength"
+            role="listbox"
+            :id="listboxId"
+          )
             button.suggestion-item.w-full.text-left.p-2.border-b.flex.items-center.gap-3(
               class="hover:bg-base-200 border-base-200 last:border-b-0"
               v-for="(item, index) in filteredSuggestions"
               :key="item.id"
+              :id="optionId(index)"
+              role="option"
+              :aria-selected="localActiveSuggestionIndex === index"
               :class="localActiveSuggestionIndex === index ? 'bg-base-200' : ''"
               @mousedown.prevent.stop="selectSuggestion(item)"
               @mouseenter="updateActiveIndex(index)"
@@ -103,7 +119,8 @@
           //- Футер панели: полный поиск по запросу (маркетплейс-паттерн:
           //- Enter = «Показать все результаты»). Виден только при совпадениях:
           //- клик применяет поиск к сетке каталога (фильтрует карточки и
-          //- закрывает панель) — до этого сетка не реагирует на ввод
+          //- закрывает панель) — до этого сетка не реагирует на ввод.
+          //- ВНЕ listbox: не вариант выбора — только товарные строки
           button.show-all-results.w-full.text-left.px-3.flex.items-center.justify-between.gap-2(
             v-if="filteredSuggestions.length > 0 && queryHasMinLength"
             class="hover:bg-base-200 bg-base-100 border-t border-base-200 py-2.5"
@@ -198,6 +215,20 @@ const searchInput = ref(null)
 const searchContainer = ref(null)
 const suggestionsPanel = ref(null)
 
+//- ARIA combobox: уникальные id списка/вариантов (в DOM два инстанса
+//- поиска — десктопный и мобильный, id не должны конфликтовать)
+const uid = useId()
+const listboxId = `${uid}-suggestions-listbox`
+const optionId = (index) => `${uid}-suggestion-${index}`
+const activeDescendantId = computed(() =>
+  localActiveSuggestionIndex.value >= 0 && filteredSuggestions.value.length > 0
+    ? optionId(localActiveSuggestionIndex.value)
+    : undefined,
+)
+const panelOpenForAria = computed(() =>
+  shouldShowSuggestionsPanel.value && filteredSuggestions.value.length > 0,
+)
+
 //- ============================================
 //- Local state
 //- ============================================
@@ -208,6 +239,9 @@ const hasPerformedSearch = ref(false)
 const isPanelForcedOpen = ref(false)
 const isInputFocused = ref(false)
 const isPanelMouseDown = ref(false)
+//- Панель закрыта первым Escape (двухступенчатый Esc): пока фокус в поле
+//- и текст не менялся — панель не переоткрывать сама по себе
+const isPanelClosedByEsc = ref(false)
 
 let closePanelTimer = null
 
@@ -246,6 +280,8 @@ const filteredSuggestions = computed(() => {
 })
 
 const shouldShowSuggestionsPanel = computed(() => {
+  //- Панель закрыта первым Escape — не показывать до изменения ввода
+  if (isPanelClosedByEsc.value) return false
   //- Оверлей: список виден, пока в поле есть запрос — независимо от фокуса
   if (props.stickyPanel) {
     if (localSearchQuery.value) return true
@@ -284,6 +320,7 @@ watch(() => props.suggestions, (newVal) => {
 const handleInput = (event) => {
   const value = event.target.value
   localSearchQuery.value = value
+  isPanelClosedByEsc.value = false
   emit('update:searchQuery', value)
   
   if (value?.length >= 2) {
@@ -298,6 +335,7 @@ const handleFocus = () => {
   isInputFocused.value = true
   clearTimeout(closePanelTimer)
   isPanelForcedOpen.value = true
+  isPanelClosedByEsc.value = false
 }
 
 const handleBlur = () => {
@@ -339,10 +377,23 @@ const handleKeydown = (event) => {
       }
       break
     case 'Escape':
-      closeSuggestionsPanel()
-      localSearchQuery.value = ''
-      emit('update:searchQuery', '')
-      searchInput.value?.blur()
+      event.preventDefault()
+      // Двухступенчатый Escape (стандарт маркетплейсов/combobox):
+      // первый — закрыть панель, НЕ трогая набранный запрос;
+      // второй — очистить поле и снять фокус. Раньше случайный Esc
+      // после набора убивал весь запрос
+      if (shouldShowSuggestionsPanel.value && !isPanelClosedByEsc.value) {
+        isPanelClosedByEsc.value = true
+        isPanelForcedOpen.value = false
+        emit('update:showSuggestions', false)
+      } else {
+        isPanelClosedByEsc.value = false
+        localSearchQuery.value = ''
+        emit('update:searchQuery', '')
+        emit('update:showSuggestions', false)
+        isPanelForcedOpen.value = false
+        searchInput.value?.blur()
+      }
       break
   }
 }
@@ -475,7 +526,7 @@ onMounted(() => {
     isPanelForcedOpen.value = true
   }
   
-  if (process.client) {
+  if (import.meta.client) {
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('scroll', handleDocScroll, { capture: true, passive: true })
   }
@@ -484,7 +535,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearTimeout(closePanelTimer)
   
-  if (process.client) {
+  if (import.meta.client) {
     document.removeEventListener('click', handleClickOutside)
     document.removeEventListener('scroll', handleDocScroll, { capture: true })
   }

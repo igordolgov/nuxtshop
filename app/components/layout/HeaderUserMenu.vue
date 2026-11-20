@@ -112,7 +112,10 @@ const toggleUserMenu = () => { isUserMenuOpen.value = !isUserMenuOpen.value }
 
 const navigateToPath = async (path) => {
   closeUserMenu()
-  await navigateTo(path)
+  // localePath ОБЯЗАТЕЛЕН: сырой путь на /en и /es выбрасывал на русскую
+  // страницу (strategy prefix_except_default) — «Мой аккаунт» на английской
+  // витрине вёл на /user вместо /en/user
+  await navigateTo(localePath(path))
 }
 
 const handleLogout = async () => {
@@ -120,7 +123,7 @@ const handleLogout = async () => {
   const result = await appState.logout()
   if (result.success) {
     $notify.success(t('header.logoutSuccess'))
-    await navigateTo('/')
+    await navigateTo(localePath('/'))
   }
 }
 

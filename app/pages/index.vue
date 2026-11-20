@@ -3,24 +3,15 @@
     блок «Последние новости», нижняя мобильная навигация. -->
 <template lang="pug">
 .grid-container
-  //- Шапка в SSR-HTML
-  Header.header-area(
-    :activeFiltersCount="activeFiltersCount"
-    :displayedProductsCount="displayedProducts.length"
-    :totalProductsCount="totalProductsCount"
-    :searchQuery="searchQuery"
-    :isSearching="isSearching"
-    :showSuggestions="showSuggestions"
-    :searchSuggestions="searchSuggestions"
-    :hasSearchSuggestions="hasSearchSuggestions"
-    :activeSuggestionIndex="activeSuggestionIndex"
-    :showFilters="showMobileFilters"
-    v-on="headerEvents"
-  )
+  //- Шапка в SSR-HTML. Пропсов/событий нет: Header сам читает appState
+  //- (глобальный поиск, счётчики бейджей) — мёртвый контракт
+  //- (11 пропсов + 13 событий, которые Header не объявляет) удалён
+  Header.header-area
 
   Transition(name="fade")
-    LazyMobileFiltersPanel.mobile-filters(
-      class="md:hidden"
+    //- Скрытие на десктопе — внутри панели (lg:hidden): планшеты
+    //- 768–1023px открывают панель (сайдбар появляется только ≥1024px)
+    LazyMobileFiltersPanel(
       v-if="showMobileFilters"
       :searchQuery="appliedSearchQuery"
       :categories="categories"
@@ -32,7 +23,6 @@
       @close="closeMobileFilters"
       @update:filters="handleFiltersUpdate"
       @reset-filters="resetFilters"
-      @scroll-to-top="scrollToTop"
     )
 
   .main-content-wrapper
@@ -45,13 +35,13 @@
           .skeleton.skeleton-card(v-for="i in 8" :key="i")
 
       template(v-else)
+        //- sort НЕ передаётся: DesktopSidebar его не объявляет — сортировка в SortBar
         LazyDesktopSidebar.sidebar-area(
           v-if="!isMobile"
           :searchQuery="appliedSearchQuery"
           :categories="categories"
           :specFacets="specFacets"
           :filters="filters"
-          :sort="sort"
           :priceRange="priceRange"
           :total-count="totalProductsCount"
           :filtered-count="displayedProducts.length"
@@ -93,8 +83,9 @@
             //- LCP главной не сдвигает. Сам скрывается без истории.
             //- Карточки-плитки — целиком ссылки (без кнопок/обработчиков)
             RecentlyViewed()
-            //- Блок «Последние новости»: данные из KV через /api/news
-            NewsLatest
+            //- Блок «Последние новости»: данные — из catalog-load (SSR,
+            //- параллельно с каталогом, тизеры без полных текстов)
+            NewsLatest(:news="homeNews")
 
             //- Десктопный футер (аудит F16). Внутри скроллящегося контейнера:
             SiteFooter
@@ -109,8 +100,8 @@
 <script setup>
 import { useAppState } from '@/composables/useAppState'
 import { useMobileDetection } from '@/composables/useMobileDetection'
-// Счётчик активных фасетов характеристик (чипы/пилюля «Фильтры N»)
-import { countActiveSpecFilters } from '@/utils/specFacets'
+// Единый счётчик активных фильтров (пилюля SortBar считает тем же кодом)
+import { countActiveFilters } from '@/utils/specFacets'
 import { nextTick, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 //- ============================================
@@ -125,11 +116,29 @@ const appState = useAppState()
 
 //- ============================================
 //- SSR-каталог: товары должны быть в серверном HTML (LCP главной).
+//- Новости — В ТОМ ЖЕ await: раньше фетчи шли тремя СЕРИЙНЫМИ фазами
+//- (каталог → /api/news → /api/content в футере), каждая — своя
+//- KV-чтение в TTFB. Promise.allSettled стартует их параллельно;
+//- сбои независимы (упавший /api/news не роняет каталог).
+//- В payload — только тизеры (без body/tоваров): NewsLatest отдаёт
+//- их рендеру, фултекстов в NUXT payload нет (см. NewsLatest).
 //- ============================================
-await useAsyncData('catalog-load', async () => {
-  await appState.loadProducts()
-  return true
+const { data: catalogData } = await useAsyncData('catalog-load', async () => {
+  const [, newsResult] = await Promise.allSettled([
+    appState.loadProducts(),
+    $fetch('/api/news').catch(() => null),
+  ])
+
+  const newsRaw =
+    newsResult.status === 'fulfilled' && Array.isArray(newsResult.value?.news)
+      ? newsResult.value.news
+      : []
+
+  return { news: newsRaw.slice(0, 3) }
 })
+
+//- Тизеры новостей для NewsLatest (SSR-HTML и payload)
+const homeNews = computed(() => catalogData.value?.news ?? [])
 
 //- ============================================
 //- Реактивные переменные
@@ -151,12 +160,6 @@ const getState = (path, defaultValue = null) => {
   return result?.value ?? defaultValue
 }
 
-const searchQuery = computed(() => getState('search.query', ''))
-const isSearching = computed(() => getState('search.isSearching', false))
-const showSuggestions = computed(() => getState('search.showSuggestions', false))
-const searchSuggestions = computed(() => getState('search.suggestions', []))
-const hasSearchSuggestions = computed(() => getState('search.hasSuggestions', false))
-const activeSuggestionIndex = computed(() => getState('search.activeSuggestionIndex', -1))
 //- ПРИМЕНЁННЫЙ поиск (сетка фильтруется им, URL отражает его). Ввод в
 //- строке (search.query) подсказкам — сетка реагирует только на
 //- «применённый» запрос (Enter/«Показать все»/?search=), иначе один и тот
@@ -265,10 +268,6 @@ watch(
   },
 )
 
-const performSearch = () => appState.search?.performSearch?.()
-
-const resetSearch = () => appState.search?.resetSearch?.()
-
 //- «Очистить» в строке результатов: сбрасывает и ввод, и применённый
 //- поиск (сетка возвращается к полному каталогу, URL теряет ?search=)
 const clearSearch = () => appState.search?.applySearchQuery?.('')
@@ -277,32 +276,30 @@ const handleFiltersUpdate = (newFilters) => appState.handleFiltersUpdate(newFilt
 
 const handleSortUpdate = (newSort) => appState.handleSortUpdate(newSort)
 
-const updateActiveSuggestionIndex = (index) => {
-  if (appState.search?.activeSuggestionIndex) {
-    appState.search.activeSuggestionIndex.value = index
-  }
-}
-
-const updateShowSuggestions = (value) => {
-  if (appState.search?.showSuggestions) {
-    appState.search.showSuggestions.value = value
-  }
-}
-
-const handleSuggestionSelected = async (suggestion) => {
-  try {
-    await router.push(localePath(`/product/${suggestion.slug}`))
-  } catch {
-    appState.search?.applySearchQuery?.(suggestion.name)
-  }
-}
-
 const toggleMobileFilters = () => {
   showMobileFilters.value = !showMobileFilters.value
 }
 
-const closeMobileFilters = () => {
+//- Фокус назад на кнопку «Фильтры» (SortBar): панель — модальный диалог,
+//- после закрытия фокус обязан вернуться на инициатора (WCAG 2.4.3).
+//- Кнопка одна (SortBar прячет её только ≥1024px, где панель не открывается).
+//- preventScroll ОБЯЗАТЕЛЕН: обычный focus() прокручивает контейнер
+//- каталога к кнопке (она вверху списка) — пользователь, закрывший
+//- панель без изменений, отбрасывался к первому товару
+const focusFiltersButton = () => {
+  if (!import.meta.client) return
+  document.querySelector('.filters-toggle-btn')?.focus?.({ preventScroll: true })
+}
+
+const closeMobileFilters = (filtersChanged = false) => {
+  if (!showMobileFilters.value) return
   showMobileFilters.value = false
+  //- Фильтры менялись — показать результаты с начала (маркетплейс-паттерн);
+  //- закрывал без изменений — вернуть на прежнее место списка
+  if (filtersChanged === true) {
+    scrollToTop()
+  }
+  nextTick(focusFiltersButton)
 }
 
 const refreshProducts = async () => {
@@ -323,6 +320,7 @@ const scrollToTop = () => {
 
 const resetFilters = async () => {
   showMobileFilters.value = false
+  // Сортировку сохраняем: сброс фильтров не обязан сбрасывать сортировку
   const currentSort = { ...sort.value }
 
   appState.handleFiltersUpdate({
@@ -372,27 +370,12 @@ const removeFilter = (key) => {
 }
 
 //- ============================================
-//- Объекты событий
+//- События сайдбара (DesktopSidebar объявляет только эти четыре;
+//- сортировка живёт в ProductSortBar над сеткой)
 //- ============================================
-const headerEvents = {
-  'update:searchQuery': setSearchQuery,
-  suggestionSelected: handleSuggestionSelected,
-  performSearch,
-  resetSearch,
-  search: setSearchQuery,
-  'clear-search': clearSearch,
-  toggleFilters: toggleMobileFilters,
-  'update:activeSuggestionIndex': updateActiveSuggestionIndex,
-  'update:showSuggestions': updateShowSuggestions,
-  'filters-update': handleFiltersUpdate,
-  'sort-update': handleSortUpdate,
-  'search-query-update': setSearchQuery,
-  'reset-filters': resetFilters,
-}
-
 const sidebarEvents = {
   'update:filters': handleFiltersUpdate,
-  'update:sort': handleSortUpdate,'update:searchQuery': setSearchQuery,
+  'update:searchQuery': setSearchQuery,
   'reset-filters': resetFilters,
   'scroll-to-top': scrollToTop,
 }
@@ -403,27 +386,12 @@ const sidebarEvents = {
 const mainAreaClasses = computed(() => (isMobile.value ? ['mobile-layout'] : []))
 
 //- ============================================
-//- Активные фильтры
+//- Активные фильтры — единая логика с ProductSortBar (utils/specFacets):
+//- цена, совпадающая с полным диапазоном каталога, «фильтром» не считается
 //- ============================================
-const activeFiltersCount = computed(() => {
-  const f = filters.value
-  if (!f) return 0
-
-  let count = 0
-  if (f.categories?.length > 0) count++
-  if (f.onlyInStock) count++
-  if (f.onlyFavorites) count++
-  count += countActiveSpecFilters(f.specs)
-
-  const actualMin = priceRange.value.min || 0
-  const actualMax = priceRange.value.max || 100000
-  const filterMin = f.priceRange?.min || actualMin
-  const filterMax = f.priceRange?.max || actualMax
-
-  if (filterMin > actualMin || filterMax < actualMax) count++
-
-  return count
-})
+const activeFiltersCount = computed(() =>
+  countActiveFilters(filters.value, priceRange.value),
+)
 
 //- ============================================
 //- Блокировка скролла при мобильных фильтрах
@@ -488,7 +456,11 @@ watch(showMobileFilters, updateBodyScroll)
   grid-template-areas: 'main';
   min-height: 0;
 
-  @media (min-width: 1025px) {
+  /* Десктоп — 1024px (Tailwind lg): ЕДИНЫЙ брейкпоинт с мобильной
+     панелью фильтров (lg:hidden) и шапкой. Раньше было 1025px:
+     на планшетах 768–1024 кнопка «Фильтры» была видна, панель
+     скрыта, сайдбара нет — кнопка не открывала ничего */
+  @media (min-width: 1024px) {
     grid-template-columns: 300px minmax(0, 1fr);
     grid-template-areas: 'sidebar main';
     gap: 1rem;
@@ -510,7 +482,9 @@ watch(showMobileFilters, updateBodyScroll)
      внутренний скролл тела, «Только в наличии» остаётся у нижнего края */
   min-height: 0;
 
-  @media (min-width: 1025px) {
+  /* Брейкпоинт = 1024px (Tailwind lg) — единый с мобильной панелью
+     (lg:hidden) и шапкой (см. .content-area) */
+  @media (min-width: 1024px) {
     display: block;
   }
 }
@@ -539,7 +513,7 @@ watch(showMobileFilters, updateBodyScroll)
   gap: 0.75rem;
   overflow: hidden;
 
-  @media (min-width: 1025px) {
+  @media (min-width: 1024px) {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -613,25 +587,7 @@ watch(showMobileFilters, updateBodyScroll)
   flex-shrink: 0;
 }
 
-/* ─── Переход фильтров ──────────────────────────────────────── */
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* ─── Оверлей мобильных фильтров ────────────────────────────── */
-
-.mobile-filters {
-  position: fixed;
-  inset: 0;
-  /* Выше нижней навигации (z-60) — иначе nav перекрывает подвал панели */
-  z-index: 70;
-  background: rgb(0 0 0 / 0.5);
-}
+/* Переход фильтров (name="fade") и оверлей мобильных фильтров здесь
+   НЕ стилизуются: .fade-* — глобальные в main.css, fixed/inset/z-70/bg —
+   внутри самой MobileFiltersPanel (дубли были мёртвым грузом). */
 </style>
