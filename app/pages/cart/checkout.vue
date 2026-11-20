@@ -4,15 +4,20 @@
 <template lang="pug">
 .checkout-page.mobile-nav-safe
   Header
-  .container.mx-auto(class="sm:ml-17")
+  //- Легаси-сдвиг sm:ml-17 удалён: сайдбаров слева нет, контейнер
+  //- центрировался и вылезал за правый край вьюпорта (68px + 1400px > 1440)
+  .container.mx-auto
     //- ГОРИЗОНТАЛЬНЫЕ ШАГИ
     //- Полоса шагов — CheckoutStepper.vue (стили полосы тоже там)
     CheckoutStepper(:steps="checkoutSteps" :current-step="currentStep")
     //- Основная сетка
     .grid.grid-cols-1.gap-2(class="lg:gap-6 lg:grid-cols-3")
-      //- Левая колонка — Товары и итоги (только десктоп)
-        //- Сводка заказа — CheckoutOrderSummary.vue (единый блок вместо
-        //- бывших дублирующихся десктоп/мобильных карточек)
+      //- Левая колонка — сводка заказа, только десктоп (на мобильных —
+      //- компактная версия под формой ниже). ВАЖНО: элемент сетки обязан
+      //- стоять НА ТОМ ЖЕ отступе, что и комментарий, — глубже вложенный
+      //- компонент pug съедает комментарий как вложенный блок и
+      //- сводка не рендерится вовсе (аудит корзины/чекаута 2025-11)
+      .checkout-summary.hidden(class="lg:block")
         CheckoutOrderSummary
       //- Правая колонка — Форма оформления
       .checkout-form.flex.flex-col(class="lg:col-span-2")
@@ -33,7 +38,9 @@
               )
 
             //- Кнопки навигации
-            .flex.justify-between.mt-4.pt-2.border-t.border-base-200.flex-shrink-0.sticky-navigation
+            //- mt/pt дают scoped-стили .sticky-navigation (margin-top: auto,
+            //- padding-top) — утилиты здесь перекрывались ими впустую
+            .flex.justify-between.border-t.border-base-200.flex-shrink-0.sticky-navigation
               button.btn.btn-outline.btn-sm.rounded-lg(
                 v-if="currentStep > 1"
                 type="button"
@@ -64,8 +71,9 @@
     .mt-2(class="lg:hidden")
       CheckoutOrderSummary(compact)
 
-    //- Промокод
-    .mb-16(class="lg:mt-4")
+    //- Промокод; mb-16 — клиренс нижней навигации (мобильные),
+    //- на десктопе дальше футер — нижний воздух не нужен
+    .mb-16(class="lg:mb-0 lg:mt-4")
       .card.bg-base-100.shadow-lg
         .card-body.p-3(class="lg:p-5")
           h3.card-title.text-sm.mb-2(class="lg:mb-3 lg:text-base") {{ $t('checkout.promoTitle') }}
@@ -92,7 +100,7 @@
     dialog.modal(:class="{ 'modal-open': showSuccessModal }")
       .modal-box.py-8.text-center.rounded-xl(class="lg:max-w-2xl")
         h3.text-2xl.font-bold.text-success.mb-4(class="lg:text-4xl") {{ $t('checkout.successTitle') }}
-        .text-6xl.mb-4(class="lg:text-6xl") 🎉
+        .text-6xl.mb-4 🎉
         p(class="lg:mb-2 lg:text-xl") {{ $t('checkout.successNumber', { n: orderNumber }) }}
         p.mb-2(class="lg:mb-4 lg:text-xl") {{ $t('checkout.successAccepted') }}
         p.mb-4(class="lg:mb-8 lg:text-xl")
@@ -103,7 +111,10 @@
           NuxtLink.btn.btn-primary.rounded-xl(:to="$localePath('/')" class="lg:btn-lg" prefetch)
             | {{ $t('checkout.successBack') }}
 
-  //- Мобильный футер
+  //- Десктопный футер (сам скрывается <1024px) — как на корзине
+  SiteFooter
+
+  //- Нижняя навигация (сам компонент ведает ориентацией и переходами)
   MobileNavFooter
 </template>
 
@@ -423,9 +434,8 @@ onMounted(async () => {
 }
 
 @media (max-width: 1023px) {
-  .checkout-form .card {
-    min-height: calc(10vh - 250px);
-  }
+  /* min-height: calc(10vh - 250px) удалён — значение всегда отрицательное,
+     декларация игнорировалась браузером (мёртвый CSS) */
 
   .checkout-form .card-body {
     padding-bottom: 0.75rem;

@@ -11,7 +11,7 @@ div(v-if="currentStep === 1")
     .form-control
       label.label.block.text-base-content.font-bold.py-0
         span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.name') }}
-      input.input.input-bordered.input-sm(
+      input.input.input-bordered.input-sm.w-full(
         type="text"
         v-model="orderForm.firstName"
         :placeholder="$t('checkout.namePh')"
@@ -25,7 +25,7 @@ div(v-if="currentStep === 1")
     .form-control
       label.label.block.text-base-content.font-bold.py-0
         span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.lastName') }}
-      input.input.input-bordered.input-sm(
+      input.input.input-bordered.input-sm.w-full(
         type="text"
         v-model="orderForm.lastName"
         :placeholder="$t('checkout.lastNamePh')"
@@ -39,7 +39,7 @@ div(v-if="currentStep === 1")
     .form-control(class="sm:col-span-2")
       label.label.block.text-base-content.font-bold.py-0
         span.label-text.text-xs(class="lg:text-sm") Email *
-      input.input.input-bordered.input-sm(
+      input.input.input-bordered.input-sm.w-full(
         type="email"
         v-model="orderForm.email"
         placeholder="your@email.com"
@@ -54,7 +54,7 @@ div(v-if="currentStep === 1")
     .form-control(class="sm:col-span-2")
       label.label.block.text-base-content.font-bold.py-0
         span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.phone') }}
-      input.input.input-bordered.input-sm.text-base(
+      input.input.input-bordered.input-sm.text-base.w-full(
         type="tel"
         v-model="orderForm.phone"
         placeholder="+7 (XXX) XXX-XX-XX"
@@ -94,13 +94,13 @@ div(v-if="currentStep === 2")
 
   //- Адрес доставки (для курьера и почты)
   .mt-4(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
-    h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPost') : $t('checkout.addressDelivery') }}
+    h3.text-base.font-bold.mb-2(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPost') : $t('checkout.addressDelivery') }}
 
     .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
       .form-control(class="lg:col-span-2")
-        label.label.py-0
-          span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.address') }}
-        input.input.input-bordered.input-sm(
+        label.label.block.text-base-content.font-bold.py-0
+          span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.address') }}
+        input.input.input-bordered.input-sm.w-full(
           type="text"
           v-model="orderForm.address"
           autocomplete="street-address"
@@ -112,9 +112,9 @@ div(v-if="currentStep === 2")
           span.label-text-alt.text-error(class="text-[0.65rem]") {{ errors.address }}
 
       .form-control
-        label.label.py-0
-          span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.city') }}
-        input.input.input-bordered.input-sm(
+        label.label.block.text-base-content.font-bold.py-0
+          span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.city') }}
+        input.input.input-bordered.input-sm.w-full(
           type="text"
           v-model="orderForm.city"
           autocomplete="address-level2"
@@ -126,9 +126,9 @@ div(v-if="currentStep === 2")
           span.label-text-alt.text-error(class="text-[0.65rem]") {{ errors.city }}
 
       .form-control
-        label.label.py-0
-          span.label-text.pr-2.text-xs(:class="orderForm.deliveryMethod === 'post' ? 'lg:text-sm font-semibold' : 'lg:text-sm'") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.zip') : $t('checkout.zipOptional') }}
-        input.input.input-bordered.input-sm(
+        label.label.block.text-base-content.font-bold.py-0
+          span.label-text.text-xs(class="lg:text-sm") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.zip') : $t('checkout.zipOptional') }}
+        input.input.input-bordered.input-sm.w-full(
           type="text"
           v-model="orderForm.postalCode"
           autocomplete="postal-code"
@@ -170,15 +170,15 @@ div(v-if="currentStep === 3")
   .mt-4(v-if="orderForm.paymentMethod === 'card'")
     .card.bg-base-200.border.border-base-300
       .card-body.p-4
-        h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.cardData') }}
+        h3.text-base.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.cardData') }}
         p.text-xs.mb-3(class="text-base-content/60")
           | {{ $t('checkout.cardNote') }}
 
         .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
           .form-control(class="lg:col-span-2")
-            label.label.py-0
-              span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.cardNumber') }}
-            input.input.input-bordered.input-sm(
+            label.label.block.text-base-content.font-bold.py-0
+              span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.cardNumber') }}
+            input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="paymentData.cardNumber"
               placeholder="0000 0000 0000 0000"
@@ -189,9 +189,9 @@ div(v-if="currentStep === 3")
             )
 
           .form-control
-            label.label.py-0
-              span.label-text.pr-2.text-xs(class="lg:text-sm") {{ $t('checkout.cardExpiry') }}
-            input.input.input-bordered.input-sm(
+            label.label.block.text-base-content.font-bold.py-0
+              span.label-text.text-xs(class="lg:text-sm") {{ $t('checkout.cardExpiry') }}
+            input.input.input-bordered.input-sm.w-full(
               type="text"
               v-model="paymentData.expiryDate"
               placeholder="MM/YY"
@@ -202,9 +202,9 @@ div(v-if="currentStep === 3")
             )
 
           .form-control
-            label.label.py-0
-              span.label-text.pr-2.text-xs(class="lg:text-sm") CVV/CVC
-            input.input.input-bordered.input-sm(
+            label.label.block.text-base-content.font-bold.py-0
+              span.label-text.text-xs(class="lg:text-sm") CVV/CVC
+            input.input.input-bordered.input-sm.w-full(
               type="password"
               v-model="paymentData.cvv"
               placeholder="•••"
@@ -219,7 +219,7 @@ div(v-if="currentStep === 3")
   .mt-4(v-if="orderForm.paymentMethod === 'transfer'")
     .card.bg-base-200.border.border-base-300
       .card-body.p-4
-        h3.text-md.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.payTransfer') }}
+        h3.text-base.font-bold.mb-2(class="lg:text-lg") {{ $t('checkout.payTransfer') }}
         p.text-xs(class="text-base-content/60")
           | {{ $t('checkout.transferNote') }}
 
@@ -227,27 +227,27 @@ div(v-if="currentStep === 3")
 div(v-if="currentStep === 4")
   .grid.grid-cols-1.gap-3(class="lg:grid-cols-2")
     .card.bg-base-200.p-3
-      h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.contactInfo') }}
+      h3.text-base.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.contactInfo') }}
       .space-y-1
         p.font-medium.text-sm {{ orderForm.firstName || '—' }} {{ orderForm.lastName || '—' }}
         p.text-sm(class="text-base-content/70") {{ orderForm.email || '—' }}
         p.text-sm(class="text-base-content/70") {{ orderForm.phone || '—' }}
 
     .card.bg-base-200.p-3(v-if="orderForm.deliveryMethod === 'courier' || orderForm.deliveryMethod === 'post'")
-      h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPostColon') : $t('checkout.addressDeliveryColon') }}
+      h3.text-base.font-bold.mb-1(class="lg:text-lg") {{ orderForm.deliveryMethod === 'post' ? $t('checkout.addressPostColon') : $t('checkout.addressDeliveryColon') }}
       .space-y-1
         p.font-medium.text-sm {{ orderForm.city || '—' }}, {{ orderForm.address || '—' }}
         p.text-sm(class="text-base-content/70" v-if="orderForm.postalCode") {{ $t('checkout.zipLine', { code: orderForm.postalCode }) }}
         p.text-sm(class="text-base-content/70") {{ deliveryName }}
 
     .card.bg-base-200.p-3(v-else-if="orderForm.deliveryMethod === 'pickup'")
-      h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.deliveryMethodTitle') }}
+      h3.text-base.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.deliveryMethodTitle') }}
       .space-y-1
         p.font-medium.text-sm {{ deliveryName }}
         p.text-sm(class="text-base-content/70") {{ pickedDelivery ? $t(pickedDelivery.descriptionKey) : '' }}
 
     .card.bg-base-200.p-3(class="lg:col-span-2")
-      h3.text-md.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.paymentMethodTitle') }}
+      h3.text-base.font-bold.mb-1(class="lg:text-lg") {{ $t('checkout.paymentMethodTitle') }}
       .flex.items-center.gap-2
         .w-6.h-6.flex.items-center.justify-center.rounded-full.bg-base-300
           span.text-sm {{ paymentMethods.find(m => m.id === orderForm.paymentMethod)?.icon }}

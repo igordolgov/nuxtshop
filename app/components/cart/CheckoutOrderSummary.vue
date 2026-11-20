@@ -6,7 +6,7 @@
 <template lang="pug">
 .card.bg-base-100.shadow-lg
   .card-body.p-3
-    h2.card-title(:class="compact ? 'text-sm mb-2' : 'text-md mb-2 lg:text-2xl'")
+    h2.card-title(:class="compact ? 'text-sm mb-2' : 'text-base mb-2 lg:text-2xl'")
       | {{ $t(compact ? 'checkout.itemsInOrderShort' : 'checkout.itemsInOrder') }}
     .overflow-y-auto(v-if="cartItems?.length" :class="compact ? 'max-h-48' : 'max-h-80'")
       .space-y-2
@@ -23,7 +23,7 @@
                 fetchpriority="high"
               )
           .flex-1.min-w-0
-            .font-medium.truncate(:class="compact ? 'text-xs' : 'text-sm lg:text-md'") {{ displayName(item) }}
+            .font-medium.truncate(:class="compact ? 'text-xs' : 'text-sm lg:text-base'") {{ displayName(item) }}
             .text-xs.truncate(class="text-base-content/60" v-if="!compact && item?.variantName") {{ item.variantName }}
             .flex.items-center.justify-between.mt-1
               span.text-base-content(class="opacity-70 text-[0.65rem]") {{ formatMoney(item?.currentPrice) }} × {{ item?.quantity }}
