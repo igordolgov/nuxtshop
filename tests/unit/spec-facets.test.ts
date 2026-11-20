@@ -82,16 +82,41 @@ describe('buildSpecFacets', () => {
   it('выбранный лейбл, исчезнувший из выборки, — пустая группа с count 0', () => {
     const facets = buildSpecFacets([p('1', { Бренд: 'Samsung' })], {
       Цвет: ['синий'],
-      Бренд: [],
     });
-    // Бренд с пустым выбором группу не создаёт
-    expect(facets.some((g) => g.label === 'Бренд')).toBe(true);
+    // Бренд (одно значение у всех) — неразличающийся, скрыт;
+    // Цвет исчез из выборки — пустая группа ради снятия галочки
+    expect(facets.some((g) => g.label === 'Бренд')).toBe(false);
     const color = facets.find((g) => g.label === 'Цвет');
     expect(color).toEqual({
       label: 'Цвет',
       productCount: 0,
       values: [{ value: 'синий', count: 0 }],
     });
+  });
+
+  it('неразличающаяся характеристика: одно значение у всех — группа скрыта', () => {
+    const products = [
+      p('1', { Бренд: 'Xiaomi', Цвет: 'белый' }),
+      p('2', { Бренд: 'Xiaomi', Цвет: 'чёрный' }),
+      p('3', { Бренд: 'Xiaomi' }),
+    ];
+    const facets = buildSpecFacets(products);
+    expect(facets.some((g) => g.label === 'Бренд')).toBe(false);
+    expect(facets.some((g) => g.label === 'Цвет')).toBe(true);
+  });
+
+  it('одно значение не у всех (часть без характеристики) — группа видна', () => {
+    const products = [p('1', { Бренд: 'Xiaomi' }), p('2', { Бренд: 'Xiaomi' }), p('3')];
+    const facets = buildSpecFacets(products);
+    const brand = facets.find((g) => g.label === 'Бренд');
+    expect(brand?.values).toEqual([{ value: 'Xiaomi', count: 2 }]);
+  });
+
+  it('однообразная группа с выбранным значением видна — галочку можно снять', () => {
+    const products = [p('1', { Бренд: 'Xiaomi' }), p('2', { Бренд: 'Xiaomi' })];
+    const facets = buildSpecFacets(products, { Бренд: ['Xiaomi'] });
+    const brand = facets.find((g) => g.label === 'Бренд');
+    expect(brand?.values).toEqual([{ value: 'Xiaomi', count: 2 }]);
   });
 
   it('сортировка групп — по охвату товаров, значения — по счётчику', () => {

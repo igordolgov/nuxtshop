@@ -22,6 +22,12 @@
 // уникальные значения, которые бесполезны как фильтр. Если у лейбла больше
 // MAX_UNIQUE_VALUES разных значений — в фасет попадают только значения,
 // встречающиеся у 2+ товаров; группа без таких значений отбрасывается.
+//
+// Неразличающиеся характеристики: если у ВСЕХ товаров выборки ровно одно
+// значение («Бренд» один на всех), фильтровать по ней нечем — группа не
+// выводится. Характеристика, заполненная не у всех (часть товаров без
+// неё), различается (значение есть/нет) и остаётся. Группа с выбранным
+// значением не скрывается никогда: отмеченное надо уметь снять.
 
 /** Выбор покупателя: лейбл характеристики → отмеченные значения. */
 export type SpecSelection = Record<string, string[]>;
@@ -88,6 +94,13 @@ export const buildSpecFacets = (
     if (values.size > SPEC_MAX_UNIQUE_VALUES) {
       list = list.filter((entry) => entry.count > 1);
     }
+    // Неразличающаяся характеристика: у ВСЕХ товаров выборки ровно одно
+    // значение — фильтровать нечем, группа скрыта. Заполненная не у всех
+    // различается (значение есть/нет) и остаётся. Выбранное значение
+    // группу спасает: отмеченное надо уметь снять
+    const hasSelected = (safeSelected[label] ?? []).some((sel) => typeof sel === 'string' && sel);
+    const productCount = [...values.values()].reduce((sum, count) => sum + count, 0);
+    if (values.size <= 1 && productCount === products.length && !hasSelected) continue;
     // Выбранные значения, выпавшие из фасета (обрезка шума/смена выборки):
     // возвращаем с count 0, чтобы галочку можно было снять
     for (const sel of safeSelected[label] ?? []) {
@@ -97,7 +110,6 @@ export const buildSpecFacets = (
     }
     if (list.length === 0) continue;
     list.sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
-    const productCount = [...values.values()].reduce((sum, count) => sum + count, 0);
     groups.push({ label, productCount, values: list });
   }
 
