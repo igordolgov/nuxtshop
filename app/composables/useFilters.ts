@@ -7,7 +7,7 @@ import { STORE_DEFAULT_LOCALE } from '../../store.config';
 import type { CatalogProduct } from './catalogProduct';
 // Фасетные фильтры по характеристикам (паттерн маркетплейсов): чистые
 // функции в utils — здесь только стейт и проводка в displayedProducts
-import { buildSpecFacets, filterBySpecSelection } from '../utils/specFacets';
+import { buildSpecFacets, clampSpecSelection, filterBySpecSelection } from '../utils/specFacets';
 import type { SpecFacetGroup, SpecSelection } from '../utils/specFacets';
 // Сортировка каталога — чистая функция в utils (тестируется в node):
 // раньше при отсутствии даты компаратор подставлял id как дату
@@ -134,10 +134,17 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
   });
 
   // Фасеты характеристик по базовой выборке (с учётом чужого spec-выбора,
-  // без собственного — счётчики выбранного не обнуляются)
-  const specFacets = computed<SpecFacetGroup[]>(() =>
-    buildSpecFacets(scopeProducts.value, filters.value.specs ?? {}),
-  );
+  // без собственного — счётчики выбранного не обнуляются).
+  // Секция «Характеристики» показывается ТОЛЬКО при выбранных категориях
+  // (паттерн WB/Ozon: фасеты — свойства товаров выбранной категории).
+  // Категорий нет — фасеты не строим вовсе: секция скрыта (гейт в
+  // ProductFilter), а вычисление по всему каталогу не тратится.
+  const specFacets = computed<SpecFacetGroup[]>(() => {
+    if (!Array.isArray(filters.value.categories) || filters.value.categories.length === 0) {
+      return [];
+    }
+    return buildSpecFacets(scopeProducts.value, filters.value.specs ?? {});
+  });
 
   const displayedProducts = computed<LocalizedCatalogProduct[]>(() =>
     sortProducts(filterBySpecSelection(scopeProducts.value, filters.value.specs ?? {}), sort.value),
@@ -156,7 +163,12 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
   };
 
   const handleFiltersUpdate = (newFilters: Partial<CatalogFiltersState>): void => {
-    filters.value = { ...filters.value, ...newFilters };
+    const next = { ...filters.value, ...newFilters };
+    // Секция характеристик существует только при выбранных категориях:
+    // снятие последней категории сбрасывает и spec-выбор — иначе невидимые
+    // фасеты продолжали бы фильтровать каталог (чипы в сортировке висят,
+    // а снять их в скрытой панели невозможно)
+    filters.value = { ...next, specs: clampSpecSelection(next.categories, next.specs) };
   };
 
   const handleSortUpdate = (newSort?: CatalogSortConfig | null): void => {

@@ -154,3 +154,21 @@ export const countActiveSpecFilters = (selected: SpecSelection = {}): number => 
   return Object.values(selected).filter((values) => Array.isArray(values) && values.length > 0)
     .length;
 };
+
+/**
+ * Spec-выбор, разрешённый при текущем категорийном фильтре.
+ *
+ * Секция «Характеристики» выводится ТОЛЬКО когда в фильтрах выбраны
+ * категории (десктоп-сайдбар и мобильная панель): категории не выбраны —
+ * секция скрыта вместе с заголовком, и висящий spec-выбор было бы нечем
+ * снять, пока он продолжает фильтровать каталог. Поэтому опустение
+ * категорий сбрасывает выбор (паттерн маркетплейсов: зависимые фасеты
+ * очищаются вместе с родительским фильтром).
+ */
+export const clampSpecSelection = (
+  categories: string[] | null | undefined,
+  specs: SpecSelection | null | undefined,
+): SpecSelection => {
+  if (!Array.isArray(categories) || categories.length === 0) return {};
+  return specs && typeof specs === 'object' && !Array.isArray(specs) ? specs : {};
+};

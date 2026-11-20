@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildSpecFacets,
+  clampSpecSelection,
   countActiveSpecFilters,
   filterBySpecSelection,
 } from '../../app/utils/specFacets';
@@ -155,5 +156,24 @@ describe('countActiveSpecFilters', () => {
     expect(countActiveSpecFilters({ Цвет: ['синий'] })).toBe(1);
     expect(countActiveSpecFilters({ Цвет: ['синий'], Бренд: [], Вес: ['200 г', '180 г'] })).toBe(2);
     expect(countActiveSpecFilters(null as never)).toBe(0);
+  });
+});
+
+describe('clampSpecSelection', () => {
+  it('категории не выбраны — spec-выбор сбрасывается (секция скрыта)', () => {
+    expect(clampSpecSelection([], { Цвет: ['синий'] })).toEqual({});
+    expect(clampSpecSelection([], { Цвет: ['синий'], Бренд: ['Samsung'] })).toEqual({});
+    expect(clampSpecSelection(undefined, { Цвет: ['синий'] })).toEqual({});
+    expect(clampSpecSelection(null, { Цвет: ['синий'] })).toEqual({});
+    expect(clampSpecSelection([], {})).toEqual({});
+    expect(clampSpecSelection(undefined, undefined)).toEqual({});
+  });
+
+  it('категории выбраны — выбор возвращается как есть', () => {
+    const specs = { Цвет: ['синий'], Бренд: [] };
+    expect(clampSpecSelection(['Планшеты'], specs)).toBe(specs);
+    expect(clampSpecSelection(['Планшеты'], undefined)).toEqual({});
+    expect(clampSpecSelection(['Планшеты'], null)).toEqual({});
+    expect(clampSpecSelection(['Планшеты'], 42 as never)).toEqual({});
   });
 });
