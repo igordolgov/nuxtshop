@@ -172,6 +172,17 @@ const categoryLabelMaps = computed(() => ({
   es: buildCategoryLabelMap(products.value, 'es'),
 }))
 
+// Поля fuzzy-поиска админки (searchFilter выше): та же сборка, что на
+// витрине (catalogSearchFields) — сырые + локализованные поля + raw-оригиналы.
+// На ru loc(p) === p (raw-поля undefined — buildSearchHaystack их пропустит);
+// на en/es localizedProduct кладёт categoriesRaw/characteristicsRaw, а
+// nameRaw/descriptionRaw дополняются вручную (паттерн useAppState).
+const adminSearchFieldsOf = (p) => {
+  const lp = loc(p)
+  const item = lp === p ? p : { ...lp, nameRaw: p.name, descriptionRaw: p.description }
+  return catalogSearchFields(item)
+}
+
 const processedProducts = computed(() => {
   let result = [...products.value]
 
@@ -182,20 +193,15 @@ const processedProducts = computed(() => {
   }
 
   if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase()
-    // Ищем и в сырых, и в локализованных полях: на /en админ может
-    // набрать английское название (loc(p) для ru — тот же объект)
-    result = result.filter((p) => {
-      const lp = loc(p)
-      return (
-        p.name?.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.categories?.some((c) => c.toLowerCase().includes(q)) ||
-        lp.name?.toLowerCase().includes(q) ||
-        lp.description?.toLowerCase().includes(q) ||
-        lp.categories?.some((c) => c.toLowerCase().includes(q))
-      )
-    })
+    // Fuzzy-поиск админки — ТОТ ЖЕ searchFilter, что на витрине: fold
+    // диакритики, порядок слов, стемминг («телефонов» → «телефон»),
+    // опечатки (Дамерау–Левенштейн: «samsng» → «Samsung»), транслит
+    // («самсунг» → Samsung, «гармин» → Garmin) и поиск по характеристикам
+    // (бренд/spec-лист). Раньше был наивный includes(весь запрос) —
+    // «samsung наушников» или опечатка давали пустую таблицу.
+    // Поля: сырые + локализованные (на /en админ может набрать перевод) +
+    // характеристики; сборка — catalogSearchFields, как на витрине.
+    result = searchFilter(result, searchQuery.value, adminSearchFieldsOf)
   }
 
   if (selectedCategories.value.length > 0) {
