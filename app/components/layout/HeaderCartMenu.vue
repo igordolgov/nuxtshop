@@ -70,13 +70,14 @@
         v-for="item in cartItems"
         :key="item.id"
       )
-        //- 56px: резерв места до загрузки (width/height), ошибка → плейсхолдер
+        //- 56px: резерв места до загрузки (width/height), ошибка → плейсхолдер.
+        //- Без lazy: дропдаун скрыт через v-show, ленивые миниатюры
+        //- грузились в момент открытия и мигали
         NuxtImg.flex-shrink-0.w-14.h-14.rounded-lg.bg-base-200.object-cover(
           :src="item.image || '/images/placeholder.jpg'"
           :alt="displayName(item)"
           width="56"
           height="56"
-          loading="lazy"
           decoding="async"
           @error="handleImageError"
         )

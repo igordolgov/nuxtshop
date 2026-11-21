@@ -17,13 +17,14 @@
         .flex.items-start.gap-3
           .flex-shrink-0
             .item-image.w-20.h-20.rounded-xl.bg-base-200.flex.items-center.justify-center.overflow-hidden
-              //- width/height = 80px (w-20 h-20): резерв места до загрузки
+              //- width/height = 80px (w-20 h-20): резерв места до загрузки.
+              //- Без lazy: миниатюры копеечные, а ленивые картинки последней
+              //- карточки ленты подгружались при свайпе и мигали
               NuxtImg.w-full.h-full.object-cover(
                 :src="item.image || '/images/placeholder.jpg'"
                 :alt="displayName(item)"
                 width="80"
                 height="80"
-                loading="lazy"
                 decoding="async"
                 @error="handleImageError"
               )
@@ -89,11 +90,16 @@
     )
       .col-span-5.flex.items-center.gap-3
         .flex-shrink-0
+          //- width/height = 96 (48px @2x): резерв места и модификаторы
+          //- трансформатора — раньше атрибутов не было и /img отдавал
+          //- полноразмерный оригинал; без lazy — как в мобильной ленте
           .item-image.w-12.h-12.rounded-lg.bg-base-200.flex.items-center.justify-center.overflow-hidden
             NuxtImg.w-full.h-full.object-cover(
               :src="item.image || '/images/placeholder.jpg'"
               :alt="displayName(item)"
-              loading="lazy"
+              width="96"
+              height="96"
+              decoding="async"
               @error="handleImageError"
             )
         .flex-grow.min-w-0

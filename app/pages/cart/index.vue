@@ -10,14 +10,18 @@
       .header-skeleton
 
   .content-wrapper.flex-1.flex.min-h-0.w-full
-    //- До монтирования: корзина читается из localStorage только на клиенте —
-    //- на SSR список пуст. Скелет вместо мигающего «Корзина пуста»
-    .cart-skeleton(v-if="!isMounted" class="px-3 sm:px-4 pt-4")
+    //- До монтирования И до чтения снапшота корзины (fetchCart идёт по
+    //- app:suspense:resolve, позже onMounted): скелет. Если отпустить
+    //- скелет раньше, на каждый открывшийся /cart вспыхивает «Корзина
+    //- пуста» (fixed-оверлей), затем список перестраивается и фото
+    //- позиций монтируются заново — мигают (см. utils/cartView.ts)
+    .cart-skeleton(v-if="cartView === 'skeleton'" class="px-3 sm:px-4 pt-4")
       .skeleton.skeleton-row(v-for="i in 3" :key="i")
 
-    //- ПУСТАЯ КОРЗИНА — один блок на все экраны
+    //- ПУСТАЯ КОРЗИНА — один блок на все экраны. Показывается только
+    //- когда корзина реально прочитана и позиций нет
     .empty-cart(
-      v-else-if="!cartItems || cartItems.length === 0"
+      v-else-if="cartView === 'empty'"
       class="flex justify-center items-center"
     )
       .empty-cart-content.text-center.max-w-md.mx-auto(class="p-6 sm:p-8")
@@ -247,6 +251,7 @@ const { $notify } = useNuxtApp()
 //- CartCheckoutPanel.vue (компоненты сами читают useCart)
 const {
   cartItems,
+  cartLoaded,
   total,
   totalItems,
   clearCart,
@@ -267,6 +272,13 @@ const promoCode = ref('')
 
 // formatPrice/formatMoney — единые из useProductUtils (валюту добавляет
 // formatMoney — аудит F13)
+
+//- Скелет / «пусто» / список — одна чистая функция (utils/cartView.ts);
+//- раньше скелет держался только до isMounted и на каждый открывшийся
+//- /cart вспыхивало «Корзина пуста» (фото позиций мигали)
+const cartView = computed(() =>
+  cartViewMode(isMounted.value, cartLoaded.value, cartItems.value?.length ?? 0),
+)
 
 const goCatalog = () => navigateTo(localePath('/'))
 

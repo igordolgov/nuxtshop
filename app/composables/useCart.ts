@@ -762,6 +762,11 @@ function createCart() {
 
   return {
     cartItems,
+    // Снапшот прочитан (localStorage/аккаунт-синк отработали). Страница
+    // корзины держит скелет до этого момента — иначе между onMounted
+    // и fetchCart на весь экран вспыхивает «Корзина пуста» и список
+    // перестраивается второй раз (фото позиций мигают).
+    cartLoaded: loaded,
     appliedPromo,
     isProcessing,
     promoError,
