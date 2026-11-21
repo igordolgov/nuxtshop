@@ -10,6 +10,8 @@ import type { H3Event } from 'h3';
 import { createError } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import { readProducts, writeProducts, type Product } from './productHelpers';
+// Акции: витринные цены заказа (raw KV + активные акции — KV не мутируется)
+import { activePromosFromEvent, applyPromosToProducts } from './promoDiscount';
 import {
   readPromoCodes,
   writePromoCodes,
@@ -298,41 +300,55 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   // 3. Товары из KV: цены и наличие — серверные.
   // Корзинная позиция варианта приходит составным id «productId::variantId»
   // (см. useCart.addToCart): склад и цена берутся из варианта, а не товара.
-  const products = await readProducts(event);
+  // Два среза каталога: raw — склад и запись (KV-объекты не мутируются
+  // промо), sellable — ЦЕНЫ (активные акции применены; заказ платит
+  // акционную цену, даже если клиентская корзина осталась со старым
+  // снимком — сервер авторитетен).
+  const rawProducts = await readProducts(event);
+  const promos = await activePromosFromEvent(event);
+  const sellable = applyPromosToProducts(rawProducts, promos);
+  const sellableById = new Map(sellable.map((p) => [String(p.id), p]));
+  const products = rawProducts;
   const items: OrderItem[] = [];
   for (const [lineId, quantity] of qtyById) {
     const sep = String(lineId).indexOf('::');
     const productId = sep === -1 ? String(lineId) : String(lineId).slice(0, sep);
     const variantId = sep === -1 ? null : String(lineId).slice(sep + 2) || null;
+    // Склад/остатки/имена — из raw; цена — из промо-среза (или как raw,
+    // если товар не под акцией — applyPromos возвращает объект как есть)
     const product = products.find((p) => String(p.id) === productId);
-    if (!product) {
+    const sellableProduct = sellableById.get(productId);
+    if (!product || !sellableProduct) {
       throw createError({
         statusCode: 400,
         message: `Товар с ID ${productId} не найден`,
         data: { code: 'productNotFound' },
       });
     }
-    let price = product.price;
+    let price = sellableProduct.price;
     let stock = product.stockQuantity ?? 0;
     let variantName: string | null = null;
     let variantNameEn: string | null = null;
     let variantNameEs: string | null = null;
     let variantImage: string | null = null;
     if (variantId !== null) {
-      const variant = product.variants?.find((v) => v.id === variantId);
-      if (!variant) {
+      // Цена варианта — из промо-среза (applyPromos пересчитал цены
+      // вариантов пропорционально); склад — из raw.
+      const variant = sellableProduct.variants?.find((v) => v.id === variantId);
+      const rawVariant = product.variants?.find((v) => v.id === variantId);
+      if (!variant || !rawVariant) {
         throw createError({
           statusCode: 400,
           message: `У товара «${product.name}» нет варианта ${variantId}`,
           data: { code: 'variantMissing', params: { name: product.name, variant: variantId } },
         });
       }
-      price = variant.price ?? product.price;
-      stock = variant.stockQuantity ?? product.stockQuantity ?? 0;
-      variantName = variant.name;
-      variantNameEn = variant.nameEn ?? null;
-      variantNameEs = variant.nameEs ?? null;
-      variantImage = variant.image ?? null;
+      price = variant.price ?? sellableProduct.price;
+      stock = rawVariant.stockQuantity ?? product.stockQuantity ?? 0;
+      variantName = rawVariant.name;
+      variantNameEn = rawVariant.nameEn ?? null;
+      variantNameEs = rawVariant.nameEs ?? null;
+      variantImage = rawVariant.image ?? null;
     }
     if (quantity > stock) {
       throw createError({

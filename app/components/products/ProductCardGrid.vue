@@ -120,10 +120,17 @@
           v-if="hasDiscount(product)",
           class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-sm leading-4 font-bold text-white"
         ) −{{ discountPercent(product) }}%
+        //- Срок акции (ставит резолвер promoDiscount на витринных ридах):
+        //- компактная плашка «до 30.11» — понятно, что скидка временная
+        span.shrink-0.text-xs(
+          v-if="product.promoEndsAt",
+          class="text-base-content/50 whitespace-nowrap"
+        ) {{ $t('product.promoUntil', { date: promoUntilShort(product.promoEndsAt) }) }}
       .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>
 
 <script setup>
+import { promoUntilShort } from '~/utils/productDiscount'
 const props = defineProps({
   product: {
     type: Object,

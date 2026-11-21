@@ -210,7 +210,8 @@
     "notifyDone": "Done! We will let you know when the product is back",
     "notifyErrContact": "Enter an email or phone number (at least 10 digits)",
     "notifyError": "Could not send. Please try again",
-    "variant": "Option"
+    "variant": "Option",
+    "promoUntil": "until {date}"
   },
   "productPage": {
     "notFound": "Product not found",
@@ -274,7 +275,8 @@
       "new": "New",
       "company": "Company",
       "reviews": "Reviews"
-    }
+    },
+    "promoUntil": "until {date}"
   },
   "about": {
     "title": "About the Store",
@@ -1108,7 +1110,18 @@
       "saveError": "Failed to save the post",
       "imageProcessError": "Failed to process the image",
       "pageTitle": "News — Admin",
-      "bodyPlaceholder": "First paragraph\n\nSecond paragraph"
+      "bodyPlaceholder": "First paragraph\n\nSecond paragraph",
+      "startsAt": "Active from",
+      "endsAt": "Active until",
+      "endsHint": "Empty = indefinite. The «until» date is inclusive: on the last day the offer is still active; the next day the discount is removed and the news item is hidden from the storefront.",
+      "promoDiscount": "Discount, %",
+      "promoCategory": "Catalog category (discount target)",
+      "promoCategoryAny": "— selected products only —",
+      "promoBlockHint": "The discount is applied to the selected products and/or catalog category automatically, while the offer is active, and is removed by itself when it expires. Storefront shows it as a discounted price with a struck-through old price and a −% badge.",
+      "promoProductsLabel": "Promo products — discount target (up to {n})",
+      "statusScheduled": "Scheduled",
+      "statusExpired": "Expired",
+      "endingSoon": "ends {date}"
     },
     "promocodes": {
       "title": "Promo codes",

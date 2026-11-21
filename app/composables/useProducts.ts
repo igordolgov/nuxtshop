@@ -123,14 +123,21 @@ function createProducts() {
 
   /** /api/products с одиночным повтором на сервере: чтение KV иногда
    *  спотыкается на холодном изоляте воркера — без повтора посетитель
-   *  получал скелет вместо SSR-каталога (медленный прогон PageSpeed). */
+   *  получал скелет вместо SSR-каталога (медленный прогон PageSpeed).
+   *  raw=1 (только на маршрутах админки): базовые цены БЕЗ активных
+   *  акций — редактирование товара не должно получать акционную цену
+   *  как базовую и писать её в KV при сохранении (promoDiscount.ts).
+   *  window.location, а не useRoute(): вызовы из onMounted/обработчиков
+   *  вне setup-контекста; SSR-рид всегда витринный (окно undefined). */
   const fetchCatalog = async (): Promise<CatalogProduct[] | { products?: CatalogProduct[] }> => {
+    const isAdminRoute = import.meta.client && window.location.pathname.includes('/admin');
+    const url = isAdminRoute ? '/api/products?raw=1' : '/api/products';
     try {
-      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>('/api/products');
+      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>(url);
     } catch (err) {
       if (!import.meta.server) throw err;
       await new Promise((resolve) => setTimeout(resolve, 250));
-      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>('/api/products');
+      return await $fetch<CatalogProduct[] | { products?: CatalogProduct[] }>(url);
     }
   };
 

@@ -60,6 +60,12 @@
               v-if="baseDiscount",
               class="inline-flex items-center bg-red-700 px-1.5 pt-px pb-0.5 rounded-md font-bold text-white text-base leading-5"
             ) −{{ discountPercent(product) }}%
+            //- Срок акции (резолвер promoDiscount, витринные риды):
+            //- «акция до 30.11» — рядом с бейджем −%, как на карточке
+            span.shrink-0.text-xs(
+              v-if="product.promoEndsAt",
+              class="text-base-content/50 whitespace-nowrap"
+            ) {{ $t('product.promoUntil', { date: promoUntilShort(product.promoEndsAt) }) }}
           .text-xs.mt-1(class="text-base-content/70") {{ $t('product.vatIncluded') }}
           //- Эквивалент в песо по курсу elTOQUE (кубинская копия; RU скрыт
           //-  флагом SHOW_CUP_EQUIVALENT — строка просто не рендерится).
@@ -209,6 +215,7 @@
 </template>
 
 <script setup>
+import { promoUntilShort } from '~/utils/productDiscount'
 // CUP_RATE_SOURCE_URL — страница курса elTOQUE (shared, тесты импортируют ту же константу)
 import { CUP_RATE_SOURCE_URL } from '#shared/cupRates'
 // Варианты: чистые хелперы (составной id позиции, цена/склад, локализация)

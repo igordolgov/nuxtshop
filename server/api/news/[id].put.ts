@@ -9,6 +9,8 @@ import {
   writeNews,
 } from '../../lib/newsHelpers';
 import { processImage } from '../../lib/imageStorage';
+// Правка новостей меняет витринные цены (акции) — сбрасываем каталог-кэш
+import { purgeCatalogEdgeCache } from '../../lib/catalogEdgeCache';
 import { sendNewsPost } from '../../lib/telegram';
 import { requireAdmin } from '../../utils/auth';
 
@@ -36,6 +38,8 @@ export default defineEventHandler(async (event) => {
     applySanitizedNews(item, clean);
     item.image = image;
     await writeNews(event, news);
+    // Срок/цель/процент акции изменились — витринные цены устарели сразу
+    await purgeCatalogEdgeCache(event);
 
     let telegramPosted = false;
     if (wasDraft && item.published !== false) {

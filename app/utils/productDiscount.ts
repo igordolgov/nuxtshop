@@ -41,3 +41,17 @@ export const discountPercent = (product?: DiscountProductLike | null): number =>
   }
   return Math.round((1 - product.price / product.oldPrice) * 100);
 };
+
+/**
+ * '2026-11-30' → '30.11' — компактная дата для плашки «акция до 30.11»
+ * (карточка каталога и страница товара; слова локали даёт словарь
+ * product.promoUntil). Год не нужен: акции короткие, а «30.11» читается
+ * однозначно. Битое/пустое → '' (плашка не рендерится).
+ */
+export const promoUntilShort = (iso?: string | null): string => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
+  if (!m) return '';
+  const day = m[3] ?? '';
+  const month = m[2] ?? '';
+  return `${Number(day)}.${month}`;
+};

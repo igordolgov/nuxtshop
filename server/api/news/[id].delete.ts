@@ -2,6 +2,8 @@
 // Удаление новости (DELETE /api/news/:id). Только админ.
 import { readNews, writeNews } from '../../lib/newsHelpers';
 import { requireAdmin } from '../../utils/auth';
+// Правка новостей меняет витринные цены (акции) — сбрасываем каталог-кэш
+import { purgeCatalogEdgeCache } from '../../lib/catalogEdgeCache';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,6 +18,8 @@ export default defineEventHandler(async (event) => {
 
     news.splice(idx, 1);
     await writeNews(event, news);
+    // Удалённая акция снимает скидки с витрины — кэш каталога больше не актуален
+    await purgeCatalogEdgeCache(event);
 
     return { success: true, message: 'Новость удалена' };
   } catch (error) {

@@ -73,6 +73,8 @@
           .flex.items-center.gap-2.flex-wrap.mb-2
             span.badge-chip(:class="`chip-${newsTone(featuredNews.category)}`") {{ catLabel(featuredNews.category) }}
             span.text-xs(class="text-base-content/50") {{ formatNewsDate(featuredNews.date, locale) }}
+            //- Срок действия (акция или новость с датой конца): «до 30.11»
+            span.badge-chip.chip-sale(v-if="featuredNews.endsAt") {{ $t('news.promoUntil', { date: promoUntilShort(featuredNews.endsAt) }) }}
           h2.text-lg.font-semibold.text-base-content(class="lg:text-2xl") {{ featuredNews.title }}
           p.text-sm.mt-2(class="text-base-content/60 lg:text-base") {{ featuredNews.excerpt }}
           span.read-more {{ $t('news.read') }}
@@ -101,6 +103,8 @@
             .flex.items-center.gap-2.flex-wrap.mb-2
               span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ catLabel(item.category) }}
               span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date, locale) }}
+              //- Срок действия (акция или новость с датой конца)
+              span.badge-chip.chip-sale(v-if="item.endsAt") {{ $t('news.promoUntil', { date: promoUntilShort(item.endsAt) }) }}
             h3.font-semibold.text-base-content(class="line-clamp-2") {{ item.title }}
             p.text-sm.mt-1(class="text-base-content/50 line-clamp-2") {{ item.excerpt }}
             span.read-more {{ $t('news.read') }}
