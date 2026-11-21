@@ -502,6 +502,53 @@ describe('searchFilter: транслитерация', () => {
   });
 });
 
+// ─── Новый товар подхватывается поиском автоматически ────────────────────
+//
+// Гарантия автоматизма: у fuzzy/транслита/подсказок НЕТ предвычисленного
+// индекса — солома, словарь fuzzy-слов и словарь исправлений строятся из
+// ПЕРЕДАННОГО списка при каждом вызове (searchQuery.ts stateless). Новый
+// товар (админка → KV → /api/products → state каталога) находится сразу,
+// без «пересчёта»/пересборки: блок фиксирует это на жизни каталога —
+// было 2 товара → запрос мимо → добавили третий → тот же запрос нашёл.
+
+describe('searchFilter: новый товар подхватывается автоматически', () => {
+  const fieldsOf = (item: { fields: unknown[] }) => item.fields;
+
+  it('fuzzy-запрос находит только что добавленный товар без пересборки индекса', () => {
+    const catalog = [
+      { id: '1', fields: ['Беспроводные наушники JBL Tune 770NC', ['Электроника']] },
+      { id: '2', fields: ['Умная колонка Яндекс Станция Лайт', ['Электроника']] },
+    ];
+    // До добавления Samsung запрос с опечаткой ничего не находит
+    expect(searchFilter(catalog, 'samsng', fieldsOf)).toEqual([]);
+
+    // В каталоге появился новый товар (как при createProduct → push в state)
+    catalog.push({ id: '3', fields: ['Смартфон Samsung Galaxy A55', ['Электроника']] });
+
+    // Тот же вызов сразу видит новый товар: словарь fuzzy-слов пересчитан
+    expect(searchFilter(catalog, 'samsng', fieldsOf).map((p) => p.id)).toEqual(['3']);
+    // И по регулярному транслиту («самсунг» → «samsung») — тоже сразу
+    expect(searchFilter(catalog, 'самсунг', fieldsOf).map((p) => p.id)).toEqual(['3']);
+  });
+
+  it('словарь «возможно, вы имели в виду» тоже растёт вместе с каталогом', () => {
+    const catalog = [
+      { id: '1', fields: ['Беспроводные наушники JBL Tune 770NC', ['Электроника']] },
+    ];
+    // Тяжёлая опечатка «garmixxx» (3 правки от «garmin» — за пределами
+    // fuzzy-допуска выдачи 1/2, территория слоя подсказок) без товара
+    // бренда — исправление невозможно
+    expect(suggestSearchCorrection(catalog, 'garmixxx', fieldsOf)).toBeNull();
+
+    catalog.push({ id: '2', fields: ['Спортивные часы Garmin Forerunner 55', ['Электроника']] });
+
+    // Новый товар в каталоге → его слово в словаре исправлений → подсказка
+    expect(suggestSearchCorrection(catalog, 'garmixxx', fieldsOf)).toBe('Garmin');
+    // И выдача по исправлению непуста (гарантия слоя подсказок)
+    expect(searchFilter(catalog, 'Garmin', fieldsOf).map((p) => p.id)).toEqual(['2']);
+  });
+});
+
 // ─── suggestSearchCorrection — «возможно, вы имели в виду» ───────────────
 
 describe('suggestSearchCorrection', () => {
