@@ -18,14 +18,14 @@
           :aria-label="$t('admin.products.refreshTitle')"
           type="button"
         )
-          icon(name="heroicons:arrow-path" size="20")
+          AppIcon(name="heroicons:arrow-path" size="20")
         button.btn.btn-sm.btn-primary.btn-square(
           @click="$emit('add')"
           :title="$t('admin.products.addTitle')"
           type="button"
           class="sm:btn-auto"
         )
-          icon(name="heroicons:plus" size="20")
+          AppIcon(name="heroicons:plus" size="20")
           span.hidden.sm-inline.ml-1 {{ $t('admin.products.addTitle') }}
 
     //- Фильтры строкой ниже

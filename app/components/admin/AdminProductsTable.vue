@@ -63,7 +63,7 @@
                       @error="onImageError($event)"
                     )
                     .w-full.h-full.flex.items-center.justify-center(v-else)
-                      icon(name="heroicons:photo" size="16")
+                      AppIcon(name="heroicons:photo" size="16")
 
               //- Название/описание/категории — в текущей локали (loc);
               //- в @edit/@delete уходит СЫРОЙ product (v-for идёт по сырому
@@ -106,14 +106,14 @@
                     :title="$t('admin.common.edit')"
                     type="button"
                   )
-                    icon(name="heroicons:pencil-square" size="18")
+                    AppIcon(name="heroicons:pencil-square" size="18")
                   button.btn.btn-ghost.btn-sm.btn-circle.text-error(
                     @click="$emit('delete', product)"
                     :aria-label="$t('admin.common.delete')"
                     :title="$t('admin.common.delete')"
                     type="button"
                   )
-                    icon(name="heroicons:trash" size="18")
+                    AppIcon(name="heroicons:trash" size="18")
 
       //- Мобильный список карточек.
       //- pb-40: карточки прокручиваются выше кнопки «Наверх»
@@ -136,7 +136,7 @@
                     @error="onImageError($event)"
                   )
                   .w-full.h-full.flex.items-center.justify-center(v-else)
-                    icon(name="heroicons:photo" size="20")
+                    AppIcon(name="heroicons:photo" size="20")
 
               //- Инфо (название в текущей локали, см. коммент в десктопной таблице)
               .flex-1.min-w-0
@@ -165,13 +165,13 @@
                   :aria-label="$t('admin.common.edit')"
                   type="button"
                 )
-                  icon(name="heroicons:pencil-square" size="20")
+                  AppIcon(name="heroicons:pencil-square" size="20")
                 button.btn.btn-circle.btn-ghost.text-error(
                   @click="$emit('delete', product)"
                   :aria-label="$t('admin.common.delete')"
                   type="button"
                 )
-                  icon(name="heroicons:trash" size="20")
+                  AppIcon(name="heroicons:trash" size="20")
 </template>
 
 <script setup>

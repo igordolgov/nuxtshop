@@ -22,7 +22,7 @@
           button.btn.btn-ghost.btn-xs.btn-circle(
             @click="dismiss"
           )
-            Icon(name="mdi:close" size="16")
+            AppIcon(name="mdi:close" size="16")
 
         .card-actions.justify-end.mt-3.gap-2
           button.btn.btn-ghost.btn-sm(
@@ -31,14 +31,14 @@
           button.btn.btn-primary.btn-sm(
             @click="install"
           )
-            Icon(name="mdi:download" size="16")
+            AppIcon(name="mdi:download" size="16")
             span.ml-1 {{ $t('install.install') }}
 
   .mini-prompt(
     v-if="showMiniPrompt"
     @click="showFullPrompt"
   )
-    Icon(name="mdi:download" size="20")
+    AppIcon(name="mdi:download" size="20")
     span {{ $t('install.cta') }}
 </template>
 

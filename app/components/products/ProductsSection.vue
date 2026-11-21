@@ -36,7 +36,7 @@
           type="button"
           @click="$emit('clearSearch')"
         )
-          Icon(name="mdi:close" size="16")
+          AppIcon(name="mdi:close" size="16")
           | {{ $t('cart.clear') }}
 
     //- Пустое состояние (role=status: СК анонсирует «ничего не найдено»
@@ -45,7 +45,7 @@
       v-if="!displayedProducts.length && !isLoading"
       role="status"
     )
-      Icon.empty-icon(name="mdi:package-variant" size="64")
+      AppIcon.empty-icon(name="mdi:package-variant" size="64")
       h3.text-xl.font-medium.mb-2 {{ $t('product.notFound') }}
       p.text-base-content.opacity-60.mb-4 {{ emptyMessage }}
       //- «Возможно, вы имели в виду» (Amazon/Ozon): исправленный запрос
@@ -131,7 +131,7 @@
   .error-state.py-16.text-center(
     v-if="loadError"
   )
-    Icon(name="mdi:alert-circle" size="48" class="text-error")
+    AppIcon(name="mdi:alert-circle" size="48" class="text-error")
     h3.text-xl.font-medium.mb-2 {{ $t('catalog.loadError') }}
     p.text-base-content.opacity-60.mb-4 {{ loadError }}
     button.btn.btn-primary(

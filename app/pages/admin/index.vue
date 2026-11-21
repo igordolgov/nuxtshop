@@ -13,26 +13,26 @@
     .flex.flex-col.gap-3(class="sm:flex-row sm:items-center sm:justify-between")
       .flex.items-center.gap-3
         .dash-avatar
-          icon(name="heroicons:shield-user" size="22")
+          AppIcon(name="heroicons:shield-check" size="22")
         div
           h1.text-xl.font-bold.text-base-content {{ $t('admin.dashboard.title') }}
           p.dash-sub {{ appState.user?.name || $t('admin.dashboard.admin') }} · {{ todayLabel }}
       .flex.gap-2
         button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="refreshStats" :aria-label="$t('admin.dashboard.refreshAria')")
-          icon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
+          AppIcon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
           span.hidden(class="sm:inline") {{ $t('admin.dashboard.refresh') }}
         button.btn.btn-sm.btn-outline.rounded-xl(
           class="hover:bg-error hover:text-error-content hover:border-error"
           @click="handleLogout"
         )
-          icon(name="heroicons:arrow-right-on-rectangle" size="18")
+          AppIcon(name="heroicons:arrow-right-on-rectangle" size="18")
           span {{ $t('admin.dashboard.logout') }}
 
     //- KPI-карточки
     .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
       .stat-card(v-for="kpi in kpis" :key="kpi.label")
         .stat-icon(:class="`stat-icon-${kpi.tone}`")
-          icon(:name="kpi.icon" size="20")
+          AppIcon(:name="kpi.icon" size="20")
         .stat-num {{ kpi.value }}
         .stat-label {{ kpi.label }}
         .stat-badge(v-if="kpi.badge" :class="`stat-badge-${kpi.tone}`") {{ kpi.badge }}
@@ -41,7 +41,7 @@
     .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-5")
       NuxtLink.quick-tile(v-for="q in quickLinks" :key="q.to" :to="q.to" prefetch)
         .quick-icon
-          icon(:name="q.icon" size="20")
+          AppIcon(:name="q.icon" size="20")
         .quick-text
           .quick-title {{ q.title }}
           .quick-sub {{ q.sub }}

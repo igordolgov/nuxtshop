@@ -24,7 +24,7 @@ Transition(name="bulk-bar")
         type="button"
         :title="$t('admin.bulkBar.editTitle')"
       )
-        icon(name="heroicons:adjustments-horizontal" size="16")
+        AppIcon(name="heroicons:adjustments-horizontal" size="16")
         span {{ $t('admin.common.edit') }}
 
       button.btn.btn-sm.btn-error(
@@ -32,7 +32,7 @@ Transition(name="bulk-bar")
         type="button"
         :title="$t('admin.bulkBar.deleteTitle')"
       )
-        icon(name="heroicons:trash" size="16")
+        AppIcon(name="heroicons:trash" size="16")
         span.hidden(class="sm:inline") {{ $t('admin.common.delete') }}
 
       button.btn.btn-sm.btn-ghost.btn-square(
@@ -41,7 +41,7 @@ Transition(name="bulk-bar")
         :title="$t('admin.bulkBar.clearTitle')"
         :aria-label="$t('admin.bulkBar.clearAria')"
       )
-        icon(name="heroicons:x-mark" size="18")
+        AppIcon(name="heroicons:x-mark" size="18")
 </template>
 
 <script setup>

@@ -14,7 +14,7 @@
       @click="$emit('update:searchQuery', '')"
       type="button"
     )
-      icon(name="heroicons:x-mark" class="w-4 h-4")
+      AppIcon(name="heroicons:x-mark" class="w-4 h-4")
 
   //- Фильтры статуса: активный — заливка, неактивный — outline.
   //- text-white/opacity-70 сняты: белый на светлом btn-secondary

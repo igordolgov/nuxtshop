@@ -166,7 +166,14 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/image',
-    '@nuxt/icon',
+    // '@nuxt/icon' УДАЛЁН (миграция на AppIcon): клиентский рантайм модуля —
+    // чанк ~33 КБ transfer с eager-фетчем на t≈230 мс, по Lighthouse 90%
+    // неиспользуемого кода (SSR рисует инлайн-<svg>, на клиенте рантайм не
+    // исполнялся). Все 39 использований <Icon>/icon( (7 mdi + 25 heroicons,
+    // статика + kpi.icon/q.icon из конечного набора) переведены на
+    // app/components/AppIcon.vue — инлайн-SVG из точных bodies
+    // @iconify-json (13.7 КБ raw, только нужные иконки). Вместе с модулем
+    // ушли /api/_nuxt_icon, fallbackToApi и зависимость от api.iconify.design.
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
     '@baptistecrouzet/nuxt-oxlint',
@@ -302,29 +309,6 @@ export default defineNuxtConfig({
           },
         },
       ],
-    },
-  },
-
-  icon: {
-    provider: 'iconify',
-    collections: ['heroicons', 'mdi'],
-    componentName: 'Icon',
-    // SVG-режим вместо дефолтного CSS. В CSS-режиме клиент тянет
-    // css-runtime-механику (генерация mask-CSS из @iconify/utils): чанк
-    // ~32 КБ raw / ~12 КБ transfer префетчился на каждой витринной
-    // странице и не исполнялся (Lighthouse: 90% unused JavaScript).
-    // В SVG-режиме: SSR рисует инлайн-<svg> из скан-бандла (на сервере
-    // initClientBundle(addIcon) — те же данные, API не нужен), иконка
-    // кладётся в payload → гидрация без запросов; на клиенте для
-    // SPA-переходов работает тот же бандл. css-runtime и fat-зависимости
-    // уходят из графа совсем, вместо них — тонкий svg-рендерер
-    // (@iconify/vue). Динамические имена (админские kpi.icon), которых
-    // нет в скан-бандле, как и раньше, добираются через
-    // fallbackToApi → /api/_nuxt_icon.
-    mode: 'svg',
-    clientBundle: {
-      scan: true,
-      sizeLimitKb: 256,
     },
   },
 

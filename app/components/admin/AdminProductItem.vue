@@ -17,13 +17,13 @@
           :class="localProduct.inStock ? 'text-success' : 'text-error'"
           :title="localProduct.inStock ? $t('admin.products.hideFromCatalog') : $t('admin.products.showInCatalog')"
         )
-          icon(:name="localProduct.inStock ? 'heroicons:eye' : 'heroicons:eye-slash'" class="w-4 h-4")
+          AppIcon(:name="localProduct.inStock ? 'heroicons:eye' : 'heroicons:eye-slash'" class="w-4 h-4")
         
         button.btn.btn-ghost.btn-xs.text-error(
           @click="confirmDelete"
           :title="$t('admin.products.deleteTitle')"
         )
-          icon(name="heroicons:trash" class="w-4 h-4")
+          AppIcon(name="heroicons:trash" class="w-4 h-4")
 
     //- Основная информация
     .grid.grid-cols-1.md-grid-cols-2.gap-4
@@ -50,7 +50,7 @@
               @click="regenerateSlug"
               :title="$t('admin.products.regenerateTitle')"
             )
-              icon(name="heroicons:arrow-path" class="w-3 h-3")
+              AppIcon(name="heroicons:arrow-path" class="w-3 h-3")
           input.input.input-bordered.input-sm.w-full(
             v-model="localProduct.slug"
             placeholder="url-tovara"
@@ -136,7 +136,7 @@
         @click="cancelChanges"
         :disabled="!hasChanges"
       )
-        icon(name="heroicons:x-mark" class="w-4 h-4 mr-1")
+        AppIcon(name="heroicons:x-mark" class="w-4 h-4 mr-1")
         | Отменить
       
       button.btn.btn-primary.btn-sm(
@@ -144,7 +144,7 @@
         :disabled="!hasChanges || !isValid || isSaving"
       )
         span.loading.loading-spinner.loading-xs.mr-1(v-if="isSaving")
-        icon(v-else name="heroicons:check" class="w-4 h-4 mr-1")
+        AppIcon(v-else name="heroicons:check" class="w-4 h-4 mr-1")
         | Сохранить
 
     //- Индикатор изменений

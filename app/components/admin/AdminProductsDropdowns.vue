@@ -10,7 +10,7 @@
       | {{ $t('admin.products.categoriesLabel') }}
       span.badge.badge-sm(class="bg-white/25 text-white border-transparent" v-if="selectedCount") {{ $t('admin.products.categoriesSelected', { n: selectedCount }) }}
       span.badge.badge-sm(class="bg-white/25 text-white border-transparent" v-else) {{ $t('admin.products.categoriesAll') }}
-      icon(name="heroicons:chevron-down" class="w-3 h-3")
+      AppIcon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
       .max-h-60.overflow-y-auto
         label.label.cursor-pointer.justify-start.gap-2.py-1.px-2(class="hover:bg-base-200" rounded
@@ -42,7 +42,7 @@
       type="button"
     )
       span {{ opt.label }}
-      icon(
+      AppIcon(
         v-if="sortField === opt.field"
         :name="sortDirection === 'asc' ? 'heroicons:arrow-up' : 'heroicons:arrow-down'"
         class="w-3 h-3"
@@ -52,7 +52,7 @@
   .dropdown.dropdown-bottom(class="sm:hidden" :class="{'dropdown-open': showSort}")
     label.btn.btn-xs.btn-outline.gap-1(@click="showSort = !showSort" type="button")
       | {{ $t('admin.products.sort') }}
-      icon(name="heroicons:chevron-down" class="w-3 h-3")
+      AppIcon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-40.z-50.mt-1(v-if="showSort" @click.stop)
       .px-2.py-1.cursor-pointer(class="hover:bg-base-200" rounded
         v-for="opt in sortOptions"

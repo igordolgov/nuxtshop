@@ -6,7 +6,7 @@
 //- pointer: coarse отсекает мышь, max-height: 500px — высокие экраны.
 .orientation-guard
   .guard-card
-    Icon.guard-icon(name="mdi:phone-rotate-portrait" size="56")
+    AppIcon.guard-icon(name="mdi:phone-rotate-portrait" size="56")
     p.guard-title {{ $t('orientation.title') }}
     p.guard-text {{ $t('orientation.text') }}
 </template>
