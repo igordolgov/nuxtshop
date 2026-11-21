@@ -24,8 +24,12 @@
 //
 // Мёртвые экспорты (containsQuery/highlightBadge/isQueryValidForHighlight)
 // удалены: использовались только внутри composable.
+//
+// Транслит-варианты токенов подсвечиваются наравне с ними: запрос
+// «самсунг» выделяет «Samsung» в названии — иначе товар найден через
+// транслитерацию (utils/searchQuery.ts), а жирным не выделено ничего.
 
-import { tokenizeSearchQuery } from '../utils/searchQuery';
+import { searchTokenVariants, tokenizeSearchQuery } from '../utils/searchQuery';
 
 const COMBINING_MARKS_RE = /[\u0300-\u036f]/g;
 /** Алф.-цифр. куски токена: «wh 1000» → ['wh', '1000']. */
@@ -61,10 +65,12 @@ export const useSearchHighlight = () => {
   ): string => {
     if (!text || typeof text !== 'string') return escapeHtml(text);
 
-    // Куски токенов запроса (≥2 символов — как раньше у запроса целиком):
-    // «samsung galaxy» → ['samsung', 'galaxy'], «wh 1000» → ['wh', '1000']
+    // Куски токенов запроса и их транслит-вариантов (≥2 символов):
+    // «samsung galaxy» → ['samsung', 'galaxy'], «wh 1000» → ['wh', '1000'],
+    // «самсунг» → ['самсунг', 'samsung']
     const chunks = tokenizeSearchQuery(query ?? '')
-      .flatMap((token) => token.split(CHUNK_SPLIT_RE))
+      .flatMap((token) => searchTokenVariants(token))
+      .flatMap((variant) => variant.split(CHUNK_SPLIT_RE))
       .filter((chunk) => chunk.length >= 2);
     if (!chunks.length) return escapeHtml(text);
 

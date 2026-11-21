@@ -4,8 +4,8 @@
 // API-мутации остались в useProducts.ts / useProductMutations.ts,
 // переиспользуемые чистые функции — здесь.
 
-// Поиск каталога: токены + fold диакритики + стемминг + spec-поля
-// (см. utils/searchQuery.ts)
+// Поиск каталога: токены + fold диакритики + стемминг + опечатки (fuzzy) +
+// транслит + spec-поля (см. utils/searchQuery.ts)
 import { searchFilter, specHaystackFields } from '../utils/searchQuery';
 
 /** Товар каталога на клиенте: серверный Product + рейтинг отзывов + флаг избранного.

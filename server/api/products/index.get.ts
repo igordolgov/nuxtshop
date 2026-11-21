@@ -40,12 +40,14 @@ export default defineEventHandler(async (event) => {
       list = list.filter((p) => p.price <= parseFloat(maxPrice));
     }
     if (search) {
-      // Токен-совпадение с fold'ом диакритики и стеммингом (server/lib/searchQuery.ts —
-      // копия app/utils/searchQuery.ts): «galaxy samsung» находит
-      // «…Samsung Galaxy…» (порядок слов), «telefono» — «Teléfono…»
-      // (без ударения), «телефонов» — «телефон» (стеммер); солома
-      // включает характеристики (бренд из spec-листа, «AMOLED»);
-      // при пустом строгом матче — частичный
+      // Токен-совпадение с fold'ом диакритики, стеммингом, fuzzy-опечатками и
+      // транслитерацией (server/lib/searchQuery.ts — копия
+      // app/utils/searchQuery.ts): «galaxy samsung» находит «…Samsung Galaxy…»
+      // (порядок слов), «telefono» — «Teléfono…» (без ударения),
+      // «телефонов» — «телефон» (стеммер), «samsng» — «samsung» (fuzzy),
+      // «самсунг» — «Samsung» (транслит); солома включает характеристики
+      // (бренд из spec-листа, «AMOLED»); при пустом матче всех токенов —
+      // частичный
       list = searchFilter(list, search, (p) => [
         p.name,
         p.description,

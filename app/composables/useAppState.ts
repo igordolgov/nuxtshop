@@ -28,8 +28,9 @@ import { useRecentlyViewed } from './useRecentlyViewed';
 import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
 // Поиск: токены + fold диакритики + стемминг (см. utils/searchQuery.ts —
 // «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…»,
-// «телефонов» = «телефон», при пустом строгом матче — частичный;
-// «возможно, вы имели в виду» — suggestSearchCorrection)
+// «телефонов» = «телефон»; опечатки «samsng»/«galaxi» матчатся fuzzy,
+// «самсунг»/«сяоми» — транслитерацией бренда; при пустом матче всех
+// токенов — частичный; «возможно, вы имели в виду» — suggestSearchCorrection)
 import { searchFilter, suggestSearchCorrection } from '../utils/searchQuery';
 import { computed, watch } from 'vue';
 

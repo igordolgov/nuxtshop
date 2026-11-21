@@ -1,19 +1,24 @@
 // tests/unit/search-query.test.ts
 // ── Поисковый матчер витрины (app/utils/searchQuery.ts) ──────────────────
 //
-// Регресс с кубинской витрины («поиск не ищет ничего»): прежний поиск
-// сравнивал сырые подстроки — не находили «telefono» в «Teléfono»
-// (диакритика), «galaxy samsung» в «…Samsung Galaxy…» (порядок слов),
-// «Samsung  Galaxy » (двойной/концевой пробел), «wh1000xm4» в
-// «WH-1000XM4» (склеенный номер модели). Плюс AND-семантика опустошала
-// выдачу, когда один токен промахивался («телефон samsung»: «смартфон» =
-// смарт+фон, буквы «е» там нет) — теперь есть частичный матч.
+// Регрессы:
+// 1. Кубинская витрина («поиск не ищет ничего»): диакритика, порядок слов,
+//    двойные пробелы, склеенные номера моделей, AND-семантика.
+// 2. Опечатки (fuzzy): «samsng», «galaxi», «soni» находят товар напрямую —
+//    консервативный допуск (1 правка, от 8 символов — 2), точные матчи
+//    ранжируются выше fuzzy.
+// 3. Транслитерация: «самсунг» → «samsung», «сяоми»/«ксиоми» → «xiaomi»,
+//    «айфон» → «iphone», «yandex» → «Яндекс» (обратный алиас).
+// 4. «Возможно, вы имели в виду» — слой ТЯЖЁЛЫХ опечаток (допуск 2/3 правки,
+//    шире допуска выдачи 1/2): лёгкие опечатки теперь находит сам поиск,
+//    подсказка остаётся для случаев, когда ничего не нашлось вовсе.
 
 import { describe, expect, it } from 'vitest';
 import {
   buildSearchHaystack,
   foldSearchText,
   searchFilter,
+  searchTokenVariants,
   specHaystackFields,
   stemSearchToken,
   suggestSearchCorrection,
@@ -23,6 +28,7 @@ import {
   buildSearchHaystack as buildSearchHaystackServer,
   foldSearchText as foldSearchTextServer,
   searchFilter as searchFilterServer,
+  searchTokenVariants as searchTokenVariantsServer,
   specHaystackFields as specHaystackFieldsServer,
   stemSearchToken as stemSearchTokenServer,
   suggestSearchCorrection as suggestSearchCorrectionServer,
@@ -97,6 +103,48 @@ describe('stemSearchToken', () => {
     // «видео» → «виде» — префикс «видео», товар по-прежнему находится
     expect(stemSearchToken('видео')).toBe('виде');
     expect(stemSearchToken('радио')).toBe('ради');
+  });
+
+  it('ключи алиасов не стеммятся (иначе суффикс отрежет алиас)', () => {
+    // «сяоми» кончается на «и» — без защиты стеммер отрезал бы «и» → «сяом»
+    expect(stemSearchToken('сяоми')).toBe('сяоми');
+    expect(stemSearchToken('ксиоми')).toBe('ксиоми');
+    expect(stemSearchToken('нинтендо')).toBe('нинтендо');
+    expect(stemSearchToken('самсунг')).toBe('самсунг');
+  });
+});
+
+// ─── searchTokenVariants — транслитерация и алиасы ───────────────────────
+
+describe('searchTokenVariants', () => {
+  it('исходный токен всегда первый', () => {
+    expect(searchTokenVariants('samsung')[0]).toBe('samsung');
+    expect(searchTokenVariants('самсунг')[0]).toBe('самсунг');
+  });
+
+  it('кириллический бренд → латинский алиас', () => {
+    expect(searchTokenVariants('самсунг')).toContain('samsung');
+    expect(searchTokenVariants('сони')).toContain('sony');
+    expect(searchTokenVariants('сяоми')).toContain('xiaomi');
+    expect(searchTokenVariants('ксиоми')).toContain('xiaomi');
+    expect(searchTokenVariants('айфон')).toContain('iphone');
+    expect(searchTokenVariants('делонги')).toContain('delonghi');
+  });
+
+  it('латинский запрос → кириллический алиас (обратное направление)', () => {
+    expect(searchTokenVariants('yandex')).toContain('яндекс');
+    expect(searchTokenVariants('xiaomi')).toContain('сяоми');
+  });
+
+  it('посимвольный транслит: «самсунг» → «samsung» без алиаса тоже покрыт', () => {
+    expect(searchTokenVariants('самсунг')).toContain('samsung');
+    expect(searchTokenVariants('телефон')).toContain('telefon');
+    // «в» → v/w: «вифи» → «wifi» (в каталоге «Wi-Fi» через дефис)
+    expect(searchTokenVariants('вифи')).toContain('wifi');
+  });
+
+  it('латинский токен без кириллицы не получает транслит', () => {
+    expect(searchTokenVariants('samsung')).not.toContain('samsungs');
   });
 });
 
@@ -345,6 +393,115 @@ describe('searchFilter: морфология', () => {
   });
 });
 
+// ─── searchFilter — опечатки (fuzzy-матчинг со словами соломы) ───────────
+
+describe('searchFilter: опечатки (fuzzy)', () => {
+  const catalog = [
+    { id: '1', fields: ['Смартфон Samsung Galaxy S23', ['Электроника', 'Смартфоны']] },
+    { id: '2', fields: ['Беспроводные наушники Sony WH-1000XM4', ['Электроника']] },
+    { id: '3', fields: ['Ноутбук Apple MacBook Pro 16', ['Электроника', 'Ноутбуки']] },
+  ];
+  const run = (query: string) =>
+    searchFilter(catalog, query, (item) => item.fields).map((p) => p.id);
+
+  it('одна опечатка в бренде: «samsng» находит Samsung', () => {
+    expect(run('samsng')).toEqual(['1']);
+  });
+
+  it('опечатка в слове: «galaxi» и «soni» находят товар', () => {
+    expect(run('galaxi')).toEqual(['1']);
+    expect(run('soni')).toEqual(['2']);
+  });
+
+  it('опечатка в номере модели (лишний символ): «wh1000xm4s» находит WH-1000XM4', () => {
+    // 10 символов → допуск 2 правки; точной подстроки нет, fuzzy матчит слово «1000xm4»
+    expect(run('wh1000xm4s')).toEqual(['2']);
+  });
+
+  it('все токены с опечатками — полный охват запроса ранится выше частичного', () => {
+    // «samsng galaxi»: оба токена fuzzy у товара 1; у остальных нет и двух совпадений
+    expect(run('samsng galaxi')).toEqual(['1']);
+  });
+
+  it('точные матчи не ниже fuzzy, при равном счёте порядок каталога сохраняется', () => {
+    // «soni samsng»: у 2 — «soni» fuzzy (dist 1), у 1 — «samsng» fuzzy (dist 1);
+    // ровный счёт (0 точных, 1 fuzzy, dist 1 у обоих) — стабильная сортировка
+    // сохраняет порядок каталога
+    expect(run('soni samsng')).toEqual(['1', '2']);
+    // «soni 1000xm4»: у 2 оба токена (soni fuzzy + точный номер) — полный охват
+    expect(run('soni 1000xm4')).toEqual(['2']);
+  });
+
+  it('короткие токены (2 символа) fuzzy не получают — только точный матч', () => {
+    expect(run('hp')).toEqual([]);
+    expect(run('16')).toEqual(['3']);
+  });
+
+  it('две правки в коротком слове не матчатся (защита от ложных совпадений)', () => {
+    // «gtxy» — 2 правки от «galaxy», но токен 4 символов → допуск 1
+    expect(run('gtxy')).toEqual([]);
+  });
+});
+
+// ─── searchFilter — транслитерация (бренд кириллицей) ────────────────────
+
+describe('searchFilter: транслитерация', () => {
+  const catalog = [
+    { id: '1', fields: ['Смартфон Samsung Galaxy S23', ['Электроника', 'Смартфоны']] },
+    { id: '2', fields: ['Смартфон Xiaomi Redmi Note 12', ['Электроника', 'Смартфоны']] },
+    { id: '3', fields: ['Смартфон Apple iPhone 15 Pro', ['Электроника', 'Смартфоны']] },
+    {
+      id: '4',
+      fields: ['Умная колонка Яндекс Станция', specHaystackFields({ Бренд: 'Яндекс' })],
+    },
+    { id: '5', fields: ['Кофеварка De’Longhi ECAM', specHaystackFields({ Бренд: 'De’Longhi' })] },
+  ];
+  const fieldsOf = (item: { fields: unknown[] }) => item.fields;
+  const run = (query: string) => searchFilter(catalog, query, fieldsOf).map((p) => p.id);
+
+  it('«самсунг» находит Samsung (алиас + транслит)', () => {
+    expect(run('самсунг')).toEqual(['1']);
+  });
+
+  it('нестандартные написания через алиасы: «сяоми», «ксиоми», «айфон», «делонги»', () => {
+    expect(run('сяоми')).toEqual(['2']);
+    expect(run('ксиоми')).toEqual(['2']);
+    expect(run('айфон')).toEqual(['3']);
+    // De’Longhi: апостроф → сепаратор, алиас «делонги» → «delonghi»
+    // находит по плотной соломе
+    expect(run('делонги')).toEqual(['5']);
+  });
+
+  it('латинский «yandex» находит кириллический «Яндекс» из spec-листа', () => {
+    expect(run('yandex')).toEqual(['4']);
+  });
+
+  it('RU-запрос по es-каталогу: «телефон samsung» через транслит «telefon»', () => {
+    const esCatalog = [
+      { id: '1', fields: ['Teléfono inteligente Samsung Galaxy S23', ['Electrónica']] },
+      { id: '2', fields: ['Auriculares Sony WH-1000XM4', ['Electrónica']] },
+    ];
+    const runEs = (query: string) =>
+      searchFilter(esCatalog, query, (item) => item.fields).map((p) => p.id);
+    // «телефон» → транслит «telefon» ⊂ «telefono» — строгий матч по обоим токенам
+    expect(runEs('телефон samsung')).toEqual(['1']);
+    expect(runEs('сони')).toEqual(['2']);
+  });
+
+  it('опечатка в кириллическом бренде: «сансунг» находит Samsung (транслит + fuzzy)', () => {
+    // «сансунг» → транслит «sansung», дистанция 1 от «samsung»
+    expect(run('сансунг')).toEqual(['1']);
+  });
+
+  it('смесь сценариев: «сони вх 1000» находит Sony WH-1000XM4', () => {
+    const sonyCatalog = [
+      { id: '2', fields: ['Беспроводные наушники Sony WH-1000XM4', ['Электроника']] },
+    ];
+    const fields = (item: { fields: unknown[] }) => item.fields;
+    expect(searchFilter(sonyCatalog, 'сони вх 1000', fields).map((p) => p.id)).toEqual(['2']);
+  });
+});
+
 // ─── suggestSearchCorrection — «возможно, вы имели в виду» ───────────────
 
 describe('suggestSearchCorrection', () => {
@@ -365,14 +522,21 @@ describe('suggestSearchCorrection', () => {
   const fieldsOf = (item: { fields: unknown[] }) => item.fields;
   const suggest = (query: string) => suggestSearchCorrection(catalog, query, fieldsOf);
 
-  it('опечатка в одном слове заменяется словом каталога (замена + сохранение остальных)', () => {
-    // «samsuna» → «Samsung» (dist 1, вид — как в каталоге), «galaxy» совпал
-    // и остался как набрано
-    expect(suggest('samsuna galaxy')).toBe('Samsung galaxy');
+  it('лёгкие опечатки (1 правка) теперь находит сам поиск — подсказка не нужна', () => {
+    // «samsuna» — dist 1 от «samsung»: fuzzy-матч в выдаче → исправление не требуется
+    expect(suggest('samsuna galaxy')).toBe(null);
+    // «наушнки» → стем «наушнк» (суффикс «и» отрезан), dist 2 от «наушники» —
+    // выше допуска выдачи (1) → подсказка ведёт на полное слово
+    expect(suggest('наушнки')).toBe('наушники');
   });
 
-  it('русская опечатка: «наушнки» → «наушники» (транспозиция)', () => {
-    expect(suggest('наушнки')).toBe('наушники');
+  it('опечатка за пределами fuzzy-допуска исправляется словом каталога', () => {
+    // «samsumk» — dist 2 от «samsung» (fuzzy-допуск для 7 символов — 1,
+    // в выдачу не попадает), допуск подсказки — 3; «galaxy» совпал
+    // и остался как набрано
+    expect(suggest('samsumk galaxy')).toBe('Samsung galaxy');
+    // «наушникаааа» — dist 3 от «наушники» (стем «наушникааа»)
+    expect(suggest('наушникаааа')).toBe('наушники');
   });
 
   it('всё совпало → null (подсказка не нужна)', () => {
@@ -391,8 +555,8 @@ describe('suggestSearchCorrection', () => {
     expect(suggest('sony zq')).toBe('sony');
   });
 
-  it('исправление гарантирует непустую выдачу', () => {
-    const correction = suggest('наушнки sonyi');
+  it('исправление гарантирует непустую выдачу (тяжёлые опечатки в двух словах)', () => {
+    const correction = suggest('наушникаааа sonyii');
     expect(correction).toBe('наушники Sony');
     // обратный прогон: исправленный запрос реально находит товары
     expect(searchFilter(catalog, correction ?? '', fieldsOf).length).toBeGreaterThan(0);
@@ -406,7 +570,7 @@ describe('suggestSearchCorrection', () => {
   it('подсказка не теряет вид пользователя для совпавших слов', () => {
     // совпавший токен остаётся как набран (регистр сохраняется),
     // исправленное слово — в виде каталога
-    expect(suggest('GALAXY samsuna')).toBe('GALAXY Samsung');
+    expect(suggest('GALAXY samsumk')).toBe('GALAXY Samsung');
   });
 });
 
@@ -431,6 +595,19 @@ describe('searchQuery: server/app copies are in sync', () => {
     'телефонов samsung',
     'portátiles',
     'наушнки',
+    // транслитерация и алиасы
+    'самсунг',
+    'сяоми',
+    'ксиоми',
+    'айфон',
+    'делонги',
+    'сони вх 1000',
+    'yandex',
+    // fuzzy-опечатки
+    'samsng',
+    'soni',
+    'сансунг',
+    'wh1000xm4s',
     '',
     '   ',
   ];
@@ -452,6 +629,12 @@ describe('searchQuery: server/app copies are in sync', () => {
 
   it.each(queries.map((q) => [q]))('токены совпадают для %j', (query) => {
     expect(tokenizeSearchQueryServer(query)).toEqual(tokenizeSearchQuery(query));
+  });
+
+  it.each(queries.map((q) => [q]))('варианты токенов совпадают для %j', (query) => {
+    for (const token of tokenizeSearchQuery(query)) {
+      expect(searchTokenVariantsServer(token)).toEqual(searchTokenVariants(token));
+    }
   });
 
   it.each(texts.map((t) => [t]))('стеммер совпадает для %j', (text) => {

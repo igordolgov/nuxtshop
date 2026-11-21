@@ -105,6 +105,14 @@ describe('useSearchHighlight.highlightText', () => {
     );
   });
 
+  it('транслитерация: «самсунг» выделяет «Samsung»', () => {
+    // товар найден через транслит-вариант (utils/searchQuery.ts) —
+    // подсветка работает по тем же вариантам
+    expect(highlightText('Смартфон Samsung Galaxy S23', 'самсунг')).toBe(
+      'Смартфон <span class="search-highlight">Samsung</span> Galaxy S23',
+    );
+  });
+
   it('NFD-исходный текст: combining-метка попадает в выделенный диапазон', () => {
     const nfd = 'Telfono'.replace('Telf', 'Tel\u00e9f'); // Teléfono в NFD: e + U+0301
     const nfdText = 'Tel\u00e9fono inteligente';

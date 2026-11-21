@@ -10,9 +10,10 @@ import { catalogSearchFields, type SearchableCatalogProduct } from './catalogPro
 // функции в utils — здесь только стейт и проводка в displayedProducts
 import { buildSpecFacets, clampSpecSelection, filterBySpecSelection } from '../utils/specFacets';
 import type { SpecFacetGroup, SpecSelection } from '../utils/specFacets';
-// Поиск каталога: токены + fold диакритики (см. utils/searchQuery.ts —
-// «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…», при
-// пустом строгом матче — частичный по любому токену)
+// Поиск каталога: токены + fold диакритики + опечатки (fuzzy) + транслит
+// (см. utils/searchQuery.ts — «galaxy samsung» = «…Samsung Galaxy…»,
+// «telefono» = «Teléfono…», «samsng» = «samsung», «самсунг» = «Samsung»,
+// при пустом матче всех токенов — частичный по любому токену)
 import { searchFilter } from '../utils/searchQuery';
 // Сортировка каталога — чистая функция в utils (тестируется в node):
 // раньше при отсутствии даты компаратор подставлял id как дату
@@ -121,12 +122,14 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
 
     const query = searchQuery.value?.trim();
     if (query) {
-      // Токен-совпадение с fold'ом диакритики и стеммингом (utils/searchQuery.ts):
-      // порядок слов («galaxy samsung»), ударения («telefono» = «Teléfono…»),
-      // формы слов («телефонов» = «телефон»), двойные пробелы и склеенные
-      // номера моделей больше не дают ложное «Ничего не найдено»;
-      // солома включает характеристики (бренд, «AMOLED», «Snapdragon»);
-      // при пустом строгом матче — частичный
+      // Токен-совпадение с fold'ом диакритики, стеммингом, fuzzy-опечатками и
+      // транслитерацией (utils/searchQuery.ts): порядок слов («galaxy samsung»),
+      // ударения («telefono» = «Teléfono…»), формы слов («телефонов» =
+      // «телефон»), опечатки («samsng» = «samsung»), бренд кириллицей
+      // («самсунг» = «Samsung»), двойные пробелы и склеенные номера моделей
+      // больше не дают ложное «Ничего не найдено»; солома включает
+      // характеристики (бренд, «AMOLED», «Snapdragon»); при пустом матче
+      // всех токенов — частичный
       filtered = searchFilter(filtered, query, catalogSearchFields);
     }
 
