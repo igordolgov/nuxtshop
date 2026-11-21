@@ -9,14 +9,24 @@ import type { CatalogProduct } from './catalogProduct';
 // функции в utils — здесь только стейт и проводка в displayedProducts
 import { buildSpecFacets, clampSpecSelection, filterBySpecSelection } from '../utils/specFacets';
 import type { SpecFacetGroup, SpecSelection } from '../utils/specFacets';
+// Поиск каталога: токены + fold диакритики (см. utils/searchQuery.ts —
+// «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…», при
+// пустом строгом матче — частичный по любому токену)
+import { searchFilter } from '../utils/searchQuery';
 // Сортировка каталога — чистая функция в utils (тестируется в node):
 // раньше при отсутствии даты компаратор подставлял id как дату
 // (new Date('33') → 2033 год, '27'…'30' → Invalid Date) — из-за NaN
 // новый товар оказывался в конце списка при «сначала новые»
 import { sortProductsByConfig } from '../utils/catalogSort';
 
-/** Локализованная копия товара (localizedProduct добавляет categoriesRaw) */
-export type LocalizedCatalogProduct = CatalogProduct & { categoriesRaw?: string[] };
+/** Локализованная копия товара (localizedProduct добавляет categoriesRaw;
+ *  поисковый слой — nameRaw/descriptionRaw: сырой оригинал для поиска и по
+ *  переводу, и по-русски на en/es-локалях) */
+export type LocalizedCatalogProduct = CatalogProduct & {
+  categoriesRaw?: string[];
+  nameRaw?: string;
+  descriptionRaw?: string;
+};
 
 /** Конфиг сортировки каталога */
 export interface CatalogSortConfig {
@@ -102,17 +112,30 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
     // с дефолтом 'es' русская витрина живёт под /ru — прежняя /^\/(en|es)/
     // её не видела и отдавала испанский каталог на русской локали
     const locale = storeLocaleFromPath(route?.path, STORE_DEFAULT_LOCALE);
-    let filtered = productsValue.map((p) => localizedProduct(p, locale) as LocalizedCatalogProduct);
+    let filtered = productsValue.map((p) => {
+      const loc = localizedProduct(p, locale) as LocalizedCatalogProduct;
+      // ru — объект как есть (сырые поля = базовые, добавлять нечего);
+      // на en/es копия дополняется сырым оригиналом: запрос находится и на
+      // языке витрины, и по-русски («смартфон» на кубинской копии)
+      return loc === p
+        ? loc
+        : ({ ...loc, nameRaw: p.name, descriptionRaw: p.description } as LocalizedCatalogProduct);
+    });
 
-    const query = searchQuery.value?.trim().toLowerCase();
+    const query = searchQuery.value?.trim();
     if (query) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(query) ||
-          p.description?.toLowerCase().includes(query) ||
-          p.categories?.some((cat) => cat?.toLowerCase().includes(query)) ||
-          p.categoriesRaw?.some((cat) => cat?.toLowerCase().includes(query)),
-      );
+      // Токен-совпадение с fold'ом диакритики (utils/searchQuery.ts):
+      // порядок слов («galaxy samsung»), ударения («telefono» = «Teléfono…»),
+      // двойные пробелы и склеенные номера моделей больше не дают ложное
+      // «Ничего не найдено»; при пустом строгом матче — частичный
+      filtered = searchFilter(filtered, query, (p) => [
+        p.name,
+        p.description,
+        p.categories,
+        p.categoriesRaw,
+        p.nameRaw,
+        p.descriptionRaw,
+      ]);
     }
 
     const selectedCategories = filters.value.categories;

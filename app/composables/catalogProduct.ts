@@ -4,6 +4,9 @@
 // API-мутации остались в useProducts.ts / useProductMutations.ts,
 // переиспользуемые чистые функции — здесь.
 
+// Поиск каталога: токены + fold диакритики (см. utils/searchQuery.ts)
+import { searchFilter } from '../utils/searchQuery';
+
 /** Товар каталога на клиенте: серверный Product + рейтинг отзывов + флаг избранного.
  *  type-alias (не interface): нужен неявный index signature для передачи в
  *  localizedProduct/buildCategoryLabelMap (T extends Record<string, unknown>). */
@@ -132,19 +135,16 @@ export const catalogProductsByCategory = (
   return list.filter((p) => p.categories?.includes(category));
 };
 
-/** Поиск по названию/описанию/категориям; пустой запрос — весь список. */
+/** Поиск по названию/описанию/категориям; пустой запрос — весь список.
+ *  Токен-совпадение с fold'ом диакритики (см. utils/searchQuery.ts):
+ *  порядок слов, ударения, двойные пробелы и дефисы не ломают поиск;
+ *  при пустом строгом матче — частичный по любому токену. */
 export const searchCatalogProducts = (
   list: CatalogProduct[],
   query?: string | null,
 ): CatalogProduct[] => {
-  if (!query) return list;
-  const term = query.toLowerCase();
-  return list.filter(
-    (p) =>
-      p.name?.toLowerCase().includes(term) ||
-      p.description?.toLowerCase().includes(term) ||
-      p.categories?.some((c) => c.toLowerCase().includes(term)),
-  );
+  if (!query?.trim()) return list;
+  return searchFilter(list, query, (p) => [p.name, p.description, p.categories]);
 };
 
 /** Фильтры витрины: категория, ценовой коридор, наличие, строка поиска. */
@@ -160,11 +160,8 @@ export const filterCatalogProducts = (
     filtered = filtered.filter((p) => p.price <= (filters.maxPrice ?? Infinity));
   if (filters.inStock !== undefined)
     filtered = filtered.filter((p) => p.inStock === filters.inStock);
-  if (filters.search) {
-    const term = filters.search.toLowerCase();
-    filtered = filtered.filter(
-      (p) => p.name?.toLowerCase().includes(term) || p.description?.toLowerCase().includes(term),
-    );
+  if (filters.search?.trim()) {
+    filtered = searchFilter(filtered, filters.search, (p) => [p.name, p.description, p.categories]);
   }
   return filtered;
 };

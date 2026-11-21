@@ -26,6 +26,10 @@ import { useFavorites } from './useFavorites';
 import { useCart } from './useCart';
 import { useRecentlyViewed } from './useRecentlyViewed';
 import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
+// Поиск: токены + fold диакритики (см. utils/searchQuery.ts —
+// «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…», при
+// пустом строгом матче — частичный по любому токену)
+import { searchFilter } from '../utils/searchQuery';
 import { computed, watch } from 'vue';
 
 /** Товар в результатах поиска: локализованная копия + подсветка совпадений */
@@ -127,30 +131,46 @@ function createAppState() {
     return highlights;
   }
 
+  // Поля ПОДСВЕТКИ (как раньше): поиск ищет шире — вместе с сырым оригиналом
+  const HIGHLIGHT_FIELDS = ['name', 'description', 'categories'];
+
   function searchInItems(query: string, items: CatalogProduct[]): SearchItem[] {
     const normalized = query.toLowerCase().trim();
-    // Поиск ведётся по локализованным КОПИЯМ: подсказки в шапке и подсветка
-    // находят товар и по переводу («smartphone» на /en), и по русскому
-    // оригиналу. ru-каталог проходит без копий (см. localizedProduct).
+    // Поиск ведётся по локализованным КОПИЯМ: подсказки в шапке находят
+    // товар по переводу («smartphone» на /en) И по русскому оригиналу —
+    // на en/es копия дополняется nameRaw/descriptionRaw (раньше комментарий
+    // обещал «и по русскому оригиналу», но матчились только переводы).
+    // ru-каталог проходит без копий (см. localizedProduct).
     // storeLocaleFromPath знает и /ru: на копии с дефолтом 'es' русская
     // витрина живёт под префиксом /ru, который прежняя /^\/(en|es)/ пропускала
     const locale = storeLocaleFromPath(searchRoute?.path, STORE_DEFAULT_LOCALE);
-    const localizedItems = items.map(
-      (item) => localizedProduct(item, locale) as LocalizedCatalogProduct,
-    );
-    const fields = ['name', 'description', 'categories'];
+    const localizedItems = items.map((item) => {
+      const loc = localizedProduct(item, locale) as LocalizedCatalogProduct;
+      return loc === item
+        ? loc
+        : ({
+            ...loc,
+            nameRaw: item.name,
+            descriptionRaw: item.description,
+          } as LocalizedCatalogProduct);
+    });
 
-    return localizedItems
-      .filter((item) =>
-        fields.some((field) => {
-          const value = getNestedValue(item, field)?.toString().toLowerCase();
-          return value?.includes(normalized);
-        }),
-      )
-      .map((item) => ({
-        ...item,
-        highlights: generateHighlights(item, normalized, fields),
-      }));
+    // Токен-совпадение с fold'ом диакритики (utils/searchQuery.ts): порядок
+    // слов, ударения, двойные пробелы и склеенные номера моделей больше не
+    // дают ложное «Ничего не найдено»; при пустом строгом матче — частичный
+    // (тот же searchFilter, что в сетке: счётчик «Показать все результаты (N)»
+    // всегда совпадает с числом карточек)
+    return searchFilter(localizedItems, query, (item) => [
+      item.name,
+      item.description,
+      item.categories,
+      item.categoriesRaw,
+      item.nameRaw,
+      item.descriptionRaw,
+    ]).map((item) => ({
+      ...item,
+      highlights: generateHighlights(item, normalized, HIGHLIGHT_FIELDS),
+    }));
   }
 
   let searchTimeout: ReturnType<typeof setTimeout> | null = null;

@@ -2,6 +2,8 @@
 import { readProducts } from '../../lib/productHelpers';
 import { attachRatings } from '../../lib/reviewHelpers';
 import { readCatalogEdgeCache, writeCatalogEdgeCache } from '../../lib/catalogEdgeCache';
+// Поиск: токены + fold диакритики (копия app/utils/searchQuery.ts)
+import { searchFilter } from '../../lib/searchQuery';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -38,10 +40,11 @@ export default defineEventHandler(async (event) => {
       list = list.filter((p) => p.price <= parseFloat(maxPrice));
     }
     if (search) {
-      const s = search.toLowerCase();
-      list = list.filter(
-        (p) => p.name.toLowerCase().includes(s) || p.description?.toLowerCase().includes(s),
-      );
+      // Токен-совпадение с fold'ом диакритики (server/lib/searchQuery.ts —
+      // копия app/utils/searchQuery.ts): «galaxy samsung» находит
+      // «…Samsung Galaxy…» (порядок слов), «telefono» — «Teléfono…»
+      // (без ударения), при пустом строгом матче — частичный
+      list = searchFilter(list, search, (p) => [p.name, p.description, p.categories]);
     }
 
     switch (query.sort) {
