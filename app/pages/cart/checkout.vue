@@ -98,7 +98,7 @@
 
     //- Модальное окно успешного заказа
     dialog.modal(:class="{ 'modal-open': showSuccessModal }")
-      .modal-box.py-8.text-center.rounded-xl(class="lg:max-w-2xl")
+      .modal-box.py-8.text-center.rounded-xl(ref="successModalBox" class="lg:max-w-2xl")
         h3.text-2xl.font-bold.text-success.mb-4(class="lg:text-4xl") {{ $t('checkout.successTitle') }}
         .text-6xl.mb-4 🎉
         p(class="lg:mb-2 lg:text-xl") {{ $t('checkout.successNumber', { n: orderNumber }) }}
@@ -159,6 +159,18 @@ const showSuccessModal = ref(false)
 const orderNumber = ref('')
 const orderTotal = ref(0)
 const promoCode = ref('')
+
+//- A11y-обвязка диалога успеха: Tab не выпускает фокус (внутри одна
+//- ссылка «На главную»), скролл фона заблокирован, при открытии фокус
+//- сразу на ссылке. Escape СОЗНАТЕЛЬНО не подключён: подтверждение
+//- заказа — не диалог отмены, закрытие мимо кнопки оставляло бы
+//- покупателя на пустом чекауте без объяснения
+const successModalBox = ref(null)
+useModalA11y({
+  isOpen: () => showSuccessModal.value,
+  container: () => successModalBox.value,
+  initialFocus: () => successModalBox.value?.querySelector('a') ?? null,
+})
 
 //- Форма заказа
 const orderForm = ref({

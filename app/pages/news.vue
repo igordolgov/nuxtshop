@@ -125,7 +125,7 @@
     //- modal-box — длинная новость обрезалась и не прокручивалась.
     //- Вместо него фото обрезает figure (скругление только сверху).
     .modal(:class="{ 'modal-open': activeNews }" role="dialog" aria-modal="true" @click.self="closeNews")
-      .modal-box.modal-box-fit.max-w-2xl.p-0
+      .modal-box.modal-box-fit.max-w-2xl.p-0(ref="newsModalBox")
         figure.news-modal-media(v-if="activeNews && activeNews.image")
           NuxtImg.w-full(
             :src="activeNews.image"
@@ -252,6 +252,17 @@ const openNews = (item: NewsWithProducts) => {
 const closeNews = () => {
   activeNews.value = null
 }
+
+//- A11y-обвязка диалога: Escape закрывает, Tab не выпускает фокус
+//- (внутри — ссылки на товары новости), скролл фона заблокирован,
+//- при открытии фокус на кнопку «Закрыть», при закрытии — возврат.
+const newsModalBox = ref<HTMLElement | null>(null)
+useModalA11y({
+  isOpen: () => Boolean(activeNews.value),
+  container: () => newsModalBox.value,
+  onClose: closeNews,
+  initialFocus: () => newsModalBox.value?.querySelector<HTMLElement>('button') ?? null,
+})
 
 //- Диплинк с главной: карточка блока «Последние новости» ведёт на
 //- /news?news=<id> — открываем эту новость в модалке сразу после

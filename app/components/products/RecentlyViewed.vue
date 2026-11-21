@@ -10,7 +10,7 @@
      плитка — ссылка на товар, без кнопок на карточке. -->
 <template lang="pug">
 section.recently-viewed(
-  v-if="isMounted && items.length"
+  v-if="isMounted && idleReady && items.length"
   aria-labelledby="recently-viewed-title"
 )
   .container.mx-auto.px-2(class="lg:px-4")
@@ -86,6 +86,7 @@ const { getProductUrl, slugify } = useCart()
 const { readSlugs, clearRecentlyViewed } = useRecentlyViewed()
 
 const isMounted = ref(false)
+const idleReady = ref(false)
 const historySlugs = ref([])
 
 const refreshHistory = () => {
@@ -105,6 +106,18 @@ onMounted(() => {
   // Синк подтянул историю из аккаунта в ЭТОЙ вкладке — обновляемся
   window.addEventListener('recently-viewed-updated', onSyncUpdated)
   document.addEventListener('visibilitychange', onVisibility)
+
+  //- Рендер ленты — в первый idle-слот ПОСЛЕ гидрации (потолок 3 с):
+  //- блок лежит ПОД сеткой каталога (далеко ниже первого экрана), а его
+  //- вставка DOM+layout в момент гидрации попадала в ту же длинную задачу
+  //- и раздувала TBT главной (профиль: гидрация 2540–3400 мс + вставка
+  //- блока сразу после). Данные истории читаются сразу (дёшево), откладывается
+  //- только отрисовка; потолок гарантирует рендер и без свободного потока.
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => { idleReady.value = true }, { timeout: 3000 })
+  } else {
+    setTimeout(() => { idleReady.value = true }, 1200)
+  }
 })
 
 onBeforeUnmount(() => {

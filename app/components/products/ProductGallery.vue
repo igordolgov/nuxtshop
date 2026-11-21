@@ -163,7 +163,7 @@
     Transition(name="fade")
       //- Диалог просмотра фото: role/aria-modal для скринридеров, фокус
       //- при открытии переносится на крест (см. watch в script), Esc работает.
-      .zoom-modal(v-if="isZoomOpen" role="dialog" aria-modal="true" :aria-label="productName || $t('product.nameFallback')")
+      .zoom-modal(v-if="isZoomOpen" ref="zoomModalEl" role="dialog" aria-modal="true" :aria-label="productName || $t('product.nameFallback')")
         button.close-btn(ref="closeBtnRef" type="button" @click="closeZoom" :aria-label="$t('catalog.close')")
           svg.w-6.h-6(xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2")
             path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
@@ -329,6 +329,18 @@ watch(isZoomOpen, async (open) => {
     lastFocused?.focus?.()
     lastFocused = null
   }
+})
+
+//- Tab-trap зум-диалога (WCAG 2.4.3): остальную a11y-обвязку
+//- (Escape, скролл-лок, фокус на крест/возврат) ведут useImageZoom и
+//- watch выше — композабл здесь только не выпускает Tab за пределы
+const zoomModalEl = ref(null)
+useModalA11y({
+  isOpen: () => isZoomOpen.value,
+  container: () => zoomModalEl.value,
+  focusOnOpen: false,
+  restoreFocus: false,
+  lockScroll: false,
 })
 </script>
 
