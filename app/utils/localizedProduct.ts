@@ -128,6 +128,10 @@ export function localizedProduct<T extends object>(
     categories,
     characteristics,
     categoriesRaw: rawCategories ?? [],
+    // Сырой spec-лист для поискового слоя (nameRaw/descriptionRaw-паттерн):
+    // на en/es запрос находит товар и по русским значениям характеристик
+    // («8 ГБ», «Да»), не только по переводу («8 GB», «Sí»)
+    characteristicsRaw: rec.characteristics as Record<string, string> | undefined,
   } as T;
 }
 

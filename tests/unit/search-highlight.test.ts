@@ -46,9 +46,28 @@ describe('useSearchHighlight.highlightText', () => {
     );
   });
 
-  it('куски токена: «wh 1000» выделяет «WH» и «1000» в «WH-1000XM4»', () => {
+  it('куски токена: «wh 1000» выделяет «WH» и «1000XM4» в «WH-1000XM4»', () => {
     expect(highlightText('Auriculares Sony WH-1000XM4', 'wh 1000')).toBe(
-      'Auriculares Sony <span class="search-highlight">WH</span>-<span class="search-highlight">1000</span>XM4',
+      'Auriculares Sony <span class="search-highlight">WH</span>-<span class="search-highlight">1000XM4</span>',
+    );
+  });
+
+  it('стем запроса выделяет слово ЦЕЛИКОМ (маркетплейс-паттерн)', () => {
+    // «телефонов» → стем «телефон» — префикс «Телефоны»: выделяется всё слово
+    expect(highlightText('Телефоны и смартфоны', 'телефонов')).toBe(
+      '<span class="search-highlight">Телефоны</span> и смартфоны',
+    );
+    // расширение вправо останавливается на сепараторе/конце слова
+    expect(highlightText('Телевизор, телефон в комплекте', 'телефонов')).toBe(
+      'Телевизор, <span class="search-highlight">телефон</span> в комплекте',
+    );
+  });
+
+  it('внутри слова расширения нет: «phones» выделяет «phone» в «Smartphone» (стем+окончание)', () => {
+    // стем «phon» матчится внутри «Smartphone», расширение вправо добавляет
+    // «e» — выделяется «phone»-часть целиком; «phones» во втором слове — целиком
+    expect(highlightText('Smartphone и phones', 'phones')).toBe(
+      'Smart<span class="search-highlight">phone</span> и <span class="search-highlight">phones</span>',
     );
   });
 

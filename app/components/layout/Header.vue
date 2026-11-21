@@ -200,6 +200,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           :hasSuggestions="hasSearchSuggestions"
           :activeSuggestionIndex="activeSuggestionIndex"
           :totalResults="totalResults"
+          :correction="searchCorrection"
           @search="onSearch"
           @update:searchQuery="onSearchQueryUpdate"
           @suggestionSelected="onSuggestionSelected"
@@ -207,6 +208,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           @resetSearch="onResetSearch"
           @update:activeSuggestionIndex="onActiveSuggestionIndex"
           @update:showSuggestions="onShowSuggestions"
+          @applyCorrection="onApplyCorrection"
         )
 
       //- Корзина — десктоп: мини-корзина дропдауном из иконки (состав,
@@ -268,6 +270,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           :hasSuggestions="hasSearchSuggestions"
           :activeSuggestionIndex="activeSuggestionIndex"
           :totalResults="totalResults"
+          :correction="searchCorrection"
           @search="onSearch"
           @update:searchQuery="onSearchQueryUpdate"
           @suggestionSelected="onSuggestionSelected"
@@ -275,6 +278,7 @@ header.app-header.sticky.top-0.z-50.border-b(
           @resetSearch="onResetSearch"
           @update:activeSuggestionIndex="onActiveSuggestionIndex"
           @update:showSuggestions="onShowSuggestions"
+          @applyCorrection="onApplyCorrection"
         )
 </template>
 <style scoped>
@@ -382,6 +386,8 @@ const appState = useAppState()
 //- ============================================
 const searchQuery = computed(() => appState.search?.query?.value ?? '')
 const isSearching = computed(() => appState.search?.isSearching?.value ?? false)
+// «Возможно, вы имели в виду»: исправленный запрос для пустой выдачи
+const searchCorrection = computed(() => appState.search?.correction?.value ?? null)
 const showSuggestions = computed(() => appState.search?.showSuggestions?.value ?? false)
 const searchSuggestions = computed(() => appState.search?.suggestions?.value ?? [])
 const hasSearchSuggestions = computed(() => appState.search?.hasSuggestions?.value ?? false)
@@ -410,6 +416,19 @@ const onPerformSearch = () => {
     return
   }
   appState.search?.performSearch?.()
+}
+
+//- Клик «возможно, вы имели в виду»: исправленный запрос применяется
+//- (сетка фильтруется им же, панель закрывается); с чужой страницы —
+//- переход в каталог с исправлением (как Enter — onPerformSearch)
+const onApplyCorrection = (q) => {
+  if (!q) return
+  appState.search?.applySearchQuery?.(q)
+  if (!isHomePage.value) {
+    navigateTo(localePath({ path: '/', query: { search: q } }))
+    return
+  }
+  appState.search?.scrollToProductsTop?.()
 }
 
 //- Подсказка → карточка товара (маркетплейс-паттерн: клик по подсказке

@@ -145,6 +145,19 @@
             class="text-base-content/50"
           )
             span {{ $t('catalog.nothingFound', { q: localSearchQuery }) }}
+          
+          //- «Возможно, вы имели в виду» (Amazon/Ozon): исправление строится
+          //- из слов каталога (Дамерау–Левенштейн) и гарантирует непустую
+          //- выдачу — клик применяет его к сетке (как Enter).
+          //- Исправление — слова каталога: подставляются как есть (в т.ч.
+          //- с ударениями «Teléfono» — поиск fold'ует диакритику)
+          button.suggestion-item.correction-item.w-full.text-left.px-3.pb-3.flex.items-center.gap-1(
+            v-if="!isSearching && localSearchQuery && localSearchQuery.length >= 2 && filteredSuggestions.length === 0 && hasPerformedSearch && correction"
+            type="button"
+            @mousedown.prevent.stop="$emit('applyCorrection', correction)"
+          )
+            span.shrink-0(class="text-base-content/50") {{ $t('catalog.didYouMean') }}
+            span.font-semibold.text-primary {{ correction }}
 </template>
 
 <script setup>
@@ -167,6 +180,10 @@ const props = defineProps({
   activeSuggestionIndex: { type: Number, default: -1 },
   isActive: { type: Boolean, default: false },
   products: { type: Array, default: () => [] },
+  // «Возможно, вы имели в виду»: исправленный запрос для пустой выдачи
+  // (строят suggestSearchCorrection родительский appState; null — исправлять
+  // нечего). Клик — emit('applyCorrection', correction)
+  correction: { type: String, default: null },
   // Полноэкранный оверлей (ProductSearchOverlay): клик-аутсайд там бессмыслен
   // (весь экран — контейнер поиска), а без запрета он УБИВАЛ панель сразу
   // после открытия: клик по иконке поиска всплывает до document уже ПОСЛЕ
@@ -200,7 +217,8 @@ const emit = defineEmits([
   'resetSearch',
   'update:activeSuggestionIndex',
   'update:showSuggestions',
-  'search'
+  'search',
+  'applyCorrection'
 ])
 
 //- ============================================
@@ -314,6 +332,15 @@ watch(() => props.suggestions, (newVal) => {
   }
 }, { immediate: true })
 
+//- Поиск считается ВЫПОЛНЕННЫМ по факту завершения (isSearching true→false),
+//- а не только при совпадениях: раньше «ничего не найдено» и «возможно, вы
+//- имели в виду» не показывались на ПЕРВОМ неудачном запросе — hasPerformedSearch
+//- поднимался только после успешного поиска (watcher suggestions с результатами),
+//- и вместо блока «ничего не найдено» пользователь видел пустую панель
+watch(() => props.isSearching, (searching, wasSearching) => {
+  if (wasSearching && !searching) hasPerformedSearch.value = true
+})
+
 //- ============================================
 //- Methods
 //- ============================================
@@ -321,6 +348,12 @@ const handleInput = (event) => {
   const value = event.target.value
   localSearchQuery.value = value
   isPanelClosedByEsc.value = false
+  //- Ввод возможен только при фокусе в поле: восстанавливаем флаг, который
+  //- closeSuggestionsPanel (Enter/клик подсказки/«Показать все») гасит при
+  //- ЖИВОМ DOM-фокусе (blur не был — повторный focus() не диспатчит событие).
+  //- Без этого продолжение набора после Enter больше не открывало панель —
+  //- «возможно, вы имели в виду» была недостижима после неудачного применения
+  isInputFocused.value = true
   emit('update:searchQuery', value)
   
   if (value?.length >= 2) {
@@ -582,6 +615,12 @@ onUnmounted(() => {
 .item-thumb,
 .item-thumb-placeholder {
   align-self: flex-start;
+}
+
+/* «Возможно, вы имели в виду» — строка-кнопка под «ничего не найдено»:
+   та же высота строки, коррекция — акцентным цветом витрины */
+.correction-item:hover {
+  background: var(--color-base-200);
 }
 
 .fade-slide-enter-active,

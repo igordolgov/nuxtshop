@@ -44,6 +44,7 @@ Teleport(to="body")
             :hasSuggestions="hasSearchSuggestions"
             :activeSuggestionIndex="activeSuggestionIndex"
             :totalResults="totalResults"
+            :correction="searchCorrection"
             @search="onSearch"
             @update:searchQuery="onSearchQueryUpdate"
             @suggestionSelected="onSuggestionSelected"
@@ -51,6 +52,7 @@ Teleport(to="body")
             @resetSearch="onResetSearch"
             @update:activeSuggestionIndex="onActiveSuggestionIndex"
             @update:showSuggestions="onShowSuggestions"
+            @applyCorrection="onApplyCorrection"
           )
         button.btn.btn-ghost.btn-circle.shrink-0(
           type="button"
@@ -87,6 +89,8 @@ const hasSearchSuggestions = computed(() => appState.search?.hasSuggestions?.val
 const activeSuggestionIndex = computed(() => appState.search?.activeSuggestionIndex?.value ?? -1)
 //- Всего совпадений (футер панели: «Показать все результаты (N)»)
 const totalResults = computed(() => appState.search?.totalResults?.value ?? 0)
+//- «Возможно, вы имели в виду»: исправленный запрос для пустой выдачи
+const searchCorrection = computed(() => appState.search?.correction?.value ?? null)
 const allProducts = computed(() => appState.products?.value || [])
 
 if (import.meta.client) {
@@ -120,6 +124,16 @@ const close = () => emit('update:open', false)
 const onPerformSearch = () => {
   const q = searchQuery.value?.trim()
   if (!q) return
+  close()
+  navigateTo(localePath({ path: '/', query: { search: q } }))
+}
+
+//- Клик «возможно, вы имели в виду»: исправление применяется, оверлей
+//- закрывается, каталог открывается с исправленным запросом (как Enter —
+//- на карточке товара сетки нет, каталог единственное место выдачи)
+const onApplyCorrection = (q) => {
+  if (!q) return
+  appState.setSearchQuery(q)
   close()
   navigateTo(localePath({ path: '/', query: { search: q } }))
 }

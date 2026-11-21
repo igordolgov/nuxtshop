@@ -91,6 +91,7 @@
     "searching": "Поиск...",
     "enterMore": "Введите ещё {n} симв.…",
     "nothingFound": "Ничего не найдено для «{q}»",
+    "didYouMean": "Возможно, вы имели в виду",
     "breadcrumbs": "Хлебные крошки",
     "sortAria": "Сортировка",
     "sortNewest": "Сначала новые",

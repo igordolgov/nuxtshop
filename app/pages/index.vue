@@ -71,12 +71,14 @@
               :isMobile="isMobile"
               :searchQuery="appliedSearchQuery"
               :activeFiltersCount="activeFiltersCount"
+              :correction="searchCorrection"
               useInfiniteScroll
               :pageSize="20"
               :maxRendered="30"
               @resetFilters="resetFilters"
               @refreshProducts="refreshProducts"
               @clearSearch="clearSearch"
+              @applyCorrection="applySearchCorrection"
             )
             //- Блок «Недавно смотрели»: localStorage клиента — SSR не
             //- рендерит (персональные данные), появляется после гидратации,
@@ -271,6 +273,12 @@ watch(
 //- «Очистить» в строке результатов: сбрасывает и ввод, и применённый
 //- поиск (сетка возвращается к полному каталогу, URL теряет ?search=)
 const clearSearch = () => appState.search?.applySearchQuery?.('')
+
+//- «Возможно, вы имели в виду» в пустом состоянии сетки: исправленный
+//- запрос применяется (applySearchQuery синхронизирует и ввод, и URL,
+//- потому что searchQuery-ватчер пере-пишет ?search=)
+const searchCorrection = computed(() => appState.search?.correction?.value ?? null)
+const applySearchCorrection = (q) => appState.search?.applySearchQuery?.(q)
 
 const handleFiltersUpdate = (newFilters) => appState.handleFiltersUpdate(newFilters)
 

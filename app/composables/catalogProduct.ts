@@ -4,8 +4,9 @@
 // API-мутации остались в useProducts.ts / useProductMutations.ts,
 // переиспользуемые чистые функции — здесь.
 
-// Поиск каталога: токены + fold диакритики (см. utils/searchQuery.ts)
-import { searchFilter } from '../utils/searchQuery';
+// Поиск каталога: токены + fold диакритики + стемминг + spec-поля
+// (см. utils/searchQuery.ts)
+import { searchFilter, specHaystackFields } from '../utils/searchQuery';
 
 /** Товар каталога на клиенте: серверный Product + рейтинг отзывов + флаг избранного.
  *  type-alias (не interface): нужен неявный index signature для передачи в
@@ -50,6 +51,15 @@ export type CatalogProduct = {
   updatedAt: string;
   // Legacy-поле из старых схем данных (toggleFavorite читает на всякий случай)
   _id?: string | number | null;
+};
+
+/** Товар, дополненный сырыми оригиналами полей (пишет localizedProduct и
+ *  копи-билдеры useFilters/useAppState на en/es; на ru поле отсутствует). */
+export type SearchableCatalogProduct = CatalogProduct & {
+  categoriesRaw?: string[];
+  nameRaw?: string;
+  descriptionRaw?: string;
+  characteristicsRaw?: Record<string, string> | null;
 };
 
 /** Фильтры каталога для filterProducts */
@@ -135,16 +145,37 @@ export const catalogProductsByCategory = (
   return list.filter((p) => p.categories?.includes(category));
 };
 
-/** Поиск по названию/описанию/категориям; пустой запрос — весь список.
- *  Токен-совпадение с fold'ом диакритики (см. utils/searchQuery.ts):
- *  порядок слов, ударения, двойные пробелы и дефисы не ломают поиск;
+/**
+ * Поля товара для поисковой соломы (searchFilter/suggestSearchCorrection):
+ * название, описание, категории (включая сырые — фильтры матчят их же) и
+ * ХАРАКТЕРИСТИКИ — поиск по бренду и значениям spec-листа («Snapdragon»,
+ * «AMOLED», «De'Longhi»); characteristicsRaw — русский оригинал на en/es
+ * (см. localizedProduct). Один набор полей для подсказок, сетки и
+ * исправления запроса — везде совпадающие результаты.
+ */
+export const catalogSearchFields = (
+  p: Readonly<SearchableCatalogProduct>,
+): ReadonlyArray<string | string[] | null | undefined> => [
+  p.name,
+  p.description,
+  p.categories,
+  p.categoriesRaw,
+  p.nameRaw,
+  p.descriptionRaw,
+  specHaystackFields(p.characteristics),
+  specHaystackFields(p.characteristicsRaw),
+];
+
+/** Поиск по названию/описанию/категориям/характеристикам; пустой запрос — весь список.
+ *  Токен-совпадение с fold'ом диакритики и стеммингом (см. utils/searchQuery.ts):
+ *  порядок слов, ударения, формы слов («телефонов») не ломают поиск;
  *  при пустом строгом матче — частичный по любому токену. */
 export const searchCatalogProducts = (
   list: CatalogProduct[],
   query?: string | null,
 ): CatalogProduct[] => {
   if (!query?.trim()) return list;
-  return searchFilter(list, query, (p) => [p.name, p.description, p.categories]);
+  return searchFilter(list, query, catalogSearchFields);
 };
 
 /** Фильтры витрины: категория, ценовой коридор, наличие, строка поиска. */
@@ -161,7 +192,7 @@ export const filterCatalogProducts = (
   if (filters.inStock !== undefined)
     filtered = filtered.filter((p) => p.inStock === filters.inStock);
   if (filters.search?.trim()) {
-    filtered = searchFilter(filtered, filters.search, (p) => [p.name, p.description, p.categories]);
+    filtered = searchFilter(filtered, filters.search, catalogSearchFields);
   }
   return filtered;
 };

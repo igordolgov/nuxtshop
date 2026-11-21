@@ -15,6 +15,13 @@
 // Куски токенов (алф.-цифр. цепочки) матчатся независимо: «wh 1000»
 // выделит и «WH», и «1000» в «WH-1000XM4», как у маркетплейсов.
 //
+// Стем-куски (токенизация стеммит запрос: «телефонов» → «телефон»)
+// расширяются до конца слова: совпадение найдено по префиксу — выделяется
+// ВСЁ слово («Телефоны», «Teléfono»), как у маркетплейсов, а не голый стем.
+// Расширение только ВПРАВО по буквам/цифрам fold-слепка (сепаратор
+// останавливает), назад не тянется: «phone» внутри «Smartphone» не
+// расширяется до целого слова.
+//
 // Мёртвые экспорты (containsQuery/highlightBadge/isQueryValidForHighlight)
 // удалены: использовались только внутри composable.
 
@@ -23,6 +30,8 @@ import { tokenizeSearchQuery } from '../utils/searchQuery';
 const COMBINING_MARKS_RE = /[\u0300-\u036f]/g;
 /** Алф.-цифр. куски токена: «wh 1000» → ['wh', '1000']. */
 const CHUNK_SPLIT_RE = /[^\p{L}\p{N}]+/u;
+/** Буква/цифра для расширения совпадения до конца слова. */
+const ALNUM_RE = /[\p{L}\p{N}]/u;
 
 /** Посимвольный fold той же семантики, что foldSearchText в searchQuery.ts. */
 const foldChar = (ch: string): string =>
@@ -81,7 +90,11 @@ export const useSearchHighlight = () => {
       for (;;) {
         const at = folded.indexOf(chunk, from);
         if (at === -1) break;
-        const last = at + chunk.length - 1;
+        let last = at + chunk.length - 1;
+        // Стем-кусок — префикс слова: тянем совпадение до конца слова
+        // (по буквам/цифрам в fold-слепке, сепараторы останавливают):
+        // «телефон» выделяет «Телефоны» целиком, а не «Телефон» без «ы»
+        while (last + 1 < folded.length && ALNUM_RE.test(folded[last + 1])) last++;
         ranges.push({
           start: map[at],
           end: (last < map.length ? map[last] : map[map.length - 1]) + 1,

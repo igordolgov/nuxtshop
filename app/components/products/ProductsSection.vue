@@ -48,6 +48,16 @@
       Icon.empty-icon(name="mdi:package-variant" size="64")
       h3.text-xl.font-medium.mb-2 {{ $t('product.notFound') }}
       p.text-base-content.opacity-60.mb-4 {{ emptyMessage }}
+      //- «Возможно, вы имели в виду» (Amazon/Ozon): исправленный запрос
+      //- применяется прямо из пустого состояния — не надо возвращаться в
+      //- строку поиска; гарантированно ведёт на непустую выдачу
+      button.btn.btn-outline.btn-secondary.btn-sm.mb-4(
+        type="button"
+        v-if="searchQuery && correction"
+        @click="$emit('applyCorrection', correction)"
+      )
+        | {{ $t('catalog.didYouMean') }}
+        span.font-bold.ml-1 {{ correction }}
       button.btn.btn-primary(
         type="button"
         v-if="activeFiltersCount > 0"
@@ -151,6 +161,9 @@ const props = defineProps({
   // Окно рендера: сколько карточек реально держать в DOM (аудит
   // «Структура DOM»). Остальное подгружает infinite scroll
   maxRendered: { type: Number, default: 30 },
+  // «Возможно, вы имели в виду»: исправленный запрос для пустой выдачи
+  // (строят suggestSearchCorrection в appState; null — исправлять нечего)
+  correction: { type: String, default: null },
 })
 
 // ==========================================
@@ -160,6 +173,7 @@ defineEmits([
   'resetFilters',
   'refreshProducts',
   'clearSearch',
+  'applyCorrection',
 ])
 
 // ==========================================

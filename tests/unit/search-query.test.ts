@@ -14,12 +14,18 @@ import {
   buildSearchHaystack,
   foldSearchText,
   searchFilter,
+  specHaystackFields,
+  stemSearchToken,
+  suggestSearchCorrection,
   tokenizeSearchQuery,
 } from '../../app/utils/searchQuery';
 import {
   buildSearchHaystack as buildSearchHaystackServer,
   foldSearchText as foldSearchTextServer,
   searchFilter as searchFilterServer,
+  specHaystackFields as specHaystackFieldsServer,
+  stemSearchToken as stemSearchTokenServer,
+  suggestSearchCorrection as suggestSearchCorrectionServer,
   tokenizeSearchQuery as tokenizeSearchQueryServer,
 } from '../../server/lib/searchQuery';
 
@@ -47,6 +53,53 @@ describe('foldSearchText', () => {
   });
 });
 
+// ─── stemSearchToken — морфология запроса ────────────────────────────────
+
+describe('stemSearchToken', () => {
+  it('ru: «телефонов» → «телефон» (родительный множ.)', () => {
+    expect(stemSearchToken('телефонов')).toBe('телефон');
+    expect(stemSearchToken('телефонах')).toBe('телефон');
+    expect(stemSearchToken('телефоне')).toBe('телефон');
+    expect(stemSearchToken('наушники')).toBe('наушник');
+    expect(stemSearchToken('наушниками')).toBe('наушник');
+    expect(stemSearchToken('смартфонах')).toBe('смартфон');
+  });
+
+  it('en/es: множественное число', () => {
+    // es-приоритет: «es» режется раньше «s», иначе «portatiles» → «portatile»
+    // перестаёт быть префиксом единственного числа «portatil» в каталоге.
+    // Побочный эффект для английских «-es»-слов: «phones» → «phon» —
+    // префикс и «phone», и «smartphone» — выдача только расширяется
+    expect(stemSearchToken('portatiles')).toBe('portatil');
+    expect(stemSearchToken('telefonos')).toBe('telefon');
+    expect(stemSearchToken('auriculares')).toBe('auricular');
+    expect(stemSearchToken('accessories')).toBe('accessor');
+    expect(stemSearchToken('phones')).toBe('phon');
+  });
+
+  it('номера моделей и цифры не стеммятся', () => {
+    expect(stemSearchToken('wh1000xm4')).toBe('wh1000xm4');
+    expect(stemSearchToken('1000')).toBe('1000');
+    expect(stemSearchToken('s23')).toBe('s23');
+    expect(stemSearchToken('xm4')).toBe('xm4');
+  });
+
+  it('короткие слова и бренды не трогаются (остаток ≥ 4)', () => {
+    expect(stemSearchToken('samsung')).toBe('samsung');
+    expect(stemSearchToken('sony')).toBe('sony');
+    expect(stemSearchToken('galaxy')).toBe('galaxy');
+    expect(stemSearchToken('для')).toBe('для');
+    expect(stemSearchToken('часы')).toBe('часы');
+    expect(stemSearchToken('iphone')).toBe('iphone');
+  });
+
+  it('базовая форма с «пустым» суффиксом остаётся префиксом себя (поиск не ломается)', () => {
+    // «видео» → «виде» — префикс «видео», товар по-прежнему находится
+    expect(stemSearchToken('видео')).toBe('виде');
+    expect(stemSearchToken('радио')).toBe('ради');
+  });
+});
+
 // ─── tokenizeSearchQuery ─────────────────────────────────────────────────
 
 describe('tokenizeSearchQuery', () => {
@@ -60,8 +113,12 @@ describe('tokenizeSearchQuery', () => {
     expect(tokenizeSearchQuery('6,1" amoled')).toEqual(['6', '1', 'amoled']);
   });
 
-  it('диакритика режется и в токенах', () => {
+  it('диакритика режется и в токенах, форма сводится к стему', () => {
+    // латинская «o» не суффикс (в списке кириллическая «о»): базовая форма
+    // остаётся как есть — префиксная семантика всё равно найдёт товар
     expect(tokenizeSearchQuery('Teléfono')).toEqual(['telefono']);
+    expect(tokenizeSearchQuery('Portátiles')).toEqual(['portatil']);
+    expect(tokenizeSearchQuery('Телефонов')).toEqual(['телефон']);
   });
 
   it('пустой/пробельный запрос — пустой список токенов', () => {
@@ -206,6 +263,153 @@ describe('searchFilter', () => {
   });
 });
 
+// ─── specHaystackFields — характеристики в соломе ────────────────────────
+
+describe('specHaystackFields', () => {
+  it('лейбл значение построчно', () => {
+    expect(specHaystackFields({ Бренд: 'Samsung', Экран: 'AMOLED 120 Гц' })).toEqual([
+      'Бренд Samsung',
+      'Экран AMOLED 120 Гц',
+    ]);
+  });
+
+  it('пусто/не объект/пустой объект → null (пропускается)', () => {
+    expect(specHaystackFields(null)).toBe(null);
+    expect(specHaystackFields(undefined)).toBe(null);
+    expect(specHaystackFields({})).toBe(null);
+  });
+
+  it('searchFilter находит бренд из spec-листа (в т.ч. склеенный De’Longhi)', () => {
+    const items = [
+      {
+        id: '1',
+        fields: ['Смартфон Samsung Galaxy S23', specHaystackFields({ Бренд: 'Samsung' })],
+      },
+      {
+        id: '2',
+        fields: ['Кофемашина De’Longhi ECAM', specHaystackFields({ Бренд: 'De’Longhi' })],
+      },
+      { id: '3', fields: ['Ноутбук Apple', specHaystackFields({ Процессор: 'Apple M2 Pro' })] },
+    ];
+    const fieldsOf = (item: { fields: unknown[] }) => item.fields;
+    expect(searchFilter(items, 'samsung', fieldsOf).map((p) => p.id)).toEqual(['1']);
+    // Де’Longhi: апостроф → сепаратор; плотный запрос находит по tight-соломе
+    expect(searchFilter(items, 'delonghi', fieldsOf).map((p) => p.id)).toEqual(['2']);
+    // Значение характеристики («Snapdragon»-тип: только в spec-листе)
+    expect(searchFilter(items, 'm2 pro', fieldsOf).map((p) => p.id)).toEqual(['3']);
+  });
+});
+
+// ─── searchFilter — морфология (формы слов находят товар) ────────────────
+
+describe('searchFilter: морфология', () => {
+  const catalog = [
+    {
+      id: '1',
+      fields: ['Мобильный телефон Samsung Galaxy S23', ['Электроника', 'Смартфоны']],
+    },
+    {
+      id: '2',
+      fields: ['Беспроводные наушники Sony WH-1000XM4', ['Электроника']],
+    },
+  ];
+  const run = (query: string) =>
+    searchFilter(catalog, query, (item) => item.fields).map((p) => p.id);
+
+  it('ru: «телефонов samsung» — строгий матч через стеммер', () => {
+    expect(run('телефонов samsung')).toEqual(['1']);
+    expect(run('телефонах samsung')).toEqual(['1']);
+  });
+
+  it('ru: «наушников» находит «наушники»', () => {
+    expect(run('наушников')).toEqual(['2']);
+    expect(run('беспроводных наушниках')).toEqual(['2']);
+  });
+
+  it('es: «telefonos» находит «Teléfono» (мн. число)', () => {
+    // es-каталог на кубинской витрине: множественное число в запросе —
+    // единственное число в каталоге
+    const esCatalog = [
+      { id: '1', fields: ['Teléfono inteligente Samsung Galaxy S23', ['Electrónica']] },
+      { id: '2', fields: ['Auriculares inalámbricos Sony WH-1000XM4', ['Electrónica']] },
+    ];
+    const runEs = (query: string) =>
+      searchFilter(esCatalog, query, (item) => item.fields).map((p) => p.id);
+    expect(runEs('telefonos')).toEqual(['1']);
+    expect(runEs('auriculares')).toEqual(['2']);
+  });
+
+  it('частичный матч сохраняется при промахе формы', () => {
+    // «телефонов» в каталоге №2 нет — «наушников sony» не опустошает выдачу
+    expect(run('наушников sony')).toEqual(['2']);
+  });
+});
+
+// ─── suggestSearchCorrection — «возможно, вы имели в виду» ───────────────
+
+describe('suggestSearchCorrection', () => {
+  const catalog = [
+    {
+      id: '1',
+      fields: ['Смартфон Samsung Galaxy S23', ['Электроника', 'Смартфоны']],
+    },
+    {
+      id: '2',
+      fields: ['Беспроводные наушники Sony WH-1000XM4', ['Электроника']],
+    },
+    {
+      id: '3',
+      fields: ['Ноутбук Apple MacBook Pro 16', ['Электроника', 'Ноутбуки']],
+    },
+  ];
+  const fieldsOf = (item: { fields: unknown[] }) => item.fields;
+  const suggest = (query: string) => suggestSearchCorrection(catalog, query, fieldsOf);
+
+  it('опечатка в одном слове заменяется словом каталога (замена + сохранение остальных)', () => {
+    // «samsuna» → «Samsung» (dist 1, вид — как в каталоге), «galaxy» совпал
+    // и остался как набрано
+    expect(suggest('samsuna galaxy')).toBe('Samsung galaxy');
+  });
+
+  it('русская опечатка: «наушнки» → «наушники» (транспозиция)', () => {
+    expect(suggest('наушнки')).toBe('наушники');
+  });
+
+  it('всё совпало → null (подсказка не нужна)', () => {
+    expect(suggest('samsung galaxy')).toBe(null);
+    expect(suggest('sony')).toBe(null);
+  });
+
+  it('нет кандидата в словаре → null', () => {
+    expect(suggest('ииииии')).toBe(null);
+    expect(suggest('xperia zzzz')).toBe(null);
+  });
+
+  it('короткий мусор выбрасывается, остальное исправляется (как у маркетплейсов)', () => {
+    // «sony zq» — «zq» короткое и не подстрока каталога (в отличие от «xy»,
+    // которая находится внутри «galaXY»), выбрасывается → подсказка «sony»
+    expect(suggest('sony zq')).toBe('sony');
+  });
+
+  it('исправление гарантирует непустую выдачу', () => {
+    const correction = suggest('наушнки sonyi');
+    expect(correction).toBe('наушники Sony');
+    // обратный прогон: исправленный запрос реально находит товары
+    expect(searchFilter(catalog, correction ?? '', fieldsOf).length).toBeGreaterThan(0);
+  });
+
+  it('пустой/короткий запрос → null', () => {
+    expect(suggestSearchCorrection(catalog, '', fieldsOf)).toBe(null);
+    expect(suggestSearchCorrection(catalog, 'sa', fieldsOf)).toBe(null);
+  });
+
+  it('подсказка не теряет вид пользователя для совпавших слов', () => {
+    // совпавший токен остаётся как набран (регистр сохраняется),
+    // исправленное слово — в виде каталога
+    expect(suggest('GALAXY samsuna')).toBe('GALAXY Samsung');
+  });
+});
+
 // ─── server/app copies are in sync ───────────────────────────────────────
 
 describe('searchQuery: server/app copies are in sync', () => {
@@ -224,6 +428,9 @@ describe('searchQuery: server/app copies are in sync', () => {
     'WH-1000XM4',
     'wh1000xm4',
     'ёлочные',
+    'телефонов samsung',
+    'portátiles',
+    'наушнки',
     '',
     '   ',
   ];
@@ -233,6 +440,11 @@ describe('searchQuery: server/app copies are in sync', () => {
     [] as string[],
   ];
   const items = fieldSets.map((fields, id) => ({ id: String(id), fields }));
+  const specSets = [
+    { Бренд: 'Samsung', Экран: '6,1" AMOLED' } as Record<string, string>,
+    { Бренд: 'De’Longhi' } as Record<string, string>,
+    {},
+  ];
 
   it.each(texts.map((t) => [t]))('fold совпадает для %j', (text) => {
     expect(foldSearchTextServer(text)).toEqual(foldSearchText(text));
@@ -242,14 +454,35 @@ describe('searchQuery: server/app copies are in sync', () => {
     expect(tokenizeSearchQueryServer(query)).toEqual(tokenizeSearchQuery(query));
   });
 
+  it.each(texts.map((t) => [t]))('стеммер совпадает для %j', (text) => {
+    const token = tokenizeSearchQuery(text)[0] ?? '';
+    expect(stemSearchTokenServer(token)).toEqual(stemSearchToken(token));
+  });
+
+  it.each(texts.map((t) => [t]))('стеммер совпадает для слова %j', (text) => {
+    const word = text.split(' ')[0] ?? '';
+    expect(stemSearchTokenServer(word)).toEqual(stemSearchToken(word));
+  });
+
   it.each(fieldSets.map((f) => [f]))('haystack совпадает для %j', (fields) => {
     expect(buildSearchHaystackServer(fields)).toEqual(buildSearchHaystack(fields));
+  });
+
+  it.each(specSets.map((s) => [s]))('spec-поля совпадают для %j', (specs) => {
+    expect(specHaystackFieldsServer(specs)).toEqual(specHaystackFields(specs));
   });
 
   it.each(queries.map((q) => [q]))('фильтр совпадает для запроса %j', (query) => {
     const fieldsOf = (item: { fields: unknown[] }) => item.fields;
     expect(searchFilterServer(items, query, fieldsOf)).toEqual(
       searchFilter(items, query, fieldsOf),
+    );
+  });
+
+  it.each(queries.map((q) => [q]))('исправление совпадает для запроса %j', (query) => {
+    const fieldsOf = (item: { fields: unknown[] }) => item.fields;
+    expect(suggestSearchCorrectionServer(items, query, fieldsOf)).toEqual(
+      suggestSearchCorrection(items, query, fieldsOf),
     );
   });
 });

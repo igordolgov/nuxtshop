@@ -82,6 +82,9 @@ describe('localizedProduct', () => {
       'en',
     );
     expect(view.characteristics).toEqual({ Screen: 'AMOLED', Color: 'Black' });
+    // Сырой spec-лист сохранён для поискового слоя (поиск по русским
+    // значениям на en/es — nameRaw/descriptionRaw-паттерн)
+    expect(view.characteristicsRaw).toEqual({ Экран: 'AMOLED', Цвет: 'Чёрный' });
   });
 
   it('en: пустой/битый characteristicsEn — фолбэк на русский список', () => {

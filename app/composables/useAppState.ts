@@ -14,7 +14,7 @@
 import { CURRENCY_NUMBER_LOCALE, STORE_CURRENCY, STORE_DEFAULT_LOCALE } from '../../store.config';
 
 import { useProducts } from './useProducts';
-import type { CatalogProduct } from './catalogProduct';
+import { catalogSearchFields } from './catalogProduct';
 import {
   useFilters,
   type LocalizedCatalogProduct,
@@ -26,10 +26,11 @@ import { useFavorites } from './useFavorites';
 import { useCart } from './useCart';
 import { useRecentlyViewed } from './useRecentlyViewed';
 import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct';
-// Поиск: токены + fold диакритики (см. utils/searchQuery.ts —
-// «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…», при
-// пустом строгом матче — частичный по любому токену)
-import { searchFilter } from '../utils/searchQuery';
+// Поиск: токены + fold диакритики + стемминг (см. utils/searchQuery.ts —
+// «galaxy samsung» = «…Samsung Galaxy…», «telefono» = «Teléfono…»,
+// «телефонов» = «телефон», при пустом строгом матче — частичный;
+// «возможно, вы имели в виду» — suggestSearchCorrection)
+import { searchFilter, suggestSearchCorrection } from '../utils/searchQuery';
 import { computed, watch } from 'vue';
 
 /** Товар в результатах поиска: локализованная копия + подсветка совпадений */
@@ -134,17 +135,13 @@ function createAppState() {
   // Поля ПОДСВЕТКИ (как раньше): поиск ищет шире — вместе с сырым оригиналом
   const HIGHLIGHT_FIELDS = ['name', 'description', 'categories'];
 
-  function searchInItems(query: string, items: CatalogProduct[]): SearchItem[] {
-    const normalized = query.toLowerCase().trim();
-    // Поиск ведётся по локализованным КОПИЯМ: подсказки в шапке находят
-    // товар по переводу («smartphone» на /en) И по русскому оригиналу —
-    // на en/es копия дополняется nameRaw/descriptionRaw (раньше комментарий
-    // обещал «и по русскому оригиналу», но матчились только переводы).
-    // ru-каталог проходит без копий (см. localizedProduct).
-    // storeLocaleFromPath знает и /ru: на копии с дефолтом 'es' русская
-    // витрина живёт под префиксом /ru, который прежняя /^\/(en|es)/ пропускала
-    const locale = storeLocaleFromPath(searchRoute?.path, STORE_DEFAULT_LOCALE);
-    const localizedItems = items.map((item) => {
+  // Локализованный каталог для поисковых операций (подсказки + исправление
+  // запроса): один источник копий — результаты всегда согласованы.
+  // ru — без копий; на en/es копия дополняется nameRaw/descriptionRaw
+  // (см. localizedProduct — он же кладёт categoriesRaw/characteristicsRaw)
+  const locale = storeLocaleFromPath(searchRoute?.path, STORE_DEFAULT_LOCALE);
+  const localizedCatalog = computed<LocalizedCatalogProduct[]>(() =>
+    products.products.value.map((item) => {
       const loc = localizedProduct(item, locale) as LocalizedCatalogProduct;
       return loc === item
         ? loc
@@ -153,25 +150,38 @@ function createAppState() {
             nameRaw: item.name,
             descriptionRaw: item.description,
           } as LocalizedCatalogProduct);
-    });
+    }),
+  );
 
-    // Токен-совпадение с fold'ом диакритики (utils/searchQuery.ts): порядок
-    // слов, ударения, двойные пробелы и склеенные номера моделей больше не
-    // дают ложное «Ничего не найдено»; при пустом строгом матче — частичный
-    // (тот же searchFilter, что в сетке: счётчик «Показать все результаты (N)»
-    // всегда совпадает с числом карточек)
-    return searchFilter(localizedItems, query, (item) => [
-      item.name,
-      item.description,
-      item.categories,
-      item.categoriesRaw,
-      item.nameRaw,
-      item.descriptionRaw,
-    ]).map((item) => ({
+  // Единые поля соломы (название/описание/категории/характеристики —
+  // включая сырые оригиналы): подсказки, сетка и исправление считают
+  // по одним и тем же полям — счётчики и результаты совпадают
+  const searchFieldsOf = (item: LocalizedCatalogProduct) => catalogSearchFields(item);
+
+  function searchInItems(query: string): SearchItem[] {
+    const normalized = query.toLowerCase().trim();
+    // Токен-совпадение с fold'ом диакритики и стеммингом (utils/searchQuery.ts):
+    // порядок слов, ударения, формы слов («телефонов» = «телефон») и
+    // склеенные номера моделей больше не дают ложное «Ничего не найдено»;
+    // при пустом строгом матче — частичный (тот же searchFilter, что
+    // в сетке: счётчик «Показать все результаты (N)» всегда совпадает)
+    return searchFilter(localizedCatalog.value, query, searchFieldsOf).map((item) => ({
       ...item,
       highlights: generateHighlights(item, normalized, HIGHLIGHT_FIELDS),
     }));
   }
+
+  //- «Возможно, вы имели в виду» (suggestSearchCorrection): считается для
+  //- ВВОДА, когда совпадений нет; после применения (applySearchQuery)
+  //- ввод == применённому запросу — та же подсказка видна в пустом
+  //- состоянии сетки. Зависит от searchResults: пока есть результаты,
+  //- подсказка не нужна
+  const searchCorrection = computed<string | null>(() => {
+    const query = searchQuery.value?.trim() ?? '';
+    if (query.length < 2) return null;
+    if (searchResults.value.length > 0) return null;
+    return suggestSearchCorrection(localizedCatalog.value, query, searchFieldsOf);
+  });
 
   let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -188,7 +198,7 @@ function createAppState() {
 
     searchTimeout = setTimeout(() => {
       try {
-        const results = searchInItems(query, products.products.value);
+        const results = searchInItems(query);
         searchResults.value = results;
         suggestionItems.value = results.slice(0, 5);
       } catch (error) {
@@ -415,6 +425,8 @@ function createAppState() {
       suggestions: suggestionItems,
       results: searchResults,
       activeSuggestionIndex,
+      // «Возможно, вы имели в виду»: исправленный запрос для пустой выдачи
+      correction: searchCorrection,
 
       hasSuggestions,
       totalResults,

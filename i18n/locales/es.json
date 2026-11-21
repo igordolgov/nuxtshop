@@ -91,6 +91,7 @@
     "searching": "Buscando...",
     "enterMore": "Escriba {n} caracteres más…",
     "nothingFound": "Sin resultados para «{q}»",
+    "didYouMean": "Quizás quiso decir",
     "breadcrumbs": "Migas de pan",
     "sortAria": "Ordenación",
     "sortNewest": "Más recientes",

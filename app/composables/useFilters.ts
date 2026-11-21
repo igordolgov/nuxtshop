@@ -5,6 +5,7 @@ import { localizedProduct, storeLocaleFromPath } from '../utils/localizedProduct
 // копия с дефолтом 'es' должна локализовать каталог, а не откатываться на 'ru'
 import { STORE_DEFAULT_LOCALE } from '../../store.config';
 import type { CatalogProduct } from './catalogProduct';
+import { catalogSearchFields, type SearchableCatalogProduct } from './catalogProduct';
 // Фасетные фильтры по характеристикам (паттерн маркетплейсов): чистые
 // функции в utils — здесь только стейт и проводка в displayedProducts
 import { buildSpecFacets, clampSpecSelection, filterBySpecSelection } from '../utils/specFacets';
@@ -19,14 +20,10 @@ import { searchFilter } from '../utils/searchQuery';
 // новый товар оказывался в конце списка при «сначала новые»
 import { sortProductsByConfig } from '../utils/catalogSort';
 
-/** Локализованная копия товара (localizedProduct добавляет categoriesRaw;
- *  поисковый слой — nameRaw/descriptionRaw: сырой оригинал для поиска и по
- *  переводу, и по-русски на en/es-локалях) */
-export type LocalizedCatalogProduct = CatalogProduct & {
-  categoriesRaw?: string[];
-  nameRaw?: string;
-  descriptionRaw?: string;
-};
+/** Локализованная копия товара (localizedProduct добавляет categoriesRaw/
+ *  characteristicsRaw; поисковый слой — nameRaw/descriptionRaw: сырой
+ *  оригинал для поиска и по переводу, и по-русски на en/es-локалях) */
+export type LocalizedCatalogProduct = SearchableCatalogProduct;
 
 /** Конфиг сортировки каталога */
 export interface CatalogSortConfig {
@@ -124,18 +121,13 @@ export const useFilters = (products: Ref<CatalogProduct[]>) => {
 
     const query = searchQuery.value?.trim();
     if (query) {
-      // Токен-совпадение с fold'ом диакритики (utils/searchQuery.ts):
+      // Токен-совпадение с fold'ом диакритики и стеммингом (utils/searchQuery.ts):
       // порядок слов («galaxy samsung»), ударения («telefono» = «Teléfono…»),
-      // двойные пробелы и склеенные номера моделей больше не дают ложное
-      // «Ничего не найдено»; при пустом строгом матче — частичный
-      filtered = searchFilter(filtered, query, (p) => [
-        p.name,
-        p.description,
-        p.categories,
-        p.categoriesRaw,
-        p.nameRaw,
-        p.descriptionRaw,
-      ]);
+      // формы слов («телефонов» = «телефон»), двойные пробелы и склеенные
+      // номера моделей больше не дают ложное «Ничего не найдено»;
+      // солома включает характеристики (бренд, «AMOLED», «Snapdragon»);
+      // при пустом строгом матче — частичный
+      filtered = searchFilter(filtered, query, catalogSearchFields);
     }
 
     const selectedCategories = filters.value.categories;

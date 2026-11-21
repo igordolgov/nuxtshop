@@ -88,5 +88,7 @@ export function localizedProduct<T extends object>(
     categories,
     characteristics,
     categoriesRaw: rawCategories ?? [],
+    // Сырой spec-лист для поискового слоя (зеркало app/utils/localizedProduct.ts)
+    characteristicsRaw: rec.characteristics as Record<string, string> | undefined,
   } as T;
 }

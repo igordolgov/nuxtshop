@@ -91,6 +91,7 @@
     "searching": "Searching...",
     "enterMore": "Type {n} more characters…",
     "nothingFound": "Nothing found for “{q}”",
+    "didYouMean": "Did you mean",
     "breadcrumbs": "Breadcrumbs",
     "sortAria": "Sorting",
     "sortNewest": "Newest first",
