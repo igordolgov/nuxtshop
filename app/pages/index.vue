@@ -49,7 +49,14 @@
         )
 
         .main-area(:class="mainAreaClasses")
-          .products-container(ref="productsContainerRef")
+          //- is-scrolling ставится на время прокрутки: shimmer призраков
+          //- замирает (main.css) — анимация background-position не
+          //- композитится и при флинге перерисовывала тайл каждый кадр,
+          //- отъедая бюджет растеризации у соседних карточек
+          .products-container(
+            ref="productsContainerRef"
+            @scroll.passive="onCatalogScroll"
+          )
             .scroll-sentinel
             //- Строка-пилюля: Фильтры · Сортировка · чипы (паттерн WB/Ozon)
             ProductSortBar(
@@ -331,6 +338,20 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+//- Флаг «каталог сейчас скроллится» для CSS (см. шаблон .products-container):
+//- замораживает shimmer призраков на время прокрутки + 160мс после
+//- последнего события (инерция затухает не мгновенно). Класс снимается
+//- по таймауту — без listeners-утечек; обработчик навешивается Vue'ом
+//- вместе с элементом (контейнер появляется после showSkeleton)
+let scrollIdleTimer = null
+const onCatalogScroll = () => {
+  const c = productsContainerRef.value
+  if (!c) return
+  c.classList.add('is-scrolling')
+  clearTimeout(scrollIdleTimer)
+  scrollIdleTimer = setTimeout(() => c.classList.remove('is-scrolling'), 160)
+}
+
 const resetFilters = async () => {
   showMobileFilters.value = false
   // Сортировку сохраняем: сброс фильтров не обязан сбрасывать сортировку
@@ -428,6 +449,7 @@ onUnmounted(() => {
   // Страховка: уход со страницы при открытых фильтрах не должен
   // оставить body заблокированным для следующих страниц
   updateBodyScroll(false)
+  clearTimeout(scrollIdleTimer)
 })
 
 watch(showMobileFilters, updateBodyScroll)
