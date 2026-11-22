@@ -8,11 +8,13 @@
       описание 2 строки → цена + бейдж (как плашка скидки).
     Подмена скелетона реальной карточкой не даёт layout-shift: ширины
     слотов задает одна и та же сетка .products-grid.
+    Класс-хук skeleton-card: ProductsSection по нему меряет, доехал ли
+    пользователь до призраков догрузки (удержание вместо слепого таймера).
     Анимация shimmer — глобальный .skeleton из main.css
     (prefers-reduced-motion гасится там же автоматически).
     aria-hidden: скелетон — декорация для скринридеров. -->
 <template lang="pug">
-.card.product-card.p-0.bg-base-100.rounded-2xl.border.overflow-hidden(
+.card.product-card.skeleton-card.p-0.bg-base-100.rounded-2xl.border.overflow-hidden(
   aria-hidden="true"
   class="border-base-300"
 )
