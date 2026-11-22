@@ -79,10 +79,11 @@
           ) {{ $t('admin.common.delete') }}
 
   //- Форма: создание / редактирование.
-  //- modal-box-fit (main.css): форма длинная — вмещается в экран
-  //- телефона (dvh-высота), скролл даёт стоковый overflow-y:auto
+  //- modal-box-fit (main.css): вмещается в экран телефона (dvh-высота).
+  //- modal-box-footer (main.css): скролл в форме, кнопки — «липким»
+  //- низом: «Отмена/Добавить» видны без прокрутки длинной формы.
   .modal(:class="{ 'modal-open': showForm }" role="dialog" aria-modal="true" @click.self="closeForm")
-    .modal-box.modal-box-fit.max-w-2xl
+    .modal-box.modal-box-fit.modal-box-footer.max-w-2xl
       h3.font-semibold.text-lg.mb-4 {{ isNew ? $t('admin.promocodes.formNew') : $t('admin.promocodes.formEdit') }}
 
       form(@submit.prevent="save" novalidate)
