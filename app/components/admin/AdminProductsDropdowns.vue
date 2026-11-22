@@ -12,7 +12,9 @@
       span.badge.badge-sm(class="bg-white/25 text-white border-transparent" v-else) {{ $t('admin.products.categoriesAll') }}
       AppIcon(name="heroicons:chevron-down" class="w-3 h-3")
     .dropdown-content.menu.p-2.shadow-lg.bg-base-100.rounded-box.w-52.z-50.mt-1(v-if="showCategories" @click.stop)
-      .max-h-60.overflow-y-auto
+      //- overscroll-contain: доскроллили категории — страница за
+      //- дропдауном не уезжает
+      .max-h-60.overflow-y-auto.overscroll-contain
         label.label.cursor-pointer.justify-start.gap-2.py-1.px-2(class="hover:bg-base-200" rounded
           v-for="cat in categories"
           :key="cat"

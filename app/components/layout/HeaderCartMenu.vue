@@ -63,8 +63,10 @@
           path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
 
     //- Позиции (внутренний скролл: сколько бы ни было — панель не разъезжается)
+    //- overscroll-contain: доскроллили список — страница за дропдауном
+    //- не уезжает (тот же случай, что список характеристик в админке)
     .mini-cart-list.overflow-y-auto.px-2(
-      class="max-h-80 divide-y divide-base-300"
+      class="max-h-80 divide-y divide-base-300 overscroll-contain"
     )
       .flex.gap-3.py-3(
         v-for="item in cartItems"

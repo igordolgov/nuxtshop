@@ -68,7 +68,9 @@
       @mousedown.prevent="handlePanelMouseDown"
     )
       .card-body.p-0
-        .suggestions-content.max-h-96.overflow-y-auto
+        //- overscroll-contain: доскроллили подсказки — страница за
+        //- панелью не уезжает (см. HeaderCartMenu, AppScrollArea)
+        .suggestions-content.max-h-96.overflow-y-auto.overscroll-contain
           //- Поиск...
           .suggestion-item.flex.items-center.justify-center.p-3(
             v-if="isSearching && !hasInitialResults"

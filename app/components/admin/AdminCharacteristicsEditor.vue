@@ -24,8 +24,13 @@
       @click="addPreset(label)"
     ) {{ label }}
 
-  //- Строки «название — значение»
-  .flex.flex-col.gap-1
+  //- Строки «название — значение». sm+ — у списка собственный скролл:
+  //- без него при листании строк колесом скроллится вся модалка
+  //- («общий скролл» — уезжают заголовок, вкладки, цена). overscroll-
+  //! contain — доскроллили список — не тянем модалку за собой.
+  //! На телефоне окна НЕТ: вложенные скроллы на таче «зависают»
+  //! (см. AppScrollArea) — там единый плоский скролл modal-box
+  .flex.flex-col.gap-1(class="sm:max-h-72 sm:overflow-y-auto sm:overscroll-contain")
     .flex.gap-1.items-center(v-for="(pair, index) in modelValue" :key="index")
       input.input.input-bordered.input-sm.flex-1.min-w-0(
         type="text"
