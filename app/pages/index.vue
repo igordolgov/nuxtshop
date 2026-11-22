@@ -61,10 +61,15 @@
               @reset-all="resetFilters"
               @update:sort="handleSortUpdate"
             )
-            //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу гидратации
             //- searchQuery — ПРИМЕНЁННЫЙ запрос (строка «Найдено N по запросу…»,
             //- пустое состояние): подсветка в карточках не нужна — сетка это
             //- страница результатов (маркетплейсы подсветку в карточках не выводят)
+            //- Окно и партия зависят от устройства. На телефоне 12/12, а не
+            //- 30/20: при каталоге 31 товар окно 30 означало ОДНУ догрузку с
+            //- ОДНИМ призраком за весь список — скелетоны не встречались
+            //- вовсе («не вижу скелетонов»). 12 карточек ≈ 6 рядов ≈ 2 экрана:
+            //- догрузка каждые ~2 экрана, призраки — регулярная часть
+            //- листания, как на маркетплейсах; DOM меньше — гидратация быстрее
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
@@ -73,8 +78,8 @@
               :activeFiltersCount="activeFiltersCount"
               :correction="searchCorrection"
               useInfiniteScroll
-              :pageSize="20"
-              :maxRendered="30"
+              :pageSize="isMobile ? 12 : 20"
+              :maxRendered="isMobile ? 12 : 30"
               @resetFilters="resetFilters"
               @refreshProducts="refreshProducts"
               @clearSearch="clearSearch"

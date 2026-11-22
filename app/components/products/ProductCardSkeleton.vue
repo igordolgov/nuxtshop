@@ -23,17 +23,18 @@
     .skeleton.absolute.inset-0
 
   //- Тело: название (зона min-h-9/lg:min-h-10 — ровно как line-clamp-2
-  //- у h2) и описание (2 строки, как line-clamp-2 у p)
+  //- у h2) и описание (2 строки; на lg реальный p — text-sm
+  //- с leading-snug ≈ 19-20px на строку → h-5, на мобиле text-xs → h-4)
   .card-body.p-3.gap-y-1
     .min-h-9.flex.flex-col.justify-center.gap-1(class="lg:min-h-10")
       .skeleton(class="rounded w-full h-4")
       .skeleton(class="rounded w-3/4 h-4")
-    .skeleton(class="rounded w-full h-4")
-    .skeleton(class="rounded w-5/6 h-4")
+    .skeleton(class="rounded w-full h-4 lg:h-5")
+    .skeleton(class="rounded w-5/6 h-4 lg:h-5")
 
-  //- Цена (text-base/lg:text-lg) + призрак бейджа скидки справа:
-  //- у карточек без скидки строка той же высоты — сдвига нет
+  //- Цена (text-base/lg:text-lg → строка 24px/28px) + призрак бейджа
+  //- скидки справа: у карточек без скидки строка той же высоты — сдвига нет
   .card-actions.flex.items-center.justify-between.gap-2.px-3.pb-3.pt-1
-    .skeleton(class="rounded w-20 h-6")
+    .skeleton(class="rounded w-20 h-6 lg:h-7")
     .skeleton(class="rounded-md w-10 h-5")
 </template>
