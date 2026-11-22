@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
     id: nextPromoId(promos),
     ...fields,
     usedCount: 0,
+    usedByUsers: {},
     createdAt: now,
     updatedAt: now,
   };

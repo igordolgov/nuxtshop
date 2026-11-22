@@ -148,6 +148,10 @@ export interface Product {
   /** Дата окончания акции YYYY-MM-DD — плашка «до <даты>»; null = без
    *  срока (бессрочная акция). */
   promoEndsAt?: string | null;
+  /** Акция разрешает промокоды на этот товар (undefined = разрешено;
+   *  false — запрет из NewsItem.allowPromocodes). Чисто витринное —
+   *  читает evaluatePromo (promoHelpers) для базы скидки промокода. */
+  promoAllowsPromocodes?: boolean;
   image: string;
   gallery: string[];
   categories: string[];

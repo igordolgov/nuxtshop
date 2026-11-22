@@ -171,6 +171,11 @@
                 option(v-for="c in catalogCategories" :key="c" :value="c") {{ c }}
             p.text-xs(class="sm:col-span-2 text-base-content/50")
               | {{ $t('admin.news.promoBlockHint') }}
+            label.block.cursor-pointer(class="sm:col-span-2")
+              .flex.items-center.gap-3
+                input.toggle.toggle-primary(type="checkbox" v-model="form.allowPromocodes")
+                span.text-sm {{ $t('admin.news.allowPromocodes') }}
+              span.block.text-xs(class="text-base-content/50") {{ $t('admin.news.allowPromocodesHint') }}
 
         //- Черновик/публикация: черновик виден только в админке;
         //- публикация черновика отправляет пост в Telegram
@@ -393,6 +398,8 @@ const form = reactive({
   // автоскидки) и целевая категория каталога (пусто = только товары)
   promoDiscount: null,
   promoCategory: '',
+  // Промокоды поверх акции (суммирование): по умолчанию разрешены
+  allowPromocodes: true,
 })
 
 //- Категории каталога для цели скидки: уникальный отсортированный список
@@ -486,6 +493,7 @@ const openCreate = () => {
     endsAt: '',
     promoDiscount: null,
     promoCategory: '',
+    allowPromocodes: true,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -521,6 +529,8 @@ const openEdit = (item) => {
     endsAt: item.endsAt || '',
     promoDiscount: item.promoDiscount ?? null,
     promoCategory: item.promoCategory || '',
+    // undefined в KV (старые записи) = разрешено по умолчанию
+    allowPromocodes: item.allowPromocodes !== false,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -559,6 +569,9 @@ const save = async () => {
       endsAt: form.endsAt || '',
       promoDiscount: form.category === 'Акции' ? form.promoDiscount ?? '' : '',
       promoCategory: form.category === 'Акции' ? form.promoCategory : '',
+      // Суммирование с промокодами: false уедет в KV только при явном
+      // снятии галочки (undefined не шлём — сервер удалит поле = дефолт)
+      allowPromocodes: form.category === 'Акции' ? Boolean(form.allowPromocodes) : undefined,
     }
     const resp = isNew.value
       ? await $fetch('/api/news', { method: 'POST', body: payload })

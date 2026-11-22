@@ -114,10 +114,15 @@ export function activePromos(items: NewsItem[], today: string = todayISO()): New
 export function bestPromoForProduct(
   promos: NewsItem[],
   product: PromoProductLike,
-): { percent: number; endsAt: string | null; newsId: string } | null {
+): { percent: number; endsAt: string | null; newsId: string; allowsPromocodes: boolean } | null {
   const productId = String(product.id);
   const categories = Array.isArray(product.categories) ? product.categories : [];
-  let best: { percent: number; endsAt: string | null; newsId: string } | null = null;
+  let best: {
+    percent: number;
+    endsAt: string | null;
+    newsId: string;
+    allowsPromocodes: boolean;
+  } | null = null;
   for (const promo of promos) {
     const percent = promo.promoDiscount;
     if (!isValidPromoDiscount(percent)) continue;
@@ -134,6 +139,8 @@ export function bestPromoForProduct(
       percent,
       endsAt: isISODate(promo.endsAt) ? promo.endsAt : null,
       newsId: String(promo.id),
+      // Разрешение промокодов поверх акции (undefined = разрешено)
+      allowsPromocodes: promo.allowPromocodes !== false,
     };
   }
   return best;
@@ -205,6 +212,9 @@ export function applyPromosToProducts<P extends Product>(
       variants,
       promoPercent: promo.percent,
       promoEndsAt: promo.endsAt,
+      // Промокоды поверх акции: разрешение акции (undefined = разрешено;
+      // читается evaluatePromo вместе с PromoCode.stackableWithPromos)
+      promoAllowsPromocodes: promo.allowsPromocodes,
     };
   });
 }

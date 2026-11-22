@@ -188,7 +188,7 @@ export interface PromoAnalyticsEntry {
   /** null — код удалён; false — временно выключен админом. */
   active: boolean | null;
   /** Почему код нельзя применить сейчас (promoIssue); null — применим или удалён. */
-  issue: 'inactive' | 'expired' | 'limit' | null;
+  issue: 'inactive' | 'scheduled' | 'expired' | 'limit' | null;
   /** Все заказы с кодом за окно, включая отменённые. */
   orders: number;
   /** Из них отменённых — деньги от них в revenue/discount не идут. */

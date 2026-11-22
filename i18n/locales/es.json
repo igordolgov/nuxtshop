@@ -729,7 +729,12 @@
     "promoExpired": "El código promocional ha expirado",
     "promoLimit": "Se alcanzó el límite de usos del código",
     "telegramNotConfigured": "El bot de Telegram no está configurado — notificaciones no disponibles",
-    "telegramUnavailable": "Telegram no está disponible — inténtalo más tarde"
+    "telegramUnavailable": "Telegram no está disponible — inténtalo más tarde",
+    "promoScheduled": "El código promocional aún no está activo",
+    "promoUserLimit": "Ya ha usado este código promocional",
+    "promoMinSubtotal": "El carrito no alcanza el mínimo de este código promocional",
+    "promoOverlap": "El código promocional no se acumula con ofertas",
+    "promoNoTargets": "El carrito no incluye productos de este código"
   },
   "products": {
     "errFavorite": "Error al actualizar favoritos",
@@ -1121,7 +1126,9 @@
       "promoProductsLabel": "Productos de la oferta — objetivo del descuento (hasta {n})",
       "statusScheduled": "Programada",
       "statusExpired": "Expirada",
-      "endingSoon": "termina {date}"
+      "endingSoon": "termina {date}",
+      "allowPromocodes": "Permitir códigos promocionales en ofertas",
+      "allowPromocodesHint": "Desactívelo — el descuento de la oferta y el código no se acumulan"
     },
     "promocodes": {
       "title": "Códigos promocionales",
@@ -1163,7 +1170,27 @@
       "turnedOff": "Código promocional desactivado",
       "turnedOn": "Código promocional activado",
       "saveError": "No se pudo guardar el código promocional",
-      "pageTitle": "Códigos promocionales — Administración"
+      "pageTitle": "Códigos promocionales — Administración",
+      "startsLabel": "Válido desde",
+      "startsInfo": "desde {date}",
+      "minSubtotalLabel": "Compra mínima",
+      "minSubtotalHint": "vacío — sin mínimo",
+      "minSubtotalInfo": "desde {amount}",
+      "userLimitLabel": "Límite por cliente",
+      "userLimitHint": "vacío — sin límite; 1 — una vez por cliente",
+      "userLimitInfo": "hasta {n} por cliente",
+      "stackLabel": "Se acumula con precios de oferta",
+      "stackHint": "Desactívelo — el código no aplicará a productos ya en oferta",
+      "stackYes": "se acumula con ofertas",
+      "stackNo": "sin acumular con ofertas",
+      "categoryLabel": "Categoría objetivo",
+      "categoryAny": "Cualquiera (todo el pedido)",
+      "productsLabel": "Productos objetivo",
+      "selectProduct": "Elija un producto…",
+      "removeProductAria": "Quitar producto {id}",
+      "scopeAll": "aplica a todo el pedido",
+      "scopeCategory": "categoría: {cat}",
+      "scopeProducts": "productos: {n}"
     },
     "reviews": {
       "title": "Reseñas",

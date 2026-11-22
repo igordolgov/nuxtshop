@@ -415,11 +415,17 @@ function createCart() {
 
   // Правила расчёта зеркалят server/lib/promoHelpers.calcDiscount:
   // percent — с округлением до рубля, fixed — не больше суммы корзины.
-  // Итог при заказе пересчитает сервер — расхождение не страшно,
-  // но и этого хватает, чтобы UI и заказ почти всегда совпадали.
+  // Приоритет — СЕРВЕРНОЕ значение последней проверки (evaluatePromo
+  // учитывает цели/акции/порог — зеркало не умеет): хранится в
+  // promoServerDiscount после applyPromoCode/revalidatePromo; между
+  // проверками (корзину правили) может устареть — чекаут перепроверит
+  // (revalidatePromo), окончательный расчёт — createOrder.
+  const promoServerDiscount = ref<number | null>(null);
   const discount = computed(() => {
     const promo = state.value.promo;
     if (!promo || typeof promo !== 'object' || !promo.code) return 0;
+    if (promoServerDiscount.value != null)
+      return Math.max(0, Math.round(promoServerDiscount.value));
     const base = subtotal.value;
     if (base <= 0) return 0;
     const raw = promo.type === 'percent' ? (base * promo.value) / 100 : promo.value;
@@ -607,6 +613,7 @@ function createCart() {
   const clearCart = async (): Promise<void> => {
     state.value.items = [];
     state.value.promo = '';
+    promoServerDiscount.value = null;
     // Синк отдаст на сервер пустую корзину — там ключ удаляется
     markMutated();
   };
@@ -626,28 +633,57 @@ function createCart() {
     valid: boolean;
     message?: string;
     // причина отказа — ключ локализации server.promo* на клиенте
-    reason?: 'not_found' | 'inactive' | 'expired' | 'limit';
+    reason?:
+      | 'not_found'
+      | 'inactive'
+      | 'scheduled'
+      | 'expired'
+      | 'limit'
+      | 'user_limit'
+      | 'min_subtotal'
+      | 'promo_overlap'
+      | 'no_targets';
     // valid: true → сервер всегда возвращает promo
-    promo: { code: string; type: 'percent' | 'fixed'; value: number };
+    promo: {
+      code: string;
+      type: 'percent' | 'fixed';
+      value: number;
+      /** Точная скидка по серверному срезу каталога (если пришла). */
+      discount?: number;
+      base?: number;
+    };
   }
 
   // причина отказа сервера → ключ словаря (секция server.*)
   const PROMO_REASON_KEYS: Record<NonNullable<PromoValidateResponse['reason']>, string> = {
     not_found: 'server.promoNotFound',
     inactive: 'server.promoInactive',
+    scheduled: 'server.promoScheduled',
     expired: 'server.promoExpired',
     limit: 'server.promoLimit',
+    user_limit: 'server.promoUserLimit',
+    min_subtotal: 'server.promoMinSubtotal',
+    promo_overlap: 'server.promoOverlap',
+    no_targets: 'server.promoNoTargets',
   };
+
+  /**
+   * Корзина в виде строк для серверной оценки (составные id
+   * «productId::variantId» — те же, что уезжают в заказ).
+   */
+  const promoLines = (): { id: string; quantity: number }[] =>
+    state.value.items.map((i) => ({ id: i.id, quantity: i.quantity }));
 
   const applyPromoCode = async (code?: string | null): Promise<boolean> => {
     const trimmed = String(code || '').trim();
     if (!trimmed) throw new Error(tr('cart.promoEnter', 'Введите промокод'));
 
     // Валидация на сервере: список промокодов живёт в KV (админка
-    // /admin/promocodes). Клиентские суммы не участвуют в заказе.
+    // /admin/promocodes). Сервер считает скидку по СВОИМ ценам/акциям
+    // (evaluatePromo) — клиентские суммы не участвуют.
     const resp = await $fetch<PromoValidateResponse>('/api/promocodes/validate', {
       method: 'POST',
-      body: { code: trimmed, subtotal: subtotal.value },
+      body: { code: trimmed, items: promoLines(), subtotal: subtotal.value },
     }).catch((error) => {
       // код сервера → server.* (сейчас promoEmpty), иначе локализованный фолбэк
       throw new Error(
@@ -669,6 +705,10 @@ function createCart() {
       type: resp.promo.type,
       value: resp.promo.value,
     };
+    // Точная скидка сервера (цели/акции/порог учтены) — для итогов корзины
+    promoServerDiscount.value = Number.isFinite(resp.promo.discount)
+      ? (resp.promo.discount as number)
+      : null;
     state.value.error = '';
     markMutated();
     return true;
@@ -686,7 +726,7 @@ function createCart() {
     try {
       const resp = await $fetch<PromoValidateResponse>('/api/promocodes/validate', {
         method: 'POST',
-        body: { code: promo.code, subtotal: subtotal.value },
+        body: { code: promo.code, items: promoLines(), subtotal: subtotal.value },
       });
       if (resp?.valid) {
         state.value.promo = {
@@ -694,10 +734,14 @@ function createCart() {
           type: resp.promo.type,
           value: resp.promo.value,
         };
+        promoServerDiscount.value = Number.isFinite(resp.promo.discount)
+          ? (resp.promo.discount as number)
+          : null;
         saveCartToStorage();
         return true;
       }
       state.value.promo = '';
+      promoServerDiscount.value = null;
       markMutated();
       return false;
     } catch {
@@ -707,6 +751,7 @@ function createCart() {
 
   const removePromoCode = async (): Promise<void> => {
     state.value.promo = '';
+    promoServerDiscount.value = null;
     markMutated();
   };
 

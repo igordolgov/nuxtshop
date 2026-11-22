@@ -16,9 +16,10 @@ import {
   readPromoCodes,
   writePromoCodes,
   findPromoByCode,
-  promoIssue,
-  calcDiscount,
+  evaluatePromo,
+  promoUserKey,
   type PromoCode,
+  type PromoCartLine,
 } from './promoHelpers';
 // Конфиг витрины: способы оплаты и цифры доставки — один источник на клиент
 // (app/utils/deliveryPrice.ts) и сервер (см. store.config.ts)
@@ -378,17 +379,39 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   }
 
   // 4. Деньги — считает только сервер (клиентские суммы игнорируются).
-  // Промокод: валидируется по KV (active/срок/лимит); невалидный или
-  // неизвестный код НЕ блокирует заказ — просто скидка 0.
+  // Промокод: ОДНА оценка с превью (validate) — evaluatePromo: окно
+  // (с…по), лимиты (всего/на покупателя), порог суммы, цели
+  // (товары/категория), суммирование с акциями. Невалидный или
+  // неизвестный код НЕ блокирует заказ — просто скидка 0 (у магазина
+  // есть причины отказа в ответе/логе).
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const promoInput = input.promoCode?.trim().toUpperCase() || null;
   let appliedPromo: PromoCode | null = null;
+  let discount = 0;
   if (promoInput) {
     const promo = findPromoByCode(await readPromoCodes(event), promoInput);
-    if (promo && !promoIssue(promo)) appliedPromo = promo;
+    if (promo) {
+      // Покупатель: userId сессии (проставлен index.post) или email заказа —
+      // per-user лимит «один раз на покупателя».
+      const userKey = promoUserKey(input.customer?.userId, input.customer?.email);
+      const lines: PromoCartLine[] = items.map((i) => {
+        const s = sellableById.get(String(i.id));
+        return {
+          productId: String(i.id),
+          quantity: i.quantity,
+          price: i.price,
+          promoPercent: s?.promoPercent ?? null,
+          promoAllowsPromocodes: s?.promoAllowsPromocodes,
+          category: s?.categories?.[0] ?? i.category,
+        };
+      });
+      const result = evaluatePromo(promo, { lines, subtotal, userKey });
+      if (result.ok) {
+        appliedPromo = promo;
+        discount = result.discount;
+      }
+    }
   }
-  const promoCode = appliedPromo?.code ?? null;
-  const discount = appliedPromo ? calcDiscount(appliedPromo, subtotal) : 0;
   const deliveryPrice =
     deliveryMethod === 'pickup'
       ? 0
@@ -397,6 +420,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
         : subtotal > FREE_DELIVERY_FROM
           ? 0
           : DELIVERY_PRICE_COURIER;
+  const promoCode = appliedPromo?.code ?? null;
   const total = subtotal - discount + deliveryPrice;
 
   // 5. Контакты (userId — из сессии, проставлен index.post.js) и уведомления
@@ -444,6 +468,16 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
       const promo = promos.find((p) => p.id === appliedPromo.id);
       if (promo) {
         promo.usedCount = (promo.usedCount ?? 0) + 1;
+        // Per-user учёт: тот же userKey, что проверял evaluatePromo —
+        // «один раз на покупателя» блокирует повтор на следующем заказе
+        const userKey = promoUserKey(input.customer?.userId, input.customer?.email);
+        if (userKey) {
+          // usedByUsers нормализован на чтении (readPromoCodes) — всегда объект
+          promo.usedByUsers = {
+            ...promo.usedByUsers,
+            [userKey]: (promo.usedByUsers[userKey] ?? 0) + 1,
+          };
+        }
         promo.updatedAt = new Date().toISOString();
         await writePromoCodes(event, promos);
       }

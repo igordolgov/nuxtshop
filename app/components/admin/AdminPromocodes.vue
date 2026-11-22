@@ -55,8 +55,14 @@
         .text-xs(class="text-base-content/60 flex flex-wrap gap-x-3 gap-y-0.5")
           span
             | {{ $t('admin.promocodes.used', { n: p.usedCount || 0 }) }}{{ p.usageLimit ? ` ${$t('admin.promocodes.usedOutOf', { n: p.usageLimit })}` : ` ${$t('admin.promocodes.noLimit')}` }}
+          span(v-if="p.usageLimitPerUser") {{ $t('admin.promocodes.userLimitInfo', { n: p.usageLimitPerUser }) }}
+          span(v-if="p.minSubtotal") {{ $t('admin.promocodes.minSubtotalInfo', { amount: formatMoney(p.minSubtotal) }) }}
+          span(v-if="p.startsAt") {{ $t('admin.promocodes.startsInfo', { date: formatDate(p.startsAt) }) }}
           span(v-if="p.expiresAt") {{ $t('admin.promocodes.expiresAt', { date: formatDate(p.expiresAt) }) }}
-          span(v-else) {{ $t('admin.promocodes.noExpiry') }}
+          span(v-if="!p.expiresAt") {{ $t('admin.promocodes.noExpiry') }}
+        .text-xs(class="text-base-content/50 flex flex-wrap gap-x-3 gap-y-0.5")
+          span {{ scopeInfo(p) }}
+          span {{ p.stackableWithPromos ? $t('admin.promocodes.stackYes') : $t('admin.promocodes.stackNo') }}
         p.text-xs(class="text-base-content/50" v-if="p.description") {{ p.description }}
         .flex.gap-2.justify-end.flex-wrap
           button.btn.btn-outline.btn-xs.rounded-lg(type="button" :disabled="busyId === p.id" @click="openEdit(p)") {{ $t('admin.common.edit') }}
@@ -106,9 +112,14 @@
 
         .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
           label.block
+            span.form-label {{ $t('admin.promocodes.startsLabel') }}
+            input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.startsAt")
+
+          label.block
             span.form-label {{ $t('admin.promocodes.expiresLabel') }}
             input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.expiresAt")
 
+        .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
           label.block
             span.form-label {{ $t('admin.promocodes.usageLimitLabel') }}
             input.input.input-bordered.rounded-xl.w-full(
@@ -117,6 +128,54 @@
               v-model.number="form.usageLimit"
               placeholder="100"
             )
+
+          label.block
+            span.form-label {{ $t('admin.promocodes.userLimitLabel') }}
+            input.input.input-bordered.rounded-xl.w-full(
+              type="number"
+              min="1"
+              v-model.number="form.usageLimitPerUser"
+              :placeholder="$t('admin.promocodes.userLimitHint')"
+            )
+
+        .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
+          label.block
+            span.form-label {{ $t('admin.promocodes.minSubtotalLabel') }}
+            input.input.input-bordered.rounded-xl.w-full(
+              type="number"
+              min="1"
+              v-model.number="form.minSubtotal"
+              :placeholder="$t('admin.promocodes.minSubtotalHint')"
+            )
+
+          label.block
+            span.form-label {{ $t('admin.promocodes.categoryLabel') }}
+            select.select.select-bordered.rounded-xl.w-full(v-model="form.category")
+              option(value="") {{ $t('admin.promocodes.categoryAny') }}
+              option(v-for="c in catalogCategories" :key="c" :value="c") {{ c }}
+
+        label.block.mb-3.cursor-pointer
+          .flex.items-center.gap-3
+            input.toggle.toggle-primary(type="checkbox" v-model="form.stackableWithPromos")
+            span.text-sm {{ $t('admin.promocodes.stackLabel') }}
+          span.block.text-xs(class="text-base-content/50") {{ $t('admin.promocodes.stackHint') }}
+
+        //- Цель-товары: пикер как в новостях (чипы выбранных + селект свободных)
+        div
+          span.form-label {{ $t('admin.promocodes.productsLabel') }}
+          .flex.flex-col.gap-2(class="sm:flex-row")
+            select.select.select-bordered.rounded-xl.w-full(v-model="pickedProductId")
+              option(value="" disabled) {{ $t('admin.promocodes.selectProduct') }}
+              option(v-for="p in availableProducts" :key="p.id" :value="p.id") {{ p.name }} · {{ formatMoney(p.price) }}
+            button.btn.btn-outline.btn-sm.rounded-xl(
+              type="button"
+              :disabled="!pickedProductId"
+              @click="addProduct"
+            ) {{ $t('admin.common.add') }}
+          .chosen-list.mt-2(v-if="form.productIds.length")
+            .chosen-chip(v-for="id in form.productIds" :key="id")
+              span.chosen-name {{ productById(id)?.name || `id ${id}` }}
+              button.chosen-remove(type="button" :aria-label="$t('admin.promocodes.removeProductAria', { id })" @click="removeProduct(id)") ✕
 
         label.block.mb-3
           span.form-label {{ $t('admin.promocodes.noteLabel') }}
@@ -165,11 +224,59 @@ const form = ref({
   code: '',
   type: 'percent',
   value: 10,
+  startsAt: '',
   expiresAt: '',
+  minSubtotal: null,
   usageLimit: null,
+  usageLimitPerUser: null,
+  stackableWithPromos: true,
+  productIds: [],
+  category: '',
   description: '',
   active: true,
 })
+
+//- Каталог для пикера товаров-целей и категорий: админский raw-рид
+//- (базовые цены, без акций — форма редактирует справочник). Не
+//- блокирует список — грузится на фон; сбой — пикер просто пуст.
+const catalog = ref([])
+const loadCatalog = async () => {
+  try {
+    const list = await $fetch('/api/products?raw=1')
+    catalog.value = Array.isArray(list) ? list : []
+  } catch {
+    catalog.value = []
+  }
+}
+const catalogCategories = computed(() =>
+  [...new Set(catalog.value.flatMap((p) => p.categories || []))].sort(),
+)
+
+//- Пикер товаров-целей: чипы выбранных + селект свободных (как в новостях)
+const pickedProductId = ref('')
+const productById = (id) => catalog.value.find((p) => String(p.id) === String(id))
+const availableProducts = computed(() =>
+  catalog.value.filter((p) => !form.value.productIds.includes(String(p.id))),
+)
+const addProduct = () => {
+  const id = String(pickedProductId.value || '')
+  if (!id || form.value.productIds.includes(id)) return
+  form.value.productIds.push(id)
+  pickedProductId.value = ''
+}
+const removeProduct = (id) => {
+  form.value.productIds = form.value.productIds.filter((x) => x !== id)
+}
+
+/** Человекочитаемая цель: весь заказ / категория / товары. */
+const scopeInfo = (p) => {
+  const parts = []
+  if (p.category) parts.push(t('admin.promocodes.scopeCategory', { cat: p.category }))
+  if (Array.isArray(p.productIds) && p.productIds.length) {
+    parts.push(t('admin.promocodes.scopeProducts', { n: p.productIds.length }))
+  }
+  return parts.length ? parts.join(', ') : t('admin.promocodes.scopeAll')
+}
 
 const isExpired = (p) => Boolean(p.expiresAt) && new Date(p.expiresAt).getTime() < Date.now()
 const isLimitReached = (p) =>
@@ -204,8 +311,14 @@ const openCreate = () => {
     code: '',
     type: 'percent',
     value: 10,
+    startsAt: '',
     expiresAt: '',
+    minSubtotal: null,
     usageLimit: null,
+    usageLimitPerUser: null,
+    stackableWithPromos: true,
+    productIds: [],
+    category: '',
     description: '',
     active: true,
   }
@@ -221,8 +334,14 @@ const openEdit = (promo) => {
     type: promo.type,
     value: promo.value,
     // input[type=date] принимает только YYYY-MM-DD — отрезаем время
+    startsAt: promo.startsAt ? String(promo.startsAt).slice(0, 10) : '',
     expiresAt: promo.expiresAt ? String(promo.expiresAt).slice(0, 10) : '',
+    minSubtotal: promo.minSubtotal ?? null,
     usageLimit: promo.usageLimit ?? null,
+    usageLimitPerUser: promo.usageLimitPerUser ?? null,
+    stackableWithPromos: promo.stackableWithPromos !== false,
+    productIds: Array.isArray(promo.productIds) ? promo.productIds.map(String) : [],
+    category: promo.category || '',
     description: promo.description || '',
     active: promo.active,
   }
@@ -252,8 +371,14 @@ const save = async () => {
       code: form.value.code,
       type: form.value.type,
       value: form.value.value,
+      startsAt: form.value.startsAt || null,
       expiresAt: form.value.expiresAt || null,
+      minSubtotal: form.value.minSubtotal || null,
       usageLimit: form.value.usageLimit || null,
+      usageLimitPerUser: form.value.usageLimitPerUser || null,
+      stackableWithPromos: form.value.stackableWithPromos,
+      productIds: form.value.productIds.length ? form.value.productIds : null,
+      category: form.value.category || null,
       description: form.value.description,
       active: form.value.active,
     }
@@ -283,8 +408,14 @@ const toggleActive = async (promo) => {
         code: promo.code,
         type: promo.type,
         value: promo.value,
+        startsAt: promo.startsAt,
         expiresAt: promo.expiresAt,
+        minSubtotal: promo.minSubtotal,
         usageLimit: promo.usageLimit,
+        usageLimitPerUser: promo.usageLimitPerUser,
+        stackableWithPromos: promo.stackableWithPromos !== false,
+        productIds: promo.productIds,
+        category: promo.category,
         description: promo.description,
         active: !promo.active,
       },
@@ -312,7 +443,10 @@ const remove = async (promo) => {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadCatalog()
+})
 </script>
 
 <style scoped>
@@ -322,6 +456,53 @@ onMounted(load)
   font-weight: 500;
   color: var(--color-base-content);
   margin-bottom: 0.375rem;
+}
+
+.chosen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.chosen-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.625rem;
+  background: var(--color-base-200);
+  font-size: 0.8125rem;
+}
+
+.chosen-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chosen-remove {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--color-base-content);
+  opacity: 0.55;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.chosen-remove:hover {
+  background: color-mix(in oklab, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+  opacity: 1;
 }
 
 .form-error {

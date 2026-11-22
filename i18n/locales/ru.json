@@ -729,7 +729,12 @@
     "promoExpired": "Срок действия промокода истёк",
     "promoLimit": "Лимит применений промокода исчерпан",
     "telegramNotConfigured": "Telegram-бот не настроен — уведомления недоступны",
-    "telegramUnavailable": "Telegram недоступен — попробуйте позже"
+    "telegramUnavailable": "Telegram недоступен — попробуйте позже",
+    "promoScheduled": "Промокод ещё не начал действовать",
+    "promoUserLimit": "Вы уже использовали этот промокод",
+    "promoMinSubtotal": "Сумма корзины меньше минимальной для этого промокода",
+    "promoOverlap": "Промокод не суммируется с акционными товарами",
+    "promoNoTargets": "В корзине нет товаров из действия этого промокода"
   },
   "products": {
     "errFavorite": "Ошибка при обновлении избранного",
@@ -1121,7 +1126,9 @@
       "promoProductsLabel": "Товары акции — цель скидки (до {n})",
       "statusScheduled": "Запланирована",
       "statusExpired": "Истекла",
-      "endingSoon": "истекает {date}"
+      "endingSoon": "истекает {date}",
+      "allowPromocodes": "Разрешить промокоды на акционные товары",
+      "allowPromocodesHint": "Выключите — скидка акции и промокод не будут суммироваться"
     },
     "promocodes": {
       "title": "Промокоды",
@@ -1163,7 +1170,27 @@
       "turnedOff": "Промокод выключен",
       "turnedOn": "Промокод включён",
       "saveError": "Не удалось сохранить промокод",
-      "pageTitle": "Промокоды — админка"
+      "pageTitle": "Промокоды — админка",
+      "startsLabel": "Действует с",
+      "startsInfo": "действует с {date}",
+      "minSubtotalLabel": "Минимальная сумма корзины",
+      "minSubtotalHint": "пусто — без порога",
+      "minSubtotalInfo": "от {amount}",
+      "userLimitLabel": "Лимит на покупателя",
+      "userLimitHint": "пусто — без лимита; 1 — раз для каждого",
+      "userLimitInfo": "до {n} на покупателя",
+      "stackLabel": "Суммируется с акционными ценами",
+      "stackHint": "Выключите — промокод не будет действовать на товары по акции",
+      "stackYes": "суммируется с акциями",
+      "stackNo": "без суммирования с акциями",
+      "categoryLabel": "Категория-цель",
+      "categoryAny": "Любая (весь заказ)",
+      "productsLabel": "Товары-цели",
+      "selectProduct": "Выберите товар…",
+      "removeProductAria": "Убрать товар {id}",
+      "scopeAll": "действует на весь заказ",
+      "scopeCategory": "категория: {cat}",
+      "scopeProducts": "товаров: {n}"
     },
     "reviews": {
       "title": "Отзывы",

@@ -95,6 +95,8 @@ export type NewsWindowPromo = {
   endsAt: string | null;
   promoDiscount: number | null;
   promoCategory: string | null;
+  /** null = удалить (дофолт «разрешено»); false — явный запрет. */
+  allowPromocodes: boolean | null;
 };
 
 /** Результат sanitizeNewsItem: базовые поля + переводы + срок/промо
@@ -114,6 +116,7 @@ export type SanitizedNewsData = Omit<
   | 'endsAt'
   | 'promoDiscount'
   | 'promoCategory'
+  | 'allowPromocodes'
 > &
   NewsTranslations &
   NewsWindowPromo;
@@ -181,6 +184,7 @@ export function applySanitizedNews(item: NewsItem, data: SanitizedNewsData): New
     endsAt,
     promoDiscount,
     promoCategory,
+    allowPromocodes,
     ...base
   } = data;
   Object.assign(item, base);
@@ -196,6 +200,7 @@ export function applySanitizedNews(item: NewsItem, data: SanitizedNewsData): New
     endsAt,
     promoDiscount,
     promoCategory,
+    allowPromocodes,
   })) {
     if (value === null) delete target[field];
     else target[field] = value;
@@ -251,6 +256,7 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): SanitizedNewsDat
   const promoDiscountRaw = raw?.promoDiscount;
   let promoDiscount: number | undefined;
   let promoCategory: string | undefined;
+  let allowPromocodes: boolean | undefined;
   if (
     category === 'Акции' &&
     promoDiscountRaw !== undefined &&
@@ -271,6 +277,11 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): SanitizedNewsDat
     }
     promoDiscount = percent;
     if (promoCategoryTrimmed) promoCategory = promoCategoryTrimmed.slice(0, 120);
+    // Суммирование с промокодами: явный toggle формы; не задан →
+    // разрешено по умолчанию (историческое поведение витрины).
+    if (raw?.allowPromocodes !== undefined) {
+      allowPromocodes = Boolean(raw.allowPromocodes);
+    }
     // Окно акции не может кончиться раньше начала скидки (начало =
     // startsAt ?? date — окно открыто с даты публикации)
     const promoStart = startsAt ?? date;
@@ -293,6 +304,8 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): SanitizedNewsDat
     endsAt,
     promoDiscount: promoDiscount ?? null,
     promoCategory: promoCategory ?? null,
+    // undefined/null = «не задано» (дофолт «разрешено»); false — явный запрет
+    allowPromocodes: allowPromocodes === undefined ? null : allowPromocodes,
     // Переводы: пусто/отсутствует → null (удалить/не ставить; фолбэк на ru).
     titleEn: localizedTextOrNull(raw?.titleEn, 'titleEn'),
     titleEs: localizedTextOrNull(raw?.titleEs, 'titleEs'),
