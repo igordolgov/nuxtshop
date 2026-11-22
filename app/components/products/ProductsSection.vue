@@ -1,7 +1,8 @@
 <!-- components/products/ProductsSection.vue — секция каталога:
     пагинация с infinite scroll (IntersectionObserver, root=вьюпорт),
     окно рендера (расширяется догрузками), скелетоны при первой
-    загрузке, 4 колонки в landscape — чистым CSS (см. style).
+    загрузке И при догрузке скроллом (фаза 450мс — см. loadMore),
+    4 колонки в landscape — чистым CSS (см. style).
     Окно рендера растит только вниз (усечение сверху не нужно при
     текущем размере каталога: окно уже >= всех товаров) — если каталог
     вырастет до сотен позиций, вернуться к вопросу об усечении. -->
@@ -16,13 +17,14 @@
   //- h2 названия первой карточки: структура заголовков без корня (a11y/SEO)
   h1.sr-only {{ $t('catalog.title') }}
 
-  //- Первая загрузка: скелетон-сетка вместо спиннера
+  //- Первая загрузка: скелетон-сетка вместо спиннера.
+  //- Скелетон — точный слепок ProductCardGrid (варианта «list» больше
+  //- нет: мобильная сетка рендерит ту же ProductCardGrid)
   .initial-skeleton(v-if="isLoadingInitial")
     .products-grid(:class="gridClasses")
       ProductCardSkeleton(
         v-for="i in initialSkeletonCount"
         :key="`sk-init-${i}`"
-        :variant="isMobile ? 'list' : 'grid'"
       )
 
   template(v-else)
@@ -98,12 +100,13 @@
           :style="{ '--card-i': index % 12 }"
         )
 
-        //- Скелетоны подгрузки следующей страницы
+        //- Скелетоны подгрузки следующей страницы (видимая фаза —
+        //- SCROLL_SKELETON_MS в loadMore, иначе каталог из памяти
+        //- расширяется синхронно и призраки мелькали один кадр)
         template(v-if="isLoadingMore")
           ProductCardSkeleton(
             v-for="i in moreSkeletonCount"
             :key="`sk-more-${i}`"
-            :variant="isMobile ? 'list' : 'grid'"
           )
 
       .scroll-sentinel(
@@ -122,7 +125,7 @@
     )
       button.btn.btn-outline.btn-primary(
         type="button"
-        @click="loadMore"
+        @click="loadMore(false)"
       )
         | {{ $t('catalog.loadMore') }}
         span.badge.badge-primary.badge-sm.ml-2 {{ remainingCount }}
@@ -201,6 +204,10 @@ const startIndex = ref(0)
 
 const loadError = ref(null)
 
+//- Минимальная видимая фаза скелетонов при догрузке скроллом (мс):
+//- shimmer успевает качнуться, призраки читаются как «загрузка»
+const SCROLL_SKELETON_MS = 450
+
 // ==========================================
 // Computed
 // ==========================================
@@ -264,18 +271,28 @@ const updateVisibleProducts = () => {
   visibleProducts.value = displayedProducts.value.slice(startIndex.value, endIndex)
 }
 
-const loadMore = async () => {
+const loadMore = async (viaScroll = false) => {
   if (isLoadingMore.value || !hasMore.value) return
 
   isLoadingMore.value = true
 
   try {
+    //- Минимальная видимая фаза скелетонов при догрузке СКРОЛЛОМ.
+    //- Каталог уже в памяти и окно расширяется синхронно: без фазы
+    //- призраки мелькали один кадр (~16мс) и не были видны — при
+    //- листании пользователь видел пустые слоты, из которых карточки
+    //- ещё ~0.4с проявлялись каскадом card-enter (opacity 0 → 1,
+    //- main.css). 450мс: shimmer успевает качнуться, поток скролла
+    //- не ломает (сантинел срабатывает за 300px до края — фаза идёт
+    //- в prefetch, догрузка догоняет при непрерывном скролле сама)
+    if (viaScroll) {
+      await new Promise((resolve) => setTimeout(resolve, SCROLL_SKELETON_MS))
+    }
+
     // Расширяем окно рендера на одну «страницу» и проверяем,
     // покрыли ли мы весь список (в терминах той же windowSize,
     // что использует updateVisibleProducts). Искусственной задержки
-    // НЕТ: товары уже в памяти (весь каталог загружен appState),
-    // сетка расширяется синхронно — скелетоны догрузки остаются
-    // только для честно асинхронных кейсов
+    // БОЛЬШЕ НЕТ: фаза скелетонов выше — единственная пауза
     windowSize.value += props.pageSize
 
     const total = displayedProducts.value.length
@@ -310,7 +327,7 @@ const setupObserver = () => {
   observer.value = new IntersectionObserver(
     async ([entry]) => {
       if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
-        await loadMore()
+        await loadMore(true)
       }
     },
     {

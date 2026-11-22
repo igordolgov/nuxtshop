@@ -1,64 +1,37 @@
 <!-- app/components/products/ProductCardSkeleton.vue — скелетон карточки товара.
-    Два варианта геометрии под реальные карточки:
-      'grid' — ProductCardGrid: квадратное изображение, 2 строки названия,
-              2 строки описания, цена;
-      'list' — мобильная карточка списка: горизонтальная, квадрат 96px слева,
-              название/описание/бейджи справа.
-    Подмена скелетона реальной карточкой не даёт layout-shift.
+    Геометрия — ТОЧНЫЙ слепок ProductCardGrid (единственной реальной
+    карточки каталога: и на десктопе, и на телефоне сетка рендерит её,
+    бывшая мобильная «списочная» карточка удалена — скелетон-вариант
+    'list' повторял несуществующую карточку и давал прыжок при подмене):
+      квадратное изображение (aspect-square, bg-base-200) →
+      название 2 строки (зона ровно min-h-9/lg:min-h-10) →
+      описание 2 строки → цена + бейдж (как плашка скидки).
+    Подмена скелетона реальной карточкой не даёт layout-shift: ширины
+    слотов задает одна и та же сетка .products-grid.
     Анимация shimmer — глобальный .skeleton из main.css
     (prefers-reduced-motion гасится там же автоматически).
     aria-hidden: скелетон — декорация для скринридеров. -->
 <template lang="pug">
-//- ─── Вариант GRID (десктоп): повторяет ProductCardGrid ────
 .card.product-card.p-0.bg-base-100.rounded-2xl.border.overflow-hidden(
-  v-if="variant === 'grid'"
   aria-hidden="true"
   class="border-base-300"
 )
+  //- Изображение: квадрат, как .image-container реальной карточки
   .relative.w-full.aspect-square.overflow-hidden.bg-base-200
     .skeleton.absolute.inset-0
-  .p-3.gap-1.flex.flex-col
-    //- Название: 2 строки (вторая короче — как реальный line-clamp-2)
-    .skeleton(class="rounded w-full h-4")
-    .skeleton(class="rounded w-3/4 h-4")
-    //- Описание: 2 строки
-    .skeleton.mt-1(class="rounded w-full h-3")
-    .skeleton(class="rounded w-5/6 h-3")
-    //- Цена
-    .flex.items-center.justify-between.pt-2
-      .skeleton(class="rounded w-20 h-5")
-      .skeleton(class="rounded-full w-8 h-8")
 
-//- ─── Вариант LIST (мобильные) ──
-.card.product-card.bg-base-100.rounded-xl.border.overflow-hidden(
-  v-else
-  aria-hidden="true"
-  class="border-base-300"
-)
-  .flex.p-2.gap-3.items-start
-    //- Квадрат изображения: 96px, как в мобильной карточке списка
-    .skeleton.w-20.h-20.rounded-xl.flex-shrink-0(class="sm:w-24 sm:h-24")
-    .flex-1.min-w-0.gap-2.flex.flex-col
-      //- Название
+  //- Тело: название (зона min-h-9/lg:min-h-10 — ровно как line-clamp-2
+  //- у h2) и описание (2 строки, как line-clamp-2 у p)
+  .card-body.p-3.gap-y-1
+    .min-h-9.flex.flex-col.justify-center.gap-1(class="lg:min-h-10")
+      .skeleton(class="rounded w-full h-4")
       .skeleton(class="rounded w-3/4 h-4")
-      //- Описание (в реальной карточке line-clamp-3)
-      .skeleton(class="rounded w-full h-3")
-      .skeleton(class="rounded w-5/6 h-3")
-      //- Бейджи категорий
-      .flex.gap-1
-        .skeleton(class="rounded-full w-12 h-4")
-        .skeleton(class="rounded-full w-16 h-4")
-</template>
+    .skeleton(class="rounded w-full h-4")
+    .skeleton(class="rounded w-5/6 h-4")
 
-<script setup>
-/**
- * Скелетон карточки товара.
- * @prop {('grid'|'list')} variant — геометрия под соответствующую карточку
- */
-defineProps({
-  variant: {
-    type: String,
-    default: 'grid',
-  },
-})
-</script>
+  //- Цена (text-base/lg:text-lg) + призрак бейджа скидки справа:
+  //- у карточек без скидки строка той же высоты — сдвига нет
+  .card-actions.flex.items-center.justify-between.gap-2.px-3.pb-3.pt-1
+    .skeleton(class="rounded w-20 h-6")
+    .skeleton(class="rounded-md w-10 h-5")
+</template>
