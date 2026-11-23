@@ -147,6 +147,12 @@ const sortDirection = ref('desc')
 
 onMounted(() => {
   initializeApp()
+  // raw=1-перезагрузка ВСЕГДА при входе на таблицу: каталогный стейт —
+  // глобальный (useState), после SPA-перехода с витрины в нём могут
+  // лежать АКЦИОННЫЕ цены (витринный срез). Редактирование/сохранение
+  // из акционных цен записало бы скидку в KV как базовую (см. fetchCatalog:
+  // на /admin-маршрутах рид raw=1). force=true минует dedup loadProducts.
+  loadProducts(true)
 })
 
 const availableCategories = computed(() => {

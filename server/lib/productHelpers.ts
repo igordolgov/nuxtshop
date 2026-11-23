@@ -140,6 +140,18 @@ export interface Product {
   // price (скидка уже внутри), поэтому поле — чисто витринное.
   // Отсутствует/undefined → товар без скидки.
   oldPrice?: number;
+  // ── Активная акция (витринный срез, см. promoDiscount.ts) ───────────
+  // Ставятся РЕЗОЛВЕРОМ на витринных ридах; в KV их НЕТ (админские
+  // риды с ?raw=1 и все записи KV несут базовые цены).
+  /** Процент активной акции (bestPromoForProduct) — для плашки. */
+  promoPercent?: number;
+  /** Дата окончания акции YYYY-MM-DD — плашка «до <даты>»; null = без
+   *  срока (бессрочная акция). */
+  promoEndsAt?: string | null;
+  /** Акция разрешает промокоды на этот товар (undefined = разрешено;
+   *  false — запрет из NewsItem.allowPromocodes). Чисто витринное —
+   *  читает evaluatePromo (promoHelpers) для базы скидки промокода. */
+  promoAllowsPromocodes?: boolean;
   image: string;
   gallery: string[];
   categories: string[];
@@ -183,6 +195,9 @@ export interface ProductVariant {
   nameEn?: string;
   nameEs?: string;
   price?: number;
+  /** Исходная цена варианта под акцией (ставит applyPromosToProducts;
+   *  в KV нет — витринное поле, как oldPrice товара). */
+  oldPrice?: number;
   image?: string;
   inStock?: boolean;
   stockQuantity?: number;

@@ -47,6 +47,15 @@
       .card-body.p-4.gap-2
         .flex.items-center.gap-2.flex-wrap
           span.badge.badge-sm(:class="badgeClass(item.category)") {{ newsCategoryLabel(item.category, t) }}
+          //- Скидка акции: −15% + цель (категория/товары)
+          span.badge.badge-sm.badge-error(v-if="item.promoDiscount") −{{ item.promoDiscount }}%
+          span.badge.badge-sm.badge-ghost(v-if="item.promoCategory") {{ item.promoCategory }}
+          //- Статус окна показа: запланирована / истекает / истекла
+          span.badge.badge-sm.badge-info(v-if="windowStatus(item) === 'scheduled'") {{ $t('admin.news.statusScheduled') }}
+          span.badge.badge-sm.badge-warning(
+            v-else-if="windowStatus(item) === 'active' && item.endsAt && daysLeft(item) <= 3"
+          ) {{ $t('admin.news.endingSoon', { date: promoUntilShort(item.endsAt) }) }}
+          span.badge.badge-sm(v-else-if="windowStatus(item) === 'expired'" class="badge-neutral") {{ $t('admin.news.statusExpired') }}
           span.badge.badge-sm.badge-warning(v-if="item.published === false") {{ $t('admin.news.draft') }}
           span.text-xs(class="text-base-content/50") {{ formatNewsDate(item.date, locale) }}
           span.text-xs(class="text-base-content/55") · id {{ item.id }}
@@ -127,6 +136,46 @@
           label.block
             span.form-label {{ $t('admin.news.publishDate') }}
             input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.date")
+
+        //- Срок действия — у ЛЮБОЙ новости: окно показа на витрине.
+        //- Пусто = бессрочно; endsAt включительно (в день окончания
+        //- новость/скидка ещё активны, на следующий — уже нет)
+        .grid.grid-cols-1.gap-3(class="sm:grid-cols-2")
+          label.block
+            span.form-label {{ $t('admin.news.startsAt') }}
+            input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.startsAt")
+          label.block
+            span.form-label {{ $t('admin.news.endsAt') }}
+            input.input.input-bordered.rounded-xl.w-full(type="date" v-model="form.endsAt")
+          p.text-xs(class="sm:col-span-2 text-base-content/50") {{ $t('admin.news.endsHint') }}
+
+        //- Промо-блок акции: скидка + цель (категория каталога).
+        //- Товары — общий пикер «Товары из новости» ниже: для «Акций»
+        //- он становится целью скидки (админ видит подсказку)
+        template(v-if="form.category === 'Акции'")
+          .grid.grid-cols-1.gap-3.rounded-xl.border.p-3(class="sm:grid-cols-2 border-base-300 bg-base-200/40")
+            label.block
+              span.form-label {{ $t('admin.news.promoDiscount') }}
+              input.input.input-bordered.rounded-xl.w-full(
+                type="number"
+                min="5"
+                max="90"
+                step="1"
+                placeholder="15"
+                v-model.number="form.promoDiscount"
+              )
+            label.block
+              span.form-label {{ $t('admin.news.promoCategory') }}
+              select.select.select-bordered.rounded-xl.w-full(v-model="form.promoCategory")
+                option(value="") {{ $t('admin.news.promoCategoryAny') }}
+                option(v-for="c in catalogCategories" :key="c" :value="c") {{ c }}
+            p.text-xs(class="sm:col-span-2 text-base-content/50")
+              | {{ $t('admin.news.promoBlockHint') }}
+            label.block.cursor-pointer(class="sm:col-span-2")
+              .flex.items-center.gap-3
+                input.toggle.toggle-primary(type="checkbox" v-model="form.allowPromocodes")
+                span.text-sm {{ $t('admin.news.allowPromocodes') }}
+              span.block.text-xs(class="text-base-content/50") {{ $t('admin.news.allowPromocodesHint') }}
 
         //- Черновик/публикация: черновик виден только в админке;
         //- публикация черновика отправляет пост в Telegram
@@ -212,9 +261,10 @@
               placeholder="Primer párrafo&#10;&#10;Segundo párrafo"
             )
 
-        //- Перелинковка: товары из новости (до 6, порядок = порядок показа)
+        //- Перелинковка: товары из новости (до 6, порядок = порядок показа).
+        //- Для рубрики «Акции» тот же пикер — ЦЕЛЬ СКИДКИ (плюс категория выше)
         .mt-3
-          span.form-label {{ $t('admin.news.productsLabel', { n: MAX_PRODUCTS }) }}
+          span.form-label {{ form.category === 'Акции' ? $t('admin.news.promoProductsLabel', { n: MAX_PRODUCTS }) : $t('admin.news.productsLabel', { n: MAX_PRODUCTS }) }}
           //- На мобильных — столбиком: селект + кнопка в строку не помещаются
           .flex.flex-col.gap-2(class="sm:flex-row")
             select.select.select-bordered.rounded-xl.w-full(v-model="pickedProductId")
@@ -245,6 +295,7 @@
 
 <script setup>
 import { NEWS_CATEGORIES, formatNewsDate, newsTone, localizedNews, newsCategoryLabel } from '~/utils/news'
+import { promoUntilShort } from '~/utils/productDiscount'
 
 const { $notify } = useNuxtApp()
 const { t, locale } = useI18n()
@@ -340,7 +391,36 @@ const form = reactive({
   bodyEs: '',
   productIds: [],
   published: true,
+  // Срок действия (любая новость): пусто = бессрочно (endsAt включительно)
+  startsAt: '',
+  endsAt: '',
+  // Акция («Акции»): скидка % (пусто = обычная новость-акция без
+  // автоскидки) и целевая категория каталога (пусто = только товары)
+  promoDiscount: null,
+  promoCategory: '',
+  // Промокоды поверх акции (суммирование): по умолчанию разрешены
+  allowPromocodes: true,
 })
+
+//- Категории каталога для цели скидки: уникальный отсортированный список
+//- из загруженного каталога (catalog — те же товары, что в пикере)
+const catalogCategories = computed(() =>
+  [...new Set(catalog.value.flatMap((p) => p.categories || []))].sort()
+)
+
+//- ─── Статусы окна показа (startsAt/endsAt): scheduled/active/expired ────
+//- Логика зеркалит server/lib/promoDiscount.ts (newsWindowStatus):
+//- даты YYYY-MM-DD сравниваются лексикографически, endsAt включительно.
+const todayISO = () => new Date().toISOString().slice(0, 10)
+const windowStatus = (item) => {
+  const today = todayISO()
+  if (item.startsAt && item.startsAt > today) return 'scheduled'
+  if (item.endsAt && item.endsAt < today) return 'expired'
+  return 'active'
+}
+//- Дней до конца окна (для бейджа «истекает до 30.11» при ≤3 днях)
+const daysLeft = (item) =>
+  Math.round((new Date(item.endsAt).getTime() - new Date(todayISO()).getTime()) / 86400000)
 
 //- ─── Загрузка фото (телефон: камера/галерея → клиентский webp-ресайз) ────
 const resizing = ref(false)
@@ -409,6 +489,11 @@ const openCreate = () => {
     bodyEs: '',
     productIds: [],
     published: true,
+    startsAt: '',
+    endsAt: '',
+    promoDiscount: null,
+    promoCategory: '',
+    allowPromocodes: true,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -439,6 +524,13 @@ const openEdit = (item) => {
     // как ручные, и автоподбор по рубрике перестал бы обновляться.
     productIds: (item.productIds ?? []).map(String),
     published: item.published !== false,
+    // Срок действия/промо: пусто в KV → пустое поле (бессрочно)
+    startsAt: item.startsAt || '',
+    endsAt: item.endsAt || '',
+    promoDiscount: item.promoDiscount ?? null,
+    promoCategory: item.promoCategory || '',
+    // undefined в KV (старые записи) = разрешено по умолчанию
+    allowPromocodes: item.allowPromocodes !== false,
   })
   pickedProductId.value = ''
   formError.value = ''
@@ -471,6 +563,15 @@ const save = async () => {
       bodyEs: form.bodyEs,
       productIds: form.productIds,
       published: form.published,
+      // Срок действия: пустая строка → сервер удалит поле (бессрочно);
+      // скидка: пусто → null → сервер снимет промо (обычная новость-акция)
+      startsAt: form.startsAt || '',
+      endsAt: form.endsAt || '',
+      promoDiscount: form.category === 'Акции' ? form.promoDiscount ?? '' : '',
+      promoCategory: form.category === 'Акции' ? form.promoCategory : '',
+      // Суммирование с промокодами: false уедет в KV только при явном
+      // снятии галочки (undefined не шлём — сервер удалит поле = дефолт)
+      allowPromocodes: form.category === 'Акции' ? Boolean(form.allowPromocodes) : undefined,
     }
     const resp = isNew.value
       ? await $fetch('/api/news', { method: 'POST', body: payload })

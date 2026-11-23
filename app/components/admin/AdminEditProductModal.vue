@@ -354,7 +354,9 @@
             span.loading.loading-spinner.loading-sm
           p.text-xs.opacity-60(v-else-if="historyError") {{ historyError }}
           p.text-xs.opacity-60(v-else-if="history.length === 0") {{ $t('admin.history.empty') }}
-          ul.space-y-2(v-else)
+          //- sm+ — собственный скролл: длинный аудит не скроллит колесом
+          //- всю модалку (тот же случай, что список характеристик)
+          ul.space-y-2(v-else class="sm:max-h-72 sm:overflow-y-auto sm:overscroll-contain")
             li(v-for="entry in history" :key="entry.ts")
               .flex.flex-wrap.items-center(class="gap-1 mb-0.5 text-xs")
                 span.badge.badge-xs(

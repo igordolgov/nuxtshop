@@ -1,11 +1,6 @@
 // server/api/product/[slug].ts
 import { getBoughtTogetherProducts } from '../../lib/boughtTogetherHelpers';
-import {
-  getProductBySlug,
-  getSimilarProducts,
-  readProducts,
-  type Product,
-} from '../../lib/productHelpers';
+import { getProductBySlug, getSimilarProducts, type Product } from '../../lib/productHelpers';
 import {
   approvedReviews,
   publicReviewView,
@@ -21,6 +16,8 @@ import {
   readProductCardEdgeCache,
   writeProductCardEdgeCache,
 } from '../../lib/productEdgeCache';
+// Акции: витринные цены карточки/похожих/FBT (raw KV + активные акции)
+import { readSellableProducts } from '../../lib/promoDiscount';
 
 // Витринный ответ карточки: тип-договор для edge-кэша (JSON туда-обратно,
 // анонимный ответ одинаков для всех гостей — см. productEdgeCache).
@@ -55,7 +52,10 @@ export default defineEventHandler(async (event) => {
 
     // Одно чтение каталога на весь ответ: слаг, «Похожие» и «Часто
     // покупают вместе» раньше читали KV независимо (до 3 раз на запрос).
-    const allProducts = await readProducts(event);
+    // Витринные цены: активные акции применены (карточка, похожие, FBT и
+    // JSON-LD price согласованы); KV не мутируется, истечение срока
+    // отзывает скидку само. Устаревание — не позже TTL кэша (30 с).
+    const allProducts = await readSellableProducts(event);
     const product = await getProductBySlug(event, slugOrId, allProducts);
     if (!product) {
       throw createError({ statusCode: 404, message: 'Товар не найден' });

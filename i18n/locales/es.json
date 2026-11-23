@@ -210,7 +210,8 @@
     "notifyDone": "¡Listo! Te avisaremos cuando vuelva el producto",
     "notifyErrContact": "Indica un email o teléfono (mínimo 10 dígitos)",
     "notifyError": "No se pudo enviar. Inténtalo de nuevo",
-    "variant": "Opción"
+    "variant": "Opción",
+    "promoUntil": "hasta {date}"
   },
   "productPage": {
     "notFound": "Producto no encontrado",
@@ -274,7 +275,8 @@
       "new": "Novedades",
       "company": "Empresa",
       "reviews": "Análisis"
-    }
+    },
+    "promoUntil": "hasta {date}"
   },
   "about": {
     "title": "Sobre la tienda",
@@ -727,7 +729,12 @@
     "promoExpired": "El código promocional ha expirado",
     "promoLimit": "Se alcanzó el límite de usos del código",
     "telegramNotConfigured": "El bot de Telegram no está configurado — notificaciones no disponibles",
-    "telegramUnavailable": "Telegram no está disponible — inténtalo más tarde"
+    "telegramUnavailable": "Telegram no está disponible — inténtalo más tarde",
+    "promoScheduled": "El código promocional aún no está activo",
+    "promoUserLimit": "Ya ha usado este código promocional",
+    "promoMinSubtotal": "El carrito no alcanza el mínimo de este código promocional",
+    "promoOverlap": "El código promocional no se acumula con ofertas",
+    "promoNoTargets": "El carrito no incluye productos de este código"
   },
   "products": {
     "errFavorite": "Error al actualizar favoritos",
@@ -1108,7 +1115,20 @@
       "saveError": "No se pudo guardar la noticia",
       "imageProcessError": "No se pudo procesar la imagen",
       "pageTitle": "Noticias — Administración",
-      "bodyPlaceholder": "Primer párrafo\n\nSegundo párrafo"
+      "bodyPlaceholder": "Primer párrafo\n\nSegundo párrafo",
+      "startsAt": "Activa desde",
+      "endsAt": "Activa hasta",
+      "endsHint": "Vacío = indefinido. La fecha «hasta» es inclusiva: en el último día la oferta sigue activa; al día siguiente el descuento se retira y la noticia se oculta de la tienda.",
+      "promoDiscount": "Descuento, %",
+      "promoCategory": "Categoría del catálogo (objetivo del descuento)",
+      "promoCategoryAny": "— solo los productos seleccionados —",
+      "promoBlockHint": "El descuento se aplica a los productos seleccionados y/o a la categoría del catálogo automáticamente, mientras la oferta esté activa, y se retira solo al vencer. La tienda lo muestra como precio con descuento, precio anterior tachado y insignia −%.",
+      "promoProductsLabel": "Productos de la oferta — objetivo del descuento (hasta {n})",
+      "statusScheduled": "Programada",
+      "statusExpired": "Expirada",
+      "endingSoon": "termina {date}",
+      "allowPromocodes": "Permitir códigos promocionales en ofertas",
+      "allowPromocodesHint": "Desactívelo — el descuento de la oferta y el código no se acumulan"
     },
     "promocodes": {
       "title": "Códigos promocionales",
@@ -1150,7 +1170,27 @@
       "turnedOff": "Código promocional desactivado",
       "turnedOn": "Código promocional activado",
       "saveError": "No se pudo guardar el código promocional",
-      "pageTitle": "Códigos promocionales — Administración"
+      "pageTitle": "Códigos promocionales — Administración",
+      "startsLabel": "Válido desde",
+      "startsInfo": "desde {date}",
+      "minSubtotalLabel": "Compra mínima",
+      "minSubtotalHint": "vacío — sin mínimo",
+      "minSubtotalInfo": "desde {amount}",
+      "userLimitLabel": "Límite por cliente",
+      "userLimitHint": "vacío — sin límite; 1 — una vez por cliente",
+      "userLimitInfo": "hasta {n} por cliente",
+      "stackLabel": "Se acumula con precios de oferta",
+      "stackHint": "Desactívelo — el código no aplicará a productos ya en oferta",
+      "stackYes": "se acumula con ofertas",
+      "stackNo": "sin acumular con ofertas",
+      "categoryLabel": "Categoría objetivo",
+      "categoryAny": "Cualquiera (todo el pedido)",
+      "productsLabel": "Productos objetivo",
+      "selectProduct": "Elija un producto…",
+      "removeProductAria": "Quitar producto {id}",
+      "scopeAll": "aplica a todo el pedido",
+      "scopeCategory": "categoría: {cat}",
+      "scopeProducts": "productos: {n}"
     },
     "reviews": {
       "title": "Reseñas",

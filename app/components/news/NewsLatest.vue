@@ -45,6 +45,8 @@ section.home-news(v-if="items.length" aria-labelledby="home-news-title")
         .flex.items-center.gap-2.flex-wrap.mb-1
           span.badge-chip(:class="`chip-${newsTone(item.category)}`") {{ newsCategoryLabel(item.category, t) }}
           span.news-date {{ formatNewsDate(item.date, locale) }}
+          //- Срок действия (акция или новость с датой конца): «до 30.11»
+          span.badge-chip.chip-sale(v-if="item.endsAt") {{ $t('news.promoUntil', { date: promoUntilShort(item.endsAt) }) }}
         h3.news-title {{ item.title }}
 
   //- Ссылка «Все новости» под лентой — на мобиле шапка скроллится

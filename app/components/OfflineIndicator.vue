@@ -6,7 +6,7 @@
       v-if="isOffline"
     )
       .banner-content
-        Icon(name="mdi:wifi-off" size="20")
+        AppIcon(name="mdi:wifi-off" size="20")
         span {{ $t('offline.banner') }}
 
   //- Баннер восстановления
@@ -15,7 +15,7 @@
       v-if="showRestoredMessage && isOnline"
     )
       .banner-content
-        Icon(name="mdi:wifi" size="20")
+        AppIcon(name="mdi:wifi" size="20")
         span {{ $t('offline.restored') }}
 </template>
 

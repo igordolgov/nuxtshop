@@ -14,13 +14,7 @@
         "e2e/**/*.{ts,js}"
       ],
       "project": ["app/**/*.{js,ts,vue,css}"],
-      "ignoreDependencies": [
-        "@markuplint/pug-parser",
-        "@markuplint/vue-spec",
-        "@iconify-json/heroicons",
-        "@iconify-json/mdi",
-        "pug"
-      ]
+      "ignoreDependencies": ["@markuplint/pug-parser", "@markuplint/vue-spec", "pug"]
     }
   }
 }

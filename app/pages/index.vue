@@ -49,7 +49,14 @@
         )
 
         .main-area(:class="mainAreaClasses")
-          .products-container(ref="productsContainerRef")
+          //- is-scrolling ставится на время прокрутки: shimmer призраков
+          //- замирает (main.css) — анимация background-position не
+          //- композитится и при флинге перерисовывала тайл каждый кадр,
+          //- отъедая бюджет растеризации у соседних карточек
+          .products-container(
+            ref="productsContainerRef"
+            @scroll.passive="onCatalogScroll"
+          )
             .scroll-sentinel
             //- Строка-пилюля: Фильтры · Сортировка · чипы (паттерн WB/Ozon)
             ProductSortBar(
@@ -61,10 +68,15 @@
               @reset-all="resetFilters"
               @update:sort="handleSortUpdate"
             )
-            //- maxRendered=30: окно рендера ограничивает DOM-узлы и работу гидратации
             //- searchQuery — ПРИМЕНЁННЫЙ запрос (строка «Найдено N по запросу…»,
             //- пустое состояние): подсветка в карточках не нужна — сетка это
             //- страница результатов (маркетплейсы подсветку в карточках не выводят)
+            //- Окно и партия зависят от устройства. На телефоне 12/12, а не
+            //- 30/20: при каталоге 31 товар окно 30 означало ОДНУ догрузку с
+            //- ОДНИМ призраком за весь список — скелетоны не встречались
+            //- вовсе («не вижу скелетонов»). 12 карточек ≈ 6 рядов ≈ 2 экрана:
+            //- догрузка каждые ~2 экрана, призраки — регулярная часть
+            //- листания, как на маркетплейсах; DOM меньше — гидратация быстрее
             ProductsSection(
               :products="displayedProducts"
               :isLoading="isLoading"
@@ -73,8 +85,8 @@
               :activeFiltersCount="activeFiltersCount"
               :correction="searchCorrection"
               useInfiniteScroll
-              :pageSize="20"
-              :maxRendered="30"
+              :pageSize="isMobile ? 12 : 20"
+              :maxRendered="isMobile ? 12 : 30"
               @resetFilters="resetFilters"
               @refreshProducts="refreshProducts"
               @clearSearch="clearSearch"
@@ -326,6 +338,20 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+//- Флаг «каталог сейчас скроллится» для CSS (см. шаблон .products-container):
+//- замораживает shimmer призраков на время прокрутки + 160мс после
+//- последнего события (инерция затухает не мгновенно). Класс снимается
+//- по таймауту — без listeners-утечек; обработчик навешивается Vue'ом
+//- вместе с элементом (контейнер появляется после showSkeleton)
+let scrollIdleTimer = null
+const onCatalogScroll = () => {
+  const c = productsContainerRef.value
+  if (!c) return
+  c.classList.add('is-scrolling')
+  clearTimeout(scrollIdleTimer)
+  scrollIdleTimer = setTimeout(() => c.classList.remove('is-scrolling'), 160)
+}
+
 const resetFilters = async () => {
   showMobileFilters.value = false
   // Сортировку сохраняем: сброс фильтров не обязан сбрасывать сортировку
@@ -423,6 +449,7 @@ onUnmounted(() => {
   // Страховка: уход со страницы при открытых фильтрах не должен
   // оставить body заблокированным для следующих страниц
   updateBodyScroll(false)
+  clearTimeout(scrollIdleTimer)
 })
 
 watch(showMobileFilters, updateBodyScroll)

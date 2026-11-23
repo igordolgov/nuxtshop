@@ -210,7 +210,8 @@
     "notifyDone": "Done! We will let you know when the product is back",
     "notifyErrContact": "Enter an email or phone number (at least 10 digits)",
     "notifyError": "Could not send. Please try again",
-    "variant": "Option"
+    "variant": "Option",
+    "promoUntil": "until {date}"
   },
   "productPage": {
     "notFound": "Product not found",
@@ -274,7 +275,8 @@
       "new": "New",
       "company": "Company",
       "reviews": "Reviews"
-    }
+    },
+    "promoUntil": "until {date}"
   },
   "about": {
     "title": "About the Store",
@@ -727,7 +729,12 @@
     "promoExpired": "The promo code has expired",
     "promoLimit": "The promo code usage limit has been reached",
     "telegramNotConfigured": "Telegram bot is not configured — notifications unavailable",
-    "telegramUnavailable": "Telegram is unavailable — try again later"
+    "telegramUnavailable": "Telegram is unavailable — try again later",
+    "promoScheduled": "Promo code is not active yet",
+    "promoUserLimit": "You have already used this promo code",
+    "promoMinSubtotal": "Cart subtotal is below the minimum for this promo code",
+    "promoOverlap": "Promo code does not combine with sale items",
+    "promoNoTargets": "The cart has no products covered by this promo code"
   },
   "products": {
     "errFavorite": "Failed to update favorites",
@@ -1108,7 +1115,20 @@
       "saveError": "Failed to save the post",
       "imageProcessError": "Failed to process the image",
       "pageTitle": "News — Admin",
-      "bodyPlaceholder": "First paragraph\n\nSecond paragraph"
+      "bodyPlaceholder": "First paragraph\n\nSecond paragraph",
+      "startsAt": "Active from",
+      "endsAt": "Active until",
+      "endsHint": "Empty = indefinite. The «until» date is inclusive: on the last day the offer is still active; the next day the discount is removed and the news item is hidden from the storefront.",
+      "promoDiscount": "Discount, %",
+      "promoCategory": "Catalog category (discount target)",
+      "promoCategoryAny": "— selected products only —",
+      "promoBlockHint": "The discount is applied to the selected products and/or catalog category automatically, while the offer is active, and is removed by itself when it expires. Storefront shows it as a discounted price with a struck-through old price and a −% badge.",
+      "promoProductsLabel": "Promo products — discount target (up to {n})",
+      "statusScheduled": "Scheduled",
+      "statusExpired": "Expired",
+      "endingSoon": "ends {date}",
+      "allowPromocodes": "Allow promo codes on sale items",
+      "allowPromocodesHint": "Turn off — the sale discount and promo codes stay exclusive"
     },
     "promocodes": {
       "title": "Promo codes",
@@ -1150,7 +1170,27 @@
       "turnedOff": "Promo code turned off",
       "turnedOn": "Promo code turned on",
       "saveError": "Failed to save the promo code",
-      "pageTitle": "Promo codes — Admin"
+      "pageTitle": "Promo codes — Admin",
+      "startsLabel": "Starts on",
+      "startsInfo": "starts {date}",
+      "minSubtotalLabel": "Minimum cart subtotal",
+      "minSubtotalHint": "empty — no threshold",
+      "minSubtotalInfo": "from {amount}",
+      "userLimitLabel": "Limit per customer",
+      "userLimitHint": "empty — unlimited; 1 — once per customer",
+      "userLimitInfo": "up to {n} per customer",
+      "stackLabel": "Stacks with sale prices",
+      "stackHint": "Turn off — the code will not apply to products already on sale",
+      "stackYes": "stacks with sales",
+      "stackNo": "no stacking with sales",
+      "categoryLabel": "Target category",
+      "categoryAny": "Any (whole order)",
+      "productsLabel": "Target products",
+      "selectProduct": "Select a product…",
+      "removeProductAria": "Remove product {id}",
+      "scopeAll": "applies to the whole order",
+      "scopeCategory": "category: {cat}",
+      "scopeProducts": "products: {n}"
     },
     "reviews": {
       "title": "Reviews",

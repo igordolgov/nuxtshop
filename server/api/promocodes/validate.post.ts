@@ -1,15 +1,19 @@
 // server/api/promocodes/validate.post.ts
 // Публичная проверка промокода (POST /api/promocodes/validate).
-// body: { code: string, subtotal?: number } — subtotal клиентский, нужен
-// только для превью скидки; окончательно скидку пересчитывает createOrder
-// по серверным ценам (клиентская сумма не может ничего подделать).
+// body: { code, items?: [{id: 'productId::variantId', quantity}] } —
+// содержимое корзины. Цены/акции/категории сервер берёт из СВОЕГО
+// sellable-среза каталога (клиентские суммы не участвуют) и считает
+// скидку той же evaluatePromo, что и createOrder — превью никогда не
+// расходится с заказом. userId сессии — для per-user лимита в превью
+// (у гостя без email превью не проверяет per-user: заказ проверит).
 import {
   readPromoCodes,
   findPromoByCode,
-  promoIssue,
-  PROMO_ISSUE_MESSAGES,
-  calcDiscount,
+  evaluatePromo,
+  type PromoCartLine,
 } from '../../lib/promoHelpers';
+import { readSellableProducts } from '../../lib/promoDiscount';
+import { getSessionUser } from '../../utils/auth';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -32,13 +36,45 @@ export default defineEventHandler(async (event) => {
     return { valid: false, reason: 'not_found', message: 'Промокод не найден' };
   }
 
-  const issue = promoIssue(promo);
-  if (issue) {
-    return { valid: false, reason: issue, message: PROMO_ISSUE_MESSAGES[issue] };
+  // Срез витрины: акционные цены + promoPercent/promoAllowsPromocodes
+  const sellable = await readSellableProducts(event);
+  const byId = new Map(sellable.map((p) => [String(p.id), p]));
+
+  // Корзина: составные id «productId::variantId» (см. useCart.addToCart)
+  const rawItems = Array.isArray(body?.items) ? body.items : [];
+  const lines: PromoCartLine[] = [];
+  for (const item of rawItems) {
+    const lineId = String(item?.id ?? '');
+    if (!lineId) continue;
+    const productId = lineId.includes('::') ? lineId.slice(0, lineId.indexOf('::')) : lineId;
+    const product = byId.get(productId);
+    if (!product) continue; // удалённый из каталога — заказ всё равно отклонит
+    const quantity = Math.max(1, Number(item?.quantity) || 1);
+    lines.push({
+      productId,
+      quantity,
+      price: product.price,
+      promoPercent: product.promoPercent ?? null,
+      promoAllowsPromocodes: product.promoAllowsPromocodes,
+      category: product.categories?.[0] ?? null,
+    });
   }
 
-  const subtotal = Number(body?.subtotal);
-  const discount = calcDiscount(promo, Number.isFinite(subtotal) ? subtotal : 0);
+  // userId сессии — per-user лимит в превью; subtotal — только для порога
+  const user = await getSessionUser(event);
+  const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+
+  const result = evaluatePromo(promo, {
+    lines,
+    subtotal,
+    userKey: user?.id ?? null,
+  });
+
+  if (!result.ok) {
+    // Локализацию делает клиент по reason (server.promo*), русский
+    // message — фолбэк для прямых вызовов API
+    return { valid: false, reason: result.reason, message: null };
+  }
 
   return {
     valid: true,
@@ -46,7 +82,9 @@ export default defineEventHandler(async (event) => {
       code: promo.code,
       type: promo.type,
       value: promo.value,
-      discount,
+      // Точная скидка по серверному срезу (клиент не считает сам)
+      discount: result.discount,
+      base: result.base,
       expiresAt: promo.expiresAt,
       description: promo.description || null,
     },

@@ -23,8 +23,8 @@
   //- вставляет тот же heroicons 24×24): solid/outline — два path одного
   //- силуэта сердца из @iconify-json/heroicons, переключение v-if.
   button.favorite-btn(
-    class="top-1 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
-    :class="[isFavorite ? 'bg-heart text-white' : 'bg-base-100/40 text-base-content', { 'fav-pop': isFavorite }]",
+    class="top-1 left-1 z-10 absolute flex justify-center items-center rounded-full size-10 transition-colors",
+    :class="[isFavorite ? 'bg-heart text-white' : 'bg-base-100/60 text-base-content', { 'fav-pop': isFavorite }]",
     @click="toggleFavorite",
     :title="isFavorite ? $t('product.favRemove') : $t('product.favAdd')",
     :aria-label="isFavorite ? $t('product.favRemove') : $t('product.favAdd')"
@@ -33,10 +33,13 @@
       path(v-if="isFavorite" fill="currentColor" d="m11.645 20.91l-.007-.003l-.022-.012l-.082-.045q-.108-.06-.301-.173a25.2 25.2 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25C2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052A5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25c0 3.925-2.438 7.111-4.739 9.256a25 25 0 0 1-4.244 3.17a15 15 0 0 1-.383.219l-.022.012l-.007.004l-.003.001a.75.75 0 0 1-.704 0z")
       path(v-else fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.687-4.5c-1.936 0-3.598 1.126-4.313 2.733c-.715-1.607-2.377-2.733-4.312-2.733C5.098 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12")
 
-  //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2.5rem + зазор)
+  //- Кнопка сравнения — под сердцем (топ-1 + высота сердечка 2.5rem + зазор).
+  //- Без backdrop-blur — как favorite-btn: 60 кнопок с подложкой =
+  //- перерасчёт блюра каждый кадр скролла и пустые тайлы при флинге.
+  //- bg-base-100/60 вместо /40: иконка читается на ярких фото и без блюра
   button.compare-btn(
-    class="top-12 left-1 z-10 absolute flex justify-center items-center backdrop-blur rounded-full size-10 transition-colors",
-    :class="isComparedVisible ? 'bg-primary text-primary-content' : 'bg-base-100/40 text-base-content'",
+    class="top-12 left-1 z-10 absolute flex justify-center items-center rounded-full size-10 transition-colors",
+    :class="isComparedVisible ? 'bg-primary text-primary-content' : 'bg-base-100/60 text-base-content'",
     @click="toggleCompareClick",
     :title="$t('compare.toggleAria')",
     :aria-label="$t('compare.toggleAria')"
@@ -120,10 +123,17 @@
           v-if="hasDiscount(product)",
           class="inline-flex items-center rounded-md bg-red-700 px-1.5 pt-px pb-0.5 text-sm leading-4 font-bold text-white"
         ) −{{ discountPercent(product) }}%
+        //- Срок акции (ставит резолвер promoDiscount на витринных ридах):
+        //- компактная плашка «до 30.11» — понятно, что скидка временная
+        span.shrink-0.text-xs(
+          v-if="product.promoEndsAt",
+          class="text-base-content/50 whitespace-nowrap"
+        ) {{ $t('product.promoUntil', { date: promoUntilShort(product.promoEndsAt) }) }}
       .text-error.text-xs(v-else) {{ $t('product.outOfStock') }}
 </template>
 
 <script setup>
+import { promoUntilShort } from '~/utils/productDiscount'
 const props = defineProps({
   product: {
     type: Object,

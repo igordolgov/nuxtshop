@@ -49,7 +49,9 @@
   //- Выпадающая панель: подсказки + строка «добавить новое».
   //- Абсолютно позиционирована относительно пикера; если снизу мало
   //- места (поле у нижнего края экрана) — раскрывается вверх.
-  .cat-list.absolute.left-0.right-0.z-50.mt-1.border.border-base-300.rounded-lg.shadow-lg.bg-base-100.overflow-y-auto(
+  //- overscroll-contain: доскроллили подсказки — модалка за панелью
+  //- не уезжает (колесо в конце списка не скроллит диалог)
+  .cat-list.absolute.left-0.right-0.z-50.mt-1.border.border-base-300.rounded-lg.shadow-lg.bg-base-100.overflow-y-auto.overscroll-contain(
     v-if="panelVisible"
     :class="dropUp ? 'bottom-full mb-1' : 'top-full'"
     role="listbox"

@@ -13,6 +13,18 @@ const MAX_PARAGRAPH_LEN = 2000;
 
 export class NewsValidationError extends Error {}
 
+/** ISO-дата (YYYY-MM-DD) или null: пусто/битое → null (= «удалить поле»
+ *  в applySanitizedNews — бессрочность). Чистая. */
+function isoDateOrNull(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!ISO_DATE_RE.test(trimmed) || Number.isNaN(Date.parse(trimmed))) {
+    throw new NewsValidationError('Дата — в формате ГГГГ-ММ-ДД');
+  }
+  return trimmed;
+}
+
 /**
  * Список id товаров из новости: строки, тримминг, без пустых и дублей,
  * не больше MAX_NEWS_PRODUCTS. Мягкая нормализация (без ошибок):
@@ -75,15 +87,39 @@ export type NewsTranslations = {
   bodyEs: string[] | null;
 };
 
-/** Результат sanitizeNewsItem: базовые поля + переводы (null = удалить).
- *  Переводные поля переопределяются из NewsTranslations (string | null):
- *  пересечение с NewsItem (string | undefined) сузило бы тип обратно до
- *  string и запретило бы null — поэтому эти поля вынуты из Omit. */
+/** Срок действия и промо-поля: null = «удалить поле из записи» —
+ *  семантика переводов (очистка даты в форме снимает бессрочность,
+ *  смена рубрики снимает скидку). */
+export type NewsWindowPromo = {
+  startsAt: string | null;
+  endsAt: string | null;
+  promoDiscount: number | null;
+  promoCategory: string | null;
+  /** null = удалить (дофолт «разрешено»); false — явный запрет. */
+  allowPromocodes: boolean | null;
+};
+
+/** Результат sanitizeNewsItem: базовые поля + переводы + срок/промо
+ *  (null = удалить). Переводные и оконно-промо поля вынуты из Omit:
+ *  пересечение с NewsItem (string | undefined) сузило бы тип до string
+ *  и запретило бы null. */
 export type SanitizedNewsData = Omit<
   NewsItem,
-  'id' | 'titleEn' | 'titleEs' | 'excerptEn' | 'excerptEs' | 'bodyEn' | 'bodyEs'
+  | 'id'
+  | 'titleEn'
+  | 'titleEs'
+  | 'excerptEn'
+  | 'excerptEs'
+  | 'bodyEn'
+  | 'bodyEs'
+  | 'startsAt'
+  | 'endsAt'
+  | 'promoDiscount'
+  | 'promoCategory'
+  | 'allowPromocodes'
 > &
-  NewsTranslations;
+  NewsTranslations &
+  NewsWindowPromo;
 
 const LOCALIZED_TEXT_FIELDS = ['titleEn', 'titleEs', 'excerptEn', 'excerptEs'] as const;
 const LOCALIZED_TEXT_LIMITS: Record<(typeof LOCALIZED_TEXT_FIELDS)[number], number> = {
@@ -132,12 +168,25 @@ function localizedBodyOrNull(input: unknown): string[] | null {
 
 /**
  * Применяет sanitize-результат к записи (мутирует item и возвращает его):
- * базовые поля присваиваются, переводы — null → поле удаляется из записи,
- * строка/массив → присваивается. Единственная точка правки записи из
- * payload — POST и PUT /api/news работают только через неё.
+ * базовые поля присваиваются; переводы и срок/промо — null → поле
+ * удаляется из записи, значение → присваивается. Единственная точка
+ * правки записи из payload — POST и PUT /api/news работают только через неё.
  */
 export function applySanitizedNews(item: NewsItem, data: SanitizedNewsData): NewsItem {
-  const { titleEn, titleEs, excerptEn, excerptEs, bodyEn, bodyEs, ...base } = data;
+  const {
+    titleEn,
+    titleEs,
+    excerptEn,
+    excerptEs,
+    bodyEn,
+    bodyEs,
+    startsAt,
+    endsAt,
+    promoDiscount,
+    promoCategory,
+    allowPromocodes,
+    ...base
+  } = data;
   Object.assign(item, base);
   const target = item as unknown as Record<string, unknown>;
   for (const [field, value] of Object.entries({
@@ -147,6 +196,11 @@ export function applySanitizedNews(item: NewsItem, data: SanitizedNewsData): New
     excerptEs,
     bodyEn,
     bodyEs,
+    startsAt,
+    endsAt,
+    promoDiscount,
+    promoCategory,
+    allowPromocodes,
   })) {
     if (value === null) delete target[field];
     else target[field] = value;
@@ -182,9 +236,58 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): SanitizedNewsDat
 
   const body = normalizeNewsBody(raw?.body);
 
-  let image = typeof raw?.image === 'string' ? raw.image.trim() : '';
+  const image = typeof raw?.image === 'string' ? raw.image.trim() : '';
   if (image && !/^(\/|data:image\/|https?:\/\/)/.test(image)) {
     throw new NewsValidationError('Изображение: путь (/…), data-URI или http(s):// URL');
+  }
+
+  // ── Срок действия (startsAt/endsAt) — у ЛЮБОЙ новости ─────────────
+  // Пусто/битая дата → поле удаляется (undefined = бессрочно). Логика
+  // «конец раньше начала» — ошибка (не молчаливое игнорирование).
+  const startsAt = isoDateOrNull(raw?.startsAt);
+  const endsAt = isoDateOrNull(raw?.endsAt);
+  if (startsAt && endsAt && endsAt < startsAt) {
+    throw new NewsValidationError('«Действует по» не может быть раньше «Действует с»');
+  }
+
+  // ── Промо-поля акции (только рубрика «Акции») ─────────────────────
+  // Вне «Акций» промо-поля молча удаляются: рубрика сменилась —
+  // скидка не должна «выжить» в данных без своей рубрики.
+  const promoDiscountRaw = raw?.promoDiscount;
+  let promoDiscount: number | undefined;
+  let promoCategory: string | undefined;
+  let allowPromocodes: boolean | undefined;
+  if (
+    category === 'Акции' &&
+    promoDiscountRaw !== undefined &&
+    promoDiscountRaw !== null &&
+    String(promoDiscountRaw).trim() !== ''
+  ) {
+    const percent = Number(promoDiscountRaw);
+    if (!Number.isInteger(percent) || percent < 5 || percent > 90) {
+      throw new NewsValidationError('Скидка акции — целое число от 5 до 90');
+    }
+    // Цель обязательна: товары (пикер) и/или категория каталога —
+    // акция без цели ошибочна сильнее «просто текста».
+    const targets = normalizeNewsProductIds(raw?.productIds);
+    const promoCategoryTrimmed =
+      typeof raw?.promoCategory === 'string' ? raw.promoCategory.trim() : '';
+    if (targets.length === 0 && !promoCategoryTrimmed) {
+      throw new NewsValidationError('Укажите цель скидки: товары и/или категорию каталога');
+    }
+    promoDiscount = percent;
+    if (promoCategoryTrimmed) promoCategory = promoCategoryTrimmed.slice(0, 120);
+    // Суммирование с промокодами: явный toggle формы; не задан →
+    // разрешено по умолчанию (историческое поведение витрины).
+    if (raw?.allowPromocodes !== undefined) {
+      allowPromocodes = Boolean(raw.allowPromocodes);
+    }
+    // Окно акции не может кончиться раньше начала скидки (начало =
+    // startsAt ?? date — окно открыто с даты публикации)
+    const promoStart = startsAt ?? date;
+    if (endsAt && endsAt < promoStart) {
+      throw new NewsValidationError('«Действует по» не может быть раньше начала акции');
+    }
   }
 
   return {
@@ -195,6 +298,14 @@ export function sanitizeNewsItem(raw: Record<string, unknown>): SanitizedNewsDat
     body,
     image,
     productIds: normalizeNewsProductIds(raw?.productIds),
+    // Срок действия и промо: null = удалить поле из записи (бессрочность/
+    // смена рубрики) — обработает applySanitizedNews
+    startsAt,
+    endsAt,
+    promoDiscount: promoDiscount ?? null,
+    promoCategory: promoCategory ?? null,
+    // undefined/null = «не задано» (дофолт «разрешено»); false — явный запрет
+    allowPromocodes: allowPromocodes === undefined ? null : allowPromocodes,
     // Переводы: пусто/отсутствует → null (удалить/не ставить; фолбэк на ru).
     titleEn: localizedTextOrNull(raw?.titleEn, 'titleEn'),
     titleEs: localizedTextOrNull(raw?.titleEs, 'titleEs'),

@@ -23,6 +23,7 @@ import {
   MAX_NEWS_PRODUCTS,
   NEWS_CATEGORIES,
   NewsValidationError,
+  applySanitizedNews,
   attachProducts,
   autopickProductIds,
   newsSeed,
@@ -248,6 +249,156 @@ describe('sanitizeNewsItem', () => {
   it('productIds не массив → пустой список', () => {
     expect(sanitizeNewsItem({ ...validPayload, productIds: 'abc' }).productIds).toEqual([]);
     expect(sanitizeNewsItem(validPayload).productIds).toEqual([]);
+  });
+
+  it('срок действия: валидные даты сохраняются, пустые → null (бессрочно)', () => {
+    const clean = sanitizeNewsItem({
+      ...validPayload,
+      startsAt: ' 2026-11-05 ',
+      endsAt: '2026-11-30',
+    });
+    expect(clean.startsAt).toBe('2026-11-05');
+    expect(clean.endsAt).toBe('2026-11-30');
+    // Пусто/битое → null → applySanitizedNews удалит поле (бессрочно)
+    expect(sanitizeNewsItem(validPayload).startsAt).toBeNull();
+    expect(sanitizeNewsItem(validPayload).endsAt).toBeNull();
+    expect(() => sanitizeNewsItem({ ...validPayload, endsAt: '30.11.2026' })).toThrow(/ГГГГ-ММ-ДД/);
+  });
+
+  it('«Действует по» раньше «Действует с» — ошибка', () => {
+    expect(() =>
+      sanitizeNewsItem({ ...validPayload, startsAt: '2026-11-10', endsAt: '2026-11-01' }),
+    ).toThrow(/раньше/);
+  });
+
+  it('промо-акция: скидка+цель сохраняются (рубрика «Акции»)', () => {
+    const clean = sanitizeNewsItem({
+      ...validPayload,
+      category: 'Акции',
+      promoDiscount: 15,
+      promoCategory: ' Электроника ',
+      productIds: ['3'],
+    });
+    expect(clean.promoDiscount).toBe(15);
+    expect(clean.promoCategory).toBe('Электроника');
+  });
+
+  it('скидка вне 5–90 (или дробная) — ошибка', () => {
+    for (const bad of [3, 91, 150, 12.5, 'abc']) {
+      expect(() =>
+        sanitizeNewsItem({ ...validPayload, category: 'Акции', promoDiscount: bad }),
+      ).toThrow(/от 5 до 90/);
+    }
+  });
+
+  it('скидка без цели (нет товаров и категории) — ошибка', () => {
+    expect(() =>
+      sanitizeNewsItem({ ...validPayload, category: 'Акции', promoDiscount: 15 }),
+    ).toThrow(/цель/);
+  });
+
+  it('«Действует по» раньше начала акции (startsAt или date) — ошибка', () => {
+    expect(() =>
+      sanitizeNewsItem({
+        ...validPayload,
+        category: 'Акции',
+        promoDiscount: 15,
+        promoCategory: 'Электроника',
+        endsAt: '2026-10-31', // раньше date=2026-11-01
+      }),
+    ).toThrow(/раньше начала/);
+    expect(() =>
+      sanitizeNewsItem({
+        ...validPayload,
+        category: 'Акции',
+        promoDiscount: 15,
+        promoCategory: 'Электроника',
+        startsAt: '2026-11-10',
+        endsAt: '2026-11-05',
+      }),
+    ).toThrow(/раньше/); // ловится общим окном (startsAt > endsAt) раньше промо-проверки
+  });
+
+  it('промо-поля вне «Акций» → null (смена рубрики снимает скидку)', () => {
+    const clean = sanitizeNewsItem({
+      ...validPayload,
+      category: 'Новинки',
+      promoDiscount: 15,
+      promoCategory: 'Электроника',
+    });
+    expect(clean.promoDiscount).toBeNull();
+    expect(clean.promoCategory).toBeNull();
+  });
+});
+
+describe('applySanitizedNews — срок/промо: null удаляет поле из записи', () => {
+  it('очистка даты и смена рубрики снимают срок и скидку', () => {
+    const item: Record<string, unknown> = {
+      id: '9',
+      date: '2026-11-01',
+      category: 'Акции',
+      title: 'Акция',
+      excerpt: '',
+      body: ['x'],
+      image: '',
+      updatedAt: '2026-11-01T00:00:00.000Z',
+      startsAt: '2026-11-01',
+      endsAt: '2026-11-30',
+      promoDiscount: 15,
+      promoCategory: 'Электроника',
+    };
+    const clean = sanitizeNewsItem({
+      title: 'Акция с новым текстом',
+      category: 'Компания',
+      date: '2026-11-01',
+      excerpt: '',
+      body: 'x',
+      image: '',
+      startsAt: '',
+      endsAt: '',
+      promoDiscount: '',
+      promoCategory: '',
+      productIds: [],
+      published: true,
+    });
+    applySanitizedNews(item as never, clean);
+    expect(item.startsAt).toBeUndefined();
+    expect(item.endsAt).toBeUndefined();
+    expect(item.promoDiscount).toBeUndefined();
+    expect(item.promoCategory).toBeUndefined();
+    expect(item.category).toBe('Компания');
+  });
+
+  it('валидная акция перезаписывает поля записи', () => {
+    const item: Record<string, unknown> = {
+      id: '9',
+      date: '2026-11-01',
+      category: 'Компания',
+      title: 'Старая',
+      excerpt: '',
+      body: ['x'],
+      image: '',
+      updatedAt: '2026-11-01T00:00:00.000Z',
+    };
+    const clean = sanitizeNewsItem({
+      title: 'Новая акция',
+      category: 'Акции',
+      date: '2026-11-01',
+      excerpt: '',
+      body: 'x',
+      image: '',
+      promoDiscount: 20,
+      promoCategory: 'Электроника',
+      startsAt: '2026-11-05',
+      endsAt: '2026-11-25',
+      productIds: ['1'],
+      published: true,
+    });
+    applySanitizedNews(item as never, clean);
+    expect(item.promoDiscount).toBe(20);
+    expect(item.promoCategory).toBe('Электроника');
+    expect(item.startsAt).toBe('2026-11-05');
+    expect(item.endsAt).toBe('2026-11-25');
   });
 });
 

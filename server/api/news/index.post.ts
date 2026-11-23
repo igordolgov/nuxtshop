@@ -11,6 +11,8 @@ import {
   writeNews,
 } from '../../lib/newsHelpers';
 import { processImage } from '../../lib/imageStorage';
+// Правка новостей меняет витринные цены (акции) — сбрасываем каталог-кэш
+import { purgeCatalogEdgeCache } from '../../lib/catalogEdgeCache';
 import { sendNewsPost } from '../../lib/telegram';
 import { requireAdmin } from '../../utils/auth';
 
@@ -32,6 +34,8 @@ export default defineEventHandler(async (event) => {
     item.image = image;
     news.push(item);
     await writeNews(event, news);
+    // Новая акция меняет цены витрины — каталог-кэш устарел сразу, не по TTL
+    await purgeCatalogEdgeCache(event);
 
     // Telegram-постинг только при публикации: черновик уходит в KV тихо.
     // Сбой бота/сети не ломает создание новости; без секретов — no-op (false).

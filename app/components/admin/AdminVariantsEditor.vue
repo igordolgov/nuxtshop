@@ -49,8 +49,10 @@
         @input="updateAxis('es', $event.target.value)"
       )
 
-  //- Строки вариантов
-  .flex.flex-col.gap-2
+  //- Строки вариантов. sm+ — собственный скролл списка: много вариантов
+  //- не должно колесом утаскивать всю модалку (как список характеристик).
+  //! На телефоне окна нет — единый плоский скролл modal-box (тач)
+  .flex.flex-col.gap-2(class="sm:max-h-80 sm:overflow-y-auto sm:overscroll-contain")
     .variant-row.border.border-base-300.rounded-lg.p-2(v-for="(variant, index) in variants" :key="index")
       .flex.flex-wrap.gap-1.items-center
         //- Порядковый бейдж: первая строка = базовый вариант (variants[0])

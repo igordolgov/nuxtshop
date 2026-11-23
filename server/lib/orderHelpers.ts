@@ -10,13 +10,16 @@ import type { H3Event } from 'h3';
 import { createError } from 'h3';
 import { kvGetJSON, kvPutJSON } from './storage';
 import { readProducts, writeProducts, type Product } from './productHelpers';
+// Акции: витринные цены заказа (raw KV + активные акции — KV не мутируется)
+import { activePromosFromEvent, applyPromosToProducts } from './promoDiscount';
 import {
   readPromoCodes,
   writePromoCodes,
   findPromoByCode,
-  promoIssue,
-  calcDiscount,
+  evaluatePromo,
+  promoUserKey,
   type PromoCode,
+  type PromoCartLine,
 } from './promoHelpers';
 // Конфиг витрины: способы оплаты и цифры доставки — один источник на клиент
 // (app/utils/deliveryPrice.ts) и сервер (см. store.config.ts)
@@ -298,41 +301,55 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   // 3. Товары из KV: цены и наличие — серверные.
   // Корзинная позиция варианта приходит составным id «productId::variantId»
   // (см. useCart.addToCart): склад и цена берутся из варианта, а не товара.
-  const products = await readProducts(event);
+  // Два среза каталога: raw — склад и запись (KV-объекты не мутируются
+  // промо), sellable — ЦЕНЫ (активные акции применены; заказ платит
+  // акционную цену, даже если клиентская корзина осталась со старым
+  // снимком — сервер авторитетен).
+  const rawProducts = await readProducts(event);
+  const promos = await activePromosFromEvent(event);
+  const sellable = applyPromosToProducts(rawProducts, promos);
+  const sellableById = new Map(sellable.map((p) => [String(p.id), p]));
+  const products = rawProducts;
   const items: OrderItem[] = [];
   for (const [lineId, quantity] of qtyById) {
     const sep = String(lineId).indexOf('::');
     const productId = sep === -1 ? String(lineId) : String(lineId).slice(0, sep);
     const variantId = sep === -1 ? null : String(lineId).slice(sep + 2) || null;
+    // Склад/остатки/имена — из raw; цена — из промо-среза (или как raw,
+    // если товар не под акцией — applyPromos возвращает объект как есть)
     const product = products.find((p) => String(p.id) === productId);
-    if (!product) {
+    const sellableProduct = sellableById.get(productId);
+    if (!product || !sellableProduct) {
       throw createError({
         statusCode: 400,
         message: `Товар с ID ${productId} не найден`,
         data: { code: 'productNotFound' },
       });
     }
-    let price = product.price;
+    let price = sellableProduct.price;
     let stock = product.stockQuantity ?? 0;
     let variantName: string | null = null;
     let variantNameEn: string | null = null;
     let variantNameEs: string | null = null;
     let variantImage: string | null = null;
     if (variantId !== null) {
-      const variant = product.variants?.find((v) => v.id === variantId);
-      if (!variant) {
+      // Цена варианта — из промо-среза (applyPromos пересчитал цены
+      // вариантов пропорционально); склад — из raw.
+      const variant = sellableProduct.variants?.find((v) => v.id === variantId);
+      const rawVariant = product.variants?.find((v) => v.id === variantId);
+      if (!variant || !rawVariant) {
         throw createError({
           statusCode: 400,
           message: `У товара «${product.name}» нет варианта ${variantId}`,
           data: { code: 'variantMissing', params: { name: product.name, variant: variantId } },
         });
       }
-      price = variant.price ?? product.price;
-      stock = variant.stockQuantity ?? product.stockQuantity ?? 0;
-      variantName = variant.name;
-      variantNameEn = variant.nameEn ?? null;
-      variantNameEs = variant.nameEs ?? null;
-      variantImage = variant.image ?? null;
+      price = variant.price ?? sellableProduct.price;
+      stock = rawVariant.stockQuantity ?? product.stockQuantity ?? 0;
+      variantName = rawVariant.name;
+      variantNameEn = rawVariant.nameEn ?? null;
+      variantNameEs = rawVariant.nameEs ?? null;
+      variantImage = rawVariant.image ?? null;
     }
     if (quantity > stock) {
       throw createError({
@@ -362,17 +379,39 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
   }
 
   // 4. Деньги — считает только сервер (клиентские суммы игнорируются).
-  // Промокод: валидируется по KV (active/срок/лимит); невалидный или
-  // неизвестный код НЕ блокирует заказ — просто скидка 0.
+  // Промокод: ОДНА оценка с превью (validate) — evaluatePromo: окно
+  // (с…по), лимиты (всего/на покупателя), порог суммы, цели
+  // (товары/категория), суммирование с акциями. Невалидный или
+  // неизвестный код НЕ блокирует заказ — просто скидка 0 (у магазина
+  // есть причины отказа в ответе/логе).
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const promoInput = input.promoCode?.trim().toUpperCase() || null;
   let appliedPromo: PromoCode | null = null;
+  let discount = 0;
   if (promoInput) {
     const promo = findPromoByCode(await readPromoCodes(event), promoInput);
-    if (promo && !promoIssue(promo)) appliedPromo = promo;
+    if (promo) {
+      // Покупатель: userId сессии (проставлен index.post) или email заказа —
+      // per-user лимит «один раз на покупателя».
+      const userKey = promoUserKey(input.customer?.userId, input.customer?.email);
+      const lines: PromoCartLine[] = items.map((i) => {
+        const s = sellableById.get(String(i.id));
+        return {
+          productId: String(i.id),
+          quantity: i.quantity,
+          price: i.price,
+          promoPercent: s?.promoPercent ?? null,
+          promoAllowsPromocodes: s?.promoAllowsPromocodes,
+          category: s?.categories?.[0] ?? i.category,
+        };
+      });
+      const result = evaluatePromo(promo, { lines, subtotal, userKey });
+      if (result.ok) {
+        appliedPromo = promo;
+        discount = result.discount;
+      }
+    }
   }
-  const promoCode = appliedPromo?.code ?? null;
-  const discount = appliedPromo ? calcDiscount(appliedPromo, subtotal) : 0;
   const deliveryPrice =
     deliveryMethod === 'pickup'
       ? 0
@@ -381,6 +420,7 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
         : subtotal > FREE_DELIVERY_FROM
           ? 0
           : DELIVERY_PRICE_COURIER;
+  const promoCode = appliedPromo?.code ?? null;
   const total = subtotal - discount + deliveryPrice;
 
   // 5. Контакты (userId — из сессии, проставлен index.post.js) и уведомления
@@ -428,6 +468,16 @@ export async function createOrder(event: H3Event, input: CreateOrderInput): Prom
       const promo = promos.find((p) => p.id === appliedPromo.id);
       if (promo) {
         promo.usedCount = (promo.usedCount ?? 0) + 1;
+        // Per-user учёт: тот же userKey, что проверял evaluatePromo —
+        // «один раз на покупателя» блокирует повтор на следующем заказе
+        const userKey = promoUserKey(input.customer?.userId, input.customer?.email);
+        if (userKey) {
+          // usedByUsers нормализован на чтении (readPromoCodes) — всегда объект
+          promo.usedByUsers = {
+            ...promo.usedByUsers,
+            [userKey]: (promo.usedByUsers[userKey] ?? 0) + 1,
+          };
+        }
         promo.updatedAt = new Date().toISOString();
         await writePromoCodes(event, promos);
       }

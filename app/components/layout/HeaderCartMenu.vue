@@ -63,20 +63,23 @@
           path(stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12")
 
     //- Позиции (внутренний скролл: сколько бы ни было — панель не разъезжается)
+    //- overscroll-contain: доскроллили список — страница за дропдауном
+    //- не уезжает (тот же случай, что список характеристик в админке)
     .mini-cart-list.overflow-y-auto.px-2(
-      class="max-h-80 divide-y divide-base-300"
+      class="max-h-80 divide-y divide-base-300 overscroll-contain"
     )
       .flex.gap-3.py-3(
         v-for="item in cartItems"
         :key="item.id"
       )
-        //- 56px: резерв места до загрузки (width/height), ошибка → плейсхолдер
+        //- 56px: резерв места до загрузки (width/height), ошибка → плейсхолдер.
+        //- Без lazy: дропдаун скрыт через v-show, ленивые миниатюры
+        //- грузились в момент открытия и мигали
         NuxtImg.flex-shrink-0.w-14.h-14.rounded-lg.bg-base-200.object-cover(
           :src="item.image || '/images/placeholder.jpg'"
           :alt="displayName(item)"
           width="56"
           height="56"
-          loading="lazy"
           decoding="async"
           @error="handleImageError"
         )

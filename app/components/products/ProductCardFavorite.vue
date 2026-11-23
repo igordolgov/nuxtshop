@@ -208,15 +208,10 @@ onMounted(() => {
   transition: opacity 0.3s ease;
 }
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-base-200) 25%,
-    var(--color-base-300) 50%,
-    var(--color-base-200) 75%
-  );
-  background-size: 200% 100%;
-}
+/* Локальный градиент .skeleton удалён: дублировал глобальный из
+   main.css и, как и его старая версия, строился на base-200/base-300 —
+   в тёмной business они темнее карточки, призрак был невидим.
+   Теперь действует глобальный контраст от base-100 к base-content. */
 
 @media (max-width: 640px) {
   .image-container {

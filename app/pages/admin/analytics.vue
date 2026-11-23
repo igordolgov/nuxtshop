@@ -11,7 +11,7 @@
     .flex.flex-col.gap-3(class="sm:flex-row sm:justify-between sm:items-center")
       .flex.items-center.gap-3
         .dash-avatar
-          icon(name="heroicons:chart-bar" size="22")
+          AppIcon(name="heroicons:chart-bar" size="22")
         div
           h1.text-xl.font-bold.text-base-content {{ $t('admin.analytics.title') }}
           p.dash-sub {{ $t('admin.analytics.subtitle', { days: period }) }}
@@ -31,30 +31,30 @@
             :aria-label="$t('admin.analytics.exportAria')"
             :title="$t('admin.analytics.exportTitle')"
           )
-            icon(name="heroicons:arrow-down-tray" size="16" :class="{ 'animate-pulse': isExporting }")
+            AppIcon(name="heroicons:arrow-down-tray" size="16" :class="{ 'animate-pulse': isExporting }")
             span.hidden(class="sm:inline") {{ $t('admin.analytics.exportLabel') }}
           ul.dropdown-content.menu.z-50.w-56.rounded-xl.border.border-base-300.bg-base-100.p-1.shadow-lg
             li
               button(type="button" @click="exportCsv('top-products')")
-                icon(name="heroicons:squares-2x2" size="16")
+                AppIcon(name="heroicons:squares-2x2" size="16")
                 span {{ $t('admin.analytics.exportTop') }}
             li
               button(type="button" @click="exportCsv('series')")
-                icon(name="heroicons:chart-bar" size="16")
+                AppIcon(name="heroicons:chart-bar" size="16")
                 span {{ $t('admin.analytics.exportDaily') }}
             li
               button(type="button" @click="exportCsv('promo-codes')")
-                icon(name="heroicons:ticket" size="16")
+                AppIcon(name="heroicons:ticket" size="16")
                 span {{ $t('admin.analytics.exportPromo') }}
         button.btn.btn-sm.btn-ghost.rounded-xl(:disabled="loading" @click="load" :aria-label="$t('admin.analytics.refreshAria')")
-          icon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
+          AppIcon(name="heroicons:arrow-path" size="18" :class="{ 'animate-spin': loading }")
           span.hidden(class="sm:inline") {{ $t('admin.analytics.refresh') }}
 
     //- KPI: заказы, выручка, средний чек, продано единиц
     .grid.grid-cols-2.gap-3.mt-4(class="lg:grid-cols-4")
       .stat-card(v-for="kpi in kpis" :key="kpi.label")
         .stat-icon(:class="`stat-icon-${kpi.tone}`")
-          icon(:name="kpi.icon" size="20")
+          AppIcon(:name="kpi.icon" size="20")
         .stat-num {{ kpi.value }}
         .stat-label {{ kpi.label }}
         .stat-badge(v-if="kpi.badge" :class="`stat-badge-${kpi.tone}`") {{ kpi.badge }}
@@ -68,7 +68,7 @@
     .panel.mt-4(v-else-if="!hasData")
       .panel-empty
         .empty-icon
-          icon(name="heroicons:shopping-bag" size="28")
+          AppIcon(name="heroicons:shopping-bag" size="28")
         .empty-title {{ $t('admin.analytics.emptyTitle') }}
         .empty-hint {{ $t('admin.analytics.emptyHint') }}
 
